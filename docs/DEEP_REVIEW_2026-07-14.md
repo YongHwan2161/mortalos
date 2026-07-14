@@ -8,7 +8,7 @@ MortalOS has a stronger conceptual foundation than it had at the first P0 pass, 
 
 The review outcome is:
 
-- **P0 specification:** PASS after four corrections;
+- **P0 specification:** PASS after six corrections;
 - **dependency audit:** PASS, zero known vulnerabilities;
 - **clean local P0 test:** PASS;
 - **semantic protocol implementation:** not started;
@@ -25,6 +25,8 @@ The review outcome is:
 | Critical | State loss was classified as death while heartbeat remained valid. | The vocabulary contradicted the state machine. | Split authority viability, state viability, operational life, state stall, and v0 protocol death. | Fixed |
 | High | Nonce “freshness” was a validator requirement. | No local validator can prove global uniqueness. | Made secure random sampling a creator duty; byte-identical Genesis is replay. | Fixed |
 | Medium | `repair` duplicated `membership-change`. | Redundant consensus labels expand code and ambiguity without adding safety. | Removed `repair` event; repair is proposal policy. | Fixed |
+| Critical | Key deletion was treated as revoking already produced signatures. | A delayed or conditionally completable successor can remain valid after current keys disappear. | Added latent-successor semantics, `INV-13`, and mandatory pending-artifact tests. | Fixed |
+| Critical | `state-transition` depended on an unspecified genome callback. | Identical messages could receive different results in different runtimes. | Removed state transition from v0; P8 must version a deterministic genome ABI/runtime. | Fixed |
 | Medium | Ajv `8.17.1` produced a moderate security advisory. | A clean public repo should not knowingly ship a vulnerable verification dependency. | Upgraded to `8.20.0`; audit now reports zero vulnerabilities. | Fixed |
 | Medium | No CI ran the documented gate. | Local PASS was not externally reproducible. | Added a Node 22 GitHub Actions workflow using `npm ci` and `npm test`. | Added; remote run pending |
 | High | Current P0 verifier checks structure and cross-document consistency, not protocol semantics. | A PASS can coexist with an unimplemented validator. | README/report now state the limitation; P1 requires executable vectors and property tests. | Open by design |
@@ -41,7 +43,7 @@ The project should not start by implementing “an OS.” It should implement fi
 
 ### Layer A — Deterministic meaning
 
-Input bytes, canonicalization, hashes, signatures, parents, quorum, and event payloads must have one result in every implementation. This is the protocol kernel.
+Input bytes, canonicalization, hashes, signatures, parents, quorum, event payloads, and pending authorization evidence must have one result in every implementation. This is the protocol kernel. v0 deliberately keeps `state_root` immutable.
 
 ### Layer B — Authority continuity
 
@@ -120,10 +122,10 @@ npm audit --audit-level=moderate: 0 vulnerabilities
 P0 schemas compiled: 2
 event-payload fixtures bound: 1
 negative structural mutations rejected: 8
-operational lifecycle definitions checked: 18
+operational lifecycle definitions checked: 19
 domain separators checked: 8
-unique rejection codes checked: 61
-invariant mappings checked: 12
+unique rejection codes checked: 58
+invariant mappings checked: 13
 ```
 
 The GitHub Actions workflow has been added locally and must be confirmed after the repository update.
