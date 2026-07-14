@@ -1,6 +1,6 @@
 # MortalOS Protocol v0
 
-Status: **Normative v0 specification with an executable H1 reference validator**  
+Status: **Normative v0 specification with an executable transition verifier and lineage registry**  
 Protocol identifier: `mortalos/0`  
 Scope: P0 operational semantics for birth, identity, lineage, continuity, fork, dormancy, death, extinction, clone, and descendant.
 
@@ -55,6 +55,15 @@ Arrays are semantically ordered. A conforming producer MUST sort:
 - acceptance arrays by ascending `key_id`.
 
 A validator MUST reject arrays that are not strictly sorted or that contain duplicate `key_id` values.
+
+To keep untrusted-input failure deterministic across implementations, v0 fixes these pre-validation resource limits:
+
+| Input | Maximum raw bytes | Maximum JSON container depth |
+|---|---:|---:|
+| Genesis or Pulse envelope | 65,536 | 64 |
+| Event-payload sidecar | 262,144 | 64 |
+
+An implementation MUST enforce the byte bound before UTF-8 decoding and the depth bound during duplicate-aware parsing. Exceeding either bound returns `E_PARSE_LIMIT_EXCEEDED` for an envelope or `E_EVENT_PAYLOAD_INVALID` with deterministic detail `E_PARSE_LIMIT_EXCEEDED` for a payload. These limits are consensus input rules, not UI policy.
 
 For v0 keyed arrays, ascending order means lexicographic comparison of the complete ASCII `key_id` bytes as unsigned bytes. Because the v0 prefix and base64url alphabet are ASCII, this is also Unicode code-point order for these strings; locale-sensitive collation MUST NOT be used.
 
@@ -164,17 +173,17 @@ A **Pulse** is an authorized state-successor proposal consisting of a signed Pul
 
 ### 4.7 Lineage
 
-A **lineage** is an ordered sequence:
+A **lineage view** is the accepted-object graph rooted at one valid Genesis. While no fork is known, its recognized path is the ordered sequence:
 
 ```text
 valid Genesis -> accepted Pulse 1 -> accepted Pulse 2 -> ... -> accepted Pulse n
 ```
 
-Every Pulse after Genesis MUST name exactly one parent and increment its parent's sequence by one. The first Pulse has sequence `"1"` and uses the Genesis organism digest as its `parent_hash`. Later Pulses use the previous Pulse hash.
+Every Pulse after Genesis MUST name exactly one parent and increment its parent's sequence by one. The first Pulse has sequence `"1"` and uses the Genesis organism digest as its `parent_hash`. Later Pulses use an accepted Pulse hash. A persistence layer MUST reconstruct the accepted graph from validated canonical source bytes; a deserialized object that merely claims `status: accept` is not accepted context.
 
 ### 4.8 Recognized head
 
-For a validator's known message set, the **recognized head** is the unique highest accepted Pulse reachable from Genesis.
+For a validator's known message set, the **recognized head** is the unique highest accepted Pulse reachable from Genesis while the accepted graph is linear.
 
 If two distinct, individually valid Pulses share one accepted parent, the validator MUST enter `FORKED` state and MUST NOT automatically choose either child. A deterministic winner rule is intentionally absent in v0; Byzantine fork resolution is out of scope.
 
@@ -236,6 +245,8 @@ In the v0 honest-custodian model, quorum intersection plus the sign-once rule pr
 A **latent successor** is a not-yet-accepted candidate for which enough durable approval or acceptance evidence already exists that the candidate can still become valid without any new signature from the current custody quorum.
 
 Destroying current private keys does not invalidate signatures already produced. In particular, a fully signed heartbeat or a current-quorum-approved membership change that can later collect only new-custodian acceptances may survive authority loss. Protocol death therefore requires accounting for latent successors, not merely counting remaining private keys.
+
+The reference implementation represents latent succession with a non-cloneable validated evidence result. It verifies the complete candidate through current-quorum authorization, verifies every supplied new-custodian acceptance, and lists only the missing new-custodian acceptances. An integer count or hand-built “latent” object is not evidence.
 
 ### 4.19 Death
 
@@ -353,7 +364,7 @@ The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.j
 | Event kind | State root | Next custody | Required event-payload sidecar semantics |
 |---|---|---|---|
 | `heartbeat` | MUST equal parent state root. | MUST equal current custody. | Canonical empty object. |
-| `membership-change` | MUST equal parent state root. | MAY differ. | Canonical I-JSON object; metadata is committed but does not independently authorize the handoff. |
+| `membership-change` | MUST equal parent state root. | MUST differ in custody or quorum. | Canonical I-JSON object; metadata is committed but does not independently authorize the handoff. |
 
 Composite state-and-membership changes are forbidden in v0. This separation makes validation and failure attribution deterministic.
 
@@ -379,12 +390,14 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 - the custody descriptor effective at the parent;
 - the parent state root;
 - the exact canonical event-payload sidecar bytes;
-- the known accepted ancestry needed to reject replay/rollback; and
+- the known accepted graph needed to reject replay and detect alternative valid children as forks; and
 - known pending approval and acceptance artifacts needed to detect a latent successor in a controlled mortality evaluation.
+
+An implementation MUST establish that context itself. In-process accepted results MAY be represented by an unforgeable capability; across persistence or process boundaries, the implementation MUST replay canonical Genesis/Pulse bytes and rebuild the accepted graph. Callers MUST NOT obtain authority by supplying a plain object with acceptance-shaped fields.
 
 No network, UI, AI, or wall-clock input is part of protocol validity.
 
-P0 fully determines all v0 lifecycle and envelope validity rules. P1 will implement them. No implementation-specific transition callback is part of v0 validity.
+P0 fully determines all v0 lifecycle and envelope validity rules. The repository implements the Node reference transition verifier, latent-evidence verifier, and accepted-object graph. Cross-runtime and independent-implementation conformance remain future evidence. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
 
@@ -407,8 +420,16 @@ Validation returns one of:
 Accept {
   organism_id,
   object_hash,
+  parent_hash?,
   next_custody_descriptor,
   next_state_root
+}
+
+Latent {
+  organism_id,
+  object_hash,
+  parent_hash,
+  missing_acceptance_key_ids[]
 }
 
 Reject {
@@ -418,8 +439,10 @@ Reject {
 }
 
 Forked {
+  code,
   parent_hash,
-  child_hashes[]
+  child_hashes[],
+  equivocating_key_ids[]
 }
 ```
 
@@ -463,11 +486,13 @@ A v0 implementation is conforming only if it:
 - implements every field rule and event-specific rule;
 - requires and verifies the exact canonical event-payload sidecar;
 - exposes stable rejection codes;
+- treats acceptance and latent-successor evidence as validator-produced capabilities or reconstructs them from canonical raw evidence;
+- uses an accepted-object graph to reject replay and expose forks;
 - never treats GPT, UI, transport, or signaling output as authority;
 - enters `FORKED` instead of silently resolving two valid siblings; and
 - states the mortality limitations from the threat model in user-facing documentation.
 
-The repository reference implementation is in [`src/`](../src/). Public Ed25519 and lifecycle vectors are in [`test/vectors/`](../test/vectors/); they contain verification material but no private signing keys. [`scripts/demo-trace.mjs`](../scripts/demo-trace.mjs) is a deterministic H2 consumer of the same validator.
+The repository reference implementation is in [`src/`](../src/), including [`lineage.mjs`](../src/lineage.mjs). Public Ed25519 and lifecycle vectors are in [`test/vectors/`](../test/vectors/); they contain verification material but no private signing keys. Fork tests generate temporary keys in memory. [`scripts/demo-trace.mjs`](../scripts/demo-trace.mjs) is a deterministic H2 consumer of the same core.
 
 ## 13. Normative companion documents
 

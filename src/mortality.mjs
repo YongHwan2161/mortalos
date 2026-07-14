@@ -1,14 +1,48 @@
+import {
+  isValidatedAcceptance,
+  isValidatedLatentSuccessor
+} from "./validator.mjs";
+
+function requireCondition(condition, message) {
+  if (!condition) throw new TypeError(message);
+}
+
 export function evaluateMortality({
-  custodyDescriptor,
+  head,
   usableKeyIds,
   stateAvailable,
-  latentSuccessorCount = 0,
+  latentSuccessors = [],
   authorityLossIrreversible = false
 }) {
+  requireCondition(isValidatedAcceptance(head), "head must be a validated acceptance");
+  requireCondition(Array.isArray(usableKeyIds), "usableKeyIds must be an array");
+  requireCondition(typeof stateAvailable === "boolean", "stateAvailable must be boolean");
+  requireCondition(Array.isArray(latentSuccessors), "latentSuccessors must be an array");
+  requireCondition(
+    typeof authorityLossIrreversible === "boolean",
+    "authorityLossIrreversible must be boolean"
+  );
+
+  const latentHashes = new Set();
+  for (const candidate of latentSuccessors) {
+    const trustedSuccessionEvidence =
+      (isValidatedAcceptance(candidate) && candidate.kind === "pulse") ||
+      isValidatedLatentSuccessor(candidate);
+    requireCondition(
+      trustedSuccessionEvidence &&
+        candidate.organism_id === head.organism_id &&
+        candidate.parent_hash === head.object_hash,
+      "latent successors must be validated direct children of head"
+    );
+    latentHashes.add(candidate.object_hash);
+  }
+
+  const custodyDescriptor = head.next_custody_descriptor;
   const declared = new Set(custodyDescriptor.custodians.map((entry) => entry.key_id));
   const usable = new Set(usableKeyIds.filter((keyId) => declared.has(keyId)));
   const threshold = custodyDescriptor.quorum.threshold;
   const authorityViable = usable.size >= threshold;
+  const latentSuccessorCount = latentHashes.size;
 
   if (authorityViable && stateAvailable) {
     return {

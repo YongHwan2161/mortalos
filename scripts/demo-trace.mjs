@@ -3,9 +3,10 @@ import { readFile } from "node:fs/promises";
 import {
   canonicalBytes,
   canonicalize,
+  createLineage,
   evaluateMortality,
   validateGenesis,
-  validatePulse
+  validateLatentSuccessor
 } from "../src/index.mjs";
 
 const vector = JSON.parse(
@@ -23,8 +24,10 @@ function labelsFor(descriptor) {
 }
 
 const events = [];
-const genesis = validateGenesis(canonicalBytes(vector.birth));
-invariant(genesis.status === "accept", `birth rejected: ${genesis.code}`);
+const opened = createLineage(canonicalBytes(vector.birth));
+invariant(opened.status === "accept", `birth rejected: ${opened.code}`);
+const lineage = opened.lineage;
+const genesis = lineage.genesis;
 events.push({
   phase: "birth",
   result: "accepted",
@@ -36,19 +39,27 @@ events.push({
 
 let parent = genesis;
 for (const step of vector.steps) {
-  const candidate = validatePulse({
-    genesis,
-    parent,
+  const input = {
     envelopeBytes: canonicalBytes(step.envelope),
     eventPayloadBytes: canonicalBytes(step.payload)
-  });
+  };
+  const candidate = lineage.validateCandidate(input);
   if (step.id === "latent-handoff-3") {
     invariant(candidate.status === "accept", "pending latent candidate lacks complete valid authorization");
+    const partialEnvelope = structuredClone(step.envelope);
+    partialEnvelope.acceptances = [];
+    const partialLatent = validateLatentSuccessor({
+      genesis,
+      parent,
+      envelopeBytes: canonicalBytes(partialEnvelope),
+      eventPayloadBytes: canonicalBytes(step.payload)
+    });
+    invariant(partialLatent.status === "latent", "current-quorum-approved partial successor was not recognized");
     const latent = evaluateMortality({
-      custodyDescriptor: parent.next_custody_descriptor,
+      head: parent,
       usableKeyIds: [],
       stateAvailable: true,
-      latentSuccessorCount: 1,
+      latentSuccessors: [partialLatent],
       authorityLossIrreversible: true
     });
     invariant(latent.status === "latent_successor_not_dead", "latent successor was misclassified as death");
@@ -59,12 +70,14 @@ for (const step of vector.steps) {
       organism_id: genesis.organism_id,
       usable_keys: latent.usable_keys,
       quorum: latent.threshold,
-      pending_authorized_successors: latent.latent_successors
+      pending_authorized_successors: latent.latent_successors,
+      missing_new_custodian_acceptances: partialLatent.missing_acceptance_key_ids.length
     });
   }
 
-  const accepted = candidate;
+  const accepted = lineage.append(input);
   invariant(accepted.status === "accept", `${step.id} rejected: ${accepted.code}`);
+  invariant(accepted.object_hash === candidate.object_hash, `${step.id} validation/append mismatch`);
   invariant(accepted.organism_id === genesis.organism_id, `${step.id} changed identity`);
   invariant(accepted.next_state_root === genesis.next_state_root, `${step.id} changed v0 state root`);
   parent = accepted;
@@ -79,11 +92,24 @@ for (const step of vector.steps) {
   });
 }
 
+const replay = lineage.append({
+  envelopeBytes: canonicalBytes(vector.steps.at(-1).envelope),
+  eventPayloadBytes: canonicalBytes(vector.steps.at(-1).payload)
+});
+invariant(replay.status === "reject" && replay.code === "E_REPLAY_STALE", "accepted object replay was not rejected");
+events.push({
+  phase: "accepted-object-replay",
+  result: "rejected",
+  sequence: parent.sequence,
+  organism_id: genesis.organism_id,
+  rejection_code: replay.code
+});
+
 const finalLabels = labelsFor(parent.next_custody_descriptor);
 invariant(finalLabels.every((label) => !["A", "B", "C"].includes(label)), "original custodian survived turnover");
 
 const stateStalled = evaluateMortality({
-  custodyDescriptor: parent.next_custody_descriptor,
+  head: parent,
   usableKeyIds: parent.next_custody_descriptor.custodians.map((entry) => entry.key_id),
   stateAvailable: false
 });
@@ -98,10 +124,10 @@ events.push({
 });
 
 const dead = evaluateMortality({
-  custodyDescriptor: parent.next_custody_descriptor,
+  head: parent,
   usableKeyIds: [vector.actors.F.key_id],
   stateAvailable: true,
-  latentSuccessorCount: 0,
+  latentSuccessors: [],
   authorityLossIrreversible: true
 });
 invariant(dead.status === "dead_under_v0_assumptions", "irreversible below-quorum authority loss was not death");
@@ -115,9 +141,7 @@ events.push({
   pending_authorized_successors: dead.latent_successors
 });
 
-const resurrection = validatePulse({
-  genesis,
-  parent,
+const resurrection = lineage.append({
   envelopeBytes: canonicalBytes(vector.resurrection_attempt.envelope),
   eventPayloadBytes: canonicalBytes(vector.resurrection_attempt.payload)
 });
@@ -147,13 +171,14 @@ events.push({
 });
 
 const trace = {
-  format: "mortalos-lifecycle-trace/1",
+  format: "mortalos-lifecycle-trace/2",
   protocol: "mortalos/0",
   scenario: "birth-succession-death-resurrection-rejection-clone",
   events,
   assertions: {
     original_custodians_fully_replaced: true,
     organism_id_preserved_through_succession: true,
+    accepted_object_replay_rejected: true,
     latent_successor_survived_key_loss: true,
     state_loss_reported_as_stalled_not_dead: true,
     authority_death_reported_only_after_pending_set_drained: true,

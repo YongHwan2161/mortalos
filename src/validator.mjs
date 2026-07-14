@@ -1,6 +1,12 @@
 import { createRequire } from "node:module";
 import Ajv2020 from "ajv/dist/2020.js";
-import { canonicalBytes, isCanonical, JsonInputError, parseJsonBytes } from "./codec.mjs";
+import {
+  canonicalBytes,
+  isCanonical,
+  JsonInputError,
+  JSON_LIMITS,
+  parseJsonBytes
+} from "./codec.mjs";
 import {
   custodyAcceptanceMessage,
   custodyCommitment,
@@ -14,6 +20,7 @@ import {
   pulseApprovalMessage,
   verifyEd25519
 } from "./crypto.mjs";
+import { rejection as reject } from "./rejection-codes.mjs";
 
 const require = createRequire(import.meta.url);
 const genesisSchema = require("../schemas/genesis.schema.json");
@@ -21,14 +28,34 @@ const pulseSchema = require("../schemas/pulse.schema.json");
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const checkGenesisSchema = ajv.compile(genesisSchema);
 const checkPulseSchema = ajv.compile(pulseSchema);
+const acceptedContexts = new WeakSet();
+const latentContexts = new WeakSet();
 
-function reject(code, fieldPath = "", deterministicDetail = "") {
-  return {
-    status: "reject",
-    code,
-    field_path: fieldPath,
-    deterministic_detail: deterministicDetail
-  };
+function deepFreeze(value, seen = new WeakSet()) {
+  if (!value || typeof value !== "object" || seen.has(value)) return value;
+  seen.add(value);
+  for (const entry of Object.values(value)) deepFreeze(entry, seen);
+  return Object.freeze(value);
+}
+
+function accept(context) {
+  deepFreeze(context);
+  acceptedContexts.add(context);
+  return context;
+}
+
+function acceptLatent(context) {
+  deepFreeze(context);
+  latentContexts.add(context);
+  return context;
+}
+
+export function isValidatedAcceptance(value) {
+  return Boolean(value && acceptedContexts.has(value));
+}
+
+export function isValidatedLatentSuccessor(value) {
+  return Boolean(value && latentContexts.has(value));
 }
 
 function fromInputError(error, payload = false) {
@@ -71,7 +98,10 @@ function schemaRejection(value, validate) {
 function parseRawEnvelope(bytes) {
   let value;
   try {
-    value = parseJsonBytes(bytes);
+    value = parseJsonBytes(bytes, {
+      maxBytes: JSON_LIMITS.envelope_bytes,
+      maxDepth: JSON_LIMITS.max_depth
+    });
   } catch (error) {
     return { failure: fromInputError(error) };
   }
@@ -94,12 +124,12 @@ function parseEnvelope(bytes, validate) {
   return failure ? { failure } : parsed;
 }
 
-function checkSortedUnique(entries, fieldPath) {
+function checkSortedUnique(entries, fieldPath, duplicateCode = "E_ARRAY_DUPLICATE_KEY_ID") {
   for (let index = 1; index < entries.length; index += 1) {
     const previous = entries[index - 1].key_id;
     const current = entries[index].key_id;
     if (current === previous) {
-      return reject("E_ARRAY_DUPLICATE_KEY_ID", `${fieldPath}/${index}/key_id`, current);
+      return reject(duplicateCode, `${fieldPath}/${index}/key_id`, current);
     }
     if (current < previous) {
       return reject("E_ARRAY_NOT_SORTED", fieldPath, `${previous}>${current}`);
@@ -151,8 +181,8 @@ function validateCustody(custodians, quorum, fieldPath) {
   return null;
 }
 
-function checkEvidenceEncoding(evidence, fieldPath) {
-  const orderingFailure = checkSortedUnique(evidence, fieldPath);
+function checkEvidenceEncoding(evidence, fieldPath, duplicateCode) {
+  const orderingFailure = checkSortedUnique(evidence, fieldPath, duplicateCode);
   if (orderingFailure) return orderingFailure;
   for (let index = 0; index < evidence.length; index += 1) {
     const idFailure = validateBinary(evidence[index].key_id, "peer:", 32, `${fieldPath}/${index}/key_id`);
@@ -178,7 +208,7 @@ export function validateGenesis(envelopeBytes) {
   const envelope = parsed.value;
   const { body, approvals } = envelope;
 
-  const approvalEncodingFailure = checkEvidenceEncoding(approvals, "/approvals");
+  const approvalEncodingFailure = checkEvidenceEncoding(approvals, "/approvals", "E_APPROVAL_DUPLICATE");
   if (approvalEncodingFailure) return approvalEncodingFailure;
   const custodyFailure = validateCustody(body.initial_custodians, body.initial_quorum, "/body/initial_custodians");
   if (custodyFailure) return custodyFailure;
@@ -203,7 +233,7 @@ export function validateGenesis(envelopeBytes) {
   }
 
   const organismId = deriveOrganismId(body);
-  return {
+  return accept({
     status: "accept",
     kind: "genesis",
     organism_id: organismId,
@@ -212,7 +242,7 @@ export function validateGenesis(envelopeBytes) {
     genome_hash: body.genome_hash,
     next_custody_descriptor: descriptor(body.initial_custodians, body.initial_quorum),
     next_state_root: body.initial_state_root
-  };
+  });
 }
 
 function parseRawPayload(payloadBytes) {
@@ -221,7 +251,10 @@ function parseRawPayload(payloadBytes) {
   }
   let value;
   try {
-    value = parseJsonBytes(payloadBytes);
+    value = parseJsonBytes(payloadBytes, {
+      maxBytes: JSON_LIMITS.event_payload_bytes,
+      maxDepth: JSON_LIMITS.max_depth
+    });
   } catch (error) {
     return { failure: fromInputError(error, true) };
   }
@@ -253,17 +286,15 @@ export function validatePulse({ genesis, parent, envelopeBytes, eventPayloadByte
     return reject("E_EVENT_KIND_UNSUPPORTED", "/body/event/kind", body.event.kind);
   }
 
-  for (const [entries, path] of [
-    [body.next_custodians, "/body/next_custodians"],
-    [approvals, "/approvals"],
-    [acceptances, "/acceptances"]
-  ]) {
-    const orderingFailure = checkSortedUnique(entries, path);
-    if (orderingFailure) return orderingFailure;
-  }
-  const approvalEncodingFailure = checkEvidenceEncoding(approvals, "/approvals");
+  const nextCustodyOrderingFailure = checkSortedUnique(body.next_custodians, "/body/next_custodians");
+  if (nextCustodyOrderingFailure) return nextCustodyOrderingFailure;
+  const approvalEncodingFailure = checkEvidenceEncoding(approvals, "/approvals", "E_APPROVAL_DUPLICATE");
   if (approvalEncodingFailure) return approvalEncodingFailure;
-  const acceptanceEncodingFailure = checkEvidenceEncoding(acceptances, "/acceptances");
+  const acceptanceEncodingFailure = checkEvidenceEncoding(
+    acceptances,
+    "/acceptances",
+    "E_ACCEPTANCE_DUPLICATE"
+  );
   if (acceptanceEncodingFailure) return acceptanceEncodingFailure;
   const nextCustodyFailure = validateCustody(body.next_custodians, body.next_quorum, "/body/next_custodians");
   if (nextCustodyFailure) return nextCustodyFailure;
@@ -287,10 +318,10 @@ export function validatePulse({ genesis, parent, envelopeBytes, eventPayloadByte
   );
   if (payloadHashFailure) return payloadHashFailure;
 
-  if (!genesis || genesis.status !== "accept" || genesis.kind !== "genesis") {
+  if (!isValidatedAcceptance(genesis) || genesis.kind !== "genesis") {
     return reject("E_LINEAGE_UNKNOWN", "", "genesis-context");
   }
-  if (!parent || parent.status !== "accept") {
+  if (!isValidatedAcceptance(parent)) {
     return reject("E_PARENT_REQUIRED", "", "parent-context");
   }
   if (parent.organism_id !== genesis.organism_id) {
@@ -333,6 +364,8 @@ export function validatePulse({ genesis, parent, envelopeBytes, eventPayloadByte
     if (!equalCanonical(currentDescriptor, nextDescriptor)) {
       return reject("E_HEARTBEAT_CUSTODY_CHANGED", "/body/next_custodians", "changed")
     }
+  } else if (equalCanonical(currentDescriptor, nextDescriptor)) {
+    return reject("E_MEMBERSHIP_CUSTODY_UNCHANGED", "/body/next_custodians", "unchanged")
   }
 
   const currentById = new Map(currentDescriptor.custodians.map((entry) => [entry.key_id, entry]));
@@ -375,14 +408,49 @@ export function validatePulse({ genesis, parent, envelopeBytes, eventPayloadByte
     }
   }
 
-  return {
+  return accept({
     status: "accept",
     kind: "pulse",
     organism_id: body.organism_id,
     object_hash: derivePulseHash(body),
+    parent_hash: body.parent_hash,
     sequence: body.sequence,
     genome_hash: body.genome_hash,
     next_custody_descriptor: nextDescriptor,
     next_state_root: body.state_root
-  };
+  });
+}
+
+export function validateLatentSuccessor(input) {
+  const result = validatePulse(input);
+  if (result.status === "accept" || result.code !== "E_ACCEPTANCE_MISSING") return result;
+
+  const envelope = parseJsonBytes(input.envelopeBytes);
+  const { body, acceptances } = envelope;
+  const nextById = new Map(body.next_custodians.map((entry) => [entry.key_id, entry]));
+  const currentIds = new Set(
+    input.parent.next_custody_descriptor.custodians.map((entry) => entry.key_id)
+  );
+  const newIds = [...nextById.keys()].filter((keyId) => !currentIds.has(keyId)).sort();
+  const acceptanceMessage = custodyAcceptanceMessage(body);
+  for (let index = 0; index < acceptances.length; index += 1) {
+    const signer = nextById.get(acceptances[index].key_id);
+    if (!verifyEd25519(signer.public_key, acceptanceMessage, acceptances[index].signature)) {
+      return reject(
+        "E_ACCEPTANCE_SIGNATURE_INVALID",
+        `/acceptances/${index}/signature`,
+        acceptances[index].key_id
+      );
+    }
+  }
+  const supplied = new Set(acceptances.map((entry) => entry.key_id));
+  return acceptLatent({
+    status: "latent",
+    kind: "pulse",
+    organism_id: body.organism_id,
+    object_hash: derivePulseHash(body),
+    parent_hash: body.parent_hash,
+    sequence: body.sequence,
+    missing_acceptance_key_ids: newIds.filter((keyId) => !supplied.has(keyId))
+  });
 }

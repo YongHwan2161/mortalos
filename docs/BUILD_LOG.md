@@ -90,13 +90,56 @@ Known limitations:
 - no H3 browser Lab or hosted judge path; and
 - no H4 GPT-5.6 runtime integration.
 
+The missing fork-aware store in this dated entry was discovered to be a trust-boundary blocker and is superseded by the next entry.
+
+## 2026-07-14 — Core trust-boundary reopening and lineage hardening
+
+Re-audited every source, test, document, and live Devpost requirement instead of proceeding directly to browser UI.
+
+Critical finding:
+
+- `validatePulse` trusted cloneable plain objects as accepted Genesis/parent context; a `structuredClone` of prior results was accepted.
+
+Implemented:
+
+- recursively frozen, non-cloneable validation capabilities for accepted context;
+- stateful raw-evidence lineage reconstruction with parent lookup;
+- exact replay rejection, valid-sibling fork detection, approval-intersection evidence, and post-fork halt;
+- authenticated partial latent-successor evidence for current-quorum-approved handoffs awaiting only listed new-custodian acceptances;
+- evidence-backed mortality inputs instead of an asserted successor count;
+- a no-op membership-change rejection;
+- an executable rejection-code manifest with exact documentation synchronization;
+- RFC 8785 number and UTF-16 sorting examples;
+- deterministic envelope, payload, and nesting resource limits;
+- H2 trace format v2 with replay and partial-latent evidence; and
+- explicit Git/npm packaging exclusions after a dry run exposed local upload attachments; and
+- a rewritten priority plan that places portable consensus code before browser UI and deterministic state transition before OS claims.
+
+Local evidence before publication:
+
+- conformance: 22/22;
+- adversarial continuations: 10,000/10,000;
+- trusted-core coverage: 98.40% lines, 91.51% branches, 100% functions;
+- H2 trace SHA-256: `1393d92d0d42dea697551c67458d52c59f92ee1067d6dedb1c21225c977ab606`; and
+- clean-room locked install/full suite: PASS; dependency audit: 0 vulnerabilities; package dry run: no local upload/tool-state artifacts; and
+- live Devpost state rechecked at `2026-07-14T10:06:54Z`: submissions open, project still draft, description/video absent, tagline still overclaims disappearance as death.
+
+Known limitations:
+
+- accepted capabilities are intentionally process-local; restart requires canonical raw-evidence replay;
+- no Chromium differential or second independent implementation;
+- fork detection has no Byzantine winner rule;
+- mortality still relies on explicit key/state/irreversibility observations;
+- v0 state is immutable and no genome executes; and
+- browser Lab and GPT-5.6 runtime paths remain absent.
+
 ## Evidence still required
 
 - the `/feedback` Codex Session ID for the thread containing most H1–H4 core functionality;
 - dated commits for the pure validator, trace engine, browser lab, and GPT-5.6 boundary;
 - clean CI results;
 - hosted demo and video identifiers; and
-- the owner-selected license commit.
+- the final deployed commit and its license/secret/dependency verification evidence.
 
 ## Entry template
 

@@ -1,7 +1,7 @@
 # OpenAI Build Week Compliance Matrix
 
 Status: **Working submission gate**  
-Last source check: **2026-07-14T05:48:44Z** through the connected Devpost Hackathons service  
+Last source check: **2026-07-14T10:06:54Z** through the connected Devpost Hackathons service  
 Hackathon: [OpenAI Build Week](https://openai.devpost.com/)  
 Official rules: [openai.devpost.com/rules](https://openai.devpost.com/rules)  
 Project: [MortalOS](https://devpost.com/software/mortalos)  
@@ -44,12 +44,12 @@ The live submission endpoint presents these required evidence objects. Its conci
 
 | Required object | MortalOS evidence | Current state | Gate |
 |---|---|---|---|
-| Working project | Pure validator, deterministic trace runner, MortalOS Lab judge path | H1 validator and H2 trace implemented; browser Lab pending | Partial |
+| Working project | Portable core, deterministic trace runner, MortalOS Lab judge path | Hardened Node core and H2 trace v2 implemented; portable browser Lab pending | Partial |
 | Category | Developer Tools | Selected in planning; final form pending | Open |
 | Project description | Devpost Project Story in English | Empty | Blocker |
 | Accurate tagline | Authority-loss wording consistent with the protocol | Current wording overclaims network-disappearance death | Blocker |
 | Demo video | Public YouTube, less than 3 minutes, clear audio | Missing | Blocker |
-| Repository URL | `https://github.com/YongHwan2161/mortalos` | Public; H1/H2 commit and Actions verified | Complete |
+| Repository URL | `https://github.com/YongHwan2161/mortalos` | Public; Apache-2.0 and prior CI verified; current core-hardening CI must pass after publication | Partial |
 | Relevant public-repo license | Repository-root `LICENSE` | Apache-2.0 applied; package metadata aligned | Complete |
 | README setup and run guidance | Clean install, supported platforms, sample/test path | Clean-room `npm ci`, full tests, coverage, and deterministic trace pass; hosted judge run pending | Partial |
 | Codex/GPT-5.6 evidence | README build log plus video narration | Codex P0 evidence exists; actual GPT-5.6 product path missing | Blocker |
@@ -75,7 +75,7 @@ A silent screencast, music-only recording, mock UI, or narration that omits eith
 
 The repository is public. Apache-2.0, reproducible local commands, deterministic traces, Codex documentation, and public-key-only conformance vectors are now present. Before submission it still must have:
 
-- a supported-platform statement;
+- a browser supported-platform statement for the final Lab;
 - a hosted judge testing path in addition to the source instructions;
 - accurate GPT-5.6 integration documentation;
 - a final Git-history and built-bundle secret scan; and
@@ -106,7 +106,7 @@ The four criteria are equally weighted.
 | Potential Impact | A specific developer audience: builders of ephemeral browser collaboration, agent, and peer-to-peer systems who need continuity/failure semantics and a test harness. |
 | Quality of the Idea | Clear distinction among data persistence, identity, authority, state viability, and mortality, demonstrated rather than asserted. |
 
-H1/H2 now provide credible technological implementation evidence: duplicate-aware canonical validation, real Ed25519 quorum handoffs, stable rejection codes, 10,000 seeded adversarial continuations, and a deterministic life/death/clone trace. Design and product-impact evidence still depend on H3/H4.
+The current Node core provides credible technological implementation evidence: duplicate-aware canonical validation, real Ed25519 quorum handoffs, non-forgeable acceptance context, replay/fork evidence, authenticated latent succession, 10,000 seeded adversarial continuations, and a deterministic lifecycle trace. Design and product-impact evidence still depend on the portable browser Lab and GPT-5.6 path.
 
 Recommended corrected tagline, to apply only after owner approval:
 

@@ -19,4 +19,6 @@ MortalOS is licensed under the [Apache License 2.0](LICENSE). Unless you explici
 
 ## Scope discipline
 
-The H1 validator is the authority for protocol validity. UI, transport, storage, network observations, and AI output may propose or explain inputs but must not bypass or redefine validator results.
+The deterministic core is the authority for transition validity. Recognized-head, replay, and fork behavior must go through `createLineage`; callers may not persist or fabricate acceptance-result objects. UI, transport, storage, network observations, and AI output may propose or explain inputs but must not bypass or redefine core results.
+
+Changes to portable consensus logic must produce identical results in every supported runtime. Platform adapters may provide bytes and cryptographic primitives, but they may not change canonicalization, validation order, rejection codes, or lineage decisions.

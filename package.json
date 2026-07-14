@@ -4,17 +4,17 @@
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "A hostless, mortal network OS that lives across connected browsers.",
+  "description": "An experimental ownerless lifecycle protocol with deterministic lineage validation.",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.5"
   },
   "scripts": {
     "test": "npm run verify:license && npm run verify:p0 && npm run test:conformance && npm run test:properties && npm run verify:h2",
     "verify:license": "node scripts/verify-license.mjs",
     "verify:p0": "node scripts/verify-p0.mjs",
-    "test:conformance": "node --test test/codec.test.mjs test/crypto.test.mjs test/validator.test.mjs test/mortality.test.mjs test/process-determinism.test.mjs",
+    "test:conformance": "node --test test/codec.test.mjs test/crypto.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/process-determinism.test.mjs",
     "test:properties": "node --test test/properties.test.mjs",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/validator.mjs --test-coverage-branches=90 test/validator.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/codec.mjs --test-coverage-include=src/crypto.mjs --test-coverage-include=src/rejection-codes.mjs --test-coverage-include=src/validator.mjs --test-coverage-include=src/lineage.mjs --test-coverage-include=src/mortality.mjs --test-coverage-branches=90 test/codec.test.mjs test/crypto.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs",
     "demo:trace": "node scripts/demo-trace.mjs",
     "verify:h2": "node scripts/demo-trace.mjs --verify"
   },

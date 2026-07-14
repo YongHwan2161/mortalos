@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import Ajv2020 from "ajv/dist/2020.js";
+import { REJECTION_CODES } from "../src/rejection-codes.mjs";
 
 const ROOT = new URL("../", import.meta.url);
 
@@ -190,10 +191,13 @@ for (const field of [...genesisFields, ...pulseFields]) {
 const rejectionCodes = [
   ...text.rejectionCodes.matchAll(/\| `(E_[A-Z0-9_]+)` \|/g)
 ].map((match) => match[1]);
-assert(rejectionCodes.length >= 50, `Expected at least 50 rejection codes, found ${rejectionCodes.length}`);
 assert(
   new Set(rejectionCodes).size === rejectionCodes.length,
   "Duplicate rejection code detected"
+);
+assert(
+  JSON.stringify([...rejectionCodes].sort()) === JSON.stringify([...REJECTION_CODES].sort()),
+  "Documented rejection codes do not exactly match src/rejection-codes.mjs"
 );
 for (const code of [
   "E_EVENT_PAYLOAD_REQUIRED",

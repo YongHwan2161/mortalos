@@ -4,7 +4,7 @@ Date: **2026-07-14**
 Stage: **P0 — Operational semantics and threat model**  
 Result: **PASS after corrective adversarial review**
 
-> Historical gate note: this report records the P0 state at the moment P1 had not started. The semantic validator, real Ed25519 vectors, Apache-2.0 license, and H2 trace were subsequently implemented on 2026-07-14. See [`H1_H2_VERIFICATION_REPORT.md`](H1_H2_VERIFICATION_REPORT.md) for current evidence; residual blockers below are retained as the P0 handoff record.
+> Historical gate note: this report records the P0 state at the moment implementation had not started. The semantic core, real Ed25519 vectors, Apache-2.0 license, stateful lineage registry, and H2 trace v2 were subsequently implemented on 2026-07-14. See [`CORE_VERIFICATION_REPORT.md`](CORE_VERIFICATION_REPORT.md) for current evidence; residual blockers below are retained only as the P0 handoff record.
 
 ## 1. Executive conclusion
 
@@ -78,7 +78,7 @@ Result: v0 supports only heartbeat and membership-change Pulses and preserves th
 | [`REJECTION_CODES.md`](REJECTION_CODES.md) | Stable deterministic failure vocabulary and precedence. |
 | [`TRACEABILITY.md`](TRACEABILITY.md) | Mapping from `INV-1` through `INV-13` and message fields to planned tests. |
 | [`genesis.schema.json`](../schemas/genesis.schema.json) | Strict Genesis envelope structure. |
-| [`pulse.schema.json`](../schemas/pulse.schema.json) | Strict Pulse envelope structure with three non-duplicative event kinds. |
+| [`pulse.schema.json`](../schemas/pulse.schema.json) | Strict Pulse envelope structure; the semantic validator permits the two v0 event kinds. |
 | [`heartbeat-payload.valid.json`](../examples/schema/heartbeat-payload.valid.json) | Canonical event-payload sidecar fixture bound by the Pulse example. |
 | [`verify-p0.mjs`](../scripts/verify-p0.mjs) | Reproducible structural and cross-document consistency gate. |
 
@@ -163,6 +163,8 @@ The example signatures and key IDs remain schema fixtures, not cryptographically
 - GPT-5.6 is planned but not yet invoked by the runnable project.
 
 ## 8. P1 execution order
+
+Current status note: items 1 through 10 below are now implemented; item 11, an implementation-independent serialized corpus, remains open and has moved to C1/R1 in the current plan.
 
 1. implement a duplicate-aware raw message parser;
 2. implement RFC 8785 canonicalization and all eight domain-separated SHA-256 helpers;

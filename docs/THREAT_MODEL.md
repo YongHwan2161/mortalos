@@ -32,6 +32,7 @@ The system does not claim that all data copies can be deleted, that death can al
 The following are trusted for the v0 claim:
 
 - the deterministic protocol validator implementation;
+- the accepted-object graph and its non-forgeable validation-capability boundary;
 - standards-conforming SHA-256 and Ed25519 implementations;
 - correct RFC 8785 canonicalization;
 - the browser/runtime's cryptographic random number generator;
@@ -52,6 +53,7 @@ The following MUST be treated as untrusted inputs:
 - event-payload sidecars, until canonical bytes and their domain-separated commitment are verified;
 - remote peer capability claims; and
 - public snapshots and historical messages.
+- deserialized, cloned, or hand-built objects that claim to be accepted or latent evidence.
 
 Untrusted components may transport or propose protocol objects but cannot make them valid.
 
@@ -82,9 +84,11 @@ The implementation and tests MUST cover:
 - message duplication;
 - message reordering;
 - stale message replay;
+- fabricated accepted-parent or latent-successor context;
 - network partition and healing;
 - concurrent honest proposals;
 - malformed JSON and schema violations;
+- oversized or excessively nested JSON input;
 - wrong hashes, parents, sequence values, identities, or algorithms;
 - invalid, duplicate, ineligible, or insufficient signatures; and
 - attempted action by a peer removed from custody.
@@ -121,7 +125,7 @@ No accepted Pulse changes `organism_id`; every candidate must match the ID deriv
 
 ### S-2 — Parent integrity
 
-Every accepted non-Genesis Pulse has exactly one accepted parent and the next sequence.
+Every accepted non-Genesis Pulse has exactly one genuine validator-accepted parent and the next sequence. Acceptance-shaped caller data has no authority.
 
 ### S-3 — Quorum authorization
 
@@ -133,7 +137,7 @@ Only the current quorum may change custody, and every newly added custodian must
 
 ### S-5 — No silent rollback
 
-An older or alternative state cannot silently replace the recognized head.
+An exact replay is rejected. A distinct alternative valid child is retained as fork evidence and removes the unique recognized head rather than silently replacing it.
 
 ### S-6 — Fork visibility
 
@@ -177,7 +181,7 @@ Examples under the v0 controlled-test assumptions:
 
 - a `2-of-3` lineage loses two current private keys and those keys were never persisted.
 
-The controlled test must also establish that no pending candidate already contains sufficient durable evidence to become valid without new signatures from the lost current quorum. Key destruction does not revoke signatures already created.
+The controlled test must also establish that no pending candidate already contains sufficient durable evidence to become valid without new signatures from the lost current quorum. Key destruction does not revoke signatures already created. The reference evaluator accepts either a fully valid direct child or a validator-authenticated partial membership handoff whose current quorum is complete and whose only missing evidence is explicitly listed new-custodian acceptance.
 
 Loss of logical state by itself is `state-stalled`, not protocol-dead, because a valid heartbeat or membership change can still be signed from the committed root. State-backed mortality requires a later protocol with verifiable availability/recovery evidence.
 
@@ -231,7 +235,7 @@ MortalOS may use infrastructure for peer discovery and NAT traversal. That infra
 - must not bypass current quorum; and
 - must not be required to reconstruct accepted state after peers connect, except as a non-authoritative cache.
 
-The correct public claim is **peer-to-peer execution and state authority with replaceable bootstrap infrastructure**, not zero infrastructure.
+If later phases implement this architecture, the correct public claim will be **peer-to-peer execution and state authority with replaceable bootstrap infrastructure**, not zero infrastructure. The current Node reference has no network transport.
 
 ## 12. GPT-5.6 boundary
 
@@ -272,7 +276,7 @@ Resource contribution must be explicit and revocable in later browser phases. v0
 | Sybil-resistant openness | Not implemented | Future work. |
 | Confidential prompts/state | Not implemented | Future work. |
 | Zero infrastructure | Not claimed | Bootstrap/relay may exist. |
-| GPT cannot bypass validity | Required architecture property | Tested in P9. |
+| GPT cannot bypass validity | Required architecture property | Runtime integration and adversarial tests are planned for H4/P9. |
 
 ## 15. Threat-model change control
 

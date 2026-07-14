@@ -1,5 +1,12 @@
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
+export const JSON_LIMITS = Object.freeze({
+  default_bytes: 1024 * 1024,
+  envelope_bytes: 64 * 1024,
+  event_payload_bytes: 256 * 1024,
+  max_depth: 64
+});
+
 export class JsonInputError extends Error {
   constructor(code, detail) {
     super(detail);
@@ -49,9 +56,10 @@ function assertIJson(value) {
 }
 
 class DuplicateAwareParser {
-  constructor(text) {
+  constructor(text, maxDepth) {
     this.text = text;
     this.index = 0;
+    this.maxDepth = maxDepth;
   }
 
   fail(detail) {
@@ -66,17 +74,20 @@ class DuplicateAwareParser {
 
   parse() {
     this.skipWhitespace();
-    const value = this.parseValue();
+    const value = this.parseValue(0);
     this.skipWhitespace();
     if (this.index !== this.text.length) this.fail("trailing-data");
     assertIJson(value);
     return value;
   }
 
-  parseValue() {
+  parseValue(depth) {
+    if (depth > this.maxDepth) {
+      throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `depth>${this.maxDepth}`);
+    }
     const token = this.text[this.index];
-    if (token === "{") return this.parseObject();
-    if (token === "[") return this.parseArray();
+    if (token === "{") return this.parseObject(depth);
+    if (token === "[") return this.parseArray(depth);
     if (token === '"') return this.parseString();
     if (token === "t") return this.parseLiteral("true", true);
     if (token === "f") return this.parseLiteral("false", false);
@@ -138,7 +149,7 @@ class DuplicateAwareParser {
     return value;
   }
 
-  parseArray() {
+  parseArray(depth) {
     const result = [];
     this.index += 1;
     this.skipWhitespace();
@@ -148,7 +159,7 @@ class DuplicateAwareParser {
     }
     while (true) {
       this.skipWhitespace();
-      result.push(this.parseValue());
+      result.push(this.parseValue(depth + 1));
       this.skipWhitespace();
       const token = this.text[this.index];
       if (token === "]") {
@@ -160,7 +171,7 @@ class DuplicateAwareParser {
     }
   }
 
-  parseObject() {
+  parseObject(depth) {
     const result = Object.create(null);
     const keys = new Set();
     this.index += 1;
@@ -181,7 +192,7 @@ class DuplicateAwareParser {
       if (this.text[this.index] !== ":") this.fail("expected-colon");
       this.index += 1;
       this.skipWhitespace();
-      result[key] = this.parseValue();
+      result[key] = this.parseValue(depth + 1);
       this.skipWhitespace();
       const token = this.text[this.index];
       if (token === "}") {
@@ -194,14 +205,20 @@ class DuplicateAwareParser {
   }
 }
 
-export function parseJsonBytes(bytes) {
+export function parseJsonBytes(
+  bytes,
+  { maxBytes = JSON_LIMITS.default_bytes, maxDepth = JSON_LIMITS.max_depth } = {}
+) {
+  if (bytes?.byteLength > maxBytes) {
+    throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `bytes:${bytes.byteLength}/${maxBytes}`);
+  }
   let text;
   try {
     text = decoder.decode(bytes);
   } catch {
     throw new JsonInputError("E_PARSE_INVALID_UTF8", "invalid-utf8");
   }
-  return new DuplicateAwareParser(text).parse();
+  return new DuplicateAwareParser(text, maxDepth).parse();
 }
 
 export function canonicalize(value) {

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canonicalBytes, eventPayloadHash, validateGenesis, validatePulse } from "../src/index.mjs";
+import {
+  canonicalBytes,
+  eventPayloadHash,
+  JSON_LIMITS,
+  validateGenesis,
+  validatePulse
+} from "../src/index.mjs";
 import { acceptedLineage, canonical, clone, vector } from "./helpers.mjs";
 
 const zeroDigest = `sha256:${Buffer.alloc(32).toString("base64url")}`;
@@ -36,12 +42,16 @@ test("signed Genesis and three signed membership handoffs validate", () => {
   assert.equal(parents.length, 4);
   assert.equal(head.sequence, "3");
   assert.equal(head.next_state_root, genesis.next_state_root);
+  assert.equal(Object.isFrozen(genesis), true);
+  assert.equal(Object.isFrozen(genesis.next_custody_descriptor.custodians), true);
+  assert.equal(Object.isFrozen(head), true);
 });
 
 test("Genesis parsing, schema, canonicality, and algorithm precedence are stable", () => {
   expectCode(validateGenesis(Buffer.from('{"kind":')), "E_PARSE_INVALID_JSON");
   expectCode(validateGenesis(Buffer.from('{"kind":"mortalos.genesis","kind":"mortalos.genesis"}')), "E_PARSE_DUPLICATE_PROPERTY");
   expectCode(validateGenesis(Buffer.from([0xff])), "E_PARSE_INVALID_UTF8");
+  expectCode(validateGenesis(Buffer.alloc(JSON_LIMITS.envelope_bytes + 1, 0x20)), "E_PARSE_LIMIT_EXCEEDED");
   expectCode(validateGenesis(Buffer.from(JSON.stringify(vector.birth, null, 2))), "E_CANONICAL_MISMATCH");
   expectCode(genesisMutation((value) => { value.extra = true; }), "E_SCHEMA_UNKNOWN_FIELD");
   expectCode(genesisMutation((value) => { value.kind = "other"; }), "E_SCHEMA_WRONG_KIND");
@@ -55,7 +65,7 @@ test("Genesis custody, encoding, approval set, and signatures are semantic check
   expectCode(genesisMutation((value) => { value.body.genome_hash = "sha256:short"; }), "E_BINARY_ENCODING");
   expectCode(genesisMutation((value) => { value.body.nonce = "nonce:short"; }), "E_BINARY_ENCODING");
   expectCode(genesisMutation((value) => { value.approvals.reverse(); }), "E_ARRAY_NOT_SORTED");
-  expectCode(genesisMutation((value) => { value.approvals[1] = clone(value.approvals[0]); }), "E_ARRAY_DUPLICATE_KEY_ID");
+  expectCode(genesisMutation((value) => { value.approvals[1] = clone(value.approvals[0]); }), "E_APPROVAL_DUPLICATE");
   expectCode(genesisMutation((value) => { value.body.initial_custodians = value.body.initial_custodians.slice(0, 2); }), "E_CUSTODIAN_COUNT_RANGE");
   expectCode(genesisMutation((value) => { [value.body.initial_custodians[0].public_key, value.body.initial_custodians[1].public_key] = [value.body.initial_custodians[1].public_key, value.body.initial_custodians[0].public_key]; }), "E_PEER_ID_MISMATCH");
   expectCode(genesisMutation((value) => { value.body.initial_custodians[1].public_key = value.body.initial_custodians[0].public_key; }), "E_CUSTODIAN_DUPLICATE_KEY");
@@ -73,6 +83,11 @@ test("Pulse requires canonical envelope and exact canonical object sidecar", () 
   expectCode(pulseMutation(0, () => {}, { eventPayloadBytes: null }), "E_EVENT_PAYLOAD_REQUIRED");
   expectCode(pulseMutation(0, () => {}, { eventPayloadBytes: Buffer.from('{"x":1,"x":2}') }), "E_EVENT_PAYLOAD_INVALID");
   expectCode(pulseMutation(0, () => {}, { eventPayloadBytes: Buffer.from('[1]') }), "E_EVENT_PAYLOAD_INVALID");
+  const oversizedPayload = pulseMutation(0, () => {}, {
+    eventPayloadBytes: Buffer.alloc(JSON_LIMITS.event_payload_bytes + 1, 0x20)
+  });
+  expectCode(oversizedPayload, "E_EVENT_PAYLOAD_INVALID");
+  assert.equal(oversizedPayload.deterministic_detail, "E_PARSE_LIMIT_EXCEEDED");
   expectCode(pulseMutation(0, () => {}, { eventPayloadBytes: Buffer.from('{ "handoff":"A-to-D"}') }), "E_EVENT_PAYLOAD_INVALID");
   expectCode(pulseMutation(0, () => {}, { envelopeBytes: Buffer.from(JSON.stringify(vector.steps[0].envelope, null, 2)) }), "E_CANONICAL_MISMATCH");
   expectCode(pulseMutation(0, (step) => { step.envelope.extra = true; }), "E_SCHEMA_UNKNOWN_FIELD");
@@ -94,16 +109,26 @@ test("Pulse requires canonical envelope and exact canonical object sidecar", () 
 
 test("Pulse ordering, encoding, custody, and validation context fail closed", () => {
   expectCode(pulseMutation(0, (step) => { step.envelope.approvals.reverse(); }), "E_ARRAY_NOT_SORTED");
-  expectCode(pulseMutation(0, (step) => { step.envelope.approvals[1] = clone(step.envelope.approvals[0]); }), "E_ARRAY_DUPLICATE_KEY_ID");
+  expectCode(pulseMutation(0, (step) => { step.envelope.approvals[1] = clone(step.envelope.approvals[0]); }), "E_APPROVAL_DUPLICATE");
+  expectCode(pulseMutation(0, (step) => { step.envelope.acceptances.push(clone(step.envelope.acceptances[0])); }), "E_ACCEPTANCE_DUPLICATE");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.next_custodians = step.envelope.body.next_custodians.slice(0, 2); }), "E_CUSTODIAN_COUNT_RANGE");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.parent_hash = "sha256:short"; }), "E_BINARY_ENCODING");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.state_root = "sha256:short"; }), "E_STATE_ROOT_ENCODING");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.event.payload_hash = "sha256:short"; }), "E_EVENT_PAYLOAD_HASH_ENCODING");
   expectCode(pulseMutation(0, () => {}, { genesis: null }), "E_LINEAGE_UNKNOWN");
   expectCode(pulseMutation(0, () => {}, { parent: null }), "E_PARENT_REQUIRED");
-  const foreign = acceptedLineage().genesis;
-  foreign.organism_id = `mortalos:${Buffer.alloc(32, 1).toString("base64url")}`;
+  const foreign = validateGenesis(canonical(vector.clone));
+  assert.equal(foreign.status, "accept");
   expectCode(pulseMutation(0, () => {}, { parent: foreign }), "E_LINEAGE_UNKNOWN");
+  const { genesis, parents } = acceptedLineage();
+  expectCode(
+    pulseMutation(0, () => {}, { genesis: clone(genesis), parent: parents[0] }),
+    "E_LINEAGE_UNKNOWN"
+  );
+  expectCode(
+    pulseMutation(0, () => {}, { genesis, parent: clone(parents[0]) }),
+    "E_PARENT_REQUIRED"
+  );
 });
 
 test("Pulse identity, sequence, parent, genome, custody, state, and payload are bound", () => {
@@ -117,6 +142,11 @@ test("Pulse identity, sequence, parent, genome, custody, state, and payload are 
   expectCode(pulseMutation(0, (step) => { step.envelope.body.event.kind = "heartbeat"; step.envelope.body.state_root = zeroDigest; }), "E_HEARTBEAT_STATE_CHANGED");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.event.kind = "heartbeat"; }), "E_HEARTBEAT_PAYLOAD_NONEMPTY");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.event.kind = "heartbeat"; step.payload = {}; step.envelope.body.event.payload_hash = eventPayloadHash({}); }), "E_HEARTBEAT_CUSTODY_CHANGED");
+  expectCode(pulseMutation(0, (step) => {
+    step.envelope.body.next_custodians = clone(vector.birth.body.initial_custodians);
+    step.envelope.body.next_quorum = clone(vector.birth.body.initial_quorum);
+    step.envelope.acceptances = [];
+  }), "E_MEMBERSHIP_CUSTODY_UNCHANGED");
 });
 
 test("Pulse approval and acceptance evidence enforces eligibility, quorum, and handoff consent", () => {
