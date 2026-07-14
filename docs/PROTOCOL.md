@@ -80,6 +80,7 @@ MORTALOS/V0/PULSE-ID\0
 MORTALOS/V0/PULSE-APPROVAL\0
 MORTALOS/V0/CUSTODY-ACCEPTANCE\0
 MORTALOS/V0/CUSTODY-COMMITMENT\0
+MORTALOS/V0/EVENT-PAYLOAD\0
 MORTALOS/V0/PEER-ID\0
 ```
 
@@ -108,6 +109,9 @@ custody_acceptance_message(pulse_body) =
 
 custody_commitment(custody_descriptor) =
   "sha256:" || B64(H(D_CUSTODY_COMMITMENT || JCS(custody_descriptor)))
+
+event_payload_hash(event_payload) =
+  "sha256:" || B64(H(D_EVENT_PAYLOAD || JCS(event_payload)))
 ```
 
 Here `D_*` is the corresponding domain separator above. `raw_digest` removes the textual prefix and base64url-decodes exactly 32 bytes.
@@ -144,7 +148,9 @@ The all-initial-custodians birth rule proves consent and possession for every in
 
 The entity's **identity** is exactly `organism_id`, derived from the canonical Genesis body. It is immutable within one lineage and has no corresponding organism owner private key.
 
-Two byte-identical Genesis bodies have the same identity. A clone or independent birth MUST use a fresh `nonce`; otherwise it is not a new Genesis body.
+Two byte-identical Genesis bodies have the same identity and describe the same birth, regardless of where or when they are observed.
+
+A conforming creator of a distinct birth MUST sample a new 128-bit `nonce` from a cryptographically secure random-number generator. Global nonce freshness is **not** a validator predicate: a validator cannot know that no equal nonce exists elsewhere. Different canonical Genesis bodies yield independently derived identities; replaying a byte-identical Genesis does not create another entity.
 
 ### 4.6 Pulse
 
@@ -172,32 +178,43 @@ If two distinct, individually valid Pulses share one accepted parent, the valida
 
 No individual peer has continuity authority in a `2-of-3` entity.
 
-### 4.10 Alive
+### 4.10 Authority-viable
 
-A lineage is **alive** if and only if both are actually true under the system model:
+A lineage is **authority-viable** if and only if at least one set of current custodians actually retains enough private keys to satisfy the current quorum for a candidate successor.
 
-1. at least one set of current custodians still controls enough private keys to satisfy the current quorum; and
-2. the state required by the genome to create the next valid Pulse is recoverable.
+Authority viability is an ontic property. It need not be observable to any one peer.
 
-Alive is an ontic property, not necessarily an observable or provable status. An observer may classify it as `continuable`, `dormant`, or `unknown` based on available evidence.
+### 4.11 State-viable
 
-### 4.11 Continuable
+A lineage is **state-viable within observation domain O** if and only if O contains enough state material to reconstruct the logical state committed by the recognized head and execute a genome-authorized state transition.
 
-A lineage is **continuable to observer O** when O has current cryptographic evidence and connectivity sufficient to assemble a valid next Pulse. This is observer-relative and may change after a partition heals.
+MortalOS v0 commits to state integrity but does not include a proof-of-retrievability or state-recovery protocol. State viability is therefore observer-domain-relative and is not inferred from a heartbeat signature.
 
-### 4.12 Dormant
+### 4.12 Alive
 
-A lineage is **dormant to observer O** when O has an accepted head but has not observed a valid successor within O's local activity window and lacks evidence proving either continuity or death.
+A lineage is **operationally alive within observation domain O** if and only if it is both authority-viable and state-viable within O. This is stronger than merely being able to sign a heartbeat.
+
+### 4.13 Continuable
+
+A lineage is **continuable to observer O** when O has current cryptographic evidence and connectivity sufficient to assemble at least one valid next Pulse. This is observer-relative and may change after a partition heals. Continuable does not by itself prove that the current logical state is recoverable.
+
+### 4.14 State-stalled
+
+A lineage is **state-stalled within observation domain O** if and only if it remains authority-viable but O cannot reconstruct the state required for a genome-authorized state transition. A state-stalled lineage may still authorize a heartbeat or custody change and therefore is not protocol-dead in v0.
+
+### 4.15 Dormant
+
+A lineage is **dormant to observer O** when O has an accepted head but has not observed a valid successor within O's local activity window and lacks evidence proving continuity, state viability, or death.
 
 Dormancy MUST NOT be treated as death. The local activity window is a UI/operations parameter and MUST NOT affect Pulse validity.
 
-### 4.13 Partitioned
+### 4.16 Partitioned
 
 A lineage is **partitioned to observer O** when O has evidence that the current peer communication graph is split or that peers report mutually unreachable components.
 
 Partition is a network condition, not a proof of life or death. In a `2-of-3` partition, a component with two current custodians may advance; a component with one MUST stall.
 
-### 4.14 Fork
+### 4.17 Fork
 
 A **fork** exists if two distinct Pulse bodies:
 
@@ -208,18 +225,17 @@ A **fork** exists if two distinct Pulse bodies:
 
 In the v0 honest-custodian model, quorum intersection plus the sign-once rule prevents a valid fork. Observation of a valid fork is evidence of equivocation, key compromise, a validator defect, or a violated threat-model assumption.
 
-### 4.15 Death
+### 4.18 Death
 
-A lineage is **dead** if and only if no future valid successor can be produced under the current accepted state because at least one indispensable continuation capability has been irreversibly lost, including:
+A lineage is **protocol-dead in v0** if and only if no future valid successor Pulse can be produced under the current accepted custody rule because fewer usable current private keys remain than the quorum requires, and that authority loss is irreversible under the stated observation domain and honest-ephemeral-key assumptions.
 
-- fewer private keys remain than the current quorum requires; or
-- indispensable state is below its recovery threshold.
+Loss of logical state alone is not protocol death in v0 because current custodians can still authorize a heartbeat or membership change using the committed state root. Such a condition is `state-stalled`. A later protocol may make a verifiable state-availability capability indispensable, but it MUST define the evidence and validation rule before claiming state loss as lineage death.
 
-Death does not require historical bytes, public keys, Genesis, Pulses, or genome artifacts to disappear. Those artifacts may remain readable.
+Death does not require historical bytes, public keys, Genesis, Pulses, genome artifacts, or state commitments to disappear. Those artifacts may remain readable.
 
 An observer cannot generally prove that no unobserved key or state copy exists. Therefore v0 defines no globally authoritative `death_certificate` message. UIs MAY report `presumed dead` under a stated local policy but MUST distinguish it from protocol-proven invalidity of a candidate Pulse.
 
-### 4.16 Extinction
+### 4.19 Extinction
 
 A lineage is **extinct within observation domain O** if and only if:
 
@@ -228,13 +244,13 @@ A lineage is **extinct within observation domain O** if and only if:
 
 Global extinction is not provable in an open network because unknown copies may exist. Extinction is not emitted as a consensus fact in v0.
 
-### 4.17 Clone
+### 4.20 Clone
 
 A **clone** is a separately born entity whose Genesis reuses a prior entity's `genome_hash` and optionally a historical `initial_state_root`, but is not authorized by a reproduction event in the prior lineage.
 
-A clone MUST use a fresh Genesis nonce and therefore MUST have a different `organism_id`.
+A clone creator MUST sample a new Genesis nonce and therefore produce a different canonical Genesis body and `organism_id`. If the body is byte-identical, the object is a replay of the same Genesis, not a clone.
 
-### 4.18 Descendant
+### 4.21 Descendant
 
 A **descendant** is a separately born entity whose Genesis is cryptographically linked to an authorized reproduction event in a parent lineage.
 
@@ -289,7 +305,7 @@ The structural schema is [`schemas/genesis.schema.json`](../schemas/genesis.sche
 | `body.initial_state_root` | MUST be a correctly encoded SHA-256 digest. |
 | `body.initial_custodians` | MUST satisfy all custody rules and be strictly sorted. |
 | `body.initial_quorum` | MUST satisfy threshold and strict-majority rules. |
-| `body.nonce` | MUST decode to exactly 16 bytes and be fresh for a new birth. |
+| `body.nonce` | MUST be the canonical encoding of exactly 16 bytes. A creator MUST randomly sample it for a distinct birth; validators do not assert global freshness. |
 | `approvals` | MUST contain exactly one valid Genesis approval from every initial custodian, sorted by `key_id`, with no other signers. |
 
 The organism ID is derived, never transmitted as an authoritative field in Genesis. A display implementation MAY show the derived value.
@@ -311,7 +327,7 @@ The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.j
 | `body.current_custody_hash` | MUST equal the commitment derived from the custody descriptor effective at the parent. |
 | `body.state_root` | MUST be a correctly encoded SHA-256 digest and obey the event-specific rule. |
 | `body.event.kind` | MUST be one of the v0 event kinds below. |
-| `body.event.payload_hash` | MUST commit to the complete external event payload, or to canonical `{}` when no payload exists. |
+| `body.event.payload_hash` | MUST equal `event_payload_hash` of the exact canonical event-payload sidecar supplied in validation context. |
 | `body.next_custodians` | MUST satisfy all custody rules and be strictly sorted. |
 | `body.next_quorum` | MUST satisfy threshold and strict-majority rules. |
 | `approvals` | MUST contain unique valid signatures from current custodians meeting the parent-derived quorum. |
@@ -319,14 +335,26 @@ The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.j
 
 ### 7.2 Event-specific rules
 
-| Event kind | State root | Next custody | Required external payload semantics |
+| Event kind | State root | Next custody | Required event-payload sidecar semantics |
 |---|---|---|---|
 | `heartbeat` | MUST equal parent state root. | MUST equal current custody. | Canonical empty object. |
-| `state-transition` | MAY differ according to genome rules. | MUST equal current custody. | Complete transition input/result commitment. |
-| `membership-change` | MUST equal parent state root. | MAY differ. | Reason and intended handoff metadata; non-authoritative. |
-| `repair` | MUST equal parent logical state root. | MAY differ. | Repair observation and replacement metadata; non-authoritative. |
+| `state-transition` | MAY differ according to genome rules. | MUST equal current custody. | Canonical I-JSON object accepted by the immutable genome validator as the complete transition input/result description. |
+| `membership-change` | MUST equal parent state root. | MAY differ. | Canonical I-JSON object; metadata is committed but does not independently authorize the handoff. |
 
 Composite state-and-membership changes are forbidden in v0. This separation makes validation and failure attribution deterministic.
+
+`repair` is not a distinct v0 event kind. Repair is policy that observes degraded custody and proposes an ordinary `membership-change` Pulse. Keeping repair outside the consensus vocabulary avoids two event labels with identical validity rules.
+
+### 7.3 Event-payload sidecar
+
+Every candidate Pulse MUST be validated together with the exact event-payload bytes. Those bytes MUST:
+
+1. be valid UTF-8 and I-JSON with no duplicate property names;
+2. decode to a JSON object;
+3. exactly equal the RFC 8785 canonical encoding of that object; and
+4. reproduce `body.event.payload_hash` using the event-payload domain separator.
+
+Missing, malformed, non-canonical, or hash-mismatched payload bytes cause deterministic rejection. The payload is a content-addressed sidecar rather than an authoritative transport message; transport location and arrival order do not affect validity.
 
 ## 8. Validation context
 
@@ -336,20 +364,21 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 - the unique accepted parent Pulse, if sequence is greater than 1;
 - the custody descriptor effective at the parent;
 - the parent state root;
+- the exact canonical event-payload sidecar bytes;
 - the known accepted ancestry needed to reject replay/rollback; and
 - the genome transition validator for a `state-transition` event.
 
 No network, UI, AI, or wall-clock input is part of protocol validity.
 
-P0 fully determines all lifecycle and envelope validity rules. P1 will implement them. The only intentionally delegated content rule is whether a `state-transition` is permitted by the immutable genome identified at Genesis; such a Pulse cannot be accepted unless that genome validator is present and returns success.
+P0 fully determines all lifecycle and envelope validity rules. P1 will implement them. The only intentionally delegated content rule is whether a `state-transition` and its verified event payload are permitted by the immutable genome identified at Genesis; such a Pulse cannot be accepted unless that genome validator is present and returns success.
 
 ## 9. Deterministic validation order
 
 Validators MUST evaluate in the following order and return the first applicable rejection code from [`REJECTION_CODES.md`](REJECTION_CODES.md):
 
-1. byte decoding and JSON parsing;
-2. schema and unknown-field validation;
-3. canonical encoding and array ordering;
+1. envelope and event-payload byte decoding and JSON parsing;
+2. envelope schema, payload-object, and unknown-field validation;
+3. canonical encoding and array ordering for both envelope and payload;
 4. protocol version and algorithm identifiers;
 5. derived identifiers, key IDs, hashes, and commitments;
 6. Genesis or parent context;
@@ -388,7 +417,9 @@ The following table prevents a UI from converting uncertainty into a false death
 
 | Observation | Allowed local label | Forbidden conclusion |
 |---|---|---|
-| Recent accepted Pulse and reachable quorum | `continuable` | None beyond local evidence. |
+| Recent accepted Pulse and reachable quorum, state availability unknown | `continuable / state unknown` | `operationally alive`. |
+| Reachable quorum and reconstructable state | `operationally alive in this observation domain` | Globally alive. |
+| Reachable quorum but unreconstructable state | `state-stalled` | `dead`. |
 | No recent Pulse; peer reachability unknown | `dormant` or `unknown` | `dead`. |
 | Known minority component | `partitioned / stalled` | Entire lineage is dead. |
 | Current candidate lacks quorum | `candidate rejected` | No other valid candidate can exist. |
@@ -400,7 +431,7 @@ The following table prevents a UI from converting uncertainty into a false death
 To create a clone:
 
 1. select a prior `genome_hash` and optional historical `initial_state_root`;
-2. choose a fresh 128-bit random nonce;
+2. sample a new 128-bit nonce with a cryptographically secure random-number generator;
 3. choose a new initial custodian set and valid quorum;
 4. construct and unanimously approve a new Genesis; and
 5. derive its new organism ID.
@@ -415,6 +446,7 @@ A v0 implementation is conforming only if it:
 - implements the domain-separated derivations above;
 - follows the deterministic validation order;
 - implements every field rule and event-specific rule;
+- requires and verifies the exact canonical event-payload sidecar;
 - exposes stable rejection codes;
 - never treats GPT, UI, transport, or signaling output as authority;
 - enters `FORKED` instead of silently resolving two valid siblings; and
@@ -428,4 +460,3 @@ A v0 implementation is conforming only if it:
 - [`P0_VERIFICATION_REPORT.md`](P0_VERIFICATION_REPORT.md)
 - [`genesis.schema.json`](../schemas/genesis.schema.json)
 - [`pulse.schema.json`](../schemas/pulse.schema.json)
-
