@@ -135,7 +135,9 @@ Phases are ordered. A phase may begin experimentally, but it is not considered c
 
 ## 7. Phased implementation plan
 
-### P0 — Operational semantics and threat model
+### P0 — Operational semantics and threat model ✅ COMPLETE
+
+**Gate result:** PASS on 2026-07-14. See [`P0_VERIFICATION_REPORT.md`](P0_VERIFICATION_REPORT.md).
 
 **Goal**
 
@@ -151,13 +153,13 @@ Turn birth, identity, pulse, continuity, fork, dormancy, death, extinction, clon
 
 **Strict exit criteria**
 
-- [ ] Every lifecycle term has a necessary and sufficient operational definition.
-- [ ] Death is defined as loss of recognized succession capability, not as an unverifiable claim that every bit was deleted.
-- [ ] Dormancy, partition, and death are explicitly distinguishable in the model, including cases where an observer cannot know which occurred.
-- [ ] The canonical encoding and hash domain-separation rules are specified.
-- [ ] Every field in Genesis and Pulse has a validation rule.
-- [ ] Every invariant `INV-1` through `INV-10` maps to at least one planned automated test.
-- [ ] No later phase is required to explain whether a candidate pulse is valid.
+- [x] Every lifecycle term has a necessary and sufficient operational definition.
+- [x] Death is defined as loss of recognized succession capability, not as an unverifiable claim that every bit was deleted.
+- [x] Dormancy, partition, and death are explicitly distinguishable in the model, including cases where an observer cannot know which occurred.
+- [x] The canonical encoding and hash domain-separation rules are specified.
+- [x] Every field in Genesis and Pulse has a validation rule.
+- [x] Every invariant `INV-1` through `INV-10` maps to at least one planned automated test.
+- [x] No later phase is required to explain whether a candidate pulse is valid.
 
 **Gate failure condition**
 
@@ -536,4 +538,3 @@ An LLM is a future cognitive organ of MortalOS. It is not evidence that MortalOS
 MortalOS has passed its foundational milestone only when this statement is demonstrated and reproducible:
 
 > Every original host is gone, yet one authorized identity and lineage remain alive. After the live continuation threshold is irreversibly lost under the stated threat model, historical data cannot continue that same lineage; it can only begin a new one.
-
