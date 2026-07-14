@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mortalos.dev/schemas/v0/genesis.schema.json",
+  "title": "MortalOS v0 Genesis Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "body", "approvals"],
+  "properties": {
+    "kind": {
+      "const": "mortalos.genesis"
+    },
+    "body": {
+      "$ref": "#/$defs/genesisBody"
+    },
+    "approvals": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/approval"
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[A-Za-z0-9_-]{43}$"
+    },
+    "peerId": {
+      "type": "string",
+      "pattern": "^peer:[A-Za-z0-9_-]{43}$"
+    },
+    "publicKey": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9_-]{43}$"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9_-]{86}$"
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^nonce:[A-Za-z0-9_-]{22}$"
+    },
+    "custodian": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_id", "public_key"],
+      "properties": {
+        "key_id": {
+          "$ref": "#/$defs/peerId"
+        },
+        "public_key": {
+          "$ref": "#/$defs/publicKey"
+        }
+      }
+    },
+    "quorum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "threshold"],
+      "properties": {
+        "type": {
+          "const": "threshold"
+        },
+        "threshold": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 16
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_id", "signature"],
+      "properties": {
+        "key_id": {
+          "$ref": "#/$defs/peerId"
+        },
+        "signature": {
+          "$ref": "#/$defs/signature"
+        }
+      }
+    },
+    "genesisBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "hash_algorithm",
+        "signature_algorithm",
+        "genome_hash",
+        "initial_state_root",
+        "initial_custodians",
+        "initial_quorum",
+        "nonce"
+      ],
+      "properties": {
+        "protocol_version": {
+          "const": "mortalos/0"
+        },
+        "hash_algorithm": {
+          "const": "sha-256"
+        },
+        "signature_algorithm": {
+          "const": "ed25519"
+        },
+        "genome_hash": {
+          "$ref": "#/$defs/digest"
+        },
+        "initial_state_root": {
+          "$ref": "#/$defs/digest"
+        },
+        "initial_custodians": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/custodian"
+          }
+        },
+        "initial_quorum": {
+          "$ref": "#/$defs/quorum"
+        },
+        "nonce": {
+          "$ref": "#/$defs/nonce"
+        }
+      }
+    }
+  }
+}
