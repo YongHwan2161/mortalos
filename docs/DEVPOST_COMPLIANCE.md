@@ -49,7 +49,7 @@ The live submission endpoint presents these required evidence objects. Its conci
 | Project description | Devpost Project Story in English | Empty | Blocker |
 | Accurate tagline | Authority-loss wording consistent with the protocol | Current wording overclaims network-disappearance death | Blocker |
 | Demo video | Public YouTube, less than 3 minutes, clear audio | Missing | Blocker |
-| Repository URL | `https://github.com/YongHwan2161/mortalos` | Public | Partial |
+| Repository URL | `https://github.com/YongHwan2161/mortalos` | Public; H1/H2 commit and Actions verified | Complete |
 | Relevant public-repo license | Repository-root `LICENSE` | Apache-2.0 applied; package metadata aligned | Complete |
 | README setup and run guidance | Clean install, supported platforms, sample/test path | Clean-room `npm ci`, full tests, coverage, and deterministic trace pass; hosted judge run pending | Partial |
 | Codex/GPT-5.6 evidence | README build log plus video narration | Codex P0 evidence exists; actual GPT-5.6 product path missing | Blocker |

@@ -75,6 +75,9 @@ Human decisions:
 Tests/evidence:
 
 - `npm test`: PASS;
+- GitHub commit: `b459485d3109e99ddb3e958c6108a50580074d1e`;
+- remote readback: 39/39 blob SHA matches, zero mismatches;
+- GitHub Actions `Verify` run 13: success;
 - RFC 8032 vector and signed MortalOS lifecycle corpus: PASS;
 - seeded adversarial continuations: 10,000/10,000;
 - validator coverage: 98.97% lines, 91.58% branches, 100% functions; and

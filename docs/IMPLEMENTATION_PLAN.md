@@ -188,6 +188,8 @@ The long-term roadmap is too large for one Build Week. The submission must imple
 
 ### H0 — Compliance, provenance, and reproducibility
 
+**Gate result:** PASS on 2026-07-14. Apache-2.0, provenance, clean-room commands, secret hygiene, dependency audit, and GitHub Actions are verified.
+
 **Goal:** remove administrative and judgeability blockers before feature work hides them.
 
 **Deliverables**
@@ -203,7 +205,7 @@ The long-term roadmap is too large for one Build Week. The submission must imple
 
 - [x] The public repository contains the exact Apache License 2.0 text in `LICENSE`, and package metadata declares `Apache-2.0`.
 - [x] All current repository work is traceable to commits made after the submission period opened; future work must preserve dated commits and Codex session evidence.
-- [ ] `npm ci && npm test` passes in CI from a clean checkout.
+- [x] GitHub Actions `Verify` run 13 passes from commit `b459485d3109e99ddb3e958c6108a50580074d1e` using clean checkout, locked install, full tests, coverage enforcement, and dependency audit.
 - [x] README `npm ci`, `npm test`, and coverage instructions pass in a clean-room copy with no pre-existing `node_modules`.
 - [x] No secret, personal token, API key, or private signing key is present in the H1/H2 source, public vectors, or generated trace; vectors contain public verification material only. Git-history scanning remains part of the final H5 freeze.
 

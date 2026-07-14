@@ -105,6 +105,8 @@ Observed result:
 | Validator branch coverage | **91.58%** |
 | Validator function coverage | **100%** |
 | Clean-room install and README commands | PASS with no pre-existing `node_modules` |
+| GitHub remote file verification | 39/39 blob SHA matches, 0 mismatches |
+| GitHub Actions | `Verify` run 13, push commit `b459485d3109e99ddb3e958c6108a50580074d1e`, success |
 
 The two uncovered line ranges are defensive schema-error mappings for a wrong Pulse event kind and sequence format when schema validation itself fails first. Normal semantic values reach and test the explicit `E_EVENT_KIND_UNSUPPORTED` and `E_SEQUENCE_INVALID_FORMAT` paths.
 
