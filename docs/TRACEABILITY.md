@@ -1,6 +1,6 @@
 # MortalOS v0 Requirements Traceability
 
-Status: **Normative P0 traceability baseline**
+Status: **Normative P0 traceability baseline, corrected by the 2026-07-14 red-team review**
 
 This document maps every foundational invariant to protocol requirements, rejection codes, and planned automated tests. Test IDs are reserved now and implemented in P1 through P10.
 
@@ -24,19 +24,21 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | `INV-6` Membership changes only through a valid Pulse. | Current quorum authorizes and every added custodian accepts handoff. | `E_ACCEPTANCE_MISSING`, `E_ACCEPTANCE_SIGNER_NOT_NEW`, `E_MEMBERSHIP_STATE_CHANGED` | `T-P3-HANDOFF-001`, `T-P3-HANDOFF-002`, `T-P3-HANDOFF-003` | P3 |
 | `INV-7` Complete safe custodian turnover preserves identity. | Handoffs change custody descriptor, never Genesis or organism ID. | `Accept` with unchanged `organism_id` | `T-P3-TURNOVER-001`, `T-P3-TURNOVER-002`, `T-P3-TURNOVER-RANDOM-001` | P3 |
 | `INV-8` Below-quorum groups cannot advance. | Threshold is parent-derived; duplicate signatures count once. | `E_APPROVAL_DUPLICATE`, `E_APPROVAL_INSUFFICIENT_QUORUM` | `T-P2-AUTH-002`, `T-P2-AUTH-004`, `T-P5-MINORITY-001` | P2 |
-| `INV-9` A clone without lineage authority has a new identity. | Clone uses fresh Genesis nonce and no prior approvals as authority. | New `organism_id`; stale approvals rejected | `T-P4-CLONE-001`, `T-P4-CLONE-002`, `T-P4-SNAPSHOT-001` | P4 |
+| `INV-9` A clone without lineage authority has a new identity. | Clone creator samples a new Genesis nonce; a byte-identical Genesis is a replay, not a clone. | New `organism_id`; stale approvals rejected | `T-P1-NONCE-G-002`, `T-P4-CLONE-001`, `T-P4-CLONE-002`, `T-P4-SNAPSHOT-001` | P1 |
 | `INV-10` AI, UI, and transport never define validity. | Only pure validator output accepts state; external layers submit bytes/proposals. | Protocol rejection code unchanged by source | `T-P6-UI-001`, `T-P7-TRANSPORT-001`, `T-P9-AI-001`, `T-P9-AI-002` | P6 |
+| `INV-11` Semantic validation uses the exact event payload committed by the Pulse. | Canonical sidecar bytes are mandatory and their domain-separated digest equals `payload_hash`. | `E_EVENT_PAYLOAD_REQUIRED`, `E_EVENT_PAYLOAD_INVALID`, `E_EVENT_PAYLOAD_MISMATCH` | `T-P1-EVENT-002`, `T-P1-EVENT-003`, `T-P1-EVENT-004` | P1 |
+| `INV-12` Authority availability and state availability are never conflated. | v0 state loss is `state-stalled`; only irreversible below-quorum authority loss establishes v0 protocol death under controlled assumptions. | Observer-state result; no death message | `T-P4-DEATH-001`, `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` | P4 |
 
 ## 3. P0 exit-criterion traceability
 
 | P0 criterion | Evidence |
 |---|---|
 | Every lifecycle term has a necessary and sufficient operational definition. | `PROTOCOL.md` section 4. |
-| Death is succession-capability loss, not unprovable universal byte deletion. | `PROTOCOL.md` 4.15 and `THREAT_MODEL.md` section 9. |
-| Dormancy, partition, and death are explicitly distinguishable. | `PROTOCOL.md` 4.12–4.15 and section 10. |
+| Death is succession-capability loss, not unprovable universal byte deletion. | `PROTOCOL.md` 4.18 and `THREAT_MODEL.md` section 9. |
+| Authority, state viability, state stall, dormancy, partition, and death are explicitly distinguishable. | `PROTOCOL.md` 4.10–4.18 and section 10. |
 | Canonical encoding and hash domain separation are specified. | `PROTOCOL.md` sections 2 and 3. |
 | Every Genesis and Pulse field has a validation rule. | `PROTOCOL.md` sections 6.1 and 7.1 plus JSON Schemas. |
-| Every invariant maps to at least one planned automated test. | Invariant table in this document. |
+| Every invariant maps to at least one planned automated test. | Invariant table in this document maps `INV-1` through `INV-12`. |
 | Later phases are not required to decide envelope/lifecycle validity. | `PROTOCOL.md` sections 8 and 9; genome content validation is identified as an explicit required input, not an unspecified rule. |
 | Two conforming validators receive the same first result. | Deterministic validation order and stable rejection codes; P1 will supply executable cross-process conformance vectors. |
 
@@ -54,7 +56,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | `body.initial_state_root` | Genesis schema | Protocol 6.1 | `T-P1-HASH-G-002` |
 | `body.initial_custodians` | Genesis schema | Protocol sections 5 and 6.1 | `T-P1-CUSTODY-G-001` |
 | `body.initial_quorum` | Genesis schema | Protocol sections 5 and 6.1 | `T-P1-QUORUM-G-001` |
-| `body.nonce` | Genesis schema | Protocol 6.1 | `T-P1-NONCE-G-001` |
+| `body.nonce` | Genesis schema | Protocol 4.5 and 6.1 | `T-P1-NONCE-G-001`, `T-P1-NONCE-G-002` |
 | `approvals` | Genesis schema | Protocol 4.4 and 6.1 | `T-P2-AUTH-G-001` |
 
 ### 4.2 Pulse
@@ -70,7 +72,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | `body.current_custody_hash` | Pulse schema | Protocol 3 and 7.1 | `T-P1-CUSTODY-P-001` |
 | `body.state_root` | Pulse schema | Protocol 7.1–7.2 | `T-P1-STATE-001` |
 | `body.event.kind` | Pulse schema | Protocol 7.2 | `T-P1-EVENT-001` |
-| `body.event.payload_hash` | Pulse schema | Protocol 7.1–7.2 | `T-P1-EVENT-002` |
+| `body.event.payload_hash` | Pulse schema | Protocol 3 and 7.1–7.3 | `T-P1-EVENT-002`, `T-P1-EVENT-003`, `T-P1-EVENT-004` |
 | `body.next_custodians` | Pulse schema | Protocol 5.1 and 7.1 | `T-P3-HANDOFF-001` |
 | `body.next_quorum` | Pulse schema | Protocol 5 and 7.1 | `T-P1-QUORUM-P-001` |
 | `approvals` | Pulse schema | Protocol 5 and 7.1 | `T-P2-AUTH-001` |
@@ -87,9 +89,10 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Invalid signatures | `T-P2-SIGN-001` through `T-P2-SIGN-004` |
 | Removed or premature signer | `T-P3-HANDOFF-003`, `T-P3-HANDOFF-004` |
 | Public snapshot after death | `T-P4-SNAPSHOT-001`, `T-P4-SNAPSHOT-002` |
+| Missing, malformed, or substituted event payload | `T-P1-EVENT-002` through `T-P1-EVENT-004` |
+| State loss mislabeled as protocol death | `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` |
 | Invalid GPT proposal | `T-P9-AI-001` through `T-P9-AI-004` |
 
 ## 6. Change rule
 
 A change to any invariant, message field, domain separator, validation precedence, or v0 threat assumption MUST update this traceability document in the same commit. No requirement may be removed without an explicit protocol-version decision.
-
