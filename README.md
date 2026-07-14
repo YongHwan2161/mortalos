@@ -13,13 +13,20 @@ The first milestone is intentionally smaller than a general-purpose operating sy
 
 ## Status
 
-Protocol design and validation planning.
+P0 protocol semantics and threat model are complete and verified. P1—the deterministic lifecycle state machine—is next.
 
 ## Start here
 
 See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for the ordered implementation plan, invariants, non-goals, and strict exit criteria for every phase.
 
+P0 specification and evidence:
+
+- [Protocol v0](docs/PROTOCOL.md)
+- [Threat model](docs/THREAT_MODEL.md)
+- [Rejection codes](docs/REJECTION_CODES.md)
+- [Requirements traceability](docs/TRACEABILITY.md)
+- [P0 verification report](docs/P0_VERIFICATION_REPORT.md)
+
 ## Core principle
 
 > The network does not host MortalOS. The living network is MortalOS.
-
