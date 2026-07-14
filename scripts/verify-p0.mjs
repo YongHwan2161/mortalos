@@ -31,7 +31,8 @@ const paths = {
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
   genesisExample: "examples/schema/genesis.valid.json",
-  pulseExample: "examples/schema/pulse.valid.json"
+  pulseExample: "examples/schema/pulse.valid.json",
+  heartbeatPayloadExample: "examples/schema/heartbeat-payload.valid.json"
 };
 
 const entries = await Promise.all(
@@ -43,6 +44,7 @@ const genesisSchema = JSON.parse(text.genesisSchema);
 const pulseSchema = JSON.parse(text.pulseSchema);
 const genesisExample = JSON.parse(text.genesisExample);
 const pulseExample = JSON.parse(text.pulseExample);
+const heartbeatPayloadExample = JSON.parse(text.heartbeatPayloadExample);
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const validateGenesis = ajv.compile(genesisSchema);
@@ -55,6 +57,21 @@ assert(
 assert(
   validatePulse(pulseExample),
   `Pulse structural example failed schema: ${ajv.errorsText(validatePulse.errors)}`
+);
+assert(
+  JSON.stringify(heartbeatPayloadExample) === "{}",
+  "Heartbeat event-payload fixture must be the canonical empty object"
+);
+
+const heartbeatPayloadHash =
+  "sha256:" +
+  createHash("sha256")
+    .update(Buffer.from("MORTALOS/V0/EVENT-PAYLOAD\0", "ascii"))
+    .update(Buffer.from("{}", "utf8"))
+    .digest("base64url");
+assert(
+  pulseExample.body.event.payload_hash === heartbeatPayloadHash,
+  "Pulse heartbeat payload_hash does not bind the canonical payload fixture"
 );
 
 function mustReject(validate, candidate, label) {
@@ -110,15 +127,18 @@ const lifecycleSections = [
   "### 4.7 Lineage",
   "### 4.8 Recognized head",
   "### 4.9 Continuity authority",
-  "### 4.10 Alive",
-  "### 4.11 Continuable",
-  "### 4.12 Dormant",
-  "### 4.13 Partitioned",
-  "### 4.14 Fork",
-  "### 4.15 Death",
-  "### 4.16 Extinction",
-  "### 4.17 Clone",
-  "### 4.18 Descendant"
+  "### 4.10 Authority-viable",
+  "### 4.11 State-viable",
+  "### 4.12 Alive",
+  "### 4.13 Continuable",
+  "### 4.14 State-stalled",
+  "### 4.15 Dormant",
+  "### 4.16 Partitioned",
+  "### 4.17 Fork",
+  "### 4.18 Death",
+  "### 4.19 Extinction",
+  "### 4.20 Clone",
+  "### 4.21 Descendant"
 ];
 for (const section of lifecycleSections) {
   assert(text.protocol.includes(section), `Missing operational definition: ${section}`);
@@ -131,6 +151,7 @@ const domains = [
   "MORTALOS/V0/PULSE-APPROVAL\\0",
   "MORTALOS/V0/CUSTODY-ACCEPTANCE\\0",
   "MORTALOS/V0/CUSTODY-COMMITMENT\\0",
+  "MORTALOS/V0/EVENT-PAYLOAD\\0",
   "MORTALOS/V0/PEER-ID\\0"
 ];
 for (const domain of domains) {
@@ -173,8 +194,15 @@ assert(
   new Set(rejectionCodes).size === rejectionCodes.length,
   "Duplicate rejection code detected"
 );
+for (const code of [
+  "E_EVENT_PAYLOAD_REQUIRED",
+  "E_EVENT_PAYLOAD_INVALID",
+  "E_EVENT_PAYLOAD_MISMATCH"
+]) {
+  assert(rejectionCodes.includes(code), `Missing event-payload rejection code: ${code}`);
+}
 
-for (let index = 1; index <= 10; index += 1) {
+for (let index = 1; index <= 12; index += 1) {
   const invariant = `INV-${index}`;
   const traceLine = text.traceability
     .split("\n")
@@ -188,7 +216,9 @@ const requiredThreatStatements = [
   "Silence is ambiguous",
   "Safety takes precedence over availability",
   "GPT-5.6 must not",
-  "peer-to-peer execution and state authority"
+  "peer-to-peer execution and state authority",
+  "event-payload sidecars",
+  "state-stalled"
 ];
 for (const statement of requiredThreatStatements) {
   assert(
@@ -203,23 +233,44 @@ const p0Criteria = [
   "Dormancy, partition, and death are explicitly distinguishable",
   "The canonical encoding and hash domain-separation rules are specified.",
   "Every field in Genesis and Pulse has a validation rule.",
-  "Every invariant `INV-1` through `INV-10` maps to at least one planned automated test.",
-  "No later phase is required to explain whether a candidate pulse is valid."
+  "Every invariant `INV-1` through `INV-12` maps to at least one planned automated test.",
+  "No later phase is required to explain whether a candidate pulse is valid.",
+  "Nonce randomness is a producer obligation",
+  "Authority viability, state viability, state stall, and v0 protocol death are non-contradictory.",
+  "Every Pulse requires the exact canonical event payload"
 ];
 for (const criterion of p0Criteria) {
   assert(text.implementationPlan.includes(criterion), `Implementation plan lost P0 criterion: ${criterion}`);
 }
 
+assert(
+  !pulseSchema.$defs.event.properties.kind.enum.includes("repair"),
+  "repair must remain policy, not a duplicate consensus event kind"
+);
+assert(
+  text.protocol.includes("Global nonce freshness is **not** a validator predicate"),
+  "Protocol still exposes globally unverifiable nonce freshness"
+);
+assert(
+  text.protocol.includes("A state-stalled lineage may still authorize a heartbeat"),
+  "Protocol does not resolve state-loss versus protocol-death semantics"
+);
+assert(
+  text.protocol.includes("the exact canonical event-payload sidecar bytes"),
+  "Validation context omits the event-payload sidecar"
+);
+
 console.log("MortalOS P0 verification: PASS");
 console.log(`- Schemas compiled: 2`);
 console.log(`- Structural valid examples accepted: 2`);
+console.log(`- Canonical event-payload fixtures bound: 1`);
 console.log(`- Structural invalid mutations rejected: 8`);
 console.log(`- Operational lifecycle definitions checked: ${lifecycleSections.length}`);
 console.log(`- Domain separators checked: ${domains.length}`);
 console.log(`- Message validation rows checked: ${genesisFields.length + pulseFields.length}`);
 console.log(`- Unique rejection codes checked: ${rejectionCodes.length}`);
-console.log(`- Invariant-to-test mappings checked: 10`);
-console.log("- Threat-model boundary statements checked: 6");
+console.log(`- Invariant-to-test mappings checked: 12`);
+console.log("- Threat-model boundary statements checked: 8");
 console.log("Document digests:");
 for (const name of ["protocol", "threatModel", "rejectionCodes", "traceability"]) {
   console.log(`  ${paths[name]} sha256:${sha256(text[name])}`);
