@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mortalos.dev/schemas/v0/pulse.schema.json",
+  "title": "MortalOS v0 Pulse Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "body", "approvals", "acceptances"],
+  "properties": {
+    "kind": {
+      "const": "mortalos.pulse"
+    },
+    "body": {
+      "$ref": "#/$defs/pulseBody"
+    },
+    "approvals": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "acceptances": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[A-Za-z0-9_-]{43}$"
+    },
+    "organismId": {
+      "type": "string",
+      "pattern": "^mortalos:[A-Za-z0-9_-]{43}$"
+    },
+    "peerId": {
+      "type": "string",
+      "pattern": "^peer:[A-Za-z0-9_-]{43}$"
+    },
+    "publicKey": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9_-]{43}$"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9_-]{86}$"
+    },
+    "sequence": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "custodian": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_id", "public_key"],
+      "properties": {
+        "key_id": {
+          "$ref": "#/$defs/peerId"
+        },
+        "public_key": {
+          "$ref": "#/$defs/publicKey"
+        }
+      }
+    },
+    "quorum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "threshold"],
+      "properties": {
+        "type": {
+          "const": "threshold"
+        },
+        "threshold": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 16
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_id", "signature"],
+      "properties": {
+        "key_id": {
+          "$ref": "#/$defs/peerId"
+        },
+        "signature": {
+          "$ref": "#/$defs/signature"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "payload_hash"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "heartbeat",
+            "state-transition",
+            "membership-change",
+            "repair"
+          ]
+        },
+        "payload_hash": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "pulseBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "organism_id",
+        "sequence",
+        "parent_hash",
+        "genome_hash",
+        "current_custody_hash",
+        "state_root",
+        "event",
+        "next_custodians",
+        "next_quorum"
+      ],
+      "properties": {
+        "protocol_version": {
+          "const": "mortalos/0"
+        },
+        "organism_id": {
+          "$ref": "#/$defs/organismId"
+        },
+        "sequence": {
+          "$ref": "#/$defs/sequence"
+        },
+        "parent_hash": {
+          "$ref": "#/$defs/digest"
+        },
+        "genome_hash": {
+          "$ref": "#/$defs/digest"
+        },
+        "current_custody_hash": {
+          "$ref": "#/$defs/digest"
+        },
+        "state_root": {
+          "$ref": "#/$defs/digest"
+        },
+        "event": {
+          "$ref": "#/$defs/event"
+        },
+        "next_custodians": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/custodian"
+          }
+        },
+        "next_quorum": {
+          "$ref": "#/$defs/quorum"
+        }
+      }
+    }
+  }
+}
