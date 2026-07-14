@@ -20,7 +20,7 @@ The system does not claim that all data copies can be deleted, that death can al
 | Continuity authority | A current quorum, not one peer, is required to advance. |
 | Custody membership | Changes only through a Pulse authorized by the current custody descriptor and accepted by new custodians. |
 | State integrity | `state_root` commits to the logical state used by the genome. |
-| Genome integrity | `genome_hash` is fixed for v0 lineage transitions. |
+| Genome integrity | `genome_hash` is fixed as a content commitment; v0 does not execute it. |
 | Private signing keys | Never intentionally serialized, logged, committed, or sent over the network. |
 | Mortality semantics | Loss of succession authority is not confused with deletion of all historical bytes or temporary loss of state availability. |
 | Validator independence | Transport, UI, GPT, and signaling cannot alter validity rules. |
@@ -35,8 +35,7 @@ The following are trusted for the v0 claim:
 - standards-conforming SHA-256 and Ed25519 implementations;
 - correct RFC 8785 canonicalization;
 - the browser/runtime's cryptographic random number generator;
-- the assumption that honest custodians obey sign-once and delete volatile keys when the controlled test requires it; and
-- the immutable genome validator for `state-transition` events.
+- the assumption that honest custodians obey sign-once, retain no hidden pending approvals, and delete volatile keys when the controlled test requires it.
 
 Compromise of these components may invalidate the v0 claim.
 
@@ -108,7 +107,7 @@ The following are explicitly out of scope for the foundational claim:
 - coercion or legal control of participants;
 - side-channel attacks;
 - quantum attacks; and
-- malicious genome code escaping a future process sandbox.
+- malicious genome code escaping a future process sandbox or producing nondeterministic results.
 
 The validator still rejects malformed or unauthorized inputs from outsiders. Exclusion means v0 does not guarantee continued safety if a current custodian behaves Byzantine or its key is compromised.
 
@@ -164,7 +163,7 @@ A valid next Pulse can eventually be produced only if:
 4. all newly added custodians accept a membership handoff, if any; and
 5. the environment schedules sufficient computation.
 
-A `state-transition` additionally requires recoverable logical state and the immutable genome validator. A heartbeat or membership change does not prove either property.
+MortalOS v0 has no state-transition event. Recoverable logical state is necessary for operational life but is not proven by a heartbeat or membership change.
 
 If these conditions do not hold, stalling is correct behavior. Safety takes precedence over availability.
 
@@ -172,11 +171,13 @@ If these conditions do not hold, stalling is correct behavior. Safety takes prec
 
 ### 9.1 What death means
 
-Protocol death in v0 is the irreversible loss of quorum-held authority to create any valid successor in the same lineage under the accepted current custody rule.
+Protocol death in v0 is the irreversible loss of quorum-held authority to create any valid successor in the same lineage under the accepted current custody rule, with no pre-authorized latent successor remaining.
 
 Examples under the v0 controlled-test assumptions:
 
 - a `2-of-3` lineage loses two current private keys and those keys were never persisted.
+
+The controlled test must also establish that no pending candidate already contains sufficient durable evidence to become valid without new signatures from the lost current quorum. Key destruction does not revoke signatures already created.
 
 Loss of logical state by itself is `state-stalled`, not protocol-dead, because a valid heartbeat or membership change can still be signed from the committed root. State-backed mortality requires a later protocol with verifiable availability/recovery evidence.
 
@@ -195,6 +196,7 @@ Death does not mean:
 Silence is ambiguous. A peer may be dead, disconnected, paused, slow, or hidden behind a partition. Therefore:
 
 - no absence-of-message timer may create a consensus death fact;
+- no key-loss observation may claim death while a latent successor could still be delivered or completed;
 - a UI may report `dormant`, `unreachable`, or `presumed dead under policy`;
 - only candidate validity is cryptographically decidable from available inputs; and
 - the controlled P4 death experiment must state its key-erasure assumption.
@@ -263,6 +265,7 @@ Resource contribution must be explicit and revocable in later browser phases. v0
 | Identity survives complete safe host turnover | Guaranteed by protocol | Requires every handoff to be valid and accepted. |
 | Minority partition cannot advance | Guaranteed | Under current threshold rule. |
 | Public snapshot cannot sign a successor | Guaranteed | Snapshot excludes private keys. |
+| Destroying keys invalidates pre-existing signatures | Not claimed | A latent authorized successor remains usable. |
 | Missing state alone kills the v0 lineage | Not claimed | v0 commits to integrity, not retrievability; report `state-stalled`. |
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |
 | Byzantine quorum cannot fork | Not guaranteed | Future work. |
@@ -282,6 +285,7 @@ Any implementation change that introduces one of the following requires a threat
 - state confidentiality claims;
 - Byzantine or Sybil resistance claims;
 - autonomous genome changes;
+- executable genome or state-transition semantics;
 - state-availability evidence that changes protocol death semantics;
 - model-controlled state mutation; or
 - authoritative server-side state.
