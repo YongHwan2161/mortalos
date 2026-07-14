@@ -13,6 +13,8 @@ MortalOS is licensed under the [Apache License 2.0](LICENSE). Unless you explici
    npm ci
    npm test
    npm run test:coverage
+   npx playwright install chromium
+   npm run test:chromium
    ```
 
 5. Never commit production private keys, API keys, tokens, `.env` files, or private signing material. Conformance vectors must contain only public verification material.

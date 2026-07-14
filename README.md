@@ -1,32 +1,34 @@
 # MortalOS
 
-**A deterministic lifecycle protocol for replaceable browser-native custodians.**
+**An endpoint-neutral lifecycle protocol for network-native entities.**
 
 MortalOS separates identity, continuation authority, lineage, state availability, and observable liveness. Its long-term question is whether one network-native entity can preserve an authorized identity after every original host has been replaced—and stop when succession becomes impossible under explicit assumptions.
 
 ## Honest status
 
-The current artifact is a verified **Node.js protocol and evidence core**, not yet a browser OS or state-bearing digital life.
+The current artifact is a verified **portable protocol and evidence kernel with CLI and Chromium proof adapters**, not yet an OS, participant network, or state-bearing digital life.
 
 Implemented:
 
-- duplicate-aware UTF-8/I-JSON parsing and RFC 8785 canonicalization;
-- eight domain-separated SHA-256 derivations and real Ed25519 verification;
-- Genesis and Pulse validation, including current `2-of-3` approval and new-custodian acceptance;
+- portable `Uint8Array` processing with duplicate-aware UTF-8/I-JSON parsing and RFC 8785 canonicalization;
+- eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification;
+- Genesis and Pulse validation for strict-majority custody descriptors from `1-of-1` through 16 custodians;
 - non-forgeable, recursively frozen validation contexts;
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
-- evidence-backed latent-successor and conditional mortality evaluation; and
-- a deterministic birth → complete turnover → replay/death/resurrection/clone trace.
+- evidence-backed latent-successor and conditional mortality evaluation;
+- a public singleton birth/heartbeat, a verified `1-of-1` to `2-of-3` authority expansion, and the complete A/B/C → D/E/F lifecycle;
+- a committed result corpus with 15 named negative cases and 10,000 seeded adversarial cases; and
+- byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results.
 
 Not implemented:
 
-- a portable core that runs identically in Node.js and Chromium;
 - the one-page browser incubator and MortalOS Lab judge experience;
-- browser peer transport or replicated state;
+- a stable CLI create/import/replay/export contract;
+- participant-to-participant transport or replicated state;
 - a deterministic executable genome or mutable logical state; and
 - GPT-5.6 runtime integration.
 
-The most important next gate is **C1 portable deterministic core**. Browser UI must not create a second, subtly different validator. See [Project status](docs/PROJECT_STATUS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
+The most important delivery gate is now **H3 MortalOS Lab**. The next fundamental research gate is a versioned deterministic state-bearing kernel. See [Project status](docs/PROJECT_STATUS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ## Run
 
@@ -36,35 +38,46 @@ Requirements: Node.js 22.5 or later and npm.
 npm ci
 npm test
 npm run test:coverage
+npx playwright install chromium
+npm run test:chromium
+npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification gates, 22 conformance tests, a fixed-seed 10,000-case adversarial continuation corpus, and the deterministic lifecycle trace gate. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification gates, 26 conformance tests, the committed cross-runtime corpus, a fixed-seed 10,000-case property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
-Expected trace digest:
+Expected H2 trace digest:
 
 ```text
 1393d92d0d42dea697551c67458d52c59f92ee1067d6dedb1c21225c977ab606
 ```
 
-Committed vectors contain public verification material only. Tests that need signing keys generate them in memory.
+Committed vectors contain public verification material only. Tests that need signing keys generate them in memory and do not persist them.
 
-## What `2-of-3` means
+## Creation profiles and ownership boundary
 
-Quorum counts distinct eligible custodian **key IDs**, not people, tabs, browsers, devices, or organizations.
+MortalOS counts distinct eligible custodian **key IDs**, not people, tabs, browsers, devices, or organizations.
 
-- Genesis requires all three initial keys: `3-of-3` birth consent.
-- Every later Pulse needs any two current keys: `2-of-3` continuation.
-- One person may initially run all three keys in one browser so an organism can be created without other participants.
-- That browser can satisfy the logical quorum by itself and is one physical failure domain.
-- Closing it before a valid handoff loses local continuation authority under the controlled ephemeral-key assumptions.
-- After handoffs distribute enough keys to independent browsers, the original browser may close while the same `organism_id` continues.
+- **CLI singleton (`1-of-1`)**: one ephemeral process can create a valid seed and heartbeat. This is creator-controlled, not ownerless.
+- **Single-browser incubator (`2-of-3`)**: one planned page holds three logical keys and can satisfy quorum by itself. It remains one physical failure domain.
+- **Distributed `2-of-3`**: no physical or administrative domain holds two keys, so no one domain can continue alone.
 
-The current Node core validates the cryptographic rules but does not yet implement this browser key lifecycle. See the [single-browser incubator profile](docs/SINGLE_BROWSER_INCUBATOR.md).
+The verified singleton can hand authority to `2-of-3` without changing `organism_id`. After that handoff, the original sole key is insufficient while two eligible keys can advance. This makes the distinction explicit: creation may begin locally, but ownerless continuation is a property of the accepted custody distribution, not the UI used to create it.
+
+Closing a browser or CLI process is not automatically a protocol death fact. Mortality remains conditional on the declared ephemeral-key policy, irreversibility, known latent evidence, and observation domain.
+
+## Why browser first, but not browser only
+
+The Build Week product is **MortalOS Lab**, a browser-based Developer Tools experience for inspecting and falsifying lifecycle traces. The browser is first because it offers a zero-install judge path and makes identity, custody, turnover, fork, and mortality visible.
+
+The browser is not a protocol boundary. Browser, CLI, native, service, embedded, and future network participants must carry the same canonical evidence to the same portable kernel. UI, transport, storage, signaling, and model output cannot define validity.
 
 ## Verified lifecycle slice
 
 ```text
+singleton birth and heartbeat
+  -> optional handoff to distributed 2-of-3 authority
+
 birth {A,B,C}
   -> handoff {B,C,D}
   -> handoff {C,D,E}
@@ -77,7 +90,7 @@ birth {A,B,C}
   -> same-genome clone accepted only under a different organism_id
 ```
 
-A generated-key test also creates two valid children of one parent. The lineage reports `E_FORK_DETECTED`, identifies intersecting signers, and rejects further automatic advancement with `E_LINEAGE_ALREADY_FORKED`.
+A public signed-fork fixture also proves `E_FORK_DETECTED`, one intersecting equivocator, and `E_LINEAGE_ALREADY_FORKED` after the fork.
 
 ## Trust boundary
 
@@ -87,20 +100,11 @@ Use `createLineage` for recognized-head, replay, and fork behavior. After restar
 
 `evaluateMortality` is a controlled-experiment observer, not a global death oracle. Key availability, state availability, irreversibility, and absence of hidden copies remain declared assumptions.
 
-## Protocol boundary
-
-- `organism_id` is derived from Genesis; it has no owner private key.
-- Current custodian keys hold temporary continuation authority.
-- Logical key quorum and physical failure-domain independence are different properties.
-- v0 keeps `state_root` immutable and executes no genome.
-- Missing state is `state-stalled`, not automatically dead.
-- Death is conditional irreversible authority loss with no validated latent successor, not deletion of all history.
-- UI, transport, signaling, storage, and model output cannot define validity.
-
 ## Documentation
 
 - [Project status and review findings](docs/PROJECT_STATUS.md)
 - [Prioritized implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [Endpoint-neutral access architecture](docs/ACCESS_ARCHITECTURE.md)
 - [Protocol v0](docs/PROTOCOL.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Rejection codes](docs/REJECTION_CODES.md)
@@ -108,14 +112,14 @@ Use `createLineage` for recognized-head, replay, and fork behavior. After restar
 - [Single-browser incubator profile](docs/SINGLE_BROWSER_INCUBATOR.md)
 - [Build Week submission checklist](docs/SUBMISSION_CHECKLIST.md)
 
-Dated audits, phase reports, and manual build logs were removed from current documentation. Git history preserves their provenance; this smaller set is the maintained source of truth.
+Current documentation contains only normative rules, rolling status/plan, deployment profiles, traceability, and submission evidence. Git history preserves dated provenance.
 
 ## Project direction
 
-The near-term product is **MortalOS Lab**, a Developer Tools experience for inspecting and falsifying lifecycle traces. GPT-5.6 may propose schema-constrained adversarial scenarios, but the deterministic core remains the only validity authority.
+MortalOS Lab will use the same kernel as CLI and future network adapters. GPT-5.6 may propose schema-constrained adversarial scenarios, but deterministic validation remains the only validity authority.
 
-Codex has assisted with protocol decomposition, red-team review, implementation, tests, and documentation. Scope, assumptions, the one-person browser-incubation requirement, public claims, and licensing remain human decisions.
+Codex has assisted with protocol decomposition, red-team review, implementation, tests, portability, and documentation. Scope, assumptions, bootstrap profiles, public claims, and licensing remain human decisions.
 
 ## License
 
-MortalOS is licensed under the [Apache License 2.0](LICENSE). Contributions use the same terms as described in [CONTRIBUTING.md](CONTRIBUTING.md).
+MortalOS is licensed under the [Apache License 2.0](LICENSE). Contributions use the same terms as described in [CONTRIBUTING.md](CONTRIBUTING.md). Current dependency licenses are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -1,0 +1,72 @@
+{
+  "actor": {
+    "key_id": "peer:S6klWeT2tyjCNdK8BDg2bummR9GiXe9wjKZpm2Fugyg",
+    "public_key": "ed25519:xIoUJv4iUl7zRdMGAeEen_9i-5qElqOvBAwxXOqd1Yk"
+  },
+  "birth": {
+    "kind": "mortalos.genesis",
+    "body": {
+      "protocol_version": "mortalos/0",
+      "hash_algorithm": "sha-256",
+      "signature_algorithm": "ed25519",
+      "genome_hash": "sha256:ERERERERERERERERERERERERERERERERERERERERERE",
+      "initial_state_root": "sha256:IiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI",
+      "initial_custodians": [
+        {
+          "key_id": "peer:S6klWeT2tyjCNdK8BDg2bummR9GiXe9wjKZpm2Fugyg",
+          "public_key": "ed25519:xIoUJv4iUl7zRdMGAeEen_9i-5qElqOvBAwxXOqd1Yk"
+        }
+      ],
+      "initial_quorum": {
+        "type": "threshold",
+        "threshold": 1
+      },
+      "nonce": "nonce:MzMzMzMzMzMzMzMzMzMzMw"
+    },
+    "approvals": [
+      {
+        "key_id": "peer:S6klWeT2tyjCNdK8BDg2bummR9GiXe9wjKZpm2Fugyg",
+        "signature": "ed25519:UecgP8rZv9KQqssZujUc8YXnKglxkTH61DYWgQEp4GT-VY-BoZSaQunyiO6bikJpca_Mum8BCj_2G9ML8RhYDA"
+      }
+    ]
+  },
+  "heartbeat": {
+    "kind": "mortalos.pulse",
+    "body": {
+      "protocol_version": "mortalos/0",
+      "organism_id": "mortalos:G1c4zxonM6nTGA8ZOycC7FIHj5kqrR6_pFnF3yWXdm8",
+      "sequence": "1",
+      "parent_hash": "sha256:G1c4zxonM6nTGA8ZOycC7FIHj5kqrR6_pFnF3yWXdm8",
+      "genome_hash": "sha256:ERERERERERERERERERERERERERERERERERERERERERE",
+      "current_custody_hash": "sha256:RhgCmkW-RsPZu1pfm5ZBE1cFWA8Phd2QixOWfsbOICM",
+      "state_root": "sha256:IiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI",
+      "event": {
+        "kind": "heartbeat",
+        "payload_hash": "sha256:RYGNp2qv_DDuVz6U77cLRxbufdBBT7eBWrm-oPH4C2U"
+      },
+      "next_custodians": [
+        {
+          "key_id": "peer:S6klWeT2tyjCNdK8BDg2bummR9GiXe9wjKZpm2Fugyg",
+          "public_key": "ed25519:xIoUJv4iUl7zRdMGAeEen_9i-5qElqOvBAwxXOqd1Yk"
+        }
+      ],
+      "next_quorum": {
+        "type": "threshold",
+        "threshold": 1
+      }
+    },
+    "approvals": [
+      {
+        "key_id": "peer:S6klWeT2tyjCNdK8BDg2bummR9GiXe9wjKZpm2Fugyg",
+        "signature": "ed25519:0TbmFydnUL0ZF339GTS8jpD6ljF8uhFgtt8SgWY-zqsKbuGrYyMicKS-YZdUm1WmV24OsLiYGGj2nY6hma2SBw"
+      }
+    ],
+    "acceptances": []
+  },
+  "payload": {},
+  "expected": {
+    "organism_id": "mortalos:G1c4zxonM6nTGA8ZOycC7FIHj5kqrR6_pFnF3yWXdm8",
+    "genesis_hash": "sha256:G1c4zxonM6nTGA8ZOycC7FIHj5kqrR6_pFnF3yWXdm8",
+    "pulse_hash": "sha256:1FFUQHwRe_zDxVMZ9mNSc1x354fypq5eesSMhMiPc9M"
+  }
+}

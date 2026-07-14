@@ -1,0 +1,153 @@
+{
+  "description": "Public-key-only signed siblings for portable replay/fork/post-fork conformance",
+  "genesis": {
+    "kind": "mortalos.genesis",
+    "body": {
+      "protocol_version": "mortalos/0",
+      "hash_algorithm": "sha-256",
+      "signature_algorithm": "ed25519",
+      "genome_hash": "sha256:UVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVE",
+      "initial_state_root": "sha256:UlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlI",
+      "initial_custodians": [
+        {
+          "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+          "public_key": "ed25519:pdChY2pp7jT0CbObBGuvLhB5bptdPz4v96gYR7-VpUM"
+        }
+      ],
+      "initial_quorum": { "type": "threshold", "threshold": 1 },
+      "nonce": "nonce:U1NTU1NTU1NTU1NTU1NTUw"
+    },
+    "approvals": [
+      {
+        "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+        "signature": "ed25519:Ifk5qJu22H3_9v8pAlRCFciYPcsQI3mJafZfJVM-tkBCfulckJ7Ugvtf1xGUeT3TQQ8lzwdr-ydK0Oe38ODTDg"
+      }
+    ]
+  },
+  "first": {
+    "payload": { "branch": "first" },
+    "envelope": {
+      "kind": "mortalos.pulse",
+      "body": {
+        "protocol_version": "mortalos/0",
+        "organism_id": "mortalos:oSGm1UyuQ9G1kFEg4VG_03QdQDRZg9asMoUYXmyx1PY",
+        "sequence": "1",
+        "parent_hash": "sha256:oSGm1UyuQ9G1kFEg4VG_03QdQDRZg9asMoUYXmyx1PY",
+        "genome_hash": "sha256:UVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVE",
+        "current_custody_hash": "sha256:bHMub2WkPQzhDWRUJx6y_c73QXsQgyuLzLyFniDQM_w",
+        "state_root": "sha256:UlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlI",
+        "event": {
+          "kind": "membership-change",
+          "payload_hash": "sha256:40j13ZrzupcRMgaCv-eRCpeSueHiI2_QUuCzqYV5wtk"
+        },
+        "next_custodians": [
+          {
+            "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+            "public_key": "ed25519:pdChY2pp7jT0CbObBGuvLhB5bptdPz4v96gYR7-VpUM"
+          },
+          {
+            "key_id": "peer:i52FnaalbDPaJJNzEuEBEXnP8OZOjnhnydkVeAIuYr0",
+            "public_key": "ed25519:uxu1VoeRnFRDXx-nvaVjUNsnMrI9pYJEMeVSIk5y860"
+          }
+        ],
+        "next_quorum": { "type": "threshold", "threshold": 2 }
+      },
+      "approvals": [
+        {
+          "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+          "signature": "ed25519:dbal7jFp3tavw80faM11PSeJJFVRXqoaGS4WvUCarGzSxlwpZrMcKrK9QqFGZ-NeVlUTSb23R7nSojD_7p0MCw"
+        }
+      ],
+      "acceptances": [
+        {
+          "key_id": "peer:i52FnaalbDPaJJNzEuEBEXnP8OZOjnhnydkVeAIuYr0",
+          "signature": "ed25519:eCtdpvbCZXWy6bG40FSMyKwpyxZ289VZBmxygagoHNOh5rA9w4hTi654AtGwcpiFpbbc463GCjquyO-HF227Dw"
+        }
+      ]
+    }
+  },
+  "sibling": {
+    "payload": { "branch": "sibling" },
+    "envelope": {
+      "kind": "mortalos.pulse",
+      "body": {
+        "protocol_version": "mortalos/0",
+        "organism_id": "mortalos:oSGm1UyuQ9G1kFEg4VG_03QdQDRZg9asMoUYXmyx1PY",
+        "sequence": "1",
+        "parent_hash": "sha256:oSGm1UyuQ9G1kFEg4VG_03QdQDRZg9asMoUYXmyx1PY",
+        "genome_hash": "sha256:UVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVE",
+        "current_custody_hash": "sha256:bHMub2WkPQzhDWRUJx6y_c73QXsQgyuLzLyFniDQM_w",
+        "state_root": "sha256:UlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlI",
+        "event": {
+          "kind": "membership-change",
+          "payload_hash": "sha256:xBbDmUJVNNzZY4ZZ3qpQLfUUTnjCA4PbG-hIlLP_dWw"
+        },
+        "next_custodians": [
+          {
+            "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+            "public_key": "ed25519:pdChY2pp7jT0CbObBGuvLhB5bptdPz4v96gYR7-VpUM"
+          },
+          {
+            "key_id": "peer:qUWFd_vRAYP2oyePMeVstrwHO-VXAFT6f-zICcWc6Wc",
+            "public_key": "ed25519:Ro3RhWuiDtDdzMRKxu75VFv0K1LxwMFCtcrybIfcGQ0"
+          }
+        ],
+        "next_quorum": { "type": "threshold", "threshold": 2 }
+      },
+      "approvals": [
+        {
+          "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+          "signature": "ed25519:PNUr8N3Fq9pVEzpI50HhsHy8GZufK29v-0raKsS5wbEpW94FfK5d7xf1NDP_Up3vTRH8UFj1pLXpDqBVDNRXCA"
+        }
+      ],
+      "acceptances": [
+        {
+          "key_id": "peer:qUWFd_vRAYP2oyePMeVstrwHO-VXAFT6f-zICcWc6Wc",
+          "signature": "ed25519:WDG9xMx-4tqyTVKKDRQd3FVAzef9Se1zG7gqFglpYVId5rEo9SPEIEdKmOFgMaBha6bw5TZC2LUkoRTX4z3rBw"
+        }
+      ]
+    }
+  },
+  "post_fork": {
+    "payload": { "branch": "post-fork" },
+    "envelope": {
+      "kind": "mortalos.pulse",
+      "body": {
+        "protocol_version": "mortalos/0",
+        "organism_id": "mortalos:oSGm1UyuQ9G1kFEg4VG_03QdQDRZg9asMoUYXmyx1PY",
+        "sequence": "1",
+        "parent_hash": "sha256:oSGm1UyuQ9G1kFEg4VG_03QdQDRZg9asMoUYXmyx1PY",
+        "genome_hash": "sha256:UVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVE",
+        "current_custody_hash": "sha256:bHMub2WkPQzhDWRUJx6y_c73QXsQgyuLzLyFniDQM_w",
+        "state_root": "sha256:UlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlI",
+        "event": {
+          "kind": "membership-change",
+          "payload_hash": "sha256:7DF1h42V8aHQWMmqmCYeD-kJApCNF_wnncN77dOaPhQ"
+        },
+        "next_custodians": [
+          {
+            "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+            "public_key": "ed25519:pdChY2pp7jT0CbObBGuvLhB5bptdPz4v96gYR7-VpUM"
+          },
+          {
+            "key_id": "peer:i52FnaalbDPaJJNzEuEBEXnP8OZOjnhnydkVeAIuYr0",
+            "public_key": "ed25519:uxu1VoeRnFRDXx-nvaVjUNsnMrI9pYJEMeVSIk5y860"
+          }
+        ],
+        "next_quorum": { "type": "threshold", "threshold": 2 }
+      },
+      "approvals": [
+        {
+          "key_id": "peer:SReFk4WkDT1ZmwGMNMSq352Da82S9BfxoYBHa3yUDT4",
+          "signature": "ed25519:GDDOmu3NH8MaAQPkRWQVNVfBGbbhxKonw9UDIRbvAVZ2T0d_W_IU_pJ13prfihzoBTCGub9qRb-qN97s6MUfAw"
+        }
+      ],
+      "acceptances": [
+        {
+          "key_id": "peer:i52FnaalbDPaJJNzEuEBEXnP8OZOjnhnydkVeAIuYr0",
+          "signature": "ed25519:G1AxDbQp9BD3urNXlfIyaCt0o1OSu_R0hgvrjXMXsSppy59wr2MCNWu2dMLQeNuUNxp8dJp08K2QxxhlirelDg"
+        }
+      ]
+    }
+  }
+}

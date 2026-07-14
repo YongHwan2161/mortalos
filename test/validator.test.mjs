@@ -66,11 +66,11 @@ test("Genesis custody, encoding, approval set, and signatures are semantic check
   expectCode(genesisMutation((value) => { value.body.nonce = "nonce:short"; }), "E_BINARY_ENCODING");
   expectCode(genesisMutation((value) => { value.approvals.reverse(); }), "E_ARRAY_NOT_SORTED");
   expectCode(genesisMutation((value) => { value.approvals[1] = clone(value.approvals[0]); }), "E_APPROVAL_DUPLICATE");
-  expectCode(genesisMutation((value) => { value.body.initial_custodians = value.body.initial_custodians.slice(0, 2); }), "E_CUSTODIAN_COUNT_RANGE");
+  expectCode(genesisMutation((value) => { value.body.initial_custodians = []; }), "E_CUSTODIAN_COUNT_RANGE");
   expectCode(genesisMutation((value) => { [value.body.initial_custodians[0].public_key, value.body.initial_custodians[1].public_key] = [value.body.initial_custodians[1].public_key, value.body.initial_custodians[0].public_key]; }), "E_PEER_ID_MISMATCH");
   expectCode(genesisMutation((value) => { value.body.initial_custodians[1].public_key = value.body.initial_custodians[0].public_key; }), "E_CUSTODIAN_DUPLICATE_KEY");
   expectCode(genesisMutation((value) => { value.body.initial_quorum.type = "weight"; }), "E_QUORUM_TYPE_UNSUPPORTED");
-  expectCode(genesisMutation((value) => { value.body.initial_quorum.threshold = 1; }), "E_QUORUM_THRESHOLD_RANGE");
+  expectCode(genesisMutation((value) => { value.body.initial_quorum.threshold = 0; }), "E_QUORUM_THRESHOLD_RANGE");
   expectCode(genesisMutation((value) => {
     value.body.initial_custodians.push(clone(vector.actors.D));
     value.body.initial_custodians.sort((a, b) => a.key_id < b.key_id ? -1 : 1);
@@ -111,7 +111,7 @@ test("Pulse ordering, encoding, custody, and validation context fail closed", ()
   expectCode(pulseMutation(0, (step) => { step.envelope.approvals.reverse(); }), "E_ARRAY_NOT_SORTED");
   expectCode(pulseMutation(0, (step) => { step.envelope.approvals[1] = clone(step.envelope.approvals[0]); }), "E_APPROVAL_DUPLICATE");
   expectCode(pulseMutation(0, (step) => { step.envelope.acceptances.push(clone(step.envelope.acceptances[0])); }), "E_ACCEPTANCE_DUPLICATE");
-  expectCode(pulseMutation(0, (step) => { step.envelope.body.next_custodians = step.envelope.body.next_custodians.slice(0, 2); }), "E_CUSTODIAN_COUNT_RANGE");
+  expectCode(pulseMutation(0, (step) => { step.envelope.body.next_custodians = []; }), "E_CUSTODIAN_COUNT_RANGE");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.parent_hash = "sha256:short"; }), "E_BINARY_ENCODING");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.state_root = "sha256:short"; }), "E_STATE_ROOT_ENCODING");
   expectCode(pulseMutation(0, (step) => { step.envelope.body.event.payload_hash = "sha256:short"; }), "E_EVENT_PAYLOAD_HASH_ENCODING");

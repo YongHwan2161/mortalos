@@ -1,0 +1,73 @@
+{
+  "format": "mortalos-portable-corpus/1",
+  "standards": {
+    "rfc8032_vector_1": true,
+    "rfc8032_mutation_rejected": true,
+    "rfc8032_short_key_rejected": true,
+    "rfc8785_primitive": "{\"literals\":[null,true,false],\"numbers\":[333333333.3333333,1e+30,4.5,0.002,1e-27],\"string\":\"€$\\u000f\\nAB\\\"\\\\\\\"/\"}",
+    "rfc8785_utf16_ordering": "{\"\\r\":\"Carriage Return\",\"1\":\"One\",\"\":\"Control\",\"ö\":\"Latin Small Letter O With Diaeresis\",\"€\":\"Euro Sign\",\"😀\":\"Emoji: Grinning Face\",\"דּ\":\"Hebrew Letter Dalet With Dagesh\"}"
+  },
+  "singleton": {
+    "birth_status": "accept",
+    "pulse_status": "accept",
+    "organism_id": "mortalos:G1c4zxonM6nTGA8ZOycC7FIHj5kqrR6_pFnF3yWXdm8",
+    "genesis_hash": "sha256:G1c4zxonM6nTGA8ZOycC7FIHj5kqrR6_pFnF3yWXdm8",
+    "pulse_hash": "sha256:1FFUQHwRe_zDxVMZ9mNSc1x354fypq5eesSMhMiPc9M",
+    "unsigned_code": "E_APPROVAL_INSUFFICIENT_QUORUM",
+    "alive_status": "operationally_alive",
+    "dead_status": "dead_under_v0_assumptions"
+  },
+  "lifecycle": {
+    "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+    "accepted_pulses": 3,
+    "head_hash": "sha256:OuzdcLTYm0mN0Q-cXavoj_F9b8dlW5TOI5LwlWlDnG0",
+    "clone_is_distinct": true
+  },
+  "negative_cases": [
+    { "id": "identity", "expected": "E_ORGANISM_ID_MISMATCH", "actual": "E_ORGANISM_ID_MISMATCH", "pass": true },
+    { "id": "sequence", "expected": "E_SEQUENCE_NOT_NEXT", "actual": "E_SEQUENCE_NOT_NEXT", "pass": true },
+    { "id": "parent", "expected": "E_PARENT_HASH_MISMATCH", "actual": "E_PARENT_HASH_MISMATCH", "pass": true },
+    { "id": "genome", "expected": "E_GENOME_HASH_MISMATCH", "actual": "E_GENOME_HASH_MISMATCH", "pass": true },
+    { "id": "custody", "expected": "E_CURRENT_CUSTODY_HASH_MISMATCH", "actual": "E_CURRENT_CUSTODY_HASH_MISMATCH", "pass": true },
+    { "id": "state", "expected": "E_MEMBERSHIP_STATE_CHANGED", "actual": "E_MEMBERSHIP_STATE_CHANGED", "pass": true },
+    { "id": "payload", "expected": "E_EVENT_PAYLOAD_MISMATCH", "actual": "E_EVENT_PAYLOAD_MISMATCH", "pass": true },
+    { "id": "signature", "expected": "E_APPROVAL_SIGNATURE_INVALID", "actual": "E_APPROVAL_SIGNATURE_INVALID", "pass": true },
+    { "id": "quorum", "expected": "E_APPROVAL_INSUFFICIENT_QUORUM", "actual": "E_APPROVAL_INSUFFICIENT_QUORUM", "pass": true },
+    { "id": "acceptance", "expected": "E_ACCEPTANCE_MISSING", "actual": "E_ACCEPTANCE_MISSING", "pass": true },
+    { "id": "custodian-empty", "expected": "E_CUSTODIAN_COUNT_RANGE", "actual": "E_CUSTODIAN_COUNT_RANGE", "pass": true },
+    { "id": "threshold-zero", "expected": "E_QUORUM_THRESHOLD_RANGE", "actual": "E_QUORUM_THRESHOLD_RANGE", "pass": true },
+    { "id": "event-kind", "expected": "E_EVENT_KIND_UNSUPPORTED", "actual": "E_EVENT_KIND_UNSUPPORTED", "pass": true },
+    { "id": "sequence-format", "expected": "E_SEQUENCE_INVALID_FORMAT", "actual": "E_SEQUENCE_INVALID_FORMAT", "pass": true },
+    { "id": "no-op-membership", "expected": "E_MEMBERSHIP_CUSTODY_UNCHANGED", "actual": "E_MEMBERSHIP_CUSTODY_UNCHANGED", "pass": true }
+  ],
+  "all_negative_cases_pass": true,
+  "trust_cases": {
+    "cloned_genesis": "E_LINEAGE_UNKNOWN",
+    "cloned_parent": "E_PARENT_REQUIRED",
+    "latent_status": "latent",
+    "latent_missing": 1
+  },
+  "fork_cases": {
+    "first": "accept",
+    "replay": "E_REPLAY_STALE",
+    "sibling": "E_FORK_DETECTED",
+    "equivocation_count": 1,
+    "post_fork": "E_LINEAGE_ALREADY_FORKED",
+    "head_after_fork": null
+  },
+  "adversarial": {
+    "seed_decimal": 1297044052,
+    "cases": 10000,
+    "rejected": 10000,
+    "histogram": {
+      "E_APPROVAL_INSUFFICIENT_QUORUM": 1319,
+      "E_APPROVAL_SIGNATURE_INVALID": 1251,
+      "E_EVENT_PAYLOAD_MISMATCH": 1201,
+      "E_GENOME_HASH_MISMATCH": 1229,
+      "E_MEMBERSHIP_STATE_CHANGED": 1236,
+      "E_ORGANISM_ID_MISMATCH": 1286,
+      "E_PARENT_HASH_MISMATCH": 1257,
+      "E_SEQUENCE_NOT_NEXT": 1221
+    }
+  }
+}

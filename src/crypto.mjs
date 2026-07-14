@@ -1,50 +1,52 @@
+import { ed25519 } from "@noble/curves/ed25519.js";
+import { sha256 } from "@noble/hashes/sha2.js";
 import {
-  createHash,
-  createPublicKey,
-  verify as verifySignature
-} from "node:crypto";
+  asBytes,
+  asciiBytes,
+  concatBytes,
+  decodeBase64Url,
+  encodeBase64Url
+} from "./bytes.mjs";
 import { canonicalBytes } from "./codec.mjs";
 
 export const DOMAINS = Object.freeze({
-  GENESIS_ID: Buffer.from("MORTALOS/V0/GENESIS-ID\0", "ascii"),
-  GENESIS_APPROVAL: Buffer.from("MORTALOS/V0/GENESIS-APPROVAL\0", "ascii"),
-  PULSE_ID: Buffer.from("MORTALOS/V0/PULSE-ID\0", "ascii"),
-  PULSE_APPROVAL: Buffer.from("MORTALOS/V0/PULSE-APPROVAL\0", "ascii"),
-  CUSTODY_ACCEPTANCE: Buffer.from("MORTALOS/V0/CUSTODY-ACCEPTANCE\0", "ascii"),
-  CUSTODY_COMMITMENT: Buffer.from("MORTALOS/V0/CUSTODY-COMMITMENT\0", "ascii"),
-  EVENT_PAYLOAD: Buffer.from("MORTALOS/V0/EVENT-PAYLOAD\0", "ascii"),
-  PEER_ID: Buffer.from("MORTALOS/V0/PEER-ID\0", "ascii")
+  GENESIS_ID: "MORTALOS/V0/GENESIS-ID\0",
+  GENESIS_APPROVAL: "MORTALOS/V0/GENESIS-APPROVAL\0",
+  PULSE_ID: "MORTALOS/V0/PULSE-ID\0",
+  PULSE_APPROVAL: "MORTALOS/V0/PULSE-APPROVAL\0",
+  CUSTODY_ACCEPTANCE: "MORTALOS/V0/CUSTODY-ACCEPTANCE\0",
+  CUSTODY_COMMITMENT: "MORTALOS/V0/CUSTODY-COMMITMENT\0",
+  EVENT_PAYLOAD: "MORTALOS/V0/EVENT-PAYLOAD\0",
+  PEER_ID: "MORTALOS/V0/PEER-ID\0"
 });
 
-const SPKI_ED25519_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+const DOMAIN_BYTES = Object.freeze(
+  Object.fromEntries(Object.entries(DOMAINS).map(([name, value]) => [name, asciiBytes(value)]))
+);
 
 function hash(...parts) {
-  const digest = createHash("sha256");
-  for (const part of parts) digest.update(part);
-  return digest.digest();
+  return sha256(concatBytes(...parts));
 }
 
 function tagged(prefix, raw) {
-  return `${prefix}${Buffer.from(raw).toString("base64url")}`;
+  return `${prefix}${encodeBase64Url(raw)}`;
 }
 
 export function decodeTagged(value, prefix, length) {
   if (typeof value !== "string" || !value.startsWith(prefix)) return null;
   const encoded = value.slice(prefix.length);
-  if (!/^[A-Za-z0-9_-]+$/.test(encoded) || encoded.includes("=")) return null;
-  const raw = Buffer.from(encoded, "base64url");
-  if (raw.length !== length || raw.toString("base64url") !== encoded) return null;
-  return raw;
+  const raw = decodeBase64Url(encoded);
+  return raw?.length === length ? raw : null;
 }
 
 export function derivePeerId(publicKey) {
   const raw = decodeTagged(publicKey, "ed25519:", 32);
   if (!raw) return null;
-  return tagged("peer:", hash(DOMAINS.PEER_ID, raw));
+  return tagged("peer:", hash(DOMAIN_BYTES.PEER_ID, raw));
 }
 
 export function deriveOrganismId(genesisBody) {
-  return tagged("mortalos:", hash(DOMAINS.GENESIS_ID, canonicalBytes(genesisBody)));
+  return tagged("mortalos:", hash(DOMAIN_BYTES.GENESIS_ID, canonicalBytes(genesisBody)));
 }
 
 export function genesisParentHash(organismId) {
@@ -55,58 +57,55 @@ export function genesisParentHash(organismId) {
 export function genesisApprovalMessage(genesisBody) {
   const organism = deriveOrganismId(genesisBody);
   const raw = decodeTagged(organism, "mortalos:", 32);
-  return hash(DOMAINS.GENESIS_APPROVAL, raw);
+  return hash(DOMAIN_BYTES.GENESIS_APPROVAL, raw);
 }
 
 export function derivePulseHash(pulseBody) {
-  return tagged("sha256:", hash(DOMAINS.PULSE_ID, canonicalBytes(pulseBody)));
+  return tagged("sha256:", hash(DOMAIN_BYTES.PULSE_ID, canonicalBytes(pulseBody)));
 }
 
 export function pulseApprovalMessage(pulseBody) {
   const raw = decodeTagged(derivePulseHash(pulseBody), "sha256:", 32);
-  return hash(DOMAINS.PULSE_APPROVAL, raw);
+  return hash(DOMAIN_BYTES.PULSE_APPROVAL, raw);
 }
 
 export function custodyAcceptanceMessage(pulseBody) {
   const raw = decodeTagged(derivePulseHash(pulseBody), "sha256:", 32);
-  return hash(DOMAINS.CUSTODY_ACCEPTANCE, raw);
+  return hash(DOMAIN_BYTES.CUSTODY_ACCEPTANCE, raw);
 }
 
 export function custodyCommitment(descriptor) {
   return tagged(
     "sha256:",
-    hash(DOMAINS.CUSTODY_COMMITMENT, canonicalBytes(descriptor))
+    hash(DOMAIN_BYTES.CUSTODY_COMMITMENT, canonicalBytes(descriptor))
   );
 }
 
 export function eventPayloadHash(payload) {
-  return tagged("sha256:", hash(DOMAINS.EVENT_PAYLOAD, canonicalBytes(payload)));
+  return tagged("sha256:", hash(DOMAIN_BYTES.EVENT_PAYLOAD, canonicalBytes(payload)));
 }
 
 export function verifyEd25519(publicKey, message, signature) {
   const publicRaw = decodeTagged(publicKey, "ed25519:", 32);
   const signatureRaw = decodeTagged(signature, "ed25519:", 64);
-  if (!publicRaw || !signatureRaw) return false;
-  try {
-    const key = createPublicKey({
-      key: Buffer.concat([SPKI_ED25519_PREFIX, publicRaw]),
-      format: "der",
-      type: "spki"
-    });
-    return verifySignature(null, message, key, signatureRaw);
-  } catch {
-    return false;
-  }
+  return publicRaw && signatureRaw
+    ? verifyEd25519Raw(publicRaw, message, signatureRaw)
+    : false;
 }
 
 export function verifyEd25519Raw(publicKeyRaw, message, signatureRaw) {
+  const publicBytes = asBytes(publicKeyRaw);
+  const messageBytes = asBytes(message);
+  const signatureBytes = asBytes(signatureRaw);
+  if (
+    publicBytes?.length !== 32 ||
+    !messageBytes ||
+    signatureBytes?.length !== 64
+  ) {
+    return false;
+  }
   try {
-    const key = createPublicKey({
-      key: Buffer.concat([SPKI_ED25519_PREFIX, Buffer.from(publicKeyRaw)]),
-      format: "der",
-      type: "spki"
-    });
-    return verifySignature(null, message, key, signatureRaw);
+    return ed25519.verify(signatureBytes, messageBytes, publicBytes, { zip215: false });
   } catch {
     return false;
   }

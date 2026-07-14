@@ -1,5 +1,4 @@
-import { createRequire } from "node:module";
-import Ajv2020 from "ajv/dist/2020.js";
+import { equalBytes } from "./bytes.mjs";
 import {
   canonicalBytes,
   isCanonical,
@@ -21,13 +20,7 @@ import {
   verifyEd25519
 } from "./crypto.mjs";
 import { rejection as reject } from "./rejection-codes.mjs";
-
-const require = createRequire(import.meta.url);
-const genesisSchema = require("../schemas/genesis.schema.json");
-const pulseSchema = require("../schemas/pulse.schema.json");
-const ajv = new Ajv2020({ allErrors: true, strict: true });
-const checkGenesisSchema = ajv.compile(genesisSchema);
-const checkPulseSchema = ajv.compile(pulseSchema);
+import { checkGenesisSchema, checkPulseSchema } from "./schema-validation.mjs";
 const acceptedContexts = new WeakSet();
 const latentContexts = new WeakSet();
 
@@ -66,7 +59,7 @@ function fromInputError(error, payload = false) {
   return reject(error.code, "", error.detail);
 }
 
-function schemaRejection(value, validate) {
+function schemaRejection(value, validate, expectedKind) {
   if (validate(value)) return null;
   const errors = validate.errors ?? [];
   const unknown = errors.find((entry) => entry.keyword === "additionalProperties");
@@ -74,22 +67,22 @@ function schemaRejection(value, validate) {
     const property = unknown.params.additionalProperty;
     return reject("E_SCHEMA_UNKNOWN_FIELD", `${unknown.instancePath}/${property}`, property);
   }
-  if (value?.kind !== (validate === checkGenesisSchema ? "mortalos.genesis" : "mortalos.pulse")) {
+  if (value?.kind !== expectedKind) {
     return reject("E_SCHEMA_WRONG_KIND", "/kind", String(value?.kind ?? "missing"));
   }
   if (value?.body?.protocol_version !== "mortalos/0") {
     return reject("E_VERSION_UNSUPPORTED", "/body/protocol_version", String(value?.body?.protocol_version));
   }
-  if (validate === checkGenesisSchema && value?.body?.hash_algorithm !== "sha-256") {
+  if (expectedKind === "mortalos.genesis" && value?.body?.hash_algorithm !== "sha-256") {
     return reject("E_HASH_ALGORITHM_UNSUPPORTED", "/body/hash_algorithm", String(value?.body?.hash_algorithm));
   }
-  if (validate === checkGenesisSchema && value?.body?.signature_algorithm !== "ed25519") {
+  if (expectedKind === "mortalos.genesis" && value?.body?.signature_algorithm !== "ed25519") {
     return reject("E_SIGNATURE_ALGORITHM_UNSUPPORTED", "/body/signature_algorithm", String(value?.body?.signature_algorithm));
   }
-  if (validate === checkPulseSchema && !["heartbeat", "membership-change"].includes(value?.body?.event?.kind)) {
+  if (expectedKind === "mortalos.pulse" && !["heartbeat", "membership-change"].includes(value?.body?.event?.kind)) {
     return reject("E_EVENT_KIND_UNSUPPORTED", "/body/event/kind", String(value?.body?.event?.kind));
   }
-  if (validate === checkPulseSchema && !/^(0|[1-9][0-9]*)$/.test(value?.body?.sequence ?? "")) {
+  if (expectedKind === "mortalos.pulse" && !/^(0|[1-9][0-9]*)$/.test(value?.body?.sequence ?? "")) {
     return reject("E_SEQUENCE_INVALID_FORMAT", "/body/sequence", String(value?.body?.sequence));
   }
   return reject("E_SCHEMA_INVALID", errors[0]?.instancePath ?? "", errors[0]?.keyword ?? "schema");
@@ -108,8 +101,8 @@ function parseRawEnvelope(bytes) {
   return { value };
 }
 
-function checkEnvelope(value, bytes, validate) {
-  const schemaFailure = schemaRejection(value, validate);
+function checkEnvelope(value, bytes, validate, expectedKind) {
+  const schemaFailure = schemaRejection(value, validate, expectedKind);
   if (schemaFailure) return schemaFailure;
   if (!isCanonical(bytes, value)) {
     return reject("E_CANONICAL_MISMATCH", "", "envelope");
@@ -117,10 +110,10 @@ function checkEnvelope(value, bytes, validate) {
   return null;
 }
 
-function parseEnvelope(bytes, validate) {
+function parseEnvelope(bytes, validate, expectedKind) {
   const parsed = parseRawEnvelope(bytes);
   if (parsed.failure) return parsed;
-  const failure = checkEnvelope(parsed.value, bytes, validate);
+  const failure = checkEnvelope(parsed.value, bytes, validate, expectedKind);
   return failure ? { failure } : parsed;
 }
 
@@ -149,7 +142,7 @@ function descriptor(custodians, quorum) {
 }
 
 function validateCustody(custodians, quorum, fieldPath) {
-  if (custodians.length < 3 || custodians.length > 16) {
+  if (custodians.length < 1 || custodians.length > 16) {
     return reject("E_CUSTODIAN_COUNT_RANGE", fieldPath, String(custodians.length));
   }
   const orderingFailure = checkSortedUnique(custodians, fieldPath);
@@ -172,7 +165,7 @@ function validateCustody(custodians, quorum, fieldPath) {
   if (quorum.type !== "threshold") {
     return reject("E_QUORUM_TYPE_UNSUPPORTED", `${fieldPath}/../quorum/type`, String(quorum.type));
   }
-  if (quorum.threshold < 2 || quorum.threshold > custodians.length) {
+  if (quorum.threshold < 1 || quorum.threshold > custodians.length) {
     return reject("E_QUORUM_THRESHOLD_RANGE", `${fieldPath}/../quorum/threshold`, String(quorum.threshold));
   }
   if (2 * quorum.threshold <= custodians.length) {
@@ -199,11 +192,11 @@ function checkEvidenceEncoding(evidence, fieldPath, duplicateCode) {
 }
 
 function equalCanonical(left, right) {
-  return canonicalBytes(left).equals(canonicalBytes(right));
+  return equalBytes(canonicalBytes(left), canonicalBytes(right));
 }
 
 export function validateGenesis(envelopeBytes) {
-  const parsed = parseEnvelope(envelopeBytes, checkGenesisSchema);
+  const parsed = parseEnvelope(envelopeBytes, checkGenesisSchema, "mortalos.genesis");
   if (parsed.failure) return parsed.failure;
   const envelope = parsed.value;
   const { body, approvals } = envelope;
@@ -272,7 +265,12 @@ export function validatePulse({ genesis, parent, envelopeBytes, eventPayloadByte
   if (parsed.failure) return parsed.failure;
   const payload = parseRawPayload(eventPayloadBytes);
   if (payload.failure) return payload.failure;
-  const envelopeFailure = checkEnvelope(parsed.value, envelopeBytes, checkPulseSchema);
+  const envelopeFailure = checkEnvelope(
+    parsed.value,
+    envelopeBytes,
+    checkPulseSchema,
+    "mortalos.pulse"
+  );
   if (envelopeFailure) return envelopeFailure;
   const payloadFailure = checkPayload(payload.value, eventPayloadBytes);
   if (payloadFailure) return payloadFailure;

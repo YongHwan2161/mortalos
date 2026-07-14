@@ -54,10 +54,10 @@ Reject {
 | `E_CURRENT_CUSTODY_HASH_MISMATCH` | Pulse custody commitment differs from the parent-effective descriptor. |
 | `E_STATE_ROOT_ENCODING` | State root is not a valid v0 SHA-256 encoding. |
 | `E_EVENT_PAYLOAD_HASH_ENCODING` | Event payload hash is not a valid v0 SHA-256 encoding. |
-| `E_CUSTODIAN_COUNT_RANGE` | Custodian count is outside 3 through 16. |
+| `E_CUSTODIAN_COUNT_RANGE` | Custodian count is outside 1 through 16. |
 | `E_CUSTODIAN_DUPLICATE_KEY` | Two custodians declare the same public key. |
 | `E_QUORUM_TYPE_UNSUPPORTED` | Quorum type is not `threshold`. |
-| `E_QUORUM_THRESHOLD_RANGE` | Threshold is less than 2 or greater than custodian count. |
+| `E_QUORUM_THRESHOLD_RANGE` | Threshold is less than 1 or greater than custodian count. |
 | `E_QUORUM_NOT_MAJORITY` | `2 * threshold <= custodian_count`. |
 | `E_GENESIS_APPROVAL_SET` | Genesis approvals do not contain exactly all initial custodians. |
 

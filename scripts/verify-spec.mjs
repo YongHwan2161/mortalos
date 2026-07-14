@@ -31,6 +31,7 @@ const paths = {
   implementationPlan: "docs/IMPLEMENTATION_PLAN.md",
   projectStatus: "docs/PROJECT_STATUS.md",
   incubator: "docs/SINGLE_BROWSER_INCUBATOR.md",
+  accessArchitecture: "docs/ACCESS_ARCHITECTURE.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
@@ -237,21 +238,20 @@ for (const statement of requiredThreatStatements) {
   );
 }
 
-const nextGateStatements = [
-  "Next gate — C1 portable deterministic core",
-  "Run one consensus implementation in Node.js and Chromium",
-  "Portable modules import no `node:*` APIs",
-  "Node and Chromium return byte-identical results",
-  "any cross-runtime mismatch blocks the browser gate"
+const portableGateStatements = [
+  "Verified gate — C1 portable deterministic core",
+  "Committed, Node, browser-target, and actual Chromium results are byte-identical.",
+  "Exactly 10,000 cases replay from seed `1297044052`",
+  "any cross-runtime mismatch reopens C1"
 ];
-for (const statement of nextGateStatements) {
-  assert(text.implementationPlan.includes(statement), `Implementation plan lost C1 rule: ${statement}`);
+for (const statement of portableGateStatements) {
+  assert(text.implementationPlan.includes(statement), `Implementation plan lost C1 evidence: ${statement}`);
 }
 
 for (const statement of [
-  "C0 trusted Node core verified; C1 portable deterministic core next",
-  "| Single-browser incubator | Planned |",
-  "The implementation counts unique eligible key IDs"
+  "C1 portable deterministic core verified; H3 visual MortalOS Lab next",
+  "| Node/Chromium equivalence | Verified |",
+  "The verified CLI singleton uses one key"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
 }
@@ -262,6 +262,14 @@ for (const statement of [
   "public evidence alone cannot create the next valid Pulse"
 ]) {
   assert(text.incubator.includes(statement), `Incubator profile is missing: ${statement}`);
+}
+
+for (const statement of [
+  "MortalOS is not a browser-resident world.",
+  "The browser remains the first demonstration surface",
+  "Creation is a protocol operation, not a UI privilege."
+]) {
+  assert(text.accessArchitecture.includes(statement), `Access architecture is missing: ${statement}`);
 }
 
 assert(
@@ -290,6 +298,7 @@ assert(
 const currentDocLinks = [
   "PROJECT_STATUS.md",
   "IMPLEMENTATION_PLAN.md",
+  "ACCESS_ARCHITECTURE.md",
   "PROTOCOL.md",
   "THREAT_MODEL.md",
   "REJECTION_CODES.md",
@@ -306,7 +315,8 @@ const removedLegacyDocs = [
   "CORE_VERIFICATION_REPORT.md",
   "CURRENT_AUDIT_2026-07-14.md",
   "DEVPOST_COMPLIANCE.md",
-  "P0_VERIFICATION_REPORT.md"
+  "P0_VERIFICATION_REPORT.md",
+  "PORTABLE_KERNEL_REPORT_2026-07-15.md"
 ];
 const existingDocs = new Set(await readdir(new URL("docs/", ROOT)));
 for (const fileName of removedLegacyDocs) {
@@ -317,6 +327,7 @@ for (const fileName of removedLegacyDocs) {
 const markdownPaths = [
   "README.md",
   "CONTRIBUTING.md",
+  "THIRD_PARTY_NOTICES.md",
   ...[...existingDocs]
     .filter((fileName) => fileName.endsWith(".md"))
     .sort()

@@ -28,6 +28,12 @@ jobs:
       - name: Run repository verification
         run: npm test
 
+      - name: Install Chromium for differential verification
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Node and Chromium differential verification
+        run: npm run test:chromium
+
       - name: Enforce validator branch coverage
         run: npm run test:coverage
 

@@ -1,14 +1,14 @@
 # MortalOS Protocol v0
 
-Status: **Normative v0 specification with an executable Node reference**
-Protocol identifier: `mortalos/0`
+Status: **Normative v0 specification with an executable portable reference**  
+Protocol identifier: `mortalos/0`  
 Scope: operational semantics for birth, identity, lineage, continuity, fork, dormancy, death, extinction, clone, and descendant.
 
 This document uses **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** as normative requirements.
 
 ## 1. Protocol purpose
 
-MortalOS v0 defines how an entity can have one recognized identity and an authorized state lineage even though every physical host is replaceable and no individual peer owns the entity identity.
+MortalOS v0 defines how an entity can have one recognized identity and an authorized state lineage even though every physical host is replaceable. The protocol permits a creator-controlled `1-of-1` bootstrap; the stronger “no individual can continue it alone” property begins only after an accepted custody descriptor has threshold greater than one.
 
 The protocol does **not** attempt to prove that all copies of data have been deleted. It defines death as loss of the capability to create another valid state in the same lineage under the declared system and threat model.
 
@@ -16,7 +16,7 @@ The following question is the v0 design boundary:
 
 > Given a Genesis envelope, an optional accepted parent Pulse, a candidate Pulse, and the protocol rules in this document, must every conforming validator return the same validation result and rejection code?
 
-The required answer is yes. Transport, UI, clocks, GPT output, and later implementation phases MUST NOT affect protocol validity.
+The required answer is yes. Endpoint type, transport, UI, clocks, GPT output, and later implementation phases MUST NOT affect protocol validity.
 
 ## 2. Normative dependencies and encodings
 
@@ -135,13 +135,13 @@ Each term below has a necessary and sufficient protocol meaning.
 
 ### 4.1 Peer
 
-A **peer** is a process possessing one or more Ed25519 private keys corresponding to declared custodian public keys. A browser tab or device without such a key is not a custodian peer for that key.
+A **peer** is a protocol participant represented by one or more Ed25519 keys. A browser tab, CLI process, native service, device, or other endpoint acts for a custodian slot only while it can use the corresponding private key. Merely observing, relaying, or executing code does not make an endpoint a custodian for a key.
 
 One peer, person, browser, device, or organization MAY possess more than one custodian key. The protocol counts distinct eligible `key_id` values and cannot determine whether they are controlled by independent failure domains.
 
 ### 4.2 Custodian
 
-A **custodian** at Pulse `P` is a logical key slot whose `key_id` appears in the custody descriptor effective after `P`; a peer holding its private key can act for that slot. For Genesis, the effective custody descriptor is `initial_custodians` plus `initial_quorum`.
+A **custodian** at Pulse `P` is a logical key slot whose `key_id` appears in the custody descriptor effective after `P`; an endpoint holding its private key can act for that slot. For Genesis, the effective custody descriptor is `initial_custodians` plus `initial_quorum`.
 
 A custodian holds authority only as part of a valid quorum. Custodian status is not ownership of `organism_id`.
 
@@ -193,7 +193,7 @@ If two distinct, individually valid Pulses share one accepted parent, the valida
 
 **Continuity authority** is the ability of a set of current custodians to satisfy the current quorum with valid signatures for one candidate successor.
 
-A holder of fewer than two eligible current keys has no continuity authority in a `2-of-3` entity. One peer holding two or more eligible keys can satisfy the logical quorum; independent-control claims require the keys to be distributed across distinct failure domains.
+A holder of fewer than two eligible current keys has no continuity authority in a `2-of-3` entity. One endpoint holding two or more eligible keys can satisfy the logical quorum; independent-control claims require distribution across distinct physical and administrative failure domains. In a `1-of-1` entity, the sole key has continuity authority by definition.
 
 ### 4.10 Authority-viable
 
@@ -299,27 +299,27 @@ A custody descriptor has this logical form:
 
 For v0:
 
-- custodian count MUST be between 3 and 16 inclusive;
+- custodian count MUST be between 1 and 16 inclusive;
 - `key_id` and public key MUST be unique;
 - each `key_id` MUST equal the derived peer ID of its public key;
-- threshold MUST be at least 2 and no greater than custodian count;
+- threshold MUST be at least 1 and no greater than custodian count;
 - threshold MUST be a strict majority: `2 * threshold > custodian_count`; and
 - arrays MUST be strictly sorted by `key_id`.
 
 Every current custodian MUST follow the **sign-once rule**: it MUST sign no more than one distinct Pulse hash for a given `(organism_id, sequence, parent_hash)` tuple.
 
+A `1-of-1` descriptor is a valid strict-majority descriptor but gives one key unilateral continuation and fork authority. It is suitable for solitary creation or an ephemeral bootstrap, not for an ownerless-authority claim. A later valid membership handoff MAY expand it to, for example, `2-of-3`; after acceptance, the former sole custodian no longer has unilateral authority.
+
 ### 5.1 Logical quorum and failure domains
 
-Threshold counts unique valid signatures from eligible custodian `key_id` values. It does not count unique humans, tabs, browsers, devices, IP addresses, or organizations.
+Threshold counts unique valid signatures from eligible custodian `key_id` values. It does not count unique humans, tabs, browsers, devices, processes, IP addresses, or organizations.
 
-For `2-of-3`:
+- `1-of-1` allows one key holder to create and continue alone.
+- In `2-of-3`, all three initial keys approve Genesis and any two current keys authorize a Pulse.
+- A process holding two or three keys can authorize a `2-of-3` Pulse by itself.
+- Distinct key IDs do not prove independent custody or resilience.
 
-- all three initial keys approve Genesis;
-- any two current keys can authorize a Pulse;
-- one current key cannot authorize a Pulse; and
-- a process holding two or three keys can authorize a Pulse by itself.
-
-A single-browser incubator MAY temporarily hold all three initial keys. That profile lets one person create an organism but provides one physical failure domain, not independent-host resilience. The stronger deployment claim applies only when no one physical or administrative failure domain controls `threshold` current keys.
+A single-browser incubator MAY temporarily hold all three `2-of-3` keys. That profile visually demonstrates logical quorum but provides one physical failure domain. The stronger no-unilateral-domain claim applies only when no one physical or administrative failure domain controls `threshold` current keys.
 
 Failure-domain distribution is deployment evidence and MUST NOT be inferred from distinct key IDs by the validator.
 
@@ -412,9 +412,9 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 
 An implementation MUST establish that context itself. In-process accepted results MAY be represented by an unforgeable capability; across persistence or process boundaries, the implementation MUST replay canonical Genesis/Pulse bytes and rebuild the accepted graph. Callers MUST NOT obtain authority by supplying a plain object with acceptance-shaped fields.
 
-No network, UI, AI, or wall-clock input is part of protocol validity.
+No endpoint type, network, UI, AI, or wall-clock input is part of protocol validity.
 
-This specification determines all v0 lifecycle and envelope validity rules. The repository implements the Node reference transition verifier, latent-evidence verifier, and accepted-object graph. Cross-runtime and independent-implementation conformance remain future evidence. No implementation-specific transition callback is part of v0 validity.
+This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Its committed result is byte-identical in Node and Chromium; a second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
 
@@ -505,12 +505,11 @@ A v0 implementation is conforming only if it:
 - exposes stable rejection codes;
 - treats acceptance and latent-successor evidence as validator-produced capabilities or reconstructs them from canonical raw evidence;
 - uses an accepted-object graph to reject replay and expose forks;
-- never treats GPT, UI, transport, or signaling output as authority;
-- enters `FORKED` instead of silently resolving two valid siblings;
-- never treats distinct key IDs as proof of independent people, devices, or failure domains; and
+- never treats GPT, endpoint type, UI, transport, or signaling output as authority;
+- enters `FORKED` instead of silently resolving two valid siblings; and
 - states the mortality limitations from the threat model in user-facing documentation.
 
-The repository reference implementation is in [`src/`](../src/), including [`lineage.mjs`](../src/lineage.mjs). Public Ed25519 and lifecycle vectors are in [`test/vectors/`](../test/vectors/); they contain verification material but no private signing keys. Fork tests generate temporary keys in memory. [`scripts/demo-trace.mjs`](../scripts/demo-trace.mjs) is a deterministic H2 consumer of the same core.
+The repository reference implementation is in [`src/`](../src/), including [`lineage.mjs`](../src/lineage.mjs). Public Ed25519, singleton, lifecycle, fork, and expected-result vectors are in [`test/vectors/`](../test/vectors/); they contain verification material but no private signing keys. Generated-key tests keep private material in process memory. [`scripts/demo-trace.mjs`](../scripts/demo-trace.mjs) and [`scripts/demo-singleton.mjs`](../scripts/demo-singleton.mjs) consume the same core.
 
 ## 13. Normative companion documents
 
@@ -519,9 +518,3 @@ The repository reference implementation is in [`src/`](../src/), including [`lin
 - [`TRACEABILITY.md`](TRACEABILITY.md)
 - [`genesis.schema.json`](../schemas/genesis.schema.json)
 - [`pulse.schema.json`](../schemas/pulse.schema.json)
-
-Supporting status and deployment documents:
-
-- [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
-- [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)
-- [`SINGLE_BROWSER_INCUBATOR.md`](SINGLE_BROWSER_INCUBATOR.md)

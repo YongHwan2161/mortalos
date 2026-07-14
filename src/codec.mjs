@@ -1,3 +1,5 @@
+import { equalBytes, utf8Bytes } from "./bytes.mjs";
+
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 export const JSON_LIMITS = Object.freeze({
@@ -237,9 +239,9 @@ export function canonicalize(value) {
 }
 
 export function canonicalBytes(value) {
-  return Buffer.from(canonicalize(value), "utf8");
+  return utf8Bytes(canonicalize(value));
 }
 
 export function isCanonical(bytes, value) {
-  return Buffer.from(bytes).equals(canonicalBytes(value));
+  return equalBytes(bytes, canonicalBytes(value));
 }

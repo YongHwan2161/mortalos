@@ -4,21 +4,30 @@
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "An experimental ownerless lifecycle protocol with deterministic lineage validation.",
+  "description": "An experimental portable lifecycle protocol with deterministic lineage validation.",
   "engines": {
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run test:conformance && npm run test:properties && npm run verify:h2",
+    "test": "npm run verify:license && npm run verify:spec && npm run test:conformance && npm run test:properties && npm run verify:portable && npm run verify:singleton && npm run verify:h2",
     "verify:license": "node scripts/verify-license.mjs",
     "verify:spec": "node scripts/verify-spec.mjs",
-    "test:conformance": "node --test test/codec.test.mjs test/crypto.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/process-determinism.test.mjs",
+    "test:conformance": "node --test test/bytes.test.mjs test/codec.test.mjs test/crypto.test.mjs test/schema-validation.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/singleton.test.mjs test/process-determinism.test.mjs",
     "test:properties": "node --test test/properties.test.mjs",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/codec.mjs --test-coverage-include=src/crypto.mjs --test-coverage-include=src/rejection-codes.mjs --test-coverage-include=src/validator.mjs --test-coverage-include=src/lineage.mjs --test-coverage-include=src/mortality.mjs --test-coverage-branches=90 test/codec.test.mjs test/crypto.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/bytes.mjs --test-coverage-include=src/codec.mjs --test-coverage-include=src/crypto.mjs --test-coverage-include=src/schema-validation.mjs --test-coverage-include=src/rejection-codes.mjs --test-coverage-include=src/validator.mjs --test-coverage-include=src/lineage.mjs --test-coverage-include=src/mortality.mjs --test-coverage-branches=90 test/bytes.test.mjs test/codec.test.mjs test/crypto.test.mjs test/schema-validation.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/singleton.test.mjs",
+    "verify:portable": "node scripts/verify-portable.mjs",
+    "test:chromium": "node scripts/verify-chromium.mjs",
+    "verify:singleton": "node scripts/demo-singleton.mjs --verify",
+    "demo:singleton": "node scripts/demo-singleton.mjs",
     "demo:trace": "node scripts/demo-trace.mjs",
     "verify:h2": "node scripts/demo-trace.mjs --verify"
   },
   "devDependencies": {
-    "ajv": "8.20.0"
+    "ajv": "8.20.0",
+    "esbuild": "0.28.1",
+    "playwright": "1.61.1"
+  },
+  "dependencies": {
+    "@noble/curves": "2.2.0"
   }
 }
