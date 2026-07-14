@@ -27,18 +27,19 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | `INV-9` A clone without lineage authority has a new identity. | Clone creator samples a new Genesis nonce; a byte-identical Genesis is a replay, not a clone. | New `organism_id`; stale approvals rejected | `T-P1-NONCE-G-002`, `T-P4-CLONE-001`, `T-P4-CLONE-002`, `T-P4-SNAPSHOT-001` | P1 |
 | `INV-10` AI, UI, and transport never define validity. | Only pure validator output accepts state; external layers submit bytes/proposals. | Protocol rejection code unchanged by source | `T-P6-UI-001`, `T-P7-TRANSPORT-001`, `T-P9-AI-001`, `T-P9-AI-002` | P6 |
 | `INV-11` Semantic validation uses the exact event payload committed by the Pulse. | Canonical sidecar bytes are mandatory and their domain-separated digest equals `payload_hash`. | `E_EVENT_PAYLOAD_REQUIRED`, `E_EVENT_PAYLOAD_INVALID`, `E_EVENT_PAYLOAD_MISMATCH` | `T-P1-EVENT-002`, `T-P1-EVENT-003`, `T-P1-EVENT-004` | P1 |
-| `INV-12` Authority availability and state availability are never conflated. | v0 state loss is `state-stalled`; only irreversible below-quorum authority loss establishes v0 protocol death under controlled assumptions. | Observer-state result; no death message | `T-P4-DEATH-001`, `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` | P4 |
+| `INV-12` Authority availability and state availability are never conflated. | v0 state loss is `state-stalled`; only irreversible below-quorum authority loss with no latent successor establishes v0 protocol death under controlled assumptions. | Observer-state result; no death message | `T-P4-DEATH-001`, `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` | P4 |
+| `INV-13` Destroying current private keys does not revoke previously created authorization evidence. | Mortality evaluation enumerates pending approvals/acceptances and rejects a death conclusion while a latent successor can still become valid. | `latent successor / not dead` observer result | `T-P4-LATENT-001`, `T-P4-LATENT-002`, `T-P5-DELAY-001` | P4 |
 
 ## 3. P0 exit-criterion traceability
 
 | P0 criterion | Evidence |
 |---|---|
 | Every lifecycle term has a necessary and sufficient operational definition. | `PROTOCOL.md` section 4. |
-| Death is succession-capability loss, not unprovable universal byte deletion. | `PROTOCOL.md` 4.18 and `THREAT_MODEL.md` section 9. |
-| Authority, state viability, state stall, dormancy, partition, and death are explicitly distinguishable. | `PROTOCOL.md` 4.10–4.18 and section 10. |
+| Death is succession-capability loss, not unprovable universal byte deletion. | `PROTOCOL.md` 4.19 and `THREAT_MODEL.md` section 9. |
+| Authority, state viability, state stall, dormancy, partition, latent succession, and death are explicitly distinguishable. | `PROTOCOL.md` 4.10–4.19 and section 10. |
 | Canonical encoding and hash domain separation are specified. | `PROTOCOL.md` sections 2 and 3. |
 | Every Genesis and Pulse field has a validation rule. | `PROTOCOL.md` sections 6.1 and 7.1 plus JSON Schemas. |
-| Every invariant maps to at least one planned automated test. | Invariant table in this document maps `INV-1` through `INV-12`. |
+| Every invariant maps to at least one planned automated test. | Invariant table in this document maps `INV-1` through `INV-13`. |
 | Later phases are not required to decide envelope/lifecycle validity. | `PROTOCOL.md` sections 8 and 9; genome content validation is identified as an explicit required input, not an unspecified rule. |
 | Two conforming validators receive the same first result. | Deterministic validation order and stable rejection codes; P1 will supply executable cross-process conformance vectors. |
 
@@ -89,6 +90,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Invalid signatures | `T-P2-SIGN-001` through `T-P2-SIGN-004` |
 | Removed or premature signer | `T-P3-HANDOFF-003`, `T-P3-HANDOFF-004` |
 | Public snapshot after death | `T-P4-SNAPSHOT-001`, `T-P4-SNAPSHOT-002` |
+| Delayed or partially completed pre-authorized successor | `T-P4-LATENT-001`, `T-P4-LATENT-002`, `T-P5-DELAY-001` |
 | Missing, malformed, or substituted event payload | `T-P1-EVENT-002` through `T-P1-EVENT-004` |
 | State loss mislabeled as protocol death | `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` |
 | Invalid GPT proposal | `T-P9-AI-001` through `T-P9-AI-004` |
