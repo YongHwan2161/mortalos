@@ -4,10 +4,14 @@
   "private": true,
   "type": "module",
   "description": "A hostless, mortal network OS that lives across connected browsers.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "test": "npm run verify:p0",
     "verify:p0": "node scripts/verify-p0.mjs"
   },
   "devDependencies": {
-    "ajv": "8.17.1"
+    "ajv": "8.20.0"
   }
 }
