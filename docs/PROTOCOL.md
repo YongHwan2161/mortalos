@@ -132,7 +132,9 @@ A custodian holds authority only as part of a valid quorum. Custodian status is 
 
 ### 4.3 Genome
 
-The **genome** is the immutable executable transition-rule artifact identified by `genome_hash`. MortalOS v0 does not permit genome mutation within one lineage. A candidate Pulse whose `genome_hash` differs from Genesis MUST be rejected.
+The **genome** is an immutable content commitment identified by `genome_hash`. It names the intended transition-rule artifact, but MortalOS v0 does not execute that artifact or accept logical state transitions. The v0 `state_root` remains equal to the Genesis state root for every Pulse.
+
+A later protocol may define a deterministic genome ABI and execution runtime. That change requires a protocol-version and threat-model revision; merely supplying an implementation-specific callback is insufficient for consensus determinism.
 
 ### 4.4 Birth
 
@@ -186,7 +188,7 @@ Authority viability is an ontic property. It need not be observable to any one p
 
 ### 4.11 State-viable
 
-A lineage is **state-viable within observation domain O** if and only if O contains enough state material to reconstruct the logical state committed by the recognized head and execute a genome-authorized state transition.
+A lineage is **state-viable within observation domain O** if and only if O contains enough state material to reconstruct the logical state committed by the recognized head.
 
 MortalOS v0 commits to state integrity but does not include a proof-of-retrievability or state-recovery protocol. State viability is therefore observer-domain-relative and is not inferred from a heartbeat signature.
 
@@ -200,7 +202,7 @@ A lineage is **continuable to observer O** when O has current cryptographic evid
 
 ### 4.14 State-stalled
 
-A lineage is **state-stalled within observation domain O** if and only if it remains authority-viable but O cannot reconstruct the state required for a genome-authorized state transition. A state-stalled lineage may still authorize a heartbeat or custody change and therefore is not protocol-dead in v0.
+A lineage is **state-stalled within observation domain O** if and only if it remains authority-viable but O cannot reconstruct the state committed by the recognized head. A state-stalled lineage may still authorize a heartbeat or custody change and therefore is not protocol-dead in v0.
 
 ### 4.15 Dormant
 
@@ -225,9 +227,18 @@ A **fork** exists if two distinct Pulse bodies:
 
 In the v0 honest-custodian model, quorum intersection plus the sign-once rule prevents a valid fork. Observation of a valid fork is evidence of equivocation, key compromise, a validator defect, or a violated threat-model assumption.
 
-### 4.18 Death
+### 4.18 Latent successor
 
-A lineage is **protocol-dead in v0** if and only if no future valid successor Pulse can be produced under the current accepted custody rule because fewer usable current private keys remain than the quorum requires, and that authority loss is irreversible under the stated observation domain and honest-ephemeral-key assumptions.
+A **latent successor** is a not-yet-accepted candidate for which enough durable approval or acceptance evidence already exists that the candidate can still become valid without any new signature from the current custody quorum.
+
+Destroying current private keys does not invalidate signatures already produced. In particular, a fully signed heartbeat or a current-quorum-approved membership change that can later collect only new-custodian acceptances may survive authority loss. Protocol death therefore requires accounting for latent successors, not merely counting remaining private keys.
+
+### 4.19 Death
+
+A lineage is **protocol-dead in v0** if and only if both conditions hold under the stated observation domain and honest-ephemeral-key assumptions:
+
+1. fewer usable current private keys remain than the quorum requires and that authority loss is irreversible; and
+2. no latent successor exists that can become valid without new signatures from the lost current quorum.
 
 Loss of logical state alone is not protocol death in v0 because current custodians can still authorize a heartbeat or membership change using the committed state root. Such a condition is `state-stalled`. A later protocol may make a verifiable state-availability capability indispensable, but it MUST define the evidence and validation rule before claiming state loss as lineage death.
 
@@ -235,7 +246,7 @@ Death does not require historical bytes, public keys, Genesis, Pulses, genome ar
 
 An observer cannot generally prove that no unobserved key or state copy exists. Therefore v0 defines no globally authoritative `death_certificate` message. UIs MAY report `presumed dead` under a stated local policy but MUST distinguish it from protocol-proven invalidity of a candidate Pulse.
 
-### 4.19 Extinction
+### 4.20 Extinction
 
 A lineage is **extinct within observation domain O** if and only if:
 
@@ -244,13 +255,13 @@ A lineage is **extinct within observation domain O** if and only if:
 
 Global extinction is not provable in an open network because unknown copies may exist. Extinction is not emitted as a consensus fact in v0.
 
-### 4.20 Clone
+### 4.21 Clone
 
 A **clone** is a separately born entity whose Genesis reuses a prior entity's `genome_hash` and optionally a historical `initial_state_root`, but is not authorized by a reproduction event in the prior lineage.
 
 A clone creator MUST sample a new Genesis nonce and therefore produce a different canonical Genesis body and `organism_id`. If the body is byte-identical, the object is a replay of the same Genesis, not a clone.
 
-### 4.21 Descendant
+### 4.22 Descendant
 
 A **descendant** is a separately born entity whose Genesis is cryptographically linked to an authorized reproduction event in a parent lineage.
 
@@ -325,7 +336,7 @@ The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.j
 | `body.parent_hash` | For sequence 1, MUST encode the Genesis identity digest as `sha256:`; otherwise MUST equal the accepted parent Pulse hash. |
 | `body.genome_hash` | MUST equal the Genesis genome hash. |
 | `body.current_custody_hash` | MUST equal the commitment derived from the custody descriptor effective at the parent. |
-| `body.state_root` | MUST be a correctly encoded SHA-256 digest and obey the event-specific rule. |
+| `body.state_root` | MUST be a correctly encoded SHA-256 digest and equal the parent state root for every v0 event. |
 | `body.event.kind` | MUST be one of the v0 event kinds below. |
 | `body.event.payload_hash` | MUST equal `event_payload_hash` of the exact canonical event-payload sidecar supplied in validation context. |
 | `body.next_custodians` | MUST satisfy all custody rules and be strictly sorted. |
@@ -338,12 +349,11 @@ The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.j
 | Event kind | State root | Next custody | Required event-payload sidecar semantics |
 |---|---|---|---|
 | `heartbeat` | MUST equal parent state root. | MUST equal current custody. | Canonical empty object. |
-| `state-transition` | MAY differ according to genome rules. | MUST equal current custody. | Canonical I-JSON object accepted by the immutable genome validator as the complete transition input/result description. |
 | `membership-change` | MUST equal parent state root. | MAY differ. | Canonical I-JSON object; metadata is committed but does not independently authorize the handoff. |
 
 Composite state-and-membership changes are forbidden in v0. This separation makes validation and failure attribution deterministic.
 
-`repair` is not a distinct v0 event kind. Repair is policy that observes degraded custody and proposes an ordinary `membership-change` Pulse. Keeping repair outside the consensus vocabulary avoids two event labels with identical validity rules.
+`state-transition` and `repair` are not v0 event kinds. State transition waits for a versioned deterministic genome runtime. Repair is policy that observes degraded custody and proposes an ordinary `membership-change` Pulse. Keeping both outside the v0 consensus vocabulary avoids unspecified execution and duplicate validity rules.
 
 ### 7.3 Event-payload sidecar
 
@@ -366,11 +376,11 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 - the parent state root;
 - the exact canonical event-payload sidecar bytes;
 - the known accepted ancestry needed to reject replay/rollback; and
-- the genome transition validator for a `state-transition` event.
+- known pending approval and acceptance artifacts needed to detect a latent successor in a controlled mortality evaluation.
 
 No network, UI, AI, or wall-clock input is part of protocol validity.
 
-P0 fully determines all lifecycle and envelope validity rules. P1 will implement them. The only intentionally delegated content rule is whether a `state-transition` and its verified event payload are permitted by the immutable genome identified at Genesis; such a Pulse cannot be accepted unless that genome validator is present and returns success.
+P0 fully determines all v0 lifecycle and envelope validity rules. P1 will implement them. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
 
@@ -424,6 +434,7 @@ The following table prevents a UI from converting uncertainty into a false death
 | Known minority component | `partitioned / stalled` | Entire lineage is dead. |
 | Current candidate lacks quorum | `candidate rejected` | No other valid candidate can exist. |
 | Volatile keys intentionally destroyed below quorum under controlled test | `dead under v0 test assumptions` | Every possible copy was physically erased. |
+| Below-quorum keys but a pre-authorized child remains pending | `latent successor / not dead` | Key destruction retroactively revoked existing signatures. |
 | Two valid children of one parent | `forked` | Silently select a winner. |
 
 ## 11. Clone procedure
