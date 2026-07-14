@@ -7,7 +7,7 @@ Protocol: `mortalos/0`
 
 MortalOS v0 protects one narrow claim:
 
-> Within the declared assumptions, no individual peer can unilaterally advance a quorum-controlled lineage; safe custodian replacement can preserve identity; and after recognized continuation capability is irreversibly lost, public historical data alone cannot continue the same lineage.
+> Within the declared assumptions, no individual peer can unilaterally advance a quorum-controlled lineage; safe custodian replacement can preserve identity; and after quorum-held continuation authority is irreversibly lost, public historical data alone cannot continue the same lineage.
 
 The system does not claim that all data copies can be deleted, that death can always be observed globally, or that v0 tolerates malicious custodians.
 
@@ -22,7 +22,7 @@ The system does not claim that all data copies can be deleted, that death can al
 | State integrity | `state_root` commits to the logical state used by the genome. |
 | Genome integrity | `genome_hash` is fixed for v0 lineage transitions. |
 | Private signing keys | Never intentionally serialized, logged, committed, or sent over the network. |
-| Mortality semantics | Loss of succession authority is not confused with deletion of all historical bytes. |
+| Mortality semantics | Loss of succession authority is not confused with deletion of all historical bytes or temporary loss of state availability. |
 | Validator independence | Transport, UI, GPT, and signaling cannot alter validity rules. |
 
 ## 3. Trust boundaries
@@ -50,6 +50,7 @@ The following MUST be treated as untrusted inputs:
 - UI and browser DOM state;
 - GPT-5.6 and every other model output;
 - user-entered text and imported files;
+- event-payload sidecars, until canonical bytes and their domain-separated commitment are verified;
 - remote peer capability claims; and
 - public snapshots and historical messages.
 
@@ -145,7 +146,11 @@ GPT output, UI state, and transport behavior cannot convert an invalid candidate
 
 ### S-8 — Clone separation
 
-A new birth using prior genome/state material but no parent authority has a new Genesis nonce and organism ID.
+A new birth using prior genome/state material but no parent authority samples a new Genesis nonce and has a different organism ID. A byte-identical Genesis is the same birth replayed, not another entity.
+
+### S-9 — Payload binding
+
+Every accepted Pulse binds the exact canonical event-payload sidecar used by semantic validation. Missing or hash-mismatched sidecars fail closed.
 
 ## 8. Conditional liveness properties
 
@@ -155,10 +160,11 @@ A valid next Pulse can eventually be produced only if:
 
 1. at least the current quorum of honest custodian keys still exists;
 2. those custodians eventually exchange messages;
-3. required logical state is recoverable;
-4. all newly added custodians accept a membership handoff, if any;
-5. the immutable genome validator is available for a state transition; and
-6. the environment schedules sufficient computation.
+3. the exact committed event-payload sidecar is available;
+4. all newly added custodians accept a membership handoff, if any; and
+5. the environment schedules sufficient computation.
+
+A `state-transition` additionally requires recoverable logical state and the immutable genome validator. A heartbeat or membership change does not prove either property.
 
 If these conditions do not hold, stalling is correct behavior. Safety takes precedence over availability.
 
@@ -166,12 +172,13 @@ If these conditions do not hold, stalling is correct behavior. Safety takes prec
 
 ### 9.1 What death means
 
-Death is the irreversible loss of the capability to create a valid successor in the same lineage under the accepted current rules and state.
+Protocol death in v0 is the irreversible loss of quorum-held authority to create any valid successor in the same lineage under the accepted current custody rule.
 
 Examples under the v0 controlled-test assumptions:
 
-- a `2-of-3` lineage loses two current private keys and those keys were never persisted;
-- required logical state falls below a future recovery threshold and no copy remains in the observation domain.
+- a `2-of-3` lineage loses two current private keys and those keys were never persisted.
+
+Loss of logical state by itself is `state-stalled`, not protocol-dead, because a valid heartbeat or membership change can still be signed from the committed root. State-backed mortality requires a later protocol with verifiable availability/recovery evidence.
 
 ### 9.2 What death does not mean
 
@@ -256,6 +263,7 @@ Resource contribution must be explicit and revocable in later browser phases. v0
 | Identity survives complete safe host turnover | Guaranteed by protocol | Requires every handoff to be valid and accepted. |
 | Minority partition cannot advance | Guaranteed | Under current threshold rule. |
 | Public snapshot cannot sign a successor | Guaranteed | Snapshot excludes private keys. |
+| Missing state alone kills the v0 lineage | Not claimed | v0 commits to integrity, not retrievability; report `state-stalled`. |
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |
 | Byzantine quorum cannot fork | Not guaranteed | Future work. |
 | Sybil-resistant openness | Not implemented | Future work. |
@@ -274,6 +282,7 @@ Any implementation change that introduces one of the following requires a threat
 - state confidentiality claims;
 - Byzantine or Sybil resistance claims;
 - autonomous genome changes;
+- state-availability evidence that changes protocol death semantics;
 - model-controlled state mutation; or
 - authoritative server-side state.
 
