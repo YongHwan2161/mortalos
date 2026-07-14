@@ -111,17 +111,18 @@ Implemented:
 - an executable rejection-code manifest with exact documentation synchronization;
 - RFC 8785 number and UTF-16 sorting examples;
 - deterministic envelope, payload, and nesting resource limits;
-- H2 trace format v2 with replay and partial-latent evidence; and
+- H2 trace format v2 with replay and partial-latent evidence;
 - explicit Git/npm packaging exclusions after a dry run exposed local upload attachments; and
 - a rewritten priority plan that places portable consensus code before browser UI and deterministic state transition before OS claims.
 
-Local evidence before publication:
+Verification evidence:
 
 - conformance: 22/22;
 - adversarial continuations: 10,000/10,000;
 - trusted-core coverage: 98.40% lines, 91.51% branches, 100% functions;
-- H2 trace SHA-256: `1393d92d0d42dea697551c67458d52c59f92ee1067d6dedb1c21225c977ab606`; and
-- clean-room locked install/full suite: PASS; dependency audit: 0 vulnerabilities; package dry run: no local upload/tool-state artifacts; and
+- H2 trace SHA-256: `1393d92d0d42dea697551c67458d52c59f92ee1067d6dedb1c21225c977ab606`;
+- clean-room locked install/full suite: PASS; dependency audit: 0 vulnerabilities; package dry run: no local upload/tool-state artifacts;
+- GitHub commit `9c5f0b76d9d7e00549677145950b329b445e93d9`: 44/44 remote blob matches, zero mismatches, and `Verify` run 15 success; and
 - live Devpost state rechecked at `2026-07-14T10:06:54Z`: submissions open, project still draft, description/video absent, tagline still overclaims disappearance as death.
 
 Known limitations:
@@ -130,8 +131,9 @@ Known limitations:
 - no Chromium differential or second independent implementation;
 - fork detection has no Byzantine winner rule;
 - mortality still relies on explicit key/state/irreversibility observations;
-- v0 state is immutable and no genome executes; and
-- browser Lab and GPT-5.6 runtime paths remain absent.
+- v0 state is immutable and no genome executes;
+- browser Lab and GPT-5.6 runtime paths remain absent; and
+- GitHub and Devpost public metadata still overclaim the implemented scope and must be corrected before submission.
 
 ## Evidence still required
 

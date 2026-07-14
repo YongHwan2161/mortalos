@@ -215,7 +215,7 @@ Goal: submit a reproducible working project, not a narrative promise.
 
 Strict pass criteria:
 
-- [ ] Devpost tagline no longer equates network disappearance with protocol death.
+- [ ] GitHub repository description and Devpost tagline describe only the implemented scope and no longer claim a browser OS or equate network disappearance with protocol death.
 - [ ] Project Story describes only demonstrated capabilities.
 - [ ] Public repository URL, Apache-2.0 license, setup instructions, supported platforms, sample data, and no-rebuild test URL are present.
 - [ ] Public YouTube video is under three minutes, shows the working product, and includes audio explaining both Codex and GPT-5.6 use.

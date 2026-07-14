@@ -18,6 +18,7 @@ This document converts live Devpost requirements into repository evidence. It is
 | Project | `MortalOS`, `submission_draft` | Submission is not complete. |
 | Project description | Empty | Must be written in English after the demonstrated scope freezes. |
 | Project tagline | Says the entity dies when the network disappears | Must be corrected: network silence/absence does not establish v0 protocol death. |
+| GitHub repository description | Calls the project a hostless browser network OS | Must be narrowed to the implemented experimental lifecycle protocol until H3/R2 exist. |
 | Demo video | Missing | Public YouTube video is a submission blocker. |
 | Category | Developer Tools selected in the credit request; required field still must be set in final submission | Product and judge path must be framed as a tool for developers. |
 | Country | Connector eligibility list contains `Korea Republic of`; user registered from South Korea | Preserve accurate country selection in the final form. |
@@ -49,7 +50,7 @@ The live submission endpoint presents these required evidence objects. Its conci
 | Project description | Devpost Project Story in English | Empty | Blocker |
 | Accurate tagline | Authority-loss wording consistent with the protocol | Current wording overclaims network-disappearance death | Blocker |
 | Demo video | Public YouTube, less than 3 minutes, clear audio | Missing | Blocker |
-| Repository URL | `https://github.com/YongHwan2161/mortalos` | Public; Apache-2.0 and prior CI verified; current core-hardening CI must pass after publication | Partial |
+| Repository URL | `https://github.com/YongHwan2161/mortalos` | Public; 44/44 blob readback and `Verify` run 15 succeeded for core-hardening commit `9c5f0b76d9d7e00549677145950b329b445e93d9` | Complete |
 | Relevant public-repo license | Repository-root `LICENSE` | Apache-2.0 applied; package metadata aligned | Complete |
 | README setup and run guidance | Clean install, supported platforms, sample/test path | Clean-room `npm ci`, full tests, coverage, and deterministic trace pass; hosted judge run pending | Partial |
 | Codex/GPT-5.6 evidence | README build log plus video narration | Codex P0 evidence exists; actual GPT-5.6 product path missing | Blocker |

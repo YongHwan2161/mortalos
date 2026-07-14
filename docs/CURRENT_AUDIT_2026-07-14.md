@@ -80,6 +80,8 @@ Historical P0 material is retained only as an explicitly labeled gate record.
 | Dependency audit at moderate threshold | 0 vulnerabilities |
 | Package dry-run local-artifact exclusion | PASS |
 | Common private-key/token pattern scan | PASS (0 matches) |
+| GitHub remote blob readback | 44/44 match; 0 mismatches |
+| GitHub Actions | `Verify` run 15, commit `9c5f0b76d9d7e00549677145950b329b445e93d9`, success |
 
 The standards tests are grounded in [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) and [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032). The JCS test now includes the RFC's number and UTF-16 sort examples, not only project-shaped ASCII objects.
 
@@ -108,6 +110,10 @@ The latent-successor input is now cryptographically grounded, but `usableKeyIds`
 ### 6.6 No browser product or GPT runtime
 
 Live Devpost readback at `2026-07-14T10:06:54Z` still shows an empty description, missing video, inaccurate disappearance/death tagline, and `submission_draft`. Build Week also requires an actual GPT-5.6 path and a no-rebuild way for judges to test a developer tool.
+
+### 6.7 Public metadata still overclaims the implementation
+
+The GitHub repository description still calls MortalOS a hostless browser network OS, while the implemented system is a Node reference protocol core. The Devpost tagline likewise equates network disappearance with death. Both public metadata fields must be corrected before H5; changing README prose alone is insufficient.
 
 ## 7. Concrete insights
 

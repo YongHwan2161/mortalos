@@ -46,6 +46,8 @@ Supported local runtime: Node.js **22.5 or later**. CI uses the latest Node.js 2
 | Clean-room `npm ci` and full suite | PASS |
 | `npm audit --audit-level=moderate` | 0 vulnerabilities |
 | `npm pack --dry-run` local-artifact check | PASS; no upload/tool-local files |
+| GitHub remote blob readback | 44/44 match; 0 mismatches |
+| GitHub Actions | `Verify` run 15, commit `9c5f0b76d9d7e00549677145950b329b445e93d9`, success |
 
 Coverage is aggregated across codec, cryptography, rejection manifest, validator, lineage, and mortality modules; the npm gate requires at least 90% aggregate branch coverage.
 
