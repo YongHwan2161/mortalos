@@ -10,7 +10,7 @@
     "state_root": "sha256:SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
     "event": {
       "kind": "heartbeat",
-      "payload_hash": "sha256:EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
+      "payload_hash": "sha256:RYGNp2qv_DDuVz6U77cLRxbufdBBT7eBWrm-oPH4C2U"
     },
     "next_custodians": [
       {
