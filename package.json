@@ -1,0 +1,13 @@
+{
+  "name": "mortalos",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A hostless, mortal network OS that lives across connected browsers.",
+  "scripts": {
+    "verify:p0": "node scripts/verify-p0.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1"
+  }
+}
