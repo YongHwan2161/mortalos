@@ -1,6 +1,6 @@
 # MortalOS v0 Requirements Traceability
 
-Status: **Normative P0 baseline with verified Node core and H2 v2 evidence**
+Status: **Normative v0 baseline with verified Node core and H2 evidence**
 
 This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Node transition, lineage, mortality, and H2 evidence are executable; browser, state-runtime, network, UI, and AI IDs remain reserved.
 
@@ -30,9 +30,9 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | `INV-12` Authority availability and state availability are never conflated. | v0 state loss is `state-stalled`; only irreversible below-quorum authority loss with no latent successor establishes v0 protocol death under controlled assumptions. | Observer-state result; no death message | `T-P4-DEATH-001`, `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` | P4 |
 | `INV-13` Destroying current private keys does not revoke previously created authorization evidence. | `validateLatentSuccessor` authenticates current quorum and supplied acceptances; mortality counts only trusted direct-child succession evidence. | `latent successor / not dead` observer result | `T-P4-LATENT-001`, `T-P4-LATENT-002`, `T-P5-DELAY-001` | P4 |
 
-## 3. P0 exit-criterion traceability
+## 3. Specification-baseline traceability
 
-| P0 criterion | Evidence |
+| Baseline criterion | Evidence |
 |---|---|
 | Every lifecycle term has a necessary and sufficient operational definition. | `PROTOCOL.md` section 4. |
 | Death is succession-capability loss, not unprovable universal byte deletion. | `PROTOCOL.md` 4.19 and `THREAT_MODEL.md` section 9. |
@@ -40,7 +40,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Canonical encoding and hash domain separation are specified. | `PROTOCOL.md` sections 2 and 3. |
 | Every Genesis and Pulse field has a validation rule. | `PROTOCOL.md` sections 6.1 and 7.1 plus JSON Schemas. |
 | Every invariant maps to at least one planned automated test. | Invariant table in this document maps `INV-1` through `INV-13`. |
-| Later phases are not required to decide envelope/lifecycle validity. | `PROTOCOL.md` sections 8 and 9; genome content validation is identified as an explicit required input, not an unspecified rule. |
+| Later phases are not required to decide envelope/lifecycle validity. | `PROTOCOL.md` sections 8 and 9; v0 has no implementation-specific genome callback. |
 | One reference validator produces the same first result reproducibly. | The Node core supplies stable rejection tests and fresh-process byte-identity verification. Node/Chromium differential and a second independent implementation remain C1/R1 gates. |
 
 ## 4. Message-field traceability
@@ -74,10 +74,10 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | `body.state_root` | Pulse schema | Protocol 7.1–7.2 | `T-P1-STATE-001` |
 | `body.event.kind` | Pulse schema | Protocol 7.2 | `T-P1-EVENT-001` |
 | `body.event.payload_hash` | Pulse schema | Protocol 3 and 7.1–7.3 | `T-P1-EVENT-002`, `T-P1-EVENT-003`, `T-P1-EVENT-004` |
-| `body.next_custodians` | Pulse schema | Protocol 5.1 and 7.1 | `T-P3-HANDOFF-001` |
+| `body.next_custodians` | Pulse schema | Protocol 5.2 and 7.1 | `T-P3-HANDOFF-001` |
 | `body.next_quorum` | Pulse schema | Protocol 5 and 7.1 | `T-P1-QUORUM-P-001` |
 | `approvals` | Pulse schema | Protocol 5 and 7.1 | `T-P2-AUTH-001` |
-| `acceptances` | Pulse schema | Protocol 5.1 and 7.1 | `T-P3-HANDOFF-002` |
+| `acceptances` | Pulse schema | Protocol 5.2 and 7.1 | `T-P3-HANDOFF-002` |
 
 ## 5. Threat-to-test traceability
 
@@ -94,12 +94,13 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Missing, malformed, or substituted event payload | `T-P1-EVENT-002` through `T-P1-EVENT-004` |
 | State loss mislabeled as protocol death | `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` |
 | Invalid GPT proposal | `T-P9-AI-001` through `T-P9-AI-004` |
+| Multiple logical keys concentrated in one browser | `T-H3-INCUBATOR-001`, `T-H3-FAILURE-DOMAIN-001` |
 
 ## 6. Change rule
 
 A change to any invariant, message field, domain separator, validation precedence, or v0 threat assumption MUST update this traceability document in the same commit. No requirement may be removed without an explicit protocol-version decision.
 
-## 7. Executable H1/H2 evidence
+## 7. Executable Node reference evidence
 
 | Requirement group | Executable evidence | Result |
 |---|---|---|
@@ -115,5 +116,7 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Cross-process determinism | `test/process-determinism.test.mjs` | PASS |
 | `INV-5`, `INV-7`, `INV-9`, `INV-12`, and `INV-13` vertical proof | `scripts/demo-trace.mjs` trace format v2 | PASS |
 | Public snapshot cannot advance a dead lineage | zero-approval sequence-4 candidate returns `E_APPROVAL_INSUFFICIENT_QUORUM (0/2)` | PASS |
+
+The validator enforces unique eligible key IDs. It does not prove that those keys belong to independent people, processes, devices, or failure domains; the browser profile must test and display that deployment property separately.
 
 The Node implementation exposes the reference result. Full language-independent conformance still requires publishing canonical input/result byte files, running them in Chromium, and then running a second independently written implementation against them.

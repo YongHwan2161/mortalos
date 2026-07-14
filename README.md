@@ -1,38 +1,36 @@
 # MortalOS
 
-**An ownerless lifecycle protocol for browser-native systems—preserving identity across host turnover and halting when quorum-held succession authority is irreversibly lost.**
+**A deterministic lifecycle protocol for replaceable browser-native custodians.**
 
-MortalOS asks whether a network-native entity can retain one recognized identity while every physical host is replaceable and no single peer owns the authority to continue it.
-
-For OpenAI Build Week, the product scope is **MortalOS Lab**: a Developer Tools experience for inspecting and falsifying birth, quorum handoff, complete custodian turnover, replay, fork, authority death, resurrection rejection, and clone scenarios.
+MortalOS separates identity, continuation authority, lineage, state availability, and observable liveness. Its long-term question is whether one network-native entity can preserve an authorized identity after every original host has been replaced—and stop when succession becomes impossible under explicit assumptions.
 
 ## Honest status
 
-Implemented and verified:
+The current artifact is a verified **Node.js protocol and evidence core**, not yet a browser OS or state-bearing digital life.
 
-- the `mortalos/0` operational semantics and threat boundary;
-- a Node.js transition verifier with duplicate-aware JSON parsing, RFC 8785 canonicalization checks, eight domain-separated derivations, and real Ed25519 verification;
-- immutable, non-cloneable validated contexts, preventing callers from fabricating prior acceptance;
-- a stateful lineage registry that reconstructs parent context from accepted raw ancestry, rejects exact replay, detects valid siblings, reports intersecting equivocators, and halts automatic advancement after a fork;
-- evidence-backed mortality evaluation that accepts only validated direct-child latent successors; and
-- a deterministic H2 lifecycle trace including complete custodian turnover, replay rejection, controlled authority death, resurrection rejection, and a distinct same-genome clone.
+Implemented:
+
+- duplicate-aware UTF-8/I-JSON parsing and RFC 8785 canonicalization;
+- eight domain-separated SHA-256 derivations and real Ed25519 verification;
+- Genesis and Pulse validation, including current `2-of-3` approval and new-custodian acceptance;
+- non-forgeable, recursively frozen validation contexts;
+- a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
+- evidence-backed latent-successor and conditional mortality evaluation; and
+- a deterministic birth → complete turnover → replay/death/resurrection/clone trace.
 
 Not implemented:
 
-- the browser MortalOS Lab and hosted judge path;
-- GPT-5.6 runtime integration;
-- a deterministic executable genome or mutable state transition;
-- browser peer transport, replicated state, distributed computation, or an ownerless LLM.
+- a portable core that runs identically in Node.js and Chromium;
+- the one-page browser incubator and MortalOS Lab judge experience;
+- browser peer transport or replicated state;
+- a deterministic executable genome or mutable logical state; and
+- GPT-5.6 runtime integration.
 
-The current artifact is therefore a **Node.js protocol and evidence core**, not yet a browser OS or distributed computer.
+The most important next gate is **C1 portable deterministic core**. Browser UI must not create a second, subtly different validator. See [Project status](docs/PROJECT_STATUS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
-## Run the current verification
+## Run
 
-Requirements:
-
-- Node.js 22.5 or later;
-- npm; and
-- Linux, macOS, or Windows with a standard Node.js environment.
+Requirements: Node.js 22.5 or later and npm.
 
 ```bash
 npm ci
@@ -41,17 +39,30 @@ npm run test:coverage
 npm run demo:trace
 ```
 
-`npm test` runs the specification/document gate, standards and protocol conformance tests, a fixed-seed 10,000-case adversarial continuation corpus, and the H2 trace gate. `npm run test:coverage` enforces at least 90% aggregate branch coverage across every trusted core module.
+`npm test` runs license/specification gates, 22 conformance tests, a fixed-seed 10,000-case adversarial continuation corpus, and the deterministic lifecycle trace gate. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
-Expected H2 verification digest:
+Expected trace digest:
 
 ```text
 1393d92d0d42dea697551c67458d52c59f92ee1067d6dedb1c21225c977ab606
 ```
 
-The committed conformance corpus contains public keys and signatures only. Runtime fork tests generate temporary signing keys in memory and never write them to disk.
+Committed vectors contain public verification material only. Tests that need signing keys generate them in memory.
 
-## Implemented vertical slice
+## What `2-of-3` means
+
+Quorum counts distinct eligible custodian **key IDs**, not people, tabs, browsers, devices, or organizations.
+
+- Genesis requires all three initial keys: `3-of-3` birth consent.
+- Every later Pulse needs any two current keys: `2-of-3` continuation.
+- One person may initially run all three keys in one browser so an organism can be created without other participants.
+- That browser can satisfy the logical quorum by itself and is one physical failure domain.
+- Closing it before a valid handoff loses local continuation authority under the controlled ephemeral-key assumptions.
+- After handoffs distribute enough keys to independent browsers, the original browser may close while the same `organism_id` continues.
+
+The current Node core validates the cryptographic rules but does not yet implement this browser key lifecycle. See the [single-browser incubator profile](docs/SINGLE_BROWSER_INCUBATOR.md).
+
+## Verified lifecycle slice
 
 ```text
 birth {A,B,C}
@@ -59,66 +70,52 @@ birth {A,B,C}
   -> handoff {C,D,E}
   -> pre-authorized handoff survives current-key loss
   -> handoff {D,E,F}
-  -> exact accepted-object replay is rejected
-  -> state loss is reported as state-stalled
-  -> irreversible below-quorum authority loss is reported as dead under v0 assumptions
-  -> public snapshot continuation is rejected with E_APPROVAL_INSUFFICIENT_QUORUM
-  -> same-genome clone is accepted only under a different organism_id
+  -> exact replay rejected
+  -> missing state reported as state-stalled
+  -> irreversible below-quorum authority loss reported as dead under v0 assumptions
+  -> public-snapshot resurrection rejected
+  -> same-genome clone accepted only under a different organism_id
 ```
 
-An additional generated-key test creates two independently valid children of one parent. The registry reports `E_FORK_DETECTED`, identifies the quorum members that signed both children, and refuses a third automatic advance with `E_LINEAGE_ALREADY_FORKED`.
+A generated-key test also creates two valid children of one parent. The lineage reports `E_FORK_DETECTED`, identifies intersecting signers, and rejects further automatic advancement with `E_LINEAGE_ALREADY_FORKED`.
 
-## API trust boundary
+## Trust boundary
 
-`validateGenesis` and `validatePulse` are transition-verification primitives. Their accepted result objects are recursively frozen and carry an in-process capability that `structuredClone`, JSON serialization, or hand-built objects cannot reproduce.
+`validateGenesis` and `validatePulse` verify transitions. Accepted results are frozen and carry an in-process capability that cloning, JSON serialization, or hand-built objects cannot reproduce.
 
-Use `createLineage` whenever recognized-head, replay, or fork behavior matters. It owns the accepted-object graph and resolves the parent from the candidate's committed `parent_hash`. After a process restart, replay the canonical Genesis and Pulse bytes to reconstruct this state; do not persist or fabricate acceptance-result objects.
+Use `createLineage` for recognized-head, replay, and fork behavior. After restart, replay canonical Genesis/Pulse evidence to reconstruct the graph; never persist or trust an `accepted: true` object.
 
-`evaluateMortality` is an observer for controlled experiments, not a global death oracle. It requires a validated head and validated direct-child latent successors, but key availability, state availability, and irreversibility remain explicit observation-domain assumptions.
+`evaluateMortality` is a controlled-experiment observer, not a global death oracle. Key availability, state availability, irreversibility, and absence of hidden copies remain declared assumptions.
 
 ## Protocol boundary
 
-- Identity is derived from the canonical Genesis body; there is no organism-owner private key.
-- The current custodian quorum holds temporary continuation authority.
-- State availability and authority availability are separate.
-- v0 keeps `state_root` immutable; a state-bearing life claim requires a later versioned deterministic runtime.
-- v0 protocol death is conditional on irreversible below-quorum authority loss, no validated latent successor, and the honest-ephemeral-key test assumption.
-- Missing state with live authority is `state-stalled`, not protocol-dead.
-- GPT, UI, transport, signaling, and hosted proposal services may propose or explain, but never define validity.
+- `organism_id` is derived from Genesis; it has no owner private key.
+- Current custodian keys hold temporary continuation authority.
+- Logical key quorum and physical failure-domain independence are different properties.
+- v0 keeps `state_root` immutable and executes no genome.
+- Missing state is `state-stalled`, not automatically dead.
+- Death is conditional irreversible authority loss with no validated latent successor, not deletion of all history.
+- UI, transport, signaling, storage, and model output cannot define validity.
 
 ## Documentation
 
+- [Project status and review findings](docs/PROJECT_STATUS.md)
 - [Prioritized implementation plan](docs/IMPLEMENTATION_PLAN.md)
-- [Current deep audit](docs/CURRENT_AUDIT_2026-07-14.md)
-- [Core verification report](docs/CORE_VERIFICATION_REPORT.md)
 - [Protocol v0](docs/PROTOCOL.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Rejection codes](docs/REJECTION_CODES.md)
 - [Requirements traceability](docs/TRACEABILITY.md)
-- [Historical P0 verification record](docs/P0_VERIFICATION_REPORT.md)
-- [Devpost compliance matrix](docs/DEVPOST_COMPLIANCE.md)
-- [Build Week provenance log](docs/BUILD_LOG.md)
+- [Single-browser incubator profile](docs/SINGLE_BROWSER_INCUBATOR.md)
+- [Build Week submission checklist](docs/SUBMISSION_CHECKLIST.md)
 
-## OpenAI Build Week
+Dated audits, phase reports, and manual build logs were removed from current documentation. Git history preserves their provenance; this smaller set is the maintained source of truth.
 
-- Track: **Developer Tools**
-- Official deadline: **2026-07-22 09:00 KST** (`2026-07-22T00:00:00Z`)
-- Devpost state last checked 2026-07-14: **submission draft**
+## Project direction
 
-The remaining submission blockers are the browser judge experience, meaningful GPT-5.6 integration, an accessible no-rebuild test path, corrected Devpost content, a public video, and a `/feedback` Codex Session ID.
+The near-term product is **MortalOS Lab**, a Developer Tools experience for inspecting and falsifying lifecycle traces. GPT-5.6 may propose schema-constrained adversarial scenarios, but the deterministic core remains the only validity authority.
 
-## How Codex has been used
-
-Codex helped convert the original network-life idea into falsifiable identity, lineage, authority, state, and mortality terms; build and red-team the protocol; implement the verifier and lifecycle corpus; detect an acceptance-context forgery flaw; add the stateful lineage registry and fork evidence; harden mortality evaluation; reconcile the plan with live Devpost requirements; and maintain executable gates.
-
-Human-owned decisions include pursuing the network-native life concept, choosing the Developer Tools framing, accepting the v0 threat assumptions, selecting Apache-2.0, and deciding what is submitted publicly.
-
-GPT-5.6 is **not yet invoked by the runnable project**. The planned Build Week use is a schema-constrained adversarial scenario designer whose proposals remain subject to the deterministic core.
+Codex has assisted with protocol decomposition, red-team review, implementation, tests, and documentation. Scope, assumptions, the one-person browser-incubation requirement, public claims, and licensing remain human decisions.
 
 ## License
 
-MortalOS is licensed under the [Apache License 2.0](LICENSE). Contributions are accepted under the same terms as described in [CONTRIBUTING.md](CONTRIBUTING.md). Third-party dependencies retain their respective licenses; future datasets, model weights, and trademarks may require separate terms.
-
-## Core principle
-
-> The network does not merely host MortalOS. Its authorized, state-bearing continuity is MortalOS.
+MortalOS is licensed under the [Apache License 2.0](LICENSE). Contributions use the same terms as described in [CONTRIBUTING.md](CONTRIBUTING.md).

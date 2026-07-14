@@ -1,13 +1,13 @@
 # MortalOS v0 Threat Model
 
-Status: **Normative for P0 and the Minimum Viable Life claim**  
+Status: **Normative for `mortalos/0` and its qualified lifecycle claims**
 Protocol: `mortalos/0`
 
 ## 1. Security objective
 
 MortalOS v0 protects one narrow claim:
 
-> Within the declared assumptions, no individual peer can unilaterally advance a quorum-controlled lineage; safe custodian replacement can preserve identity; and after quorum-held continuation authority is irreversibly lost, public historical data alone cannot continue the same lineage.
+> Within the declared assumptions, a holder of fewer than the threshold number of distinct current custodian keys cannot advance the lineage; safe custodian replacement can preserve identity; and after quorum-held continuation authority is irreversibly lost, public historical data alone cannot continue the same lineage.
 
 The system does not claim that all data copies can be deleted, that death can always be observed globally, or that v0 tolerates malicious custodians.
 
@@ -17,13 +17,14 @@ The system does not claim that all data copies can be deleted, that death can al
 |---|---|
 | Organism identity | Derived only from the canonical valid Genesis body and immutable within a lineage. |
 | Lineage integrity | Every accepted Pulse has one accepted parent and obeys deterministic transition rules. |
-| Continuity authority | A current quorum, not one peer, is required to advance. |
+| Continuity authority | A threshold of distinct current custodian keys is required; one peer may control several keys unless deployment prevents it. |
 | Custody membership | Changes only through a Pulse authorized by the current custody descriptor and accepted by new custodians. |
 | State integrity | `state_root` commits to the logical state used by the genome. |
 | Genome integrity | `genome_hash` is fixed as a content commitment; v0 does not execute it. |
 | Private signing keys | Never intentionally serialized, logged, committed, or sent over the network. |
 | Mortality semantics | Loss of succession authority is not confused with deletion of all historical bytes or temporary loss of state availability. |
 | Validator independence | Transport, UI, GPT, and signaling cannot alter validity rules. |
+| Failure-domain honesty | The validator never treats distinct key IDs as proof of independent people, browsers, devices, or operators. |
 
 ## 3. Trust boundaries
 
@@ -38,6 +39,8 @@ The following are trusted for the v0 claim:
 - the browser/runtime's cryptographic random number generator;
 - the assumption that honest custodians obey sign-once, retain no hidden pending approvals, and delete volatile keys when the controlled test requires it.
 
+The stronger no-single-host-control claim additionally requires deployment evidence that no one physical or administrative failure domain holds `threshold` current keys. That condition is intentionally absent in the sole-browser incubator profile.
+
 Compromise of these components may invalidate the v0 claim.
 
 ### 3.2 Untrusted components
@@ -51,8 +54,8 @@ The following MUST be treated as untrusted inputs:
 - GPT-5.6 and every other model output;
 - user-entered text and imported files;
 - event-payload sidecars, until canonical bytes and their domain-separated commitment are verified;
-- remote peer capability claims; and
-- public snapshots and historical messages.
+- remote peer capability claims;
+- public snapshots and historical messages; and
 - deserialized, cloned, or hand-built objects that claim to be accepted or latent evidence.
 
 Untrusted components may transport or propose protocol objects but cannot make them valid.
@@ -69,6 +72,7 @@ The foundational model treats custodians as **honest but fallible**: they follow
 | Signaling operator | May observe or disrupt connection setup but has no state authority. |
 | GPT control layer | Produces untrusted proposals and explanations only. |
 | Observer | Maintains a local view that may be incomplete or partitioned. |
+| Incubator operator | May control three logical keys in one volatile browser so one person can create an organism; receives no independent-host guarantee before handoff. |
 
 ## 5. Failures included in v0
 
@@ -129,7 +133,7 @@ Every accepted non-Genesis Pulse has exactly one genuine validator-accepted pare
 
 ### S-3 — Quorum authorization
 
-Fewer than the current threshold of eligible unique custodians cannot authorize a successor.
+Fewer than the current threshold of eligible unique custodian keys cannot authorize a successor. If one process controls threshold keys, it can satisfy the logical quorum; v0 does not misreport those keys as independent failure domains.
 
 ### S-4 — Membership safety
 
@@ -209,14 +213,14 @@ Silence is ambiguous. A peer may be dead, disconnected, paused, slow, or hidden 
 
 An open browser application cannot prove that a modified client did not copy a private key before deleting it. Therefore v0 mortality is guaranteed only for honest ephemeral custodians in the controlled experiment.
 
-Potential later mitigations include non-exportable device keys, trusted execution, distributed key generation, proactive resharing, and threshold signatures. Each introduces new trust or availability assumptions and is not part of P0.
+Potential later mitigations include non-exportable device keys, trusted execution, distributed key generation, proactive resharing, and threshold signatures. Each introduces new trust or availability assumptions and is not part of v0.
 
 ## 10. Partition and fork analysis
 
-For `n=3`, `threshold=2`:
+For `n=3`, `threshold=2`, where custody is distributed one key per peer:
 
-- a `2 + 1` partition permits the two-peer component to progress;
-- the one-peer component must stall;
+- a `2 + 1` partition permits the two-key component to progress;
+- the one-key component must stall;
 - two disjoint quorum components cannot exist; and
 - two valid siblings require at least one custodian to violate sign-once or lose key integrity.
 
@@ -236,6 +240,17 @@ MortalOS may use infrastructure for peer discovery and NAT traversal. That infra
 - must not be required to reconstruct accepted state after peers connect, except as a non-authoritative cache.
 
 If later phases implement this architecture, the correct public claim will be **peer-to-peer execution and state authority with replaceable bootstrap infrastructure**, not zero infrastructure. The current Node reference has no network transport.
+
+### 11.1 Single-browser incubator boundary
+
+One browser MAY create three volatile logical custodian keys and complete unanimous Genesis approval without other people online. This bootstrap profile:
+
+- has three logical custodian slots but one physical failure domain;
+- can satisfy `2-of-3` inside the browser because it controls multiple keys;
+- loses all local keys together if the page closes before handoff, under the controlled assumption; and
+- may later hand slots to independent browsers without changing identity.
+
+The UI MUST disclose this concentration and MUST NOT call the organism independently distributed until no failure domain controls threshold keys. Workers and non-extractable WebCrypto keys reduce accidental persistence but do not create physical independence or prove erasure.
 
 ## 12. GPT-5.6 boundary
 
@@ -265,7 +280,9 @@ Resource contribution must be explicit and revocable in later browser phases. v0
 
 | Claim | v0 status | Qualification |
 |---|---|---|
-| One peer cannot advance 2-of-3 lineage | Guaranteed | Assumes signature keys are not compromised. |
+| Holder of one current key cannot advance 2-of-3 lineage | Guaranteed | Quorum counts distinct eligible keys. |
+| One browser holding all three keys cannot advance alone | Not claimed | It can sign with two keys; this is the incubator profile. |
+| Sole-incubator close loses continuation authority | Conditional | Assumes volatile keys, no hidden copy, and no latent successor. |
 | Identity survives complete safe host turnover | Guaranteed by protocol | Requires every handoff to be valid and accepted. |
 | Minority partition cannot advance | Guaranteed | Under current threshold rule. |
 | Public snapshot cannot sign a successor | Guaranteed | Snapshot excludes private keys. |
@@ -291,7 +308,8 @@ Any implementation change that introduces one of the following requires a threat
 - autonomous genome changes;
 - executable genome or state-transition semantics;
 - state-availability evidence that changes protocol death semantics;
-- model-controlled state mutation; or
-- authoritative server-side state.
+- model-controlled state mutation;
+- authoritative server-side state; or
+- a claim that logical key separation proves physical or administrative independence.
 
 The revision must identify the new trust assumption, affected invariant, failure mode, and required test.

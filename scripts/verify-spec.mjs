@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import Ajv2020 from "ajv/dist/2020.js";
 import { REJECTION_CODES } from "../src/rejection-codes.mjs";
@@ -29,6 +29,9 @@ const paths = {
   rejectionCodes: "docs/REJECTION_CODES.md",
   traceability: "docs/TRACEABILITY.md",
   implementationPlan: "docs/IMPLEMENTATION_PLAN.md",
+  projectStatus: "docs/PROJECT_STATUS.md",
+  incubator: "docs/SINGLE_BROWSER_INCUBATOR.md",
+  readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
   genesisExample: "examples/schema/genesis.valid.json",
@@ -224,7 +227,8 @@ const requiredThreatStatements = [
   "peer-to-peer execution and state authority",
   "event-payload sidecars",
   "state-stalled",
-  "latent successor"
+  "latent successor",
+  "failure domain"
 ];
 for (const statement of requiredThreatStatements) {
   assert(
@@ -233,22 +237,31 @@ for (const statement of requiredThreatStatements) {
   );
 }
 
-const p0Criteria = [
-  "Every lifecycle term has a necessary and sufficient operational definition.",
-  "Death is defined as loss of recognized succession capability",
-  "Dormancy, partition, and death are explicitly distinguishable",
-  "The canonical encoding and hash domain-separation rules are specified.",
-  "Every field in Genesis and Pulse has a validation rule.",
-  "Every invariant `INV-1` through `INV-13` maps to at least one planned automated test.",
-  "No later phase is required to explain whether a candidate pulse is valid.",
-  "Nonce randomness is a producer obligation",
-  "Authority viability, state viability, state stall, and v0 protocol death are non-contradictory.",
-  "Every Pulse requires the exact canonical event payload",
-  "Key destruction is distinguished from latent, already-authorized succession.",
-  "v0 has no implementation-specific genome callback or state-transition event."
+const nextGateStatements = [
+  "Next gate — C1 portable deterministic core",
+  "Run one consensus implementation in Node.js and Chromium",
+  "Portable modules import no `node:*` APIs",
+  "Node and Chromium return byte-identical results",
+  "any cross-runtime mismatch blocks the browser gate"
 ];
-for (const criterion of p0Criteria) {
-  assert(text.implementationPlan.includes(criterion), `Implementation plan lost P0 criterion: ${criterion}`);
+for (const statement of nextGateStatements) {
+  assert(text.implementationPlan.includes(statement), `Implementation plan lost C1 rule: ${statement}`);
+}
+
+for (const statement of [
+  "C0 trusted Node core verified; C1 portable deterministic core next",
+  "| Single-browser incubator | Planned |",
+  "The implementation counts unique eligible key IDs"
+]) {
+  assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
+}
+
+for (const statement of [
+  "One process that holds two or three current keys can advance by itself.",
+  "three logical custodian slots but one physical failure domain",
+  "public evidence alone cannot create the next valid Pulse"
+]) {
+  assert(text.incubator.includes(statement), `Incubator profile is missing: ${statement}`);
 }
 
 assert(
@@ -274,7 +287,57 @@ assert(
   "Protocol omits latent successor authority"
 );
 
-console.log("MortalOS P0 verification: PASS");
+const currentDocLinks = [
+  "PROJECT_STATUS.md",
+  "IMPLEMENTATION_PLAN.md",
+  "PROTOCOL.md",
+  "THREAT_MODEL.md",
+  "REJECTION_CODES.md",
+  "TRACEABILITY.md",
+  "SINGLE_BROWSER_INCUBATOR.md",
+  "SUBMISSION_CHECKLIST.md"
+];
+for (const fileName of currentDocLinks) {
+  assert(text.readme.includes(`docs/${fileName}`), `README does not link current document: ${fileName}`);
+}
+
+const removedLegacyDocs = [
+  "BUILD_LOG.md",
+  "CORE_VERIFICATION_REPORT.md",
+  "CURRENT_AUDIT_2026-07-14.md",
+  "DEVPOST_COMPLIANCE.md",
+  "P0_VERIFICATION_REPORT.md"
+];
+const existingDocs = new Set(await readdir(new URL("docs/", ROOT)));
+for (const fileName of removedLegacyDocs) {
+  assert(!existingDocs.has(fileName), `Legacy document must remain removed: ${fileName}`);
+  assert(!text.readme.includes(fileName), `README still references legacy document: ${fileName}`);
+}
+
+const markdownPaths = [
+  "README.md",
+  "CONTRIBUTING.md",
+  ...[...existingDocs]
+    .filter((fileName) => fileName.endsWith(".md"))
+    .sort()
+    .map((fileName) => `docs/${fileName}`)
+];
+let relativeLinkCount = 0;
+for (const markdownPath of markdownPaths) {
+  const markdown = await read(markdownPath);
+  for (const match of markdown.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+    const target = match[1].split("#", 1)[0];
+    if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
+    try {
+      await access(new URL(target, new URL(markdownPath, ROOT)));
+    } catch {
+      throw new Error(`Broken relative Markdown link in ${markdownPath}: ${match[1]}`);
+    }
+    relativeLinkCount += 1;
+  }
+}
+
+console.log("MortalOS specification verification: PASS");
 console.log(`- Schemas compiled: 2`);
 console.log(`- Structural valid examples accepted: 2`);
 console.log(`- Canonical event-payload fixtures bound: 1`);
@@ -284,7 +347,8 @@ console.log(`- Domain separators checked: ${domains.length}`);
 console.log(`- Message validation rows checked: ${genesisFields.length + pulseFields.length}`);
 console.log(`- Unique rejection codes checked: ${rejectionCodes.length}`);
 console.log(`- Invariant-to-test mappings checked: 13`);
-console.log("- Threat-model boundary statements checked: 9");
+console.log("- Threat-model boundary statements checked: 10");
+console.log(`- Relative Markdown links checked: ${relativeLinkCount}`);
 console.log("Document digests:");
 for (const name of ["protocol", "threatModel", "rejectionCodes", "traceability"]) {
   console.log(`  ${paths[name]} sha256:${sha256(text[name])}`);

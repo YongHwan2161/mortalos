@@ -1,8 +1,8 @@
 # MortalOS Protocol v0
 
-Status: **Normative v0 specification with an executable transition verifier and lineage registry**  
-Protocol identifier: `mortalos/0`  
-Scope: P0 operational semantics for birth, identity, lineage, continuity, fork, dormancy, death, extinction, clone, and descendant.
+Status: **Normative v0 specification with an executable Node reference**
+Protocol identifier: `mortalos/0`
+Scope: operational semantics for birth, identity, lineage, continuity, fork, dormancy, death, extinction, clone, and descendant.
 
 This document uses **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** as normative requirements.
 
@@ -12,7 +12,7 @@ MortalOS v0 defines how an entity can have one recognized identity and an author
 
 The protocol does **not** attempt to prove that all copies of data have been deleted. It defines death as loss of the capability to create another valid state in the same lineage under the declared system and threat model.
 
-The following question is the P0 design boundary:
+The following question is the v0 design boundary:
 
 > Given a Genesis envelope, an optional accepted parent Pulse, a candidate Pulse, and the protocol rules in this document, must every conforming validator return the same validation result and rejection code?
 
@@ -135,11 +135,13 @@ Each term below has a necessary and sufficient protocol meaning.
 
 ### 4.1 Peer
 
-A **peer** is a process possessing an Ed25519 private key corresponding to a declared custodian public key. A browser tab or device without such a key is not a custodian peer for that key.
+A **peer** is a process possessing one or more Ed25519 private keys corresponding to declared custodian public keys. A browser tab or device without such a key is not a custodian peer for that key.
+
+One peer, person, browser, device, or organization MAY possess more than one custodian key. The protocol counts distinct eligible `key_id` values and cannot determine whether they are controlled by independent failure domains.
 
 ### 4.2 Custodian
 
-A **custodian** at Pulse `P` is a peer whose `key_id` appears in the custody descriptor effective after `P`. For Genesis, the effective custody descriptor is `initial_custodians` plus `initial_quorum`.
+A **custodian** at Pulse `P` is a logical key slot whose `key_id` appears in the custody descriptor effective after `P`; a peer holding its private key can act for that slot. For Genesis, the effective custody descriptor is `initial_custodians` plus `initial_quorum`.
 
 A custodian holds authority only as part of a valid quorum. Custodian status is not ownership of `organism_id`.
 
@@ -191,7 +193,7 @@ If two distinct, individually valid Pulses share one accepted parent, the valida
 
 **Continuity authority** is the ability of a set of current custodians to satisfy the current quorum with valid signatures for one candidate successor.
 
-No individual peer has continuity authority in a `2-of-3` entity.
+A holder of fewer than two eligible current keys has no continuity authority in a `2-of-3` entity. One peer holding two or more eligible keys can satisfy the logical quorum; independent-control claims require the keys to be distributed across distinct failure domains.
 
 ### 4.10 Authority-viable
 
@@ -306,7 +308,22 @@ For v0:
 
 Every current custodian MUST follow the **sign-once rule**: it MUST sign no more than one distinct Pulse hash for a given `(organism_id, sequence, parent_hash)` tuple.
 
-### 5.1 Membership handoff
+### 5.1 Logical quorum and failure domains
+
+Threshold counts unique valid signatures from eligible custodian `key_id` values. It does not count unique humans, tabs, browsers, devices, IP addresses, or organizations.
+
+For `2-of-3`:
+
+- all three initial keys approve Genesis;
+- any two current keys can authorize a Pulse;
+- one current key cannot authorize a Pulse; and
+- a process holding two or three keys can authorize a Pulse by itself.
+
+A single-browser incubator MAY temporarily hold all three initial keys. That profile lets one person create an organism but provides one physical failure domain, not independent-host resilience. The stronger deployment claim applies only when no one physical or administrative failure domain controls `threshold` current keys.
+
+Failure-domain distribution is deployment evidence and MUST NOT be inferred from distinct key IDs by the validator.
+
+### 5.2 Membership handoff
 
 A valid Pulse may replace custodians. It requires:
 
@@ -397,7 +414,7 @@ An implementation MUST establish that context itself. In-process accepted result
 
 No network, UI, AI, or wall-clock input is part of protocol validity.
 
-P0 fully determines all v0 lifecycle and envelope validity rules. The repository implements the Node reference transition verifier, latent-evidence verifier, and accepted-object graph. Cross-runtime and independent-implementation conformance remain future evidence. No implementation-specific transition callback is part of v0 validity.
+This specification determines all v0 lifecycle and envelope validity rules. The repository implements the Node reference transition verifier, latent-evidence verifier, and accepted-object graph. Cross-runtime and independent-implementation conformance remain future evidence. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
 
@@ -489,7 +506,8 @@ A v0 implementation is conforming only if it:
 - treats acceptance and latent-successor evidence as validator-produced capabilities or reconstructs them from canonical raw evidence;
 - uses an accepted-object graph to reject replay and expose forks;
 - never treats GPT, UI, transport, or signaling output as authority;
-- enters `FORKED` instead of silently resolving two valid siblings; and
+- enters `FORKED` instead of silently resolving two valid siblings;
+- never treats distinct key IDs as proof of independent people, devices, or failure domains; and
 - states the mortality limitations from the threat model in user-facing documentation.
 
 The repository reference implementation is in [`src/`](../src/), including [`lineage.mjs`](../src/lineage.mjs). Public Ed25519 and lifecycle vectors are in [`test/vectors/`](../test/vectors/); they contain verification material but no private signing keys. Fork tests generate temporary keys in memory. [`scripts/demo-trace.mjs`](../scripts/demo-trace.mjs) is a deterministic H2 consumer of the same core.
@@ -499,6 +517,11 @@ The repository reference implementation is in [`src/`](../src/), including [`lin
 - [`THREAT_MODEL.md`](THREAT_MODEL.md)
 - [`REJECTION_CODES.md`](REJECTION_CODES.md)
 - [`TRACEABILITY.md`](TRACEABILITY.md)
-- [`P0_VERIFICATION_REPORT.md`](P0_VERIFICATION_REPORT.md)
 - [`genesis.schema.json`](../schemas/genesis.schema.json)
 - [`pulse.schema.json`](../schemas/pulse.schema.json)
+
+Supporting status and deployment documents:
+
+- [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+- [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)
+- [`SINGLE_BROWSER_INCUBATOR.md`](SINGLE_BROWSER_INCUBATOR.md)

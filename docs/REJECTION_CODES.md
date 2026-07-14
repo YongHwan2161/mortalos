@@ -2,7 +2,7 @@
 
 Status: **Normative and executable**
 
-The code set in this document must exactly match [`src/rejection-codes.mjs`](../src/rejection-codes.mjs). `npm run verify:p0` fails if either side adds, removes, or misspells a code without updating the other.
+The code set in this document must exactly match [`src/rejection-codes.mjs`](../src/rejection-codes.mjs). `npm run verify:spec` fails if either side adds, removes, or misspells a code without updating the other.
 
 Transition verification returns the first applicable code in the validation order from [`PROTOCOL.md`](PROTOCOL.md). The lineage registry adds parent-recognition, replay, and fork-state results after intrinsic transition checks.
 

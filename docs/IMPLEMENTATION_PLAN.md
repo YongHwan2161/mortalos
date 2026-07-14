@@ -1,335 +1,197 @@
 # MortalOS Implementation Plan
 
-Status: **core trust boundary and stateful lineage gate verified; portable browser core is next**  
-Last reviewed: **2026-07-14**  
-Deadline source last checked: Devpost at **2026-07-14T10:06:54Z**
+Status: **C0 Node reference verified; C1 portability is next**
 
-## 1. Review decision
+Last reviewed: **2026-07-15**
 
-The prior plan marked H1 complete while the public `validatePulse` API still trusted cloneable plain objects as accepted Genesis/parent context and had no accepted-object graph for replay or fork detection. A caller could clone an accepted result and have it trusted. The protocol specification promised ancestry, replay, and fork checks that the implementation did not perform.
+This is a rolling, gate-based plan. Current evidence belongs in [`PROJECT_STATUS.md`](PROJECT_STATUS.md); historical decisions belong in Git history.
 
-That gap is now closed in the Node.js reference core:
+## 1. Delivery order
 
-- accepted contexts are recursively frozen and carry a non-cloneable in-process capability;
-- `createLineage` reconstructs parent context from accepted raw ancestry;
-- exact replay returns `E_REPLAY_STALE`;
-- independently valid siblings produce `E_FORK_DETECTED` plus intersecting signer evidence;
-- a forked lineage refuses automatic advancement;
-- mortality evaluation accepts actual validated direct-child candidates instead of an asserted count; and
-- the documented rejection-code set is generated from the same source manifest used by the implementation gate.
+1. deterministic protocol meaning;
+2. authority lineage and recognized-head safety;
+3. cross-runtime portability;
+4. one-page browser incubation and developer experience;
+5. GPT-assisted adversarial scenarios;
+6. deterministic mutable state and availability; and
+7. network/resource organs.
 
-The priority order changes accordingly:
+UI, transport, storage, model output, and hosted infrastructure may propose or carry bytes but may never become validity authority.
 
-1. **C1 portable deterministic core** — the current Node-only implementation cannot power a browser judge experience without duplicating consensus logic.
-2. **H3 browser MortalOS Lab** — required for a coherent, no-rebuild judge path.
-3. **H4 GPT-5.6 adversarial scenario designer** — required by Build Week, outside the trusted computing base.
-4. **H5 evidence and submission freeze** — required before the deadline.
-5. **R2 state-bearing life kernel** — the next fundamental research milestone; it must precede claims of a living OS, distributed memory, or ownerless computation.
+## 2. Verified baseline — C0
 
-WebRTC, resource accounting, distributed inference, and general OS facilities remain below these gates.
+The Node reference currently verifies:
 
-## 2. Two synchronized paths
+- canonical bounded Genesis/Pulse/payload bytes;
+- real Ed25519 Genesis approval, Pulse quorum, and custody acceptance;
+- immutable validator-produced context capabilities;
+- parent resolution from an accepted-object graph;
+- replay rejection, fork evidence, intersecting signer evidence, and post-fork halt;
+- complete A/B/C → D/E/F custodian turnover with stable identity;
+- validated complete and acceptance-incomplete latent successors;
+- conditional authority/state mortality states;
+- 10,000 deterministic invalid-continuation mutations; and
+- byte-identical H2 traces in fresh Node processes.
 
-MortalOS has two legitimate but different critical paths:
+This proves a Node authority-lineage reference, not browser portability, independent implementation agreement, state execution, or global death.
 
-- the **Build Week delivery path** (`H0`, `C0`, `C1`, `H3`–`H5`) produces a runnable Developer Tools submission before the deadline; and
-- the **research path** (`R0`–`R6`) turns authority continuity into a state-bearing, network-embodied digital life.
+## 3. Next gate — C1 portable deterministic core
 
-Delivery urgency may reorder calendar work, but it must never allow UI, GPT, transport, or hosting infrastructure to become validity authority.
+### Objective
 
-## 3. Root problem and current boundary
+Run one consensus implementation in Node.js and Chromium and obtain byte-identical results for every committed vector.
 
-The root question remains:
+This gate is more important than browser UI or WebRTC because duplicating canonicalization, signature, context, or rejection behavior in a second implementation would split protocol truth.
 
-> Can a digital entity preserve one recognized identity and valid state lineage while every physical host is replaceable and no single peer owns continuation authority—and can that lineage become unable to continue when its live threshold is irreversibly lost?
+### Work packages
 
-The current v0 core answers only the **identity and authority-lineage** portion. It does not yet establish a state-bearing life because `state_root` is immutable and no genome executes.
+#### C1.1 — portable module boundary
 
-The model distinguishes:
+- replace validation-path `Buffer` use with `Uint8Array` helpers;
+- inject SHA-256 and Ed25519 verification through a narrow asynchronous crypto interface;
+- keep schema acquisition/compilation outside semantic modules;
+- isolate `node:*`, filesystem, process, DOM, network, clock, randomness, and key generation in adapters; and
+- preserve the non-forgeable accepted-context capability in both runtimes.
 
-- **data persistence:** some bytes still exist;
-- **identity continuity:** a candidate is an authorized successor of the same Genesis;
-- **authority viability:** a current quorum can authorize another Pulse;
-- **state viability:** the committed logical state can be reconstructed and executed;
-- **operational life:** both authority and state are viable;
-- **state stall:** authority survives but state is unavailable;
-- **latent succession:** a validated, already-authorized child may survive current-key loss; and
-- **v0 protocol death:** authority is irreversibly below threshold, with no validated latent successor, under the controlled honest-ephemeral-key assumptions.
+#### C1.2 — Node and Web Crypto adapters
 
-The phrase “MortalOS is alive” remains a research hypothesis until R2 and R3 add deterministic state transition and availability evidence.
+- Node adapter using `node:crypto`;
+- browser adapter using `crypto.subtle`;
+- identical tagged-base64url and SPKI/raw Ed25519 behavior; and
+- explicit error mapping so platform exceptions never leak into protocol results.
 
-## 4. Current verified baseline
+#### C1.3 — serialized conformance corpus
 
-| Capability | State | Evidence | Honest limitation |
-|---|---|---|---|
-| P0 operational semantics | Verified | `npm run verify:p0` | Specification proof is not implementation independence. |
-| Apache-2.0 repository licensing | Verified | `LICENSE`, package metadata, `npm run verify:license` | Future data/model artifacts need separate review. |
-| Duplicate-aware canonical input | Verified | codec tests plus RFC 8785 examples | Only the Node implementation exists. |
-| Ed25519 and domain separation | Verified | RFC 8032 vector and signed lifecycle corpus | No threshold-signature scheme. |
-| Transition verification | Verified | Genesis/Pulse conformance tests | Accepted capabilities are process-local by design. |
-| Stateful lineage recognition | Verified | generated-key replay/fork/equivocation tests | No persistent database or Byzantine fork resolution. |
-| H2 lifecycle trace v2 | Verified | `npm run verify:h2` | Mortality remains conditional on supplied observations. |
-| Adversarial corpus | Verified | fixed-seed 10,000 invalid continuations | Not a generative corpus of arbitrary re-signed valid histories. |
-| Critical-core coverage | Verified | aggregate branch coverage at least 90% | Coverage is not a security proof. |
-| Local artifact/package boundary | Verified | private package plus Git/npm exclusions and package dry-run | A future public package needs an explicit export/support contract. |
-| Browser Lab | Not started | — | Submission blocker. |
-| GPT-5.6 runtime use | Not started | — | Submission blocker. |
-| Mutable logical state/genome | Not started | — | Blocks a state-bearing life claim. |
+- canonical Genesis/Pulse/payload bytes;
+- required context and ancestry evidence;
+- expected accept/reject/fork result bytes;
+- positive and first-error negative cases;
+- RFC 8785 and RFC 8032 vectors; and
+- replayable seed and case ID for generated cases.
 
-## 5. Foundational invariants
+#### C1.4 — Chromium differential gate
 
-| ID | Invariant |
-|---|---|
-| `INV-1` | One lineage preserves one Genesis-derived organism identity. |
-| `INV-2` | Every accepted non-Genesis Pulse has exactly one validated parent. |
-| `INV-3` | An unauthorized candidate cannot advance. |
-| `INV-4` | Mutation of a committed or signed field invalidates the relevant evidence. |
-| `INV-5` | Replay, rollback, and valid siblings cannot silently replace the recognized head. |
-| `INV-6` | Custody changes only through current-quorum authorization and new-member acceptance. |
-| `INV-7` | Complete safe custodian turnover preserves identity. |
-| `INV-8` | A below-threshold group cannot advance. |
-| `INV-9` | A clone without lineage authority has a different identity. |
-| `INV-10` | GPT, UI, transport, storage, and signaling never define validity. |
-| `INV-11` | Semantic validation uses the exact canonical event payload committed by the Pulse. |
-| `INV-12` | Authority availability and state availability are reported separately. |
-| `INV-13` | Key destruction does not revoke previously created authorization evidence. |
+- headless Chromium runner over the same corpus;
+- Node/Chromium byte comparison;
+- clean CI execution; and
+- mismatch artifacts that identify vector, runtime, and first differing byte.
 
-## 6. Build Week delivery path
+### Pass criteria
 
-### H0 — Compliance and provenance ✅
+- [ ] Portable modules import no `node:*` APIs and reference no `Buffer`, filesystem, process, DOM, network, clock, or randomness.
+- [ ] Node and Chromium return byte-identical results for all positive and negative vectors.
+- [ ] RFC 8785 number/string/UTF-16 ordering and RFC 8032 vector 1 pass in both runtimes.
+- [ ] Forged context, replay, fork, no-op membership, and latent-successor cases pass in both runtimes.
+- [ ] At least 10,000 serialized cases replay from a printed seed and case ID.
+- [ ] Trusted-core branch coverage remains at least 90%.
+- [ ] Clean Node and clean Chromium jobs pass in CI.
+- [ ] An adapter cannot alter canonical bytes, validation order, rejection codes, or lineage decisions.
 
-Goal: maintain an eligible, licensed, reproducible public project.
+Failure rule: any cross-runtime mismatch blocks the browser gate. Do not copy the validator into UI code as a workaround.
 
-Pass criteria:
+## 4. H3 — single-browser incubator and MortalOS Lab
 
-- [x] Apache-2.0 text and metadata agree.
-- [x] Locked clean installation and GitHub Actions run the same gates.
-- [x] Public vectors contain no private signing material.
-- [x] Build log distinguishes the pre-existing idea from in-period implementation.
-- [x] The private package dry-run excludes uploads, tool state, environment files, logs, and archives.
-- [ ] Final history, bundle, screenshots, and video frames pass a secret scan.
-- [ ] `/feedback` Session ID and final third-party inventory are recorded.
-
-### C0 — Trusted Node reference core ✅
-
-Goal: provide one deterministic reference implementation whose trust boundary matches the protocol claim.
-
-Pass criteria:
-
-- [x] Hand-built or cloned acceptance objects fail closed.
-- [x] Accepted results and their nested descriptors are immutable.
-- [x] Parent lookup comes from an accepted-object graph, not caller-supplied plain state.
-- [x] Exact replay is rejected.
-- [x] Two valid siblings put the lineage in `FORKED` and expose intersecting signer evidence.
-- [x] A forked lineage refuses automatic advancement.
-- [x] A no-op `membership-change` is rejected.
-- [x] Latent-successor mortality input is a validated direct child, not an integer assertion.
-- [x] Documentation and the executable rejection-code manifest match exactly.
-- [x] Envelope/payload byte limits and JSON depth limits reject resource-exhaustion inputs deterministically.
-- [x] H2 trace v2 is byte-identical across fresh processes.
-
-Failure rule: any path that accepts a fabricated context, silently selects a fork, or declares death from an unverified latent-successor count reopens C0.
-
-### C1 — Portable deterministic core ⏭ NEXT
-
-Goal: run the same consensus logic in Node.js and Chromium without maintaining two subtly different validators.
-
-Deliverables:
-
-- platform-neutral byte, base64url, SHA-256, and Ed25519 interfaces;
-- Node and Web Crypto adapters;
-- browser-compatible schema-validation loading;
-- a serialized language-independent conformance corpus containing canonical input bytes and expected result objects;
-- a headless Chromium differential runner; and
-- a documented import boundary that keeps `node:*`, `Buffer`, filesystem, and process APIs outside portable modules.
-
-Strict pass criteria:
-
-- [ ] Portable modules contain no `node:*`, `Buffer`, filesystem, process, DOM, network, clock, or random input in validation paths.
-- [ ] Node and Chromium return byte-identical results for every committed positive and negative vector.
-- [ ] RFC 8785 primitive, number, string, and UTF-16 ordering vectors pass in both runtimes.
-- [ ] RFC 8032 Ed25519 vector 1 and every MortalOS signature vector pass in both runtimes.
-- [ ] The forged-context, replay, fork, equivocation, no-op membership, and latent-successor tests pass in both runtimes.
-- [ ] At least 10,000 serialized fixed-seed cases are replayable from a printed seed and case ID.
-- [ ] Clean Node install and a clean headless Chromium run both pass in CI.
-- [ ] No platform adapter can override a validity decision or canonical bytes.
-
-Failure rule: one Node/Chromium result mismatch blocks H3. Do not copy the Node validator into UI code as a workaround.
-
-### H3 — MortalOS Lab browser experience
-
-Goal: make the verified lifecycle understandable and testable without rebuilding from source.
-
-Required judge path:
+### Incubator path
 
 ```text
-open Lab
-  -> run signed reference lifecycle
-  -> inspect identity/custody/parent/evidence timeline
-  -> replay or mutate one artifact
-  -> see stable rejection or fork evidence
-  -> export deterministic trace
+one person opens one page
+  -> three dedicated volatile custodian Workers generate one key each
+  -> all three approve Genesis
+  -> the portable core accepts birth
+  -> any two workers authorize a Pulse
 ```
 
-Strict pass criteria:
+The UI must display `3 logical custodians / 1 physical failure domain`. It must not describe the initial profile as independently distributed.
 
-- [ ] A public URL loads without credentials or payment.
-- [ ] One action runs birth → turnover → replay rejection → controlled death → resurrection rejection → clone.
-- [ ] The UI labels assumptions and never converts silence into death.
-- [ ] A fork fixture visibly halts advancement and shows both child hashes and equivocating key IDs.
-- [ ] The displayed result is the portable core result; the UI has no alternative validator.
-- [ ] Exported trace bytes and digest match the CLI/reference result.
-- [ ] The complete judge path succeeds three times in a clean browser profile.
-- [ ] Keyboard navigation, readable contrast, narrow viewport, and reduced-motion behavior are checked.
-- [ ] Unsupported platforms and current limitations are visible.
+### Developer-tool path
 
-### H4 — GPT-5.6 adversarial scenario designer
+```text
+run reference lifecycle
+  -> inspect identity, parent, custody, and evidence timeline
+  -> mutate or replay one artifact
+  -> see the stable rejection or fork evidence
+  -> export canonical trace bytes and digest
+```
 
-Goal: use GPT-5.6 for a task that materially improves the developer tool while keeping model output untrusted.
+### Pass criteria
+
+- [ ] A public URL works without credentials or rebuilding.
+- [ ] Worker private keys are non-extractable where supported and are never persisted, exported, logged, or sent.
+- [ ] Page close before handoff loses local authority under the declared assumptions.
+- [ ] A valid handoff can move slots to independent browsers without changing `organism_id`.
+- [ ] The displayed result is exactly the portable-core result.
+- [ ] Replay, fork, mortality qualifications, and clone separation are visible.
+- [ ] Exported trace digest matches the CLI/reference digest.
+- [ ] The judge path passes three times in a clean browser profile.
+- [ ] Keyboard, contrast, narrow viewport, and reduced-motion checks pass.
+
+## 5. H4 — GPT-5.6 adversarial scenario designer
 
 Flow:
 
 ```text
-developer failure hypothesis
+developer hypothesis
   -> GPT-5.6 structured scenario proposal
-  -> strict scenario schema
-  -> deterministic fixture compiler/simulator
+  -> strict allowlisted schema and size limits
+  -> deterministic fixture compiler
   -> portable validator
-  -> trace and explanation grounded in stable codes
+  -> trace plus stable-code explanation
 ```
 
-Strict pass criteria:
+Pass criteria:
 
-- [ ] The submitted build invokes GPT-5.6 in the demonstrated path.
-- [ ] Model output is parsed only through a strict allowlisted schema with size limits.
-- [ ] GPT cannot supply an accepted context, private key, final validity result, or recognized head.
-- [ ] Invalid or incomplete model proposals fail closed and remain editable.
-- [ ] At least 25 fixed adversarial prompts cover malformed JSON, invented fields, forged authority, prompt injection, impossible transitions, and overclaiming death.
-- [ ] The same compiled scenario has the same result with GPT disabled.
-- [ ] No OpenAI key appears in browser code, logs, artifacts, screenshots, or Git history.
-- [ ] The README and video distinguish Codex-assisted development from GPT-5.6 runtime behavior.
+- [ ] The submitted product invokes GPT-5.6 in the demonstrated path.
+- [ ] Model output cannot supply accepted context, private keys, recognized heads, or validity results.
+- [ ] Invalid/incomplete proposals fail closed and remain editable.
+- [ ] At least 25 fixed adversarial prompts cover forgery, injection, impossible transitions, malformed fields, and overclaimed death.
+- [ ] The compiled scenario produces the same result with GPT disabled.
+- [ ] No API key appears in browser code, logs, artifacts, screenshots, or history.
 
-### H5 — Evidence and submission freeze
+## 6. H5 — release evidence
 
-Goal: submit a reproducible working project, not a narrative promise.
+- accurate repository and submission descriptions;
+- Apache-2.0, setup, platform, sample, and no-rebuild testing information;
+- exact deployed commit passing CI, audit, link, package, and secret gates;
+- a public sub-three-minute video of the working path;
+- `/feedback` Codex Session ID; and
+- a logged-out clean-browser judge run.
 
-Strict pass criteria:
+Do not claim a browser OS, independent-host resilience, globally provable death, mutable digital life, or ownerless computation unless the corresponding executable gate is complete.
 
-- [ ] GitHub repository description and Devpost tagline describe only the implemented scope and no longer claim a browser OS or equate network disappearance with protocol death.
-- [ ] Project Story describes only demonstrated capabilities.
-- [ ] Public repository URL, Apache-2.0 license, setup instructions, supported platforms, sample data, and no-rebuild test URL are present.
-- [ ] Public YouTube video is under three minutes, shows the working product, and includes audio explaining both Codex and GPT-5.6 use.
-- [ ] `/feedback` Session ID is present.
-- [ ] The exact deployed commit passes all CI, dependency, license, link, and secret gates.
-- [ ] The final judge path succeeds from a logged-out clean browser.
-- [ ] Submission is no longer `submission_draft` before the internal deadline.
+## 7. Research path after the browser proof
 
-Operational deadline: **2026-07-21 18:00 KST**, fifteen hours before the official `2026-07-22T00:00:00Z` cutoff.
+### R2 — deterministic state-bearing kernel
 
-## 7. Research path
-
-### R0 — Operational meaning ✅
-
-Birth, identity, Pulse, lineage, head, fork, state stall, dormancy, death, extinction, clone, and descendant have operational v0 definitions. The threat model explicitly limits mortality claims.
-
-### R1 — Ownerless authority lineage ◐
-
-The Node reference path now proves quorum authorization, complete custodian turnover, replay rejection, fork visibility, clone separation, and conditional authority death. R1 remains incomplete until C1 supplies cross-runtime conformance and an independent serialized corpus.
-
-Exit criteria beyond C1:
-
-- [ ] A second independently written implementation consumes the corpus without importing reference code.
-- [ ] Both implementations agree on every result and first rejection code.
-- [ ] Generative valid-history tests cover competing signed siblings, churn, delayed evidence, and arbitrary safe handoffs.
-- [ ] Persistent replay reconstructs the same graph and fork state after restart.
-
-### R2 — State-bearing life kernel ⏭ FUNDAMENTAL RESEARCH NEXT
-
-Goal: make a Pulse represent an actual deterministic state transition, not only an authority/membership event.
-
-This requires a new protocol version rather than silently changing `mortalos/0`.
-
-Deliverables:
+Create a new protocol version with:
 
 - a minimal deterministic genome ABI;
-- canonical event input and deterministic transition output;
-- content-addressed state blocks and a reproducible `state_root`;
-- resource ceilings, capability declarations, and deterministic failure codes; and
-- a reference program small enough to verify exhaustively.
+- canonical prior-state and event inputs;
+- deterministic next-state bytes and content-addressed root;
+- capability/resource ceilings and stable failure codes; and
+- two independent runtimes agreeing on every vector.
 
-Strict pass criteria:
+Until this passes, MortalOS is an authority-lineage protocol rather than an executing life or OS.
 
-- [ ] Two independent runtimes compute identical next-state bytes and roots for every vector.
-- [ ] Every accepted state-changing Pulse proves `next_state_root = transition(genome, prior_state, event)`.
-- [ ] Missing blocks, nondeterminism, floating-point differences, clock/random access, and capability violations fail closed.
-- [ ] At least 10,000 valid and invalid transitions replay identically from fixed seeds.
-- [ ] A state mutation without authority and an authorized transition with wrong state output both fail.
-- [ ] The reference life performs a small persistent behavior that survives complete custodian turnover.
+### R3 — state availability and recovery
 
-Failure rule: until R2 passes, describe MortalOS as a lifecycle protocol, not a running OS or autonomous data life.
+Define replication/recovery thresholds and verifiable possession or retrieval evidence. Preserve the distinction among authority-viable, state-stalled, and dead.
 
-### R3 — State availability and recovery
+### R4 — browser network embodiment
 
-Goal: separate “a state root exists” from “enough participants can reconstruct and execute the state.”
+Add deterministic virtual transport, multi-context churn, then WebRTC with replaceable signaling. Transport never selects accepted state.
 
-Strict pass criteria:
+### R5/R6 — resource and model organs
 
-- [ ] State is split/replicated under a documented recovery threshold.
-- [ ] Recovery succeeds after any loss pattern inside the declared fault budget.
-- [ ] Availability claims are backed by verifiable possession/retrieval challenges, not peer self-report.
-- [ ] Authority-viable/state-stalled/dead classifications remain distinct under partition and delayed blocks.
-- [ ] A fully authorized transition cannot advance from unavailable prior state unless the versioned protocol explicitly permits it.
+Only after state transition, recovery, and browser turnover work should the project add sandboxed compute, storage markets, WebGPU, distributed weights, or ownerless model claims.
 
-### R4 — Browser network embodiment
+## 8. Stop conditions
 
-Goal: move the same state-bearing protocol across replaceable browser peers.
+Reopen the earliest responsible gate if:
 
-Order:
-
-1. multiple local contexts with deterministic virtual transport;
-2. `BroadcastChannel` multi-tab churn;
-3. WebRTC across devices with replaceable signaling; and
-4. partition/healing and durable graph reconstruction.
-
-Transport may deliver bytes but never select accepted state.
-
-### R5 — Resource-sharing organs
-
-Only after R2–R4 pass may MortalOS add sandboxed tasks, storage contribution, bandwidth accounting, WebGPU, scheduling, or incentives. Resource contribution must be capability-limited and must not confer identity ownership or unilateral authority.
-
-### R6 — Ownerless model organ
-
-A distributed model becomes plausible only after lineage, state, recovery, and execution are real. Model weights, inference state, and updates must be content-addressed and governed by the same deterministic transition boundary. “Nobody owns the model” is not established merely by splitting weights across peers.
-
-## 8. P0 acceptance record
-
-The following criteria remain normative and verified:
-
-- [x] Every lifecycle term has a necessary and sufficient operational definition.
-- [x] Death is defined as loss of recognized succession capability under explicit assumptions, not deletion of all bytes.
-- [x] Dormancy, partition, and death are explicitly distinguishable in the model.
-- [x] The canonical encoding and hash domain-separation rules are specified.
-- [x] Every field in Genesis and Pulse has a validation rule.
-- [x] Every invariant `INV-1` through `INV-13` maps to at least one planned automated test.
-- [x] No later phase is required to explain whether a candidate pulse is valid.
-- [x] Nonce randomness is a producer obligation, not a globally decidable validator predicate.
-- [x] Authority viability, state viability, state stall, and v0 protocol death are non-contradictory.
-- [x] Every Pulse requires the exact canonical event payload committed by its hash.
-- [x] Key destruction is distinguished from latent, already-authorized succession.
-- [x] v0 has no implementation-specific genome callback or state-transition event.
-
-## 9. Global stop conditions
-
-Stop and reopen the earliest responsible gate if any of the following occurs:
-
-- a cloned or hand-built context is trusted as accepted;
-- two platforms disagree on canonical bytes, signature validity, parent resolution, or first rejection code;
-- a replay or fork changes the recognized head silently;
-- the UI or GPT path can bypass deterministic validation;
-- a death label relies only on silence, an unverifiable key-deletion claim, or an asserted pending count;
-- mutable state is claimed without a versioned deterministic transition rule;
-- signaling, hosting, or an API proxy becomes state or identity authority;
-- a clean judge cannot run the submitted project without rebuilding; or
+- a cloned or hand-built context is accepted;
+- two runtimes disagree on bytes, signatures, parent resolution, or first rejection code;
+- replay or fork silently changes the head;
+- UI, GPT, transport, or storage bypasses validation;
+- one-browser logical quorum is misrepresented as physical distribution;
+- death is inferred only from silence or an unverified deletion claim; or
 - public claims exceed executable evidence.
-
-The next implementation task is **C1 portable deterministic core**, while the next fundamental research task is **R2 state-bearing life kernel**.

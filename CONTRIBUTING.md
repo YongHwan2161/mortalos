@@ -4,7 +4,7 @@ MortalOS is licensed under the [Apache License 2.0](LICENSE). Unless you explici
 
 ## Before opening a change
 
-1. Preserve the protocol invariants in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
+1. Preserve the normative rules and invariants in [`docs/PROTOCOL.md`](docs/PROTOCOL.md) and [`docs/TRACEABILITY.md`](docs/TRACEABILITY.md).
 2. Update [`docs/TRACEABILITY.md`](docs/TRACEABILITY.md) in the same change when modifying an invariant, message field, domain separator, validation precedence, or threat assumption.
 3. Add a deterministic positive or negative conformance case for every validator behavior change.
 4. Run the complete gate:
