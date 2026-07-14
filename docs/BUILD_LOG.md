@@ -33,8 +33,10 @@ Corrections:
 - added exact canonical event-payload sidecars to the complete validation input;
 - replaced unverifiable global nonce freshness with a creator randomness obligation;
 - split authority viability, state viability, operational life, state stall, and v0 protocol death;
+- required controlled mortality tests to account for already signed latent successors;
+- removed `state-transition` from v0 because an unspecified genome callback is not a deterministic consensus rule;
 - removed `repair` as a duplicate consensus event kind;
-- added `INV-11` and `INV-12` with planned tests;
+- added `INV-11` through `INV-13` with planned tests;
 - upgraded Ajv after a moderate advisory and obtained a zero-vulnerability audit;
 - added clean-checkout CI; and
 - reconciled the implementation plan with live Devpost rules, judging criteria, required submission fields, and date conflicts.
