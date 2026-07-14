@@ -135,10 +135,11 @@ const lifecycleSections = [
   "### 4.15 Dormant",
   "### 4.16 Partitioned",
   "### 4.17 Fork",
-  "### 4.18 Death",
-  "### 4.19 Extinction",
-  "### 4.20 Clone",
-  "### 4.21 Descendant"
+  "### 4.18 Latent successor",
+  "### 4.19 Death",
+  "### 4.20 Extinction",
+  "### 4.21 Clone",
+  "### 4.22 Descendant"
 ];
 for (const section of lifecycleSections) {
   assert(text.protocol.includes(section), `Missing operational definition: ${section}`);
@@ -202,7 +203,7 @@ for (const code of [
   assert(rejectionCodes.includes(code), `Missing event-payload rejection code: ${code}`);
 }
 
-for (let index = 1; index <= 12; index += 1) {
+for (let index = 1; index <= 13; index += 1) {
   const invariant = `INV-${index}`;
   const traceLine = text.traceability
     .split("\n")
@@ -218,7 +219,8 @@ const requiredThreatStatements = [
   "GPT-5.6 must not",
   "peer-to-peer execution and state authority",
   "event-payload sidecars",
-  "state-stalled"
+  "state-stalled",
+  "latent successor"
 ];
 for (const statement of requiredThreatStatements) {
   assert(
@@ -233,19 +235,22 @@ const p0Criteria = [
   "Dormancy, partition, and death are explicitly distinguishable",
   "The canonical encoding and hash domain-separation rules are specified.",
   "Every field in Genesis and Pulse has a validation rule.",
-  "Every invariant `INV-1` through `INV-12` maps to at least one planned automated test.",
+  "Every invariant `INV-1` through `INV-13` maps to at least one planned automated test.",
   "No later phase is required to explain whether a candidate pulse is valid.",
   "Nonce randomness is a producer obligation",
   "Authority viability, state viability, state stall, and v0 protocol death are non-contradictory.",
-  "Every Pulse requires the exact canonical event payload"
+  "Every Pulse requires the exact canonical event payload",
+  "Key destruction is distinguished from latent, already-authorized succession.",
+  "v0 has no implementation-specific genome callback or state-transition event."
 ];
 for (const criterion of p0Criteria) {
   assert(text.implementationPlan.includes(criterion), `Implementation plan lost P0 criterion: ${criterion}`);
 }
 
 assert(
-  !pulseSchema.$defs.event.properties.kind.enum.includes("repair"),
-  "repair must remain policy, not a duplicate consensus event kind"
+  !pulseSchema.$defs.event.properties.kind.enum.includes("repair") &&
+    !pulseSchema.$defs.event.properties.kind.enum.includes("state-transition"),
+  "repair and state transition must remain outside the v0 consensus event vocabulary"
 );
 assert(
   text.protocol.includes("Global nonce freshness is **not** a validator predicate"),
@@ -259,6 +264,10 @@ assert(
   text.protocol.includes("the exact canonical event-payload sidecar bytes"),
   "Validation context omits the event-payload sidecar"
 );
+assert(
+  text.protocol.includes("Destroying current private keys does not invalidate signatures already produced"),
+  "Protocol omits latent successor authority"
+);
 
 console.log("MortalOS P0 verification: PASS");
 console.log(`- Schemas compiled: 2`);
@@ -269,8 +278,8 @@ console.log(`- Operational lifecycle definitions checked: ${lifecycleSections.le
 console.log(`- Domain separators checked: ${domains.length}`);
 console.log(`- Message validation rows checked: ${genesisFields.length + pulseFields.length}`);
 console.log(`- Unique rejection codes checked: ${rejectionCodes.length}`);
-console.log(`- Invariant-to-test mappings checked: 12`);
-console.log("- Threat-model boundary statements checked: 8");
+console.log(`- Invariant-to-test mappings checked: 13`);
+console.log("- Threat-model boundary statements checked: 9");
 console.log("Document digests:");
 for (const name of ["protocol", "threatModel", "rejectionCodes", "traceability"]) {
   console.log(`  ${paths[name]} sha256:${sha256(text[name])}`);
