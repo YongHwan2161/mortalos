@@ -34,7 +34,8 @@ This command is a P0 documentation/schema consistency gate. It is not a substitu
 - Identity is derived from the canonical Genesis body; there is no organism-owner private key.
 - Current custodian quorum holds temporary continuation authority.
 - State availability and authority availability are separate.
-- v0 protocol death means irreversible below-quorum authority loss under the honest-ephemeral-key test assumption.
+- v0 keeps `state_root` immutable; executable genome/state-transition semantics require a later versioned deterministic runtime.
+- v0 protocol death means irreversible below-quorum authority loss, with no latent pre-authorized successor, under the honest-ephemeral-key test assumption.
 - Missing state with live authority is `state-stalled`, not protocol-dead.
 - GPT, UI, transport, signaling, and hosted proposal services may propose or explain but never define validity.
 
