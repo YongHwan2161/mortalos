@@ -104,8 +104,7 @@
           "enum": [
             "heartbeat",
             "state-transition",
-            "membership-change",
-            "repair"
+            "membership-change"
           ]
         },
         "payload_hash": {
