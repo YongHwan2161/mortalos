@@ -103,7 +103,6 @@
         "kind": {
           "enum": [
             "heartbeat",
-            "state-transition",
             "membership-change"
           ]
         },
