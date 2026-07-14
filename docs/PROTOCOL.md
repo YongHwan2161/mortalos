@@ -1,0 +1,431 @@
+# MortalOS Protocol v0
+
+Status: **Normative pre-implementation specification**  
+Protocol identifier: `mortalos/0`  
+Scope: P0 operational semantics for birth, identity, lineage, continuity, fork, dormancy, death, extinction, clone, and descendant.
+
+This document uses **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** as normative requirements.
+
+## 1. Protocol purpose
+
+MortalOS v0 defines how an entity can have one recognized identity and an authorized state lineage even though every physical host is replaceable and no individual peer owns the entity identity.
+
+The protocol does **not** attempt to prove that all copies of data have been deleted. It defines death as loss of the capability to create another valid state in the same lineage under the declared system and threat model.
+
+The following question is the P0 design boundary:
+
+> Given a Genesis envelope, an optional accepted parent Pulse, a candidate Pulse, and the protocol rules in this document, must every conforming validator return the same validation result and rejection code?
+
+The required answer is yes. Transport, UI, clocks, GPT output, and later implementation phases MUST NOT affect protocol validity.
+
+## 2. Normative dependencies and encodings
+
+MortalOS v0 uses:
+
+- JSON Schema Draft 2020-12 for structural message schemas;
+- RFC 8785 JSON Canonicalization Scheme (JCS) for deterministic JSON bytes;
+- UTF-8 for canonical byte encoding;
+- SHA-256 as specified by FIPS 180-4 for v0 hashes;
+- Ed25519 as specified by RFC 8032 for v0 signatures; and
+- unpadded base64url for binary values.
+
+References:
+
+- <https://json-schema.org/draft/2020-12/json-schema-core>
+- <https://www.rfc-editor.org/rfc/rfc8785>
+- <https://csrc.nist.gov/pubs/fips/180-4/upd1/final>
+- <https://www.rfc-editor.org/rfc/rfc8032>
+- <https://www.rfc-editor.org/rfc/rfc4648>
+
+### 2.1 JSON restrictions
+
+All signed objects MUST:
+
+1. conform to their JSON Schema;
+2. contain no duplicate property names;
+3. contain no unknown properties;
+4. use strings rather than JSON numbers for unbounded counters such as `sequence`;
+5. preserve Unicode strings exactly as received; and
+6. be canonicalized with RFC 8785 before hashing.
+
+Arrays are semantically ordered. A conforming producer MUST sort:
+
+- custodian arrays by ascending `key_id`;
+- approval arrays by ascending `key_id`; and
+- acceptance arrays by ascending `key_id`.
+
+A validator MUST reject arrays that are not strictly sorted or that contain duplicate `key_id` values.
+
+### 2.2 Text encodings
+
+| Value | Text form | Binary length |
+|---|---|---:|
+| SHA-256 digest | `sha256:` + 43 base64url characters | 32 bytes |
+| Organism ID | `mortalos:` + 43 base64url characters | 32 bytes |
+| Peer ID | `peer:` + 43 base64url characters | 32 bytes |
+| Ed25519 public key | `ed25519:` + 43 base64url characters | 32 bytes |
+| Ed25519 signature | `ed25519:` + 86 base64url characters | 64 bytes |
+| Genesis nonce | `nonce:` + 22 base64url characters | 16 bytes |
+
+Padding (`=`), standard base64 characters (`+`, `/`), or incorrect decoded lengths MUST be rejected.
+
+## 3. Domain separation
+
+No v0 signature or hash input may be reused under another semantic purpose. The following ASCII byte strings, each including the final NUL byte, are normative:
+
+```text
+MORTALOS/V0/GENESIS-ID\0
+MORTALOS/V0/GENESIS-APPROVAL\0
+MORTALOS/V0/PULSE-ID\0
+MORTALOS/V0/PULSE-APPROVAL\0
+MORTALOS/V0/CUSTODY-ACCEPTANCE\0
+MORTALOS/V0/CUSTODY-COMMITMENT\0
+MORTALOS/V0/PEER-ID\0
+```
+
+Let `H(x)` mean SHA-256 over bytes `x`, `JCS(x)` mean the RFC 8785 canonical UTF-8 bytes of JSON object `x`, and `B64(x)` mean unpadded base64url.
+
+Derived values are:
+
+```text
+peer_id(public_key_raw) =
+  "peer:" || B64(H(D_PEER_ID || public_key_raw))
+
+organism_id(genesis_body) =
+  "mortalos:" || B64(H(D_GENESIS_ID || JCS(genesis_body)))
+
+genesis_approval_message(genesis_body) =
+  H(D_GENESIS_APPROVAL || raw_digest(organism_id(genesis_body)))
+
+pulse_hash(pulse_body) =
+  "sha256:" || B64(H(D_PULSE_ID || JCS(pulse_body)))
+
+pulse_approval_message(pulse_body) =
+  H(D_PULSE_APPROVAL || raw_digest(pulse_hash(pulse_body)))
+
+custody_acceptance_message(pulse_body) =
+  H(D_CUSTODY_ACCEPTANCE || raw_digest(pulse_hash(pulse_body)))
+
+custody_commitment(custody_descriptor) =
+  "sha256:" || B64(H(D_CUSTODY_COMMITMENT || JCS(custody_descriptor)))
+```
+
+Here `D_*` is the corresponding domain separator above. `raw_digest` removes the textual prefix and base64url-decodes exactly 32 bytes.
+
+## 4. Operational vocabulary
+
+Each term below has a necessary and sufficient protocol meaning.
+
+### 4.1 Peer
+
+A **peer** is a process possessing an Ed25519 private key corresponding to a declared custodian public key. A browser tab or device without such a key is not a custodian peer for that key.
+
+### 4.2 Custodian
+
+A **custodian** at Pulse `P` is a peer whose `key_id` appears in the custody descriptor effective after `P`. For Genesis, the effective custody descriptor is `initial_custodians` plus `initial_quorum`.
+
+A custodian holds authority only as part of a valid quorum. Custodian status is not ownership of `organism_id`.
+
+### 4.3 Genome
+
+The **genome** is the immutable executable transition-rule artifact identified by `genome_hash`. MortalOS v0 does not permit genome mutation within one lineage. A candidate Pulse whose `genome_hash` differs from Genesis MUST be rejected.
+
+### 4.4 Birth
+
+An entity is **born** if and only if:
+
+1. its Genesis envelope passes structural and semantic validation;
+2. every listed initial custodian supplies one valid Genesis approval; and
+3. the derived organism ID is accepted as the identifier of the new lineage.
+
+The all-initial-custodians birth rule proves consent and possession for every initial custodian. The lower `initial_quorum` governs Pulses after birth.
+
+### 4.5 Identity
+
+The entity's **identity** is exactly `organism_id`, derived from the canonical Genesis body. It is immutable within one lineage and has no corresponding organism owner private key.
+
+Two byte-identical Genesis bodies have the same identity. A clone or independent birth MUST use a fresh `nonce`; otherwise it is not a new Genesis body.
+
+### 4.6 Pulse
+
+A **Pulse** is an authorized state-successor proposal consisting of a signed Pulse body and its approval/acceptance evidence. A Pulse becomes accepted relative to a parent only when every applicable structural, contextual, semantic, and authorization rule passes.
+
+### 4.7 Lineage
+
+A **lineage** is an ordered sequence:
+
+```text
+valid Genesis -> accepted Pulse 1 -> accepted Pulse 2 -> ... -> accepted Pulse n
+```
+
+Every Pulse after Genesis MUST name exactly one parent and increment its parent's sequence by one. The first Pulse has sequence `"1"` and uses the Genesis organism digest as its `parent_hash`. Later Pulses use the previous Pulse hash.
+
+### 4.8 Recognized head
+
+For a validator's known message set, the **recognized head** is the unique highest accepted Pulse reachable from Genesis.
+
+If two distinct, individually valid Pulses share one accepted parent, the validator MUST enter `FORKED` state and MUST NOT automatically choose either child. A deterministic winner rule is intentionally absent in v0; Byzantine fork resolution is out of scope.
+
+### 4.9 Continuity authority
+
+**Continuity authority** is the ability of a set of current custodians to satisfy the current quorum with valid signatures for one candidate successor.
+
+No individual peer has continuity authority in a `2-of-3` entity.
+
+### 4.10 Alive
+
+A lineage is **alive** if and only if both are actually true under the system model:
+
+1. at least one set of current custodians still controls enough private keys to satisfy the current quorum; and
+2. the state required by the genome to create the next valid Pulse is recoverable.
+
+Alive is an ontic property, not necessarily an observable or provable status. An observer may classify it as `continuable`, `dormant`, or `unknown` based on available evidence.
+
+### 4.11 Continuable
+
+A lineage is **continuable to observer O** when O has current cryptographic evidence and connectivity sufficient to assemble a valid next Pulse. This is observer-relative and may change after a partition heals.
+
+### 4.12 Dormant
+
+A lineage is **dormant to observer O** when O has an accepted head but has not observed a valid successor within O's local activity window and lacks evidence proving either continuity or death.
+
+Dormancy MUST NOT be treated as death. The local activity window is a UI/operations parameter and MUST NOT affect Pulse validity.
+
+### 4.13 Partitioned
+
+A lineage is **partitioned to observer O** when O has evidence that the current peer communication graph is split or that peers report mutually unreachable components.
+
+Partition is a network condition, not a proof of life or death. In a `2-of-3` partition, a component with two current custodians may advance; a component with one MUST stall.
+
+### 4.14 Fork
+
+A **fork** exists if two distinct Pulse bodies:
+
+- have the same `organism_id`;
+- have the same `sequence`;
+- have the same `parent_hash`; and
+- each independently passes all validations relative to that parent.
+
+In the v0 honest-custodian model, quorum intersection plus the sign-once rule prevents a valid fork. Observation of a valid fork is evidence of equivocation, key compromise, a validator defect, or a violated threat-model assumption.
+
+### 4.15 Death
+
+A lineage is **dead** if and only if no future valid successor can be produced under the current accepted state because at least one indispensable continuation capability has been irreversibly lost, including:
+
+- fewer private keys remain than the current quorum requires; or
+- indispensable state is below its recovery threshold.
+
+Death does not require historical bytes, public keys, Genesis, Pulses, or genome artifacts to disappear. Those artifacts may remain readable.
+
+An observer cannot generally prove that no unobserved key or state copy exists. Therefore v0 defines no globally authoritative `death_certificate` message. UIs MAY report `presumed dead` under a stated local policy but MUST distinguish it from protocol-proven invalidity of a candidate Pulse.
+
+### 4.16 Extinction
+
+A lineage is **extinct within observation domain O** if and only if:
+
+1. it is dead within O under the stated assumptions; and
+2. O contains no recoverable genome and state material sufficient to create a new Genesis derived from it.
+
+Global extinction is not provable in an open network because unknown copies may exist. Extinction is not emitted as a consensus fact in v0.
+
+### 4.17 Clone
+
+A **clone** is a separately born entity whose Genesis reuses a prior entity's `genome_hash` and optionally a historical `initial_state_root`, but is not authorized by a reproduction event in the prior lineage.
+
+A clone MUST use a fresh Genesis nonce and therefore MUST have a different `organism_id`.
+
+### 4.18 Descendant
+
+A **descendant** is a separately born entity whose Genesis is cryptographically linked to an authorized reproduction event in a parent lineage.
+
+MortalOS v0 reserves this term but defines no valid reproduction event. Any claim of protocol-recognized descent in v0 MUST be rejected as unsupported. A later protocol version may define it.
+
+## 5. Custody and quorum rules
+
+A custody descriptor has this logical form:
+
+```json
+{
+  "custodians": [
+    { "key_id": "peer:...", "public_key": "ed25519:..." }
+  ],
+  "quorum": { "type": "threshold", "threshold": 2 }
+}
+```
+
+For v0:
+
+- custodian count MUST be between 3 and 16 inclusive;
+- `key_id` and public key MUST be unique;
+- each `key_id` MUST equal the derived peer ID of its public key;
+- threshold MUST be at least 2 and no greater than custodian count;
+- threshold MUST be a strict majority: `2 * threshold > custodian_count`; and
+- arrays MUST be strictly sorted by `key_id`.
+
+Every current custodian MUST follow the **sign-once rule**: it MUST sign no more than one distinct Pulse hash for a given `(organism_id, sequence, parent_hash)` tuple.
+
+### 5.1 Membership handoff
+
+A valid Pulse may replace custodians. It requires:
+
+1. valid approvals satisfying the current parent-derived quorum; and
+2. one valid custody acceptance from every public key newly added to `next_custodians`.
+
+New custodians have no authority before the handoff Pulse is accepted. Removed custodians have no authority after it is accepted.
+
+## 6. Genesis message
+
+The structural schema is [`schemas/genesis.schema.json`](../schemas/genesis.schema.json).
+
+### 6.1 Genesis field validation
+
+| Field | Normative validation |
+|---|---|
+| `kind` | MUST equal `mortalos.genesis`. |
+| `body.protocol_version` | MUST equal `mortalos/0`. |
+| `body.hash_algorithm` | MUST equal `sha-256`. |
+| `body.signature_algorithm` | MUST equal `ed25519`. |
+| `body.genome_hash` | MUST be a correctly encoded SHA-256 digest. |
+| `body.initial_state_root` | MUST be a correctly encoded SHA-256 digest. |
+| `body.initial_custodians` | MUST satisfy all custody rules and be strictly sorted. |
+| `body.initial_quorum` | MUST satisfy threshold and strict-majority rules. |
+| `body.nonce` | MUST decode to exactly 16 bytes and be fresh for a new birth. |
+| `approvals` | MUST contain exactly one valid Genesis approval from every initial custodian, sorted by `key_id`, with no other signers. |
+
+The organism ID is derived, never transmitted as an authoritative field in Genesis. A display implementation MAY show the derived value.
+
+## 7. Pulse message
+
+The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.json).
+
+### 7.1 Pulse field validation
+
+| Field | Normative validation |
+|---|---|
+| `kind` | MUST equal `mortalos.pulse`. |
+| `body.protocol_version` | MUST equal `mortalos/0`. |
+| `body.organism_id` | MUST equal the ID derived from the validated Genesis. |
+| `body.sequence` | MUST be canonical decimal without a sign or leading zero and equal parent sequence + 1. |
+| `body.parent_hash` | For sequence 1, MUST encode the Genesis identity digest as `sha256:`; otherwise MUST equal the accepted parent Pulse hash. |
+| `body.genome_hash` | MUST equal the Genesis genome hash. |
+| `body.current_custody_hash` | MUST equal the commitment derived from the custody descriptor effective at the parent. |
+| `body.state_root` | MUST be a correctly encoded SHA-256 digest and obey the event-specific rule. |
+| `body.event.kind` | MUST be one of the v0 event kinds below. |
+| `body.event.payload_hash` | MUST commit to the complete external event payload, or to canonical `{}` when no payload exists. |
+| `body.next_custodians` | MUST satisfy all custody rules and be strictly sorted. |
+| `body.next_quorum` | MUST satisfy threshold and strict-majority rules. |
+| `approvals` | MUST contain unique valid signatures from current custodians meeting the parent-derived quorum. |
+| `acceptances` | MUST contain exactly one valid custody-acceptance signature from every newly added custodian and no others. |
+
+### 7.2 Event-specific rules
+
+| Event kind | State root | Next custody | Required external payload semantics |
+|---|---|---|---|
+| `heartbeat` | MUST equal parent state root. | MUST equal current custody. | Canonical empty object. |
+| `state-transition` | MAY differ according to genome rules. | MUST equal current custody. | Complete transition input/result commitment. |
+| `membership-change` | MUST equal parent state root. | MAY differ. | Reason and intended handoff metadata; non-authoritative. |
+| `repair` | MUST equal parent logical state root. | MAY differ. | Repair observation and replacement metadata; non-authoritative. |
+
+Composite state-and-membership changes are forbidden in v0. This separation makes validation and failure attribution deterministic.
+
+## 8. Validation context
+
+A Pulse cannot be validated from its bytes alone. The complete required context is:
+
+- validated Genesis body and approvals;
+- the unique accepted parent Pulse, if sequence is greater than 1;
+- the custody descriptor effective at the parent;
+- the parent state root;
+- the known accepted ancestry needed to reject replay/rollback; and
+- the genome transition validator for a `state-transition` event.
+
+No network, UI, AI, or wall-clock input is part of protocol validity.
+
+P0 fully determines all lifecycle and envelope validity rules. P1 will implement them. The only intentionally delegated content rule is whether a `state-transition` is permitted by the immutable genome identified at Genesis; such a Pulse cannot be accepted unless that genome validator is present and returns success.
+
+## 9. Deterministic validation order
+
+Validators MUST evaluate in the following order and return the first applicable rejection code from [`REJECTION_CODES.md`](REJECTION_CODES.md):
+
+1. byte decoding and JSON parsing;
+2. schema and unknown-field validation;
+3. canonical encoding and array ordering;
+4. protocol version and algorithm identifiers;
+5. derived identifiers, key IDs, hashes, and commitments;
+6. Genesis or parent context;
+7. sequence, parent, lineage, genome, and event semantics;
+8. signer eligibility, signature validity, duplicate evidence, and quorum;
+9. new-custodian acceptance validation; and
+10. replay, equivocation, and fork-context checks.
+
+Validation returns one of:
+
+```text
+Accept {
+  organism_id,
+  object_hash,
+  next_custody_descriptor,
+  next_state_root
+}
+
+Reject {
+  code,
+  field_path,
+  deterministic_detail
+}
+
+Forked {
+  parent_hash,
+  child_hashes[]
+}
+```
+
+`deterministic_detail` MUST NOT include locale-specific or runtime-dependent text. Human-readable messages are UI metadata keyed by stable rejection code.
+
+## 10. Observer states versus protocol facts
+
+The following table prevents a UI from converting uncertainty into a false death claim.
+
+| Observation | Allowed local label | Forbidden conclusion |
+|---|---|---|
+| Recent accepted Pulse and reachable quorum | `continuable` | None beyond local evidence. |
+| No recent Pulse; peer reachability unknown | `dormant` or `unknown` | `dead`. |
+| Known minority component | `partitioned / stalled` | Entire lineage is dead. |
+| Current candidate lacks quorum | `candidate rejected` | No other valid candidate can exist. |
+| Volatile keys intentionally destroyed below quorum under controlled test | `dead under v0 test assumptions` | Every possible copy was physically erased. |
+| Two valid children of one parent | `forked` | Silently select a winner. |
+
+## 11. Clone procedure
+
+To create a clone:
+
+1. select a prior `genome_hash` and optional historical `initial_state_root`;
+2. choose a fresh 128-bit random nonce;
+3. choose a new initial custodian set and valid quorum;
+4. construct and unanimously approve a new Genesis; and
+5. derive its new organism ID.
+
+The clone MUST NOT reference prior signatures as authority. Historical artifacts may be provenance metadata outside the v0 signed Genesis body, but they confer no lineage continuity.
+
+## 12. Conformance
+
+A v0 implementation is conforming only if it:
+
+- validates the exact schemas;
+- implements the domain-separated derivations above;
+- follows the deterministic validation order;
+- implements every field rule and event-specific rule;
+- exposes stable rejection codes;
+- never treats GPT, UI, transport, or signaling output as authority;
+- enters `FORKED` instead of silently resolving two valid siblings; and
+- states the mortality limitations from the threat model in user-facing documentation.
+
+## 13. Normative companion documents
+
+- [`THREAT_MODEL.md`](THREAT_MODEL.md)
+- [`REJECTION_CODES.md`](REJECTION_CODES.md)
+- [`TRACEABILITY.md`](TRACEABILITY.md)
+- [`P0_VERIFICATION_REPORT.md`](P0_VERIFICATION_REPORT.md)
+- [`genesis.schema.json`](../schemas/genesis.schema.json)
+- [`pulse.schema.json`](../schemas/pulse.schema.json)
+
