@@ -33,8 +33,11 @@ P0 red-team review found that this must be refined further:
 - **Operational life:** both authority and state are viable.
 - **State stall:** authority exists but state cannot currently be reconstructed.
 - **Protocol death in v0:** quorum authority is irreversibly below threshold under the honest-ephemeral-key test assumption.
+- **Latent successor:** previously created durable authorization evidence may still advance a candidate after current keys disappear.
 
 State loss alone is not v0 protocol death because a quorum can still sign a heartbeat or custody change from the committed root. A future state-backed mortality claim requires an explicit, verifiable availability mechanism.
+
+Likewise, key destruction alone is not death if a pre-authorized successor can still be delivered or completed. The controlled mortality test must account for pending approval and acceptance artifacts.
 
 The project succeeds only if these distinctions are executable and testable, not merely metaphorical.
 
@@ -62,6 +65,7 @@ Anything beyond this claim is lower priority until the claim passes every gate b
 - The protocol uses canonical serialized messages and deterministic validation.
 - Every Pulse is validated with the exact canonical event-payload sidecar committed by its `payload_hash`.
 - No central compute or storage backend is authoritative for entity state.
+- v0 does not execute `genome_hash` or accept logical state transitions; those require a later deterministic, versioned runtime.
 - A bootstrap or signaling service may help peers connect, but it may not decide valid MortalOS state.
 
 ### Non-goals for v0
@@ -157,6 +161,7 @@ Every phase must preserve the following invariants:
 | INV-10 | AI output, UI state, and transport messages can propose but never define protocol validity. |
 | INV-11 | Every accepted Pulse is semantically validated against the exact canonical event payload committed by that Pulse. |
 | INV-12 | Authority availability and state availability are reported separately; v0 never treats state silence or state loss alone as protocol death. |
+| INV-13 | Destroying current private keys never retroactively invalidates existing approval or acceptance evidence; a latent successor prevents a death conclusion. |
 
 ## 6. Priority and gate policy
 
@@ -214,7 +219,7 @@ The long-term roadmap is too large for one Build Week. The submission must imple
 - [ ] Genesis and Pulse validation uses exact canonical bytes and the mandatory event-payload sidecar.
 - [ ] Real Ed25519 signatures authorize `2-of-3`; `0-of-3`, `1-of-3`, duplicate, replayed, and mutated evidence fail with stable codes.
 - [ ] Two fresh processes return byte-identical results for the same conformance corpus.
-- [ ] At least 10,000 seeded traces preserve `INV-1` through `INV-6` and `INV-11`.
+- [ ] At least 10,000 seeded traces preserve `INV-1` through `INV-6`, `INV-11`, and v0 state-root immutability.
 - [ ] Validator branch coverage is at least 90%.
 
 ### H2 — Minimum Viable Life scenario
@@ -228,6 +233,7 @@ birth {A,B,C}
 -> handoff {B,C,D}
 -> handoff {C,D,E}
 -> handoff {D,E,F}
+-> drain and enumerate pending authorization artifacts
 -> destroy authority below quorum
 -> reject same-lineage successor from public snapshot
 -> create clone with a different organism_id
@@ -238,6 +244,7 @@ birth {A,B,C}
 - [ ] `npm run demo:trace` executes the entire scenario without network or model access.
 - [ ] All original custodians are absent while the organism ID remains unchanged.
 - [ ] The dead-lineage continuation attempt fails for the expected stable code.
+- [ ] A delayed pre-authorized child is accepted before death is declared, proving that key destruction is not retroactive revocation.
 - [ ] State loss alone is shown as `state-stalled`, never as v0 protocol death.
 - [ ] The clone receives a different organism ID.
 - [ ] The trace is exportable as deterministic JSON for judges and tests.
@@ -302,7 +309,7 @@ GPT-5.6 will translate a natural-language failure experiment into a schema-const
 
 ### P0 — Operational semantics and threat model ✅ CORRECTED AND REVERIFIED
 
-**Gate result:** PASS after a second adversarial review on 2026-07-14. The review corrected event-payload context, nonce freshness semantics, authority/state availability separation, and the redundant repair event. See [`P0_VERIFICATION_REPORT.md`](P0_VERIFICATION_REPORT.md).
+**Gate result:** PASS after a second adversarial review on 2026-07-14. The review corrected event-payload context, nonce freshness semantics, authority/state availability separation, latent-successor semantics, unspecified genome execution, and the redundant repair event. See [`P0_VERIFICATION_REPORT.md`](P0_VERIFICATION_REPORT.md).
 
 **Goal**
 
@@ -324,11 +331,13 @@ Turn birth, identity, pulse, continuity, state stall, fork, dormancy, death, ext
 - [x] Dormancy, partition, and death are explicitly distinguishable in the model, including cases where an observer cannot know which occurred.
 - [x] The canonical encoding and hash domain-separation rules are specified.
 - [x] Every field in Genesis and Pulse has a validation rule.
-- [x] Every invariant `INV-1` through `INV-12` maps to at least one planned automated test.
+- [x] Every invariant `INV-1` through `INV-13` maps to at least one planned automated test.
 - [x] No later phase is required to explain whether a candidate pulse is valid.
 - [x] Nonce randomness is a producer obligation, not a globally unverifiable validator predicate.
 - [x] Authority viability, state viability, state stall, and v0 protocol death are non-contradictory.
 - [x] Every Pulse requires the exact canonical event payload committed by its `payload_hash`.
+- [x] Key destruction is distinguished from latent, already-authorized succession.
+- [x] v0 has no implementation-specific genome callback or state-transition event.
 
 **Gate failure condition**
 
@@ -358,6 +367,7 @@ Implement protocol validity as a pure library with no browser, networking, UI, s
 - [ ] Duplicate JSON properties are rejected before conversion into ordinary language objects.
 - [ ] A one-bit mutation of any committed field is rejected.
 - [ ] A missing, non-canonical, or substituted event payload is rejected with the specified first error code.
+- [ ] `state-transition` is rejected as unsupported and every accepted v0 Pulse preserves the parent state root.
 - [ ] Sequence gaps, incorrect parent hashes, wrong organism IDs, and unauthorized membership changes are rejected.
 - [ ] A repeated byte-identical Genesis is treated as the same birth; nonce freshness is never guessed from local history.
 - [ ] At least 10,000 seeded generated traces run without violating `INV-1` through `INV-6` and `INV-11`.
@@ -450,6 +460,7 @@ Prove authority-level protocol mortality: once current continuation authority is
 - local expiry and key-destruction behavior
 - death and dormancy test fixtures
 - state-stalled fixture with quorum authority still present
+- latent-successor fixtures with delayed complete and partially complete authorization evidence
 - clone-from-genome operation that creates a new Genesis
 
 **Strict exit criteria**
@@ -462,10 +473,11 @@ Prove authority-level protocol mortality: once current continuation authority is
 - [ ] Tests explicitly document that a malicious client may persist keys, which is outside the v0 threat model.
 - [ ] Temporary message silence alone is not asserted as globally proven death.
 - [ ] Loss of state with a still-usable quorum is labeled `state-stalled`; a heartbeat does not claim state recoverability.
+- [ ] A fully signed delayed child, or a membership change completable without new current-quorum signatures, prevents a death conclusion.
 
 **Gate failure condition**
 
-If public historical data alone can advance the same organism ID after authority loss, or if state loss is presented as v0 protocol death, the foundational mortality claim fails.
+If public historical data alone can create new authority, if latent authorization is ignored, or if state loss is presented as v0 protocol death, the foundational mortality claim fails.
 
 ---
 
@@ -565,6 +577,8 @@ If the signaling service or any single transport peer can define accepted state,
 **Goal**
 
 Add the first real organ: a small deterministic process whose state is maintained and moved by the living network.
+
+This phase must define a deterministic genome ABI/runtime and introduce state transition through an explicit protocol-version decision. An implementation-specific callback is not a consensus rule.
 
 **Deliverables**
 
