@@ -4,6 +4,8 @@ Status: **Normative**
 
 Validators return the first applicable code in the validation order defined by [`PROTOCOL.md`](PROTOCOL.md). Codes are stable protocol identifiers. Human-readable text may change without changing the code.
 
+The structural schemas deliberately leave protocol encodings and semantic ranges to the validator. This ensures, for example, that a string with a malformed digest encoding reaches `E_BINARY_ENCODING` and a one-approval Pulse reaches `E_APPROVAL_INSUFFICIENT_QUORUM` instead of collapsing both into `E_SCHEMA_INVALID`.
+
 ## 1. Result shape
 
 ```text
@@ -96,9 +98,9 @@ Reject {
 | `E_APPROVAL_DUPLICATE` | More than one approval is supplied for the same `key_id`. |
 | `E_APPROVAL_SIGNATURE_INVALID` | Ed25519 approval signature does not verify for the normative message. |
 | `E_APPROVAL_INSUFFICIENT_QUORUM` | Valid eligible unique approvals are below current threshold. |
-| `E_ACCEPTANCE_SIGNER_NOT_NEW` | Acceptance signer is not newly added by this Pulse. |
+| `E_ACCEPTANCE_SIGNER_NOT_NEW` | Acceptance signer appears in both current and next custody and therefore is unchanged, not newly added. |
 | `E_ACCEPTANCE_MISSING` | A newly added custodian has no valid acceptance. |
-| `E_ACCEPTANCE_UNEXPECTED` | An unchanged, removed, or unrelated peer supplies an acceptance. |
+| `E_ACCEPTANCE_UNEXPECTED` | A removed or unrelated peer that is not in the newly added set supplies an acceptance. |
 | `E_ACCEPTANCE_DUPLICATE` | More than one acceptance is supplied for the same `key_id`. |
 | `E_ACCEPTANCE_SIGNATURE_INVALID` | Custody-acceptance signature does not verify for the normative message. |
 

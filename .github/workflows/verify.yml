@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  p0:
+  protocol:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -27,3 +27,9 @@ jobs:
 
       - name: Run repository verification
         run: npm test
+
+      - name: Enforce validator branch coverage
+        run: npm run test:coverage
+
+      - name: Audit production and development dependencies
+        run: npm audit --audit-level=moderate

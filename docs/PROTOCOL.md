@@ -1,6 +1,6 @@
 # MortalOS Protocol v0
 
-Status: **Normative pre-implementation specification**  
+Status: **Normative v0 specification with an executable H1 reference validator**  
 Protocol identifier: `mortalos/0`  
 Scope: P0 operational semantics for birth, identity, lineage, continuity, fork, dormancy, death, extinction, clone, and descendant.
 
@@ -55,6 +55,10 @@ Arrays are semantically ordered. A conforming producer MUST sort:
 - acceptance arrays by ascending `key_id`.
 
 A validator MUST reject arrays that are not strictly sorted or that contain duplicate `key_id` values.
+
+For v0 keyed arrays, ascending order means lexicographic comparison of the complete ASCII `key_id` bytes as unsigned bytes. Because the v0 prefix and base64url alphabet are ASCII, this is also Unicode code-point order for these strings; locale-sensitive collation MUST NOT be used.
+
+The JSON Schemas define envelope shape, required fields, unknown-field exclusion, and JSON value types. Protocol encodings and semantic ranges—including prefixed base64url lengths, supported event kinds, custodian count, quorum range, and approval sufficiency—are intentionally enforced by the semantic validator so their stable rejection codes remain reachable. Schema success alone never establishes protocol validity.
 
 ### 2.2 Text encodings
 
@@ -462,6 +466,8 @@ A v0 implementation is conforming only if it:
 - never treats GPT, UI, transport, or signaling output as authority;
 - enters `FORKED` instead of silently resolving two valid siblings; and
 - states the mortality limitations from the threat model in user-facing documentation.
+
+The repository reference implementation is in [`src/`](../src/). Public Ed25519 and lifecycle vectors are in [`test/vectors/`](../test/vectors/); they contain verification material but no private signing keys. [`scripts/demo-trace.mjs`](../scripts/demo-trace.mjs) is a deterministic H2 consumer of the same validator.
 
 ## 13. Normative companion documents
 

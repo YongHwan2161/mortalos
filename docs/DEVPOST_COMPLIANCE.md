@@ -44,17 +44,17 @@ The live submission endpoint presents these required evidence objects. Its conci
 
 | Required object | MortalOS evidence | Current state | Gate |
 |---|---|---|---|
-| Working project | Pure validator, deterministic trace runner, MortalOS Lab judge path | Not implemented | Blocker |
+| Working project | Pure validator, deterministic trace runner, MortalOS Lab judge path | H1 validator and H2 trace implemented; browser Lab pending | Partial |
 | Category | Developer Tools | Selected in planning; final form pending | Open |
 | Project description | Devpost Project Story in English | Empty | Blocker |
 | Accurate tagline | Authority-loss wording consistent with the protocol | Current wording overclaims network-disappearance death | Blocker |
 | Demo video | Public YouTube, less than 3 minutes, clear audio | Missing | Blocker |
 | Repository URL | `https://github.com/YongHwan2161/mortalos` | Public | Partial |
-| Relevant public-repo license | Repository-root `LICENSE` | Missing | **Blocker** |
-| README setup and run guidance | Clean install, supported platforms, sample/test path | Partially added; clean-room run pending | Blocker |
+| Relevant public-repo license | Repository-root `LICENSE` | Apache-2.0 applied; package metadata aligned | Complete |
+| README setup and run guidance | Clean install, supported platforms, sample/test path | Clean-room `npm ci`, full tests, coverage, and deterministic trace pass; hosted judge run pending | Partial |
 | Codex/GPT-5.6 evidence | README build log plus video narration | Codex P0 evidence exists; actual GPT-5.6 product path missing | Blocker |
 | `/feedback` session ID | Session containing most core functionality | Not captured | Blocker |
-| Developer-tool testing instructions | Installation, platforms, sandbox/demo/test account | Not available | Blocker |
+| Developer-tool testing instructions | Installation, platforms, sandbox/demo/test account | `npm ci`, `npm test`, coverage, and H2 trace paths available; no hosted browser path yet | Partial |
 
 The live custom submission fields are IDs `27945` through `27951`. Required fields cover submitter type, country, one category, repository URL, and `/feedback` session ID. The developer-tool instruction field is conditionally required for MortalOS even though the generic form marks it optional.
 
@@ -73,19 +73,15 @@ A silent screencast, music-only recording, mock UI, or narration that omits eith
 
 ## 5. Repository and licensing gate
 
-The repository is public. Before submission it must have:
+The repository is public. Apache-2.0, reproducible local commands, deterministic traces, Codex documentation, and public-key-only conformance vectors are now present. Before submission it still must have:
 
-- a repository-root open-source license selected by the owner;
-- reproducible `npm ci` and `npm test` commands;
 - a supported-platform statement;
-- installation and judge testing instructions;
-- sample deterministic traces;
-- a description of Codex collaboration and human decisions;
+- a hosted judge testing path in addition to the source instructions;
 - accurate GPT-5.6 integration documentation;
-- no secrets or private signing keys; and
+- a final Git-history and built-bundle secret scan; and
 - a hosted or prepared judge path that does not require rebuilding.
 
-For a protocol and SDK, Apache-2.0 is the technical recommendation because it includes an explicit patent grant; MIT is simpler. This is an owner rights decision, so no license is applied automatically.
+The owner selected Apache-2.0. The root license text, package metadata, README, and contribution terms are aligned. Third-party dependencies, future datasets/model weights, and trademarks remain separately governed.
 
 ## 6. New-versus-existing-work evidence
 
@@ -110,7 +106,7 @@ The four criteria are equally weighted.
 | Potential Impact | A specific developer audience: builders of ephemeral browser collaboration, agent, and peer-to-peer systems who need continuity/failure semantics and a test harness. |
 | Quality of the Idea | Clear distinction among data persistence, identity, authority, state viability, and mortality, demonstrated rather than asserted. |
 
-The current repository scores primarily on idea quality. It cannot credibly score on implementation, design, or demonstrated impact until H1–H4 pass.
+H1/H2 now provide credible technological implementation evidence: duplicate-aware canonical validation, real Ed25519 quorum handoffs, stable rejection codes, 10,000 seeded adversarial continuations, and a deterministic life/death/clone trace. Design and product-impact evidence still depend on H3/H4.
 
 Recommended corrected tagline, to apply only after owner approval:
 

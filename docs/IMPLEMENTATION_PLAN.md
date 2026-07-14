@@ -1,6 +1,6 @@
 # MortalOS Implementation Plan
 
-Status: **P0 corrected and reverified; P1 implementation is next**  
+Status: **P0, Build Week H1, and Build Week H2 verified; H3 browser judge experience is next**  
 Last reviewed: **2026-07-14**, including the live OpenAI Build Week rules, judging criteria, submission form, and announcements.  
 Purpose: define the shortest falsifiable path from an idea to a demonstrated hostless digital life cycle while also producing a judgeable Developer Tools submission by the hackathon deadline.
 
@@ -201,13 +201,15 @@ The long-term roadmap is too large for one Build Week. The submission must imple
 
 **Strict gate**
 
-- [ ] The public repository contains a relevant `LICENSE` file.
+- [x] The public repository contains the exact Apache License 2.0 text in `LICENSE`, and package metadata declares `Apache-2.0`.
 - [x] All current repository work is traceable to commits made after the submission period opened; future work must preserve dated commits and Codex session evidence.
 - [ ] `npm ci && npm test` passes in CI from a clean checkout.
-- [ ] README instructions have been executed exactly as written in a clean environment.
-- [ ] No secret, personal token, API key, or private signing key is present in tracked files or build output.
+- [x] README `npm ci`, `npm test`, and coverage instructions pass in a clean-room copy with no pre-existing `node_modules`.
+- [x] No secret, personal token, API key, or private signing key is present in the H1/H2 source, public vectors, or generated trace; vectors contain public verification material only. Git-history scanning remains part of the final H5 freeze.
 
-### H1 — Deterministic protocol core
+### H1 — Deterministic protocol core ✅ VERIFIED
+
+**Gate result:** PASS on 2026-07-14. Evidence: [`H1_H2_VERIFICATION_REPORT.md`](H1_H2_VERIFICATION_REPORT.md), `src/`, `test/`, and the enforced npm gates.
 
 **Goal:** implement the smallest non-trivial Developer Tools artifact: a reusable pure validator and trace runner.
 
@@ -215,14 +217,16 @@ The long-term roadmap is too large for one Build Week. The submission must imple
 
 **Strict gate**
 
-- [ ] Raw input parsing detects duplicate JSON properties before ordinary object parsing can erase them.
-- [ ] Genesis and Pulse validation uses exact canonical bytes and the mandatory event-payload sidecar.
-- [ ] Real Ed25519 signatures authorize `2-of-3`; `0-of-3`, `1-of-3`, duplicate, replayed, and mutated evidence fail with stable codes.
-- [ ] Two fresh processes return byte-identical results for the same conformance corpus.
-- [ ] At least 10,000 seeded traces preserve `INV-1` through `INV-6`, `INV-11`, and v0 state-root immutability.
-- [ ] Validator branch coverage is at least 90%.
+- [x] Raw input parsing detects duplicate JSON properties before ordinary object parsing can erase them.
+- [x] Genesis and Pulse validation uses exact canonical bytes and the mandatory event-payload sidecar.
+- [x] Real Ed25519 signatures authorize `2-of-3`; `0-of-3`, `1-of-3`, duplicate, replayed, and mutated evidence fail with stable codes.
+- [x] Two fresh processes return byte-identical results for the same conformance corpus.
+- [x] A fixed-seed corpus of 10,000 adversarial trace continuations preserves `INV-1` through `INV-6`, `INV-11`, and v0 state-root immutability; failures print seed and case.
+- [x] Validator branch coverage is **91.58%** and line coverage is **98.97%**, enforced by `npm run test:coverage`.
 
-### H2 — Minimum Viable Life scenario
+### H2 — Minimum Viable Life scenario ✅ VERIFIED
+
+**Gate result:** PASS on 2026-07-14. `npm run demo:trace` emits deterministic JSON with SHA-256 `7b3046231a61f7b21882b02b67114941daccb3e4fb8b2fee745ab0e16de45ab7`.
 
 **Goal:** prove the distinctive claim in one replayable command before building a UI.
 
@@ -241,13 +245,13 @@ birth {A,B,C}
 
 **Strict gate**
 
-- [ ] `npm run demo:trace` executes the entire scenario without network or model access.
-- [ ] All original custodians are absent while the organism ID remains unchanged.
-- [ ] The dead-lineage continuation attempt fails for the expected stable code.
-- [ ] A delayed pre-authorized child is accepted before death is declared, proving that key destruction is not retroactive revocation.
-- [ ] State loss alone is shown as `state-stalled`, never as v0 protocol death.
-- [ ] The clone receives a different organism ID.
-- [ ] The trace is exportable as deterministic JSON for judges and tests.
+- [x] `npm run demo:trace` executes the entire scenario without network or model access.
+- [x] All original custodians are absent while the organism ID remains unchanged.
+- [x] The dead-lineage public-snapshot continuation attempt fails with `E_APPROVAL_INSUFFICIENT_QUORUM` and deterministic detail `0/2`.
+- [x] A complete pre-authorized child is independently verified, remains valid after current-key loss, and is accepted before death is declared.
+- [x] State loss with live quorum is shown as `state_stalled`, never as v0 protocol death.
+- [x] The same-genome clone receives a different `organism_id`.
+- [x] The trace is deterministic JSON; two fresh processes emit byte-identical output.
 
 ### H3 — Judgeable MortalOS Lab experience
 
@@ -297,8 +301,8 @@ GPT-5.6 will translate a natural-language failure experiment into a schema-const
 | KST date | Required outcome |
 |---|---|
 | July 14 | Correct P0, close repository/compliance gaps, freeze the H1 interface. |
-| July 15–16 | Complete H1 validator, signatures, deterministic corpus, and CI. |
-| July 17 | Complete H2 turnover/death/clone trace. |
+| July 15–16 | H1 validator, real signatures, deterministic corpus, and local coverage gate completed early on July 14; remote CI confirmation remains. |
+| July 17 | H2 turnover/death/resurrection-rejection/clone trace completed early on July 14. |
 | July 18 | Complete H3 judge experience and hosted test path. |
 | July 19 | Complete H4 GPT-5.6 path and safety tests. |
 | July 20 | Freeze features; write README/story and record the first complete video. |
@@ -345,7 +349,9 @@ If two conforming readers can legitimately disagree on validity from the same in
 
 ---
 
-### P1 — Deterministic lifecycle state machine
+### P1 — Deterministic lifecycle state machine ◐ REFERENCE CORE IMPLEMENTED
+
+**Current result:** the Build Week H1 subset is executable and verified. Remaining full-P1 work is an implementation-independent serialized corpus, exhaustive committed-byte mutation coverage, and an independent second implementation; these do not block H3.
 
 **Goal**
 
@@ -362,17 +368,17 @@ Implement protocol validity as a pure library with no browser, networking, UI, s
 
 **Strict exit criteria**
 
-- [ ] Repeated validation of identical bytes produces identical results across at least two fresh processes.
-- [ ] Unknown fields, missing fields, malformed encodings, and non-canonical encodings are rejected deterministically.
-- [ ] Duplicate JSON properties are rejected before conversion into ordinary language objects.
+- [x] Repeated validation of identical bytes produces byte-identical trace results across two fresh processes.
+- [x] Unknown fields, missing fields, malformed encodings, and non-canonical encodings are rejected deterministically.
+- [x] Duplicate JSON properties are rejected before conversion into ordinary language objects.
 - [ ] A one-bit mutation of any committed field is rejected.
-- [ ] A missing, non-canonical, or substituted event payload is rejected with the specified first error code.
-- [ ] `state-transition` is rejected as unsupported and every accepted v0 Pulse preserves the parent state root.
-- [ ] Sequence gaps, incorrect parent hashes, wrong organism IDs, and unauthorized membership changes are rejected.
+- [x] A missing, non-canonical, duplicate-key, non-object, or substituted event payload is rejected with the specified first error code.
+- [x] `state-transition` is rejected as unsupported and every accepted v0 Pulse preserves the parent state root.
+- [x] Sequence gaps, incorrect parent hashes, wrong organism IDs, and unauthorized membership changes are rejected.
 - [ ] A repeated byte-identical Genesis is treated as the same birth; nonce freshness is never guessed from local history.
-- [ ] At least 10,000 seeded generated traces run without violating `INV-1` through `INV-6` and `INV-11`.
-- [ ] Any failing generated trace is reproducible from its printed seed.
-- [ ] Core test coverage is at least 90% for branches in the validator, with uncovered branches documented.
+- [x] At least 10,000 fixed-seed adversarial trace continuations run without violating `INV-1` through `INV-6` and `INV-11`.
+- [x] Any failing generated case reports its fixed seed, case number, and mutation class.
+- [x] Validator branch coverage is 91.58%; the two uncovered schema-mapping branches are documented in the H1/H2 verification report.
 
 **Gate failure condition**
 

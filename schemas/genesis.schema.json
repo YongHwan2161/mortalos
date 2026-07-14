@@ -14,8 +14,7 @@
     },
     "approvals": {
       "type": "array",
-      "minItems": 3,
-      "maxItems": 16,
+      "minItems": 0,
       "items": {
         "$ref": "#/$defs/approval"
       }
@@ -23,24 +22,19 @@
   },
   "$defs": {
     "digest": {
-      "type": "string",
-      "pattern": "^sha256:[A-Za-z0-9_-]{43}$"
+      "type": "string"
     },
     "peerId": {
-      "type": "string",
-      "pattern": "^peer:[A-Za-z0-9_-]{43}$"
+      "type": "string"
     },
     "publicKey": {
-      "type": "string",
-      "pattern": "^ed25519:[A-Za-z0-9_-]{43}$"
+      "type": "string"
     },
     "signature": {
-      "type": "string",
-      "pattern": "^ed25519:[A-Za-z0-9_-]{86}$"
+      "type": "string"
     },
     "nonce": {
-      "type": "string",
-      "pattern": "^nonce:[A-Za-z0-9_-]{22}$"
+      "type": "string"
     },
     "custodian": {
       "type": "object",
@@ -61,12 +55,10 @@
       "required": ["type", "threshold"],
       "properties": {
         "type": {
-          "const": "threshold"
+          "type": "string"
         },
         "threshold": {
-          "type": "integer",
-          "minimum": 2,
-          "maximum": 16
+          "type": "integer"
         }
       }
     },
@@ -114,8 +106,6 @@
         },
         "initial_custodians": {
           "type": "array",
-          "minItems": 3,
-          "maxItems": 16,
           "items": {
             "$ref": "#/$defs/custodian"
           }

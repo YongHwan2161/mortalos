@@ -1,8 +1,8 @@
 # MortalOS v0 Requirements Traceability
 
-Status: **Normative P0 traceability baseline, corrected by the 2026-07-14 red-team review**
+Status: **Normative P0 baseline with verified H1/H2 executable evidence**
 
-This document maps every foundational invariant to protocol requirements, rejection codes, and planned automated tests. Test IDs are reserved now and implemented in P1 through P10.
+This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. H1/H2 evidence is executable; later network, UI, and AI IDs remain reserved.
 
 ## 1. Test ID convention
 
@@ -41,7 +41,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Every Genesis and Pulse field has a validation rule. | `PROTOCOL.md` sections 6.1 and 7.1 plus JSON Schemas. |
 | Every invariant maps to at least one planned automated test. | Invariant table in this document maps `INV-1` through `INV-13`. |
 | Later phases are not required to decide envelope/lifecycle validity. | `PROTOCOL.md` sections 8 and 9; genome content validation is identified as an explicit required input, not an unspecified rule. |
-| Two conforming validators receive the same first result. | Deterministic validation order and stable rejection codes; P1 will supply executable cross-process conformance vectors. |
+| Two conforming validators receive the same first result. | H1 supplies stable rejection tests and two fresh-process byte-identity verification; a second independent implementation remains future P1 evidence. |
 
 ## 4. Message-field traceability
 
@@ -98,3 +98,20 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 ## 6. Change rule
 
 A change to any invariant, message field, domain separator, validation precedence, or v0 threat assumption MUST update this traceability document in the same commit. No requirement may be removed without an explicit protocol-version decision.
+
+## 7. Executable H1/H2 evidence
+
+| Requirement group | Executable evidence | Result |
+|---|---|---|
+| Raw UTF-8/JSON, duplicates, I-JSON, and canonical bytes | `src/codec.mjs`, `test/codec.test.mjs` | PASS |
+| Eight domain-separated derivations and RFC 8032 verification | `src/crypto.mjs`, `test/crypto.test.mjs`, `test/vectors/rfc8032-ed25519.json` | PASS |
+| Genesis birth and unanimous initial consent | `validateGenesis`, signed lifecycle vector, validator conformance suite | PASS |
+| Pulse identity, parent, sequence, genome, state, and payload binding | `validatePulse`, validator conformance suite | PASS |
+| Current `2-of-3` approval and new-custodian acceptance | three signed membership handoffs in `test/vectors/lifecycle.json` | PASS |
+| `0-of-3`, `1-of-3`, duplicate, ineligible, replayed, and corrupt evidence rejection | `test/validator.test.mjs` | PASS |
+| Fixed-seed invariant stress | `test/properties.test.mjs`, 10,000 adversarial continuations | PASS |
+| Cross-process determinism | `test/process-determinism.test.mjs` | PASS |
+| `INV-7`, `INV-9`, `INV-12`, and `INV-13` vertical proof | `scripts/demo-trace.mjs` | PASS |
+| Public snapshot cannot advance a dead lineage | zero-approval sequence-4 candidate returns `E_APPROVAL_INSUFFICIENT_QUORUM (0/2)` | PASS |
+
+The H1 implementation exposes the reference result, but full language-independent conformance still requires publishing canonical input/result byte files and running a second implementation against them.

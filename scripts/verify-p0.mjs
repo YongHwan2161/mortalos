@@ -91,33 +91,33 @@ function mustReject(validate, candidate, label) {
 }
 {
   const candidate = clone(genesisExample);
-  candidate.body.genome_hash = "sha256:short";
-  mustReject(validateGenesis, candidate, "malformed Genesis digest");
+  candidate.body.genome_hash = 7;
+  mustReject(validateGenesis, candidate, "wrong-type Genesis digest");
 }
 {
   const candidate = clone(genesisExample);
-  candidate.approvals = candidate.approvals.slice(0, 2);
-  mustReject(validateGenesis, candidate, "too few Genesis approvals");
+  delete candidate.approvals[0].signature;
+  mustReject(validateGenesis, candidate, "malformed Genesis approval");
 }
 {
   const candidate = clone(pulseExample);
-  candidate.body.sequence = "01";
-  mustReject(validatePulse, candidate, "non-canonical Pulse sequence");
+  candidate.body.sequence = 1;
+  mustReject(validatePulse, candidate, "wrong-type Pulse sequence");
 }
 {
   const candidate = clone(pulseExample);
-  candidate.body.event.kind = "reproduction";
-  mustReject(validatePulse, candidate, "unsupported v0 event");
+  candidate.body.event.kind = 1;
+  mustReject(validatePulse, candidate, "wrong-type v0 event");
 }
 {
   const candidate = clone(pulseExample);
-  candidate.approvals = candidate.approvals.slice(0, 1);
-  mustReject(validatePulse, candidate, "too few Pulse approvals");
+  delete candidate.approvals[0].signature;
+  mustReject(validatePulse, candidate, "malformed Pulse approval");
 }
 {
   const candidate = clone(pulseExample);
-  candidate.body.next_custodians[0].public_key = "ed25519:short";
-  mustReject(validatePulse, candidate, "malformed Pulse custodian key");
+  candidate.body.next_custodians[0].public_key = 1;
+  mustReject(validatePulse, candidate, "wrong-type Pulse custodian key");
 }
 
 const lifecycleSections = [
@@ -248,9 +248,10 @@ for (const criterion of p0Criteria) {
 }
 
 assert(
-  !pulseSchema.$defs.event.properties.kind.enum.includes("repair") &&
-    !pulseSchema.$defs.event.properties.kind.enum.includes("state-transition"),
-  "repair and state transition must remain outside the v0 consensus event vocabulary"
+  pulseSchema.$defs.event.properties.kind.type === "string" &&
+    !JSON.stringify(pulseSchema).includes('"repair"') &&
+    !JSON.stringify(pulseSchema).includes('"state-transition"'),
+  "schema must delegate the v0 event vocabulary to semantic validation without enumerating removed events"
 );
 assert(
   text.protocol.includes("Global nonce freshness is **not** a validator predicate"),

@@ -43,6 +43,50 @@ Corrections:
 
 No P1 semantic validator, browser demo, or GPT-5.6 runtime integration existed at the end of this entry.
 
+## 2026-07-14 — Apache-2.0, H1 validator, and H2 Minimum Viable Life
+
+Implemented after the submission period opened:
+
+- applied the unmodified Apache License 2.0 text and aligned package/contribution metadata;
+- implemented duplicate-aware UTF-8/JSON parsing and deterministic canonical bytes;
+- implemented all v0 domain-separated hashes and strict prefixed-base64url decoding;
+- implemented deterministic Genesis and Pulse semantic validation with stable rejection codes;
+- verified RFC 8032 Ed25519 vector 1 and a public-key-only MortalOS signed corpus;
+- implemented three valid `2-of-3` custodian handoffs from ABC through DEF;
+- demonstrated latent-successor survival, state stall, controlled authority death, public-snapshot rejection, and a distinct same-genome clone;
+- added 10,000 fixed-seed adversarial trace continuations, cross-process determinism, and a 90% validator branch-coverage gate; and
+- updated the protocol, rejection-code boundary, traceability, Build Week plan, README, and Devpost matrix.
+
+Codex contribution:
+
+- translated the normative validation order into the executable reference core;
+- detected and corrected the schema/semantic boundary that had made quorum and encoding rejection codes unreachable;
+- detected locale-sensitive custodian ordering during fixture verification and replaced it with protocol-defined ASCII byte order;
+- generated public conformance signatures locally, then removed all temporary signing material before repository publication; and
+- built the replayable H2 evidence and verification report.
+
+Human decisions:
+
+- selected Apache-2.0;
+- authorized implementation of H1 and H2;
+- retained the controlled honest-ephemeral-key mortality scope; and
+- kept browser networking, general computation, and distributed LLM work behind the lifecycle proof.
+
+Tests/evidence:
+
+- `npm test`: PASS;
+- RFC 8032 vector and signed MortalOS lifecycle corpus: PASS;
+- seeded adversarial continuations: 10,000/10,000;
+- validator coverage: 98.97% lines, 91.58% branches, 100% functions; and
+- H2 trace SHA-256: `7b3046231a61f7b21882b02b67114941daccb3e4fb8b2fee745ab0e16de45ab7`.
+
+Known limitations:
+
+- Node.js reference implementation only;
+- no fork-aware accepted-object store or independent second implementation;
+- no H3 browser Lab or hosted judge path; and
+- no H4 GPT-5.6 runtime integration.
+
 ## Evidence still required
 
 - the `/feedback` Codex Session ID for the thread containing most H1–H4 core functionality;

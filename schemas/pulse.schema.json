@@ -14,8 +14,7 @@
     },
     "approvals": {
       "type": "array",
-      "minItems": 2,
-      "maxItems": 16,
+      "minItems": 0,
       "items": {
         "$ref": "#/$defs/evidence"
       }
@@ -23,7 +22,6 @@
     "acceptances": {
       "type": "array",
       "minItems": 0,
-      "maxItems": 16,
       "items": {
         "$ref": "#/$defs/evidence"
       }
@@ -31,28 +29,22 @@
   },
   "$defs": {
     "digest": {
-      "type": "string",
-      "pattern": "^sha256:[A-Za-z0-9_-]{43}$"
+      "type": "string"
     },
     "organismId": {
-      "type": "string",
-      "pattern": "^mortalos:[A-Za-z0-9_-]{43}$"
+      "type": "string"
     },
     "peerId": {
-      "type": "string",
-      "pattern": "^peer:[A-Za-z0-9_-]{43}$"
+      "type": "string"
     },
     "publicKey": {
-      "type": "string",
-      "pattern": "^ed25519:[A-Za-z0-9_-]{43}$"
+      "type": "string"
     },
     "signature": {
-      "type": "string",
-      "pattern": "^ed25519:[A-Za-z0-9_-]{86}$"
+      "type": "string"
     },
     "sequence": {
-      "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)$"
+      "type": "string"
     },
     "custodian": {
       "type": "object",
@@ -73,12 +65,10 @@
       "required": ["type", "threshold"],
       "properties": {
         "type": {
-          "const": "threshold"
+          "type": "string"
         },
         "threshold": {
-          "type": "integer",
-          "minimum": 2,
-          "maximum": 16
+          "type": "integer"
         }
       }
     },
@@ -101,10 +91,7 @@
       "required": ["kind", "payload_hash"],
       "properties": {
         "kind": {
-          "enum": [
-            "heartbeat",
-            "membership-change"
-          ]
+          "type": "string"
         },
         "payload_hash": {
           "$ref": "#/$defs/digest"
@@ -153,8 +140,6 @@
         },
         "next_custodians": {
           "type": "array",
-          "minItems": 3,
-          "maxItems": 16,
           "items": {
             "$ref": "#/$defs/custodian"
           }

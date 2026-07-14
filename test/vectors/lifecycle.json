@@ -1,0 +1,176 @@
+{
+  "format": "mortalos-h1-conformance/1",
+  "note": "Public verification material only. No private signing key is included.",
+  "actors": {
+    "A": { "key_id": "peer:5OtsAze2FAxGRvCSwMAOfY7HgYWg8mybcErSKhTu1Uk", "public_key": "ed25519:9NX6ufqC2yEPhmnDYEvSy8wxGxbVjDiD5T0R0Q_MxQ8" },
+    "B": { "key_id": "peer:9C6DrpyJNQ1F3y9SvBceLewlx5nAO-UKeJYd46U0cHg", "public_key": "ed25519:6whaLvN2-MSISDVng8xkawsQEo2CvldsbESH37tgCxo" },
+    "C": { "key_id": "peer:eDFJiJfv1SNjB5M7NLuHz2yuSvagkkbocNVdKfZIVY4", "public_key": "ed25519:v7yG6e-NyzmBvDTxRR13tWkYGDJik-2oJOWU8sdrQqY" },
+    "D": { "key_id": "peer:nPk13Rzu71TPVAMVXDTP8w5f2xhGYyHZiP4txO2u96w", "public_key": "ed25519:CxsnkZzE4ggyNkmG2yYak2ODb81IeoTrLJ5_qjz7kZA" },
+    "E": { "key_id": "peer:OMaYPeOpwOPxu4KZ0Q2tJ-Iqz1fLoktd5YGWypygjpg", "public_key": "ed25519:U2v4itsc1q3_bVTIOHXx7jdXPMnB70zbPktCUchHMW4" },
+    "F": { "key_id": "peer:99PS9B9rFvUqf5yclu-u-EVnSM_X6afWm60dBxo3Iu8", "public_key": "ed25519:yYIQx4fk4CnlSAgLyY8YC28GWzTzupib_Dx8mCJyZnI" },
+    "G": { "key_id": "peer:vH3lTjfh09_MgkM94zwk-uzwzHQvyt3xelniLFhTSYo", "public_key": "ed25519:IqXkZOqOzXXM7aLETt8_H2Jxj7qGsGqWQYlgG0twGtQ" },
+    "H": { "key_id": "peer:oEz4qx3W_y9oNm3xnAWSrJL1T3J-cg0lSbph10i8PwU", "public_key": "ed25519:0Cn7-ZoVBJG_c8P-_zvdLsruyTx1izyWg4Abtwaxyf0" },
+    "I": { "key_id": "peer:NjDj2aQA5bGYNGLcs0c08IaF-goFjkjS65xzyVZsoSU", "public_key": "ed25519:zt5PIG6WC7ayCbRdas2OENlMmwDGgvD37I5jxTxmdQI" }
+  },
+  "birth": {
+    "kind": "mortalos.genesis",
+    "body": {
+      "protocol_version": "mortalos/0",
+      "hash_algorithm": "sha-256",
+      "signature_algorithm": "ed25519",
+      "genome_hash": "sha256:6I0E3PtVG23YdgY_SR5fuwRfy9ndRSzIig5_TOzqjmc",
+      "initial_state_root": "sha256:aHP0IzHyjCHm0STxYXj3Nreu2lUpydllaWaRJHARRJY",
+      "initial_custodians": [
+        { "key_id": "peer:5OtsAze2FAxGRvCSwMAOfY7HgYWg8mybcErSKhTu1Uk", "public_key": "ed25519:9NX6ufqC2yEPhmnDYEvSy8wxGxbVjDiD5T0R0Q_MxQ8" },
+        { "key_id": "peer:9C6DrpyJNQ1F3y9SvBceLewlx5nAO-UKeJYd46U0cHg", "public_key": "ed25519:6whaLvN2-MSISDVng8xkawsQEo2CvldsbESH37tgCxo" },
+        { "key_id": "peer:eDFJiJfv1SNjB5M7NLuHz2yuSvagkkbocNVdKfZIVY4", "public_key": "ed25519:v7yG6e-NyzmBvDTxRR13tWkYGDJik-2oJOWU8sdrQqY" }
+      ],
+      "initial_quorum": { "type": "threshold", "threshold": 2 },
+      "nonce": "nonce:EREREREREREREREREREREQ"
+    },
+    "approvals": [
+      { "key_id": "peer:5OtsAze2FAxGRvCSwMAOfY7HgYWg8mybcErSKhTu1Uk", "signature": "ed25519:x5EjKDLSpVMFZ-48Onk6W920_LIAGRih6UV4bB_1MsMthlkCUYXuBxZi2KFdhSrApcT5IF7gyMPDogZm6TeeDw" },
+      { "key_id": "peer:9C6DrpyJNQ1F3y9SvBceLewlx5nAO-UKeJYd46U0cHg", "signature": "ed25519:PG9ZKYxSbuWN2VrQ7eImaJSmWviZ9P_1m255vd2PtfXlrQu94hgAavxXz3rfQLPHxo25h0uhHjQRhuSCUTniDw" },
+      { "key_id": "peer:eDFJiJfv1SNjB5M7NLuHz2yuSvagkkbocNVdKfZIVY4", "signature": "ed25519:uXDSJpNVr2Ma17eYxr-F8mcG5yfoonoErSS3KkR16TnvWiQUcvhmWrIT2SsKJkwn7QpmVUQ8NqTj4IE405bzAA" }
+    ]
+  },
+  "steps": [
+    {
+      "id": "handoff-1",
+      "payload": { "handoff": "A-to-D" },
+      "envelope": {
+        "kind": "mortalos.pulse",
+        "body": {
+          "protocol_version": "mortalos/0",
+          "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+          "sequence": "1",
+          "parent_hash": "sha256:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+          "genome_hash": "sha256:6I0E3PtVG23YdgY_SR5fuwRfy9ndRSzIig5_TOzqjmc",
+          "current_custody_hash": "sha256:OxMuCv9d1L1G7JonHs4nQqJGMpQdyQAPycfuO9xzIWA",
+          "state_root": "sha256:aHP0IzHyjCHm0STxYXj3Nreu2lUpydllaWaRJHARRJY",
+          "event": { "kind": "membership-change", "payload_hash": "sha256:9rRU30SsVsPnPLB2TVbV8Cz-lKjow9_zq5n_xsS07_I" },
+          "next_custodians": [
+            { "key_id": "peer:9C6DrpyJNQ1F3y9SvBceLewlx5nAO-UKeJYd46U0cHg", "public_key": "ed25519:6whaLvN2-MSISDVng8xkawsQEo2CvldsbESH37tgCxo" },
+            { "key_id": "peer:eDFJiJfv1SNjB5M7NLuHz2yuSvagkkbocNVdKfZIVY4", "public_key": "ed25519:v7yG6e-NyzmBvDTxRR13tWkYGDJik-2oJOWU8sdrQqY" },
+            { "key_id": "peer:nPk13Rzu71TPVAMVXDTP8w5f2xhGYyHZiP4txO2u96w", "public_key": "ed25519:CxsnkZzE4ggyNkmG2yYak2ODb81IeoTrLJ5_qjz7kZA" }
+          ],
+          "next_quorum": { "type": "threshold", "threshold": 2 }
+        },
+        "approvals": [
+          { "key_id": "peer:5OtsAze2FAxGRvCSwMAOfY7HgYWg8mybcErSKhTu1Uk", "signature": "ed25519:u7IYjkZBMFErk72-DRDUeLingklTzKmA4pIjd1iRE2bhIi-CoSKfww7qPWCtB8F-xepYoJg8ciQBI27v-grOAg" },
+          { "key_id": "peer:9C6DrpyJNQ1F3y9SvBceLewlx5nAO-UKeJYd46U0cHg", "signature": "ed25519:d2oGLY-DnPwjWbjPsNYtzaBkksBrCKtWsqV-2zQ9ilRFFkc39Wx7Z29ado5-dSfRJLITxhScSnjjlEe-x4elDw" }
+        ],
+        "acceptances": [
+          { "key_id": "peer:nPk13Rzu71TPVAMVXDTP8w5f2xhGYyHZiP4txO2u96w", "signature": "ed25519:a3j_TQHuINtt6WcPylZYLhQAVW1-1W2XU-gdPn-Ml_MI-li0bR3GhwKLUipgC6t1w_TnRAOgyA8bF0ddVNm9Ag" }
+        ]
+      }
+    },
+    {
+      "id": "handoff-2",
+      "payload": { "handoff": "B-to-E" },
+      "envelope": {
+        "kind": "mortalos.pulse",
+        "body": {
+          "protocol_version": "mortalos/0",
+          "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+          "sequence": "2",
+          "parent_hash": "sha256:_L36jVZOFIjSL2mVjezeej8aNFxP4jgqYqR4oIjpkq4",
+          "genome_hash": "sha256:6I0E3PtVG23YdgY_SR5fuwRfy9ndRSzIig5_TOzqjmc",
+          "current_custody_hash": "sha256:LmdDfNr2Zq7QO844AHjKUSmqtGlEJchCF5elz8oEBBQ",
+          "state_root": "sha256:aHP0IzHyjCHm0STxYXj3Nreu2lUpydllaWaRJHARRJY",
+          "event": { "kind": "membership-change", "payload_hash": "sha256:MSbXRrPDy_bmW8GYLNp1bn84NUPDuoQmPfXfQVBjV64" },
+          "next_custodians": [
+            { "key_id": "peer:OMaYPeOpwOPxu4KZ0Q2tJ-Iqz1fLoktd5YGWypygjpg", "public_key": "ed25519:U2v4itsc1q3_bVTIOHXx7jdXPMnB70zbPktCUchHMW4" },
+            { "key_id": "peer:eDFJiJfv1SNjB5M7NLuHz2yuSvagkkbocNVdKfZIVY4", "public_key": "ed25519:v7yG6e-NyzmBvDTxRR13tWkYGDJik-2oJOWU8sdrQqY" },
+            { "key_id": "peer:nPk13Rzu71TPVAMVXDTP8w5f2xhGYyHZiP4txO2u96w", "public_key": "ed25519:CxsnkZzE4ggyNkmG2yYak2ODb81IeoTrLJ5_qjz7kZA" }
+          ],
+          "next_quorum": { "type": "threshold", "threshold": 2 }
+        },
+        "approvals": [
+          { "key_id": "peer:9C6DrpyJNQ1F3y9SvBceLewlx5nAO-UKeJYd46U0cHg", "signature": "ed25519:MOMklpislqKNbhW8w7k77MzIGSzssu4t0xfnN5YGcLrGuQrKTlMqbBnJh66W0RyHz_8yDvqg9NLv7E9cwmcBAQ" },
+          { "key_id": "peer:eDFJiJfv1SNjB5M7NLuHz2yuSvagkkbocNVdKfZIVY4", "signature": "ed25519:6jvfO9pELdSwcZJM3fpxeCiRdxC57YXKOBfj5zVQ_KCXqRxFmOKqDRYo-cnsGoRLqePBetKikQ64zphD4e44Bw" }
+        ],
+        "acceptances": [
+          { "key_id": "peer:OMaYPeOpwOPxu4KZ0Q2tJ-Iqz1fLoktd5YGWypygjpg", "signature": "ed25519:hmqbvzlJt9Vu0l_kQotMxndjXeTeb23yuCSI3FQtYM2Y2Apy9lMyhIKKJbfz0knaRwZQmbLqoXNgME1q9DuZDA" }
+        ]
+      }
+    },
+    {
+      "id": "latent-handoff-3",
+      "payload": { "handoff": "C-to-F" },
+      "envelope": {
+        "kind": "mortalos.pulse",
+        "body": {
+          "protocol_version": "mortalos/0",
+          "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+          "sequence": "3",
+          "parent_hash": "sha256:VMpQL3Rza_76t79rhfnpJaVPP5jax7V-wdOYJygEd-I",
+          "genome_hash": "sha256:6I0E3PtVG23YdgY_SR5fuwRfy9ndRSzIig5_TOzqjmc",
+          "current_custody_hash": "sha256:jU7KfHhdq88kmAMER4E_EZidPJlUkMbj4kMJhWTwQK4",
+          "state_root": "sha256:aHP0IzHyjCHm0STxYXj3Nreu2lUpydllaWaRJHARRJY",
+          "event": { "kind": "membership-change", "payload_hash": "sha256:8Nqyyn9wcXKKvgOxr6ecehF7z8DDvBjlD8O9DzuA1ro" },
+          "next_custodians": [
+            { "key_id": "peer:99PS9B9rFvUqf5yclu-u-EVnSM_X6afWm60dBxo3Iu8", "public_key": "ed25519:yYIQx4fk4CnlSAgLyY8YC28GWzTzupib_Dx8mCJyZnI" },
+            { "key_id": "peer:OMaYPeOpwOPxu4KZ0Q2tJ-Iqz1fLoktd5YGWypygjpg", "public_key": "ed25519:U2v4itsc1q3_bVTIOHXx7jdXPMnB70zbPktCUchHMW4" },
+            { "key_id": "peer:nPk13Rzu71TPVAMVXDTP8w5f2xhGYyHZiP4txO2u96w", "public_key": "ed25519:CxsnkZzE4ggyNkmG2yYak2ODb81IeoTrLJ5_qjz7kZA" }
+          ],
+          "next_quorum": { "type": "threshold", "threshold": 2 }
+        },
+        "approvals": [
+          { "key_id": "peer:eDFJiJfv1SNjB5M7NLuHz2yuSvagkkbocNVdKfZIVY4", "signature": "ed25519:2zDMFD24LdUqRDo0YboFa3IBQhcUzJ8dlB-vRUFkcfuOSYCDYso53dTryufpum9n_2UXKzrBj6y4Z6ebMu5XDw" },
+          { "key_id": "peer:nPk13Rzu71TPVAMVXDTP8w5f2xhGYyHZiP4txO2u96w", "signature": "ed25519:CsVrXCRTJVxYBEgJ3APDUU6m6rC90mb5oHuykksINbq74JahDRCPHFsuMC6igC14l8pjAcImsr_rvqchZN8ABg" }
+        ],
+        "acceptances": [
+          { "key_id": "peer:99PS9B9rFvUqf5yclu-u-EVnSM_X6afWm60dBxo3Iu8", "signature": "ed25519:8PUbTDRN-Ak3x1D4GKe6XsKr36al-GHcQHN51rP66sCsJWztwjFOIqquvwIQnfUMBnP4keimjDwPRalePHkNCA" }
+        ]
+      }
+    }
+  ],
+  "resurrection_attempt": {
+    "payload": {},
+    "envelope": {
+      "kind": "mortalos.pulse",
+      "body": {
+        "protocol_version": "mortalos/0",
+        "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+        "sequence": "4",
+        "parent_hash": "sha256:OuzdcLTYm0mN0Q-cXavoj_F9b8dlW5TOI5LwlWlDnG0",
+        "genome_hash": "sha256:6I0E3PtVG23YdgY_SR5fuwRfy9ndRSzIig5_TOzqjmc",
+        "current_custody_hash": "sha256:hrat3P8M47qZDJ4V8B1Tv2YrMVZoD5N8z43mOOJojZk",
+        "state_root": "sha256:aHP0IzHyjCHm0STxYXj3Nreu2lUpydllaWaRJHARRJY",
+        "event": { "kind": "heartbeat", "payload_hash": "sha256:RYGNp2qv_DDuVz6U77cLRxbufdBBT7eBWrm-oPH4C2U" },
+        "next_custodians": [
+          { "key_id": "peer:99PS9B9rFvUqf5yclu-u-EVnSM_X6afWm60dBxo3Iu8", "public_key": "ed25519:yYIQx4fk4CnlSAgLyY8YC28GWzTzupib_Dx8mCJyZnI" },
+          { "key_id": "peer:OMaYPeOpwOPxu4KZ0Q2tJ-Iqz1fLoktd5YGWypygjpg", "public_key": "ed25519:U2v4itsc1q3_bVTIOHXx7jdXPMnB70zbPktCUchHMW4" },
+          { "key_id": "peer:nPk13Rzu71TPVAMVXDTP8w5f2xhGYyHZiP4txO2u96w", "public_key": "ed25519:CxsnkZzE4ggyNkmG2yYak2ODb81IeoTrLJ5_qjz7kZA" }
+        ],
+        "next_quorum": { "type": "threshold", "threshold": 2 }
+      },
+      "approvals": [],
+      "acceptances": []
+    },
+    "expected_rejection": "E_APPROVAL_INSUFFICIENT_QUORUM"
+  },
+  "clone": {
+    "kind": "mortalos.genesis",
+    "body": {
+      "protocol_version": "mortalos/0",
+      "hash_algorithm": "sha-256",
+      "signature_algorithm": "ed25519",
+      "genome_hash": "sha256:6I0E3PtVG23YdgY_SR5fuwRfy9ndRSzIig5_TOzqjmc",
+      "initial_state_root": "sha256:aHP0IzHyjCHm0STxYXj3Nreu2lUpydllaWaRJHARRJY",
+      "initial_custodians": [
+        { "key_id": "peer:NjDj2aQA5bGYNGLcs0c08IaF-goFjkjS65xzyVZsoSU", "public_key": "ed25519:zt5PIG6WC7ayCbRdas2OENlMmwDGgvD37I5jxTxmdQI" },
+        { "key_id": "peer:oEz4qx3W_y9oNm3xnAWSrJL1T3J-cg0lSbph10i8PwU", "public_key": "ed25519:0Cn7-ZoVBJG_c8P-_zvdLsruyTx1izyWg4Abtwaxyf0" },
+        { "key_id": "peer:vH3lTjfh09_MgkM94zwk-uzwzHQvyt3xelniLFhTSYo", "public_key": "ed25519:IqXkZOqOzXXM7aLETt8_H2Jxj7qGsGqWQYlgG0twGtQ" }
+      ],
+      "initial_quorum": { "type": "threshold", "threshold": 2 },
+      "nonce": "nonce:IiIiIiIiIiIiIiIiIiIiIg"
+    },
+    "approvals": [
+      { "key_id": "peer:NjDj2aQA5bGYNGLcs0c08IaF-goFjkjS65xzyVZsoSU", "signature": "ed25519:FwQTt65hqQRLAa46vV3g8d3b6hpnEQHlH-naTsHpOTuN2uVypPZhoFCYmkY-na_OumURVk4oJvhgso0hEuNnBQ" },
+      { "key_id": "peer:oEz4qx3W_y9oNm3xnAWSrJL1T3J-cg0lSbph10i8PwU", "signature": "ed25519:IREG2Ye0xnAu2NYQJVhAfjecp1FcYHcaU5qBeyrxg7bSwpXsP3tCc5z7WtfQALB0PDBuvLq-DQ4le9S-FEtdBQ" },
+      { "key_id": "peer:vH3lTjfh09_MgkM94zwk-uzwzHQvyt3xelniLFhTSYo", "signature": "ed25519:QTZhvOivJo0Rlzw0HOVykC2Gro1BdxYaxE43cZhqRVlmHbxHMlbWFdxBPjR6Y8-5jJFTU-pZZX6AU8B14BmQBQ" }
+    ]
+  }
+}

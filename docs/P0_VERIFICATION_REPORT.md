@@ -4,6 +4,8 @@ Date: **2026-07-14**
 Stage: **P0 — Operational semantics and threat model**  
 Result: **PASS after corrective adversarial review**
 
+> Historical gate note: this report records the P0 state at the moment P1 had not started. The semantic validator, real Ed25519 vectors, Apache-2.0 license, and H2 trace were subsequently implemented on 2026-07-14. See [`H1_H2_VERIFICATION_REPORT.md`](H1_H2_VERIFICATION_REPORT.md) for current evidence; residual blockers below are retained as the P0 handoff record.
+
 ## 1. Executive conclusion
 
 P0 now passes at the specification-consistency level defined in `IMPLEMENTATION_PLAN.md`.
