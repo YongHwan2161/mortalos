@@ -86,9 +86,6 @@ Reject {
 | `E_HEARTBEAT_STATE_CHANGED` | A heartbeat changes `state_root`. |
 | `E_HEARTBEAT_CUSTODY_CHANGED` | A heartbeat changes custody or quorum. |
 | `E_HEARTBEAT_PAYLOAD_NONEMPTY` | A heartbeat payload is not canonical `{}`. |
-| `E_STATE_TRANSITION_CUSTODY_CHANGED` | A state transition also changes custody or quorum. |
-| `E_STATE_TRANSITION_GENOME_REJECTED` | Immutable genome validator rejects the proposed logical transition. |
-| `E_STATE_TRANSITION_VALIDATOR_MISSING` | Required genome validator is unavailable. |
 | `E_MEMBERSHIP_STATE_CHANGED` | A membership-change Pulse changes logical state. |
 
 ## 8. Approval and acceptance codes
