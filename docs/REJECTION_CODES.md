@@ -80,6 +80,8 @@ Reject {
 | Code | Condition |
 |---|---|
 | `E_EVENT_KIND_UNSUPPORTED` | Event kind is not a v0 event kind. |
+| `E_EVENT_PAYLOAD_REQUIRED` | The exact event-payload sidecar bytes required for validation are absent. |
+| `E_EVENT_PAYLOAD_INVALID` | Event-payload bytes are not a canonical I-JSON object or contain duplicate properties. |
 | `E_EVENT_PAYLOAD_MISMATCH` | `payload_hash` does not commit to the provided complete payload. |
 | `E_HEARTBEAT_STATE_CHANGED` | A heartbeat changes `state_root`. |
 | `E_HEARTBEAT_CUSTODY_CHANGED` | A heartbeat changes custody or quorum. |
@@ -88,7 +90,6 @@ Reject {
 | `E_STATE_TRANSITION_GENOME_REJECTED` | Immutable genome validator rejects the proposed logical transition. |
 | `E_STATE_TRANSITION_VALIDATOR_MISSING` | Required genome validator is unavailable. |
 | `E_MEMBERSHIP_STATE_CHANGED` | A membership-change Pulse changes logical state. |
-| `E_REPAIR_STATE_CHANGED` | A repair Pulse changes logical state rather than storage/custody embodiment. |
 
 ## 8. Approval and acceptance codes
 
@@ -129,4 +130,3 @@ These codes indicate an implementation or environmental failure. The candidate M
 - A structurally valid Pulse with the wrong organism ID and insufficient signatures returns `E_ORGANISM_ID_MISMATCH` first.
 - A validly signed heartbeat that changes state returns `E_HEARTBEAT_STATE_CHANGED` before quorum acceptance can make it valid.
 - A second valid sibling produces `E_FORK_DETECTED` only after both candidates independently pass all intrinsic checks.
-
