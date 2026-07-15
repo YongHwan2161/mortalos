@@ -34,6 +34,26 @@ This log is append-only. Each review records the exact PR head and the evidence 
 - Merge SHA: already merged as `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
 - Corrective action: `agent/codex-protocol-kernel--governance-hardening` pending
 
+## 2026-07-15 — PR #2
+
+- Author agent: `codex-protocol-kernel`
+- Base SHA: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Reviewed head SHA: `20424fc6010d7d918bc2a9e3d669a680e784c68e`
+- Changed paths: 44 trusted-core, schema, rejection-code, vector, test, workflow,
+  dependency-notice, protocol, threat-model, status, plan, and traceability paths
+- Checks: exact-head `Agent PR Policy` run 29382765460 and `Verify` run
+  29382765457 succeeded; independent detached-head `npm ci` and `npm test`
+  passed
+- Findings: mortality can falsely declare death when a pending threshold-raise body
+  is completable by a surviving retained custodian; canonical hashing/signing accepts
+  exotic non-I-JSON programmatic objects and collapses distinct values to `{}`
+- Review: native `REQUEST_CHANGES` was rejected by GitHub because the connected
+  identity is also the PR author; structured blocking `COMMENT` review 4700321564
+  was anchored to the immutable head
+- Verdict: `REQUEST_CHANGES`
+- Merge SHA: not merged
+- Post-merge verification: not applicable
+
 ## Entry template
 
 ### YYYY-MM-DD — PR #N
