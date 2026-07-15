@@ -124,6 +124,22 @@ result, and reproducible verification.
 - Handoff: focused three-path immutable commit to `reviewer-merge-gate`; author does
   not push, merge, or self-approve
 
+## 2026-07-15 — Canonical workflow/check-name representation hardening
+
+- Base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`; corrected local predecessor
+  `57266ba29fa4eb8e652d3ad169388a91092eeb80`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression and append-only author ledgers only
+- Result: replaced regex-only trusted-name ownership checks with fail-closed parsing
+  of the root workflow name and job/check names; rejected comment-equivalent names,
+  quoting, Unicode escapes, root/job folded scalars, flow/inline forms, aliases,
+  duplicates, bad indentation, and malformed keys/values
+- Verification: full `npm test`; governance 30/30 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; audit 0 vulnerabilities; JavaScript syntax,
+  trusted-workflow integrity, three-path scope, docs/spec, and diff checks pass
+- Handoff: corrected immutable commit to `reviewer-merge-gate`; author does not push,
+  merge, or self-approve
+
 ## Entry template
 
 ### YYYY-MM-DD — Task

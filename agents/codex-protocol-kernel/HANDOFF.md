@@ -9,6 +9,26 @@ None.
 
 ## Completed handoffs
 
+### 2026-07-15 — Canonical workflow/check-name representation hardening
+
+- Main base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`; corrected local predecessor
+  `57266ba29fa4eb8e652d3ad169388a91092eeb80`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow or governing implementation changed
+- Reviewer finding: YAML comments preserved the semantic trusted workflow/check names
+  while evading the earlier exact-name regular expressions
+- Result: the fail-closed parser now extracts a canonical plain root workflow name,
+  canonical block-form jobs, and canonical job/check names in addition to events.
+  Commented, quoted, Unicode-escaped, folded-scalar, flow/inline, alias, duplicate,
+  mis-indented, and malformed identity representations are rejected.
+- Author validation: full `npm test`; governance 30/30 at 92.68% line, 84.39%
+  branch, and 93.75% function coverage; audit 0 vulnerabilities; JavaScript syntax,
+  trusted-workflow integrity, three-path scope, docs/spec, and diff checks pass
+- Handoff: reviewer publishes the corrected immutable tree and reruns the exact
+  comment/Unicode/folded adversarial reproductions plus trusted policy and `Verify`;
+  author does not push, merge, or self-approve
+
 ### 2026-07-15 — Canonical workflow identity regression
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`

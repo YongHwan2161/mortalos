@@ -71,6 +71,99 @@ function parseCanonicalWorkflowEvents(source) {
   return events;
 }
 
+const CANONICAL_WORKFLOW_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9 ._()/-]*[A-Za-z0-9)])?$/u;
+
+function parseCanonicalWorkflowIdentity(source) {
+  const lines = source.split(/\r?\n/u);
+  for (const line of lines) {
+    if (line.trim().length === 0 || line.trimStart().startsWith("#") || /^[ \t]/u.test(line)) continue;
+    if (!/^[A-Za-z_][A-Za-z0-9_-]*:/u.test(line)) {
+      throw new Error("invalid canonical workflow identity: root keys must be plain scalars");
+    }
+  }
+  const rootNameCandidates = lines.filter(
+    (line) => /^(?:name|["']name["'])[ \t]*:/u.test(line)
+  );
+  const rootNameMatch = rootNameCandidates.length === 1
+    ? /^name: (.+)$/u.exec(rootNameCandidates[0])
+    : null;
+  if (!rootNameMatch || !CANONICAL_WORKFLOW_NAME.test(rootNameMatch[1])) {
+    throw new Error("invalid canonical workflow identity: require one plain root name");
+  }
+
+  const rootJobsCandidates = lines
+    .map((line, index) => ({ index, line }))
+    .filter(({ line }) => /^(?:jobs|["']jobs["'])[ \t]*:/u.test(line));
+  if (rootJobsCandidates.length !== 1 || rootJobsCandidates[0].line !== "jobs:") {
+    throw new Error("invalid canonical workflow identity: require one block-form jobs section");
+  }
+
+  const jobs = [];
+  let currentJob;
+  for (let index = rootJobsCandidates[0].index + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    const trimmed = line.trim();
+    if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
+    if (!/^[ \t]/u.test(line)) break;
+    if (line.startsWith("\t") || /^ [^ ]/u.test(line)) {
+      throw new Error("invalid canonical workflow identity: job indentation must be canonical");
+    }
+
+    if (!line.startsWith("    ")) {
+      const jobMatch = /^  ([A-Za-z_][A-Za-z0-9_-]*):[ \t]*$/u.exec(line);
+      if (!jobMatch) {
+        throw new Error("invalid canonical workflow identity: job keys must use block form");
+      }
+      if (jobs.some((job) => job.id === jobMatch[1])) {
+        throw new Error("invalid canonical workflow identity: duplicate job key");
+      }
+      if (currentJob && !currentJob.hasProperty) {
+        throw new Error("invalid canonical workflow identity: job requires canonical properties");
+      }
+      currentJob = { id: jobMatch[1], name: undefined, hasProperty: false };
+      jobs.push(currentJob);
+      continue;
+    }
+
+    if (!currentJob) {
+      throw new Error("invalid canonical workflow identity: property precedes a job");
+    }
+    if (/^    [^ ]/u.test(line)) {
+      const propertyMatch = /^    ([A-Za-z_][A-Za-z0-9_-]*):/u.exec(line);
+      if (!propertyMatch) {
+        throw new Error("invalid canonical workflow identity: job property keys must be plain scalars");
+      }
+      currentJob.hasProperty = true;
+      if (propertyMatch[1] !== "name") continue;
+      if (currentJob.name !== undefined) {
+        throw new Error("invalid canonical workflow identity: duplicate or misplaced job name");
+      }
+      const jobNameMatch = /^    name: (.+)$/u.exec(line);
+      if (!jobNameMatch || !CANONICAL_WORKFLOW_NAME.test(jobNameMatch[1])) {
+        throw new Error("invalid canonical workflow identity: job name must be a plain scalar");
+      }
+      currentJob.name = jobNameMatch[1];
+    } else if (!currentJob.hasProperty) {
+      throw new Error("invalid canonical workflow identity: nested data precedes a job property");
+    }
+  }
+
+  if (jobs.length === 0 || jobs.some((job) => !job.hasProperty)) {
+    throw new Error("invalid canonical workflow identity: at least one job is required");
+  }
+  return {
+    workflowName: rootNameMatch[1],
+    checks: jobs.map((job) => job.name ?? job.id)
+  };
+}
+
+function parseCanonicalWorkflow(source) {
+  return {
+    events: parseCanonicalWorkflowEvents(source),
+    ...parseCanonicalWorkflowIdentity(source)
+  };
+}
+
 function validBody(overrides = {}) {
   const fields = {
     author: "codex-protocol-kernel",
@@ -533,6 +626,43 @@ test("canonical workflow trigger parser rejects quoted, flow, alias, and duplica
   }
 });
 
+test("canonical workflow identity parser rejects comments, quoting, escapes, flow, and duplicates", () => {
+  const canonical = [
+    "name: Agent PR Policy",
+    "on:",
+    "  pull_request_target:",
+    "jobs:",
+    "  policy:",
+    "    name: Trusted main-base policy",
+    "    runs-on: ubuntu-latest"
+  ].join("\n");
+  assert.deepEqual(parseCanonicalWorkflow(canonical), {
+    events: ["pull_request_target"],
+    workflowName: "Agent PR Policy",
+    checks: ["Trusted main-base policy"]
+  });
+
+  const adversarial = [
+    canonical.replace("name: Agent PR Policy", "name: Agent PR Policy # comment"),
+    canonical.replace("name: Trusted main-base policy", "name: Trusted main-base policy # comment"),
+    canonical.replace("name: Agent PR Policy", 'name: "Agent PR\\u0020Policy"'),
+    canonical.replace("name: Trusted main-base policy", 'name: "Trusted main-base\\u0020policy"'),
+    canonical.replace("name: Agent PR Policy", "name: >\n  Agent PR Policy"),
+    canonical.replace("name: Trusted main-base policy", "name: >\n      Trusted main-base policy"),
+    canonical.replace("name: Agent PR Policy", "name: [Agent PR Policy]"),
+    canonical.replace("name: Agent PR Policy", "name: *policy-name"),
+    canonical.replace("name: Agent PR Policy", 'name: Verify\n"n\\u0061me": "Agent PR Policy"'),
+    canonical.replace("name: Trusted main-base policy", 'name: harmless\n    "n\\u0061me": "Trusted main-base policy"'),
+    canonical.replace("jobs:\n  policy:\n    name: Trusted main-base policy", "jobs: { policy: { name: Trusted main-base policy } }"),
+    canonical.replace("  policy:\n    name: Trusted main-base policy", "  policy: { name: Trusted main-base policy }"),
+    canonical.replace("name: Agent PR Policy", "name: Agent PR Policy\nname: Verify"),
+    canonical.replace("    name: Trusted main-base policy", "    name: Trusted main-base policy\n    name: duplicate")
+  ];
+  for (const source of adversarial) {
+    assert.throws(() => parseCanonicalWorkflow(source), /invalid canonical workflow identity/u);
+  }
+});
+
 test("trusted policy identities are reserved across every canonical workflow", async () => {
   const workflowsUrl = new URL("../.github/workflows/", import.meta.url);
   const workflowNames = (await readdir(workflowsUrl))
@@ -545,26 +675,25 @@ test("trusted policy identities are reserved across every canonical workflow", a
     name,
     source: await readFile(new URL(name, workflowsUrl), "utf8")
   })));
-  const workflowIdentity = /^name:[ \t]*["']?Agent PR Policy["']?[ \t]*$/mu;
-  const checkIdentity = /^[ \t]+name:[ \t]*["']?Trusted main-base policy["']?[ \t]*$/mu;
 
   for (const workflow of workflows) {
-    const events = parseCanonicalWorkflowEvents(workflow.source);
-    const hasPullRequest = events.includes("pull_request");
-    const ownsPolicyIdentity = workflowIdentity.test(workflow.source);
+    const parsed = parseCanonicalWorkflow(workflow.source);
+    const hasPullRequest = parsed.events.includes("pull_request");
+    const ownsPolicyIdentity = parsed.workflowName === "Agent PR Policy";
+    const ownsCheckIdentity = parsed.checks.includes("Trusted main-base policy");
 
     if (workflow.name === "trusted-pr-policy.yml") {
       assert.equal(ownsPolicyIdentity, true);
-      assert.match(workflow.source, checkIdentity);
-      assert.deepEqual(events, ["pull_request_target"]);
+      assert.equal(ownsCheckIdentity, true);
+      assert.deepEqual(parsed.events, ["pull_request_target"]);
     } else {
       assert.equal(ownsPolicyIdentity, false, `${workflow.name} must not claim the policy workflow name`);
-      assert.doesNotMatch(workflow.source, checkIdentity);
+      assert.equal(ownsCheckIdentity, false, `${workflow.name} must not claim the trusted check name`);
     }
 
     if (hasPullRequest) {
       assert.equal(ownsPolicyIdentity, false);
-      assert.doesNotMatch(workflow.source, checkIdentity);
+      assert.equal(ownsCheckIdentity, false);
     }
     assert.doesNotMatch(workflow.source, /TEMPORARY-MIGRATION-STATE|MIGRATION-EXCEPTION|bootstrap-untrusted/u);
   }
