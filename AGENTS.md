@@ -38,28 +38,31 @@ and proof that current `origin/main` is an ancestor of the task branch.
 - A change to the reviewed body, base, head, changed-file evidence, or latest bound
   policy run invalidates the review and requires a new snapshot review.
 
-`Agent PR Policy` runs with `pull_request_target`, a platform-side `main` base-branch
-filter, minimum read permissions, and trusted base code. The branch filter must stop
-alternate-base PRs before any checkout or script execution. The workflow must never
-check out or execute PR head code, and concurrent runs for one PR cancel older runs.
-It binds the event body to stable beginning/end API snapshots and requires the
-paginated file count to equal both snapshots' `changed_files` count. It obtains
-immutable base/head metadata, ancestry, and changed files through GitHub's read API
-before applying the unit-tested policy parser.
+`.github/workflows/trusted-pr-policy.yml` defines `Agent PR Policy`. It runs only with
+`pull_request_target`, a platform-side `main` base-branch filter, minimum read
+permissions, and trusted base code. The branch filter must stop alternate-base PRs
+before any checkout or script execution. The workflow must never check out or execute
+PR head code, and concurrent runs for one PR cancel older runs. It binds the event
+body to stable beginning/end API snapshots and requires the paginated file count to
+equal both snapshots' `changed_files` count. It obtains immutable base/head metadata,
+ancestry, and changed files through GitHub's read API before applying the unit-tested
+policy parser.
 
 ### Temporary PR #3 migration state
 
 `TEMPORARY-MIGRATION-STATE: ACTIVE` applies only to the two-phase rollout of the
-trusted target workflow. The same workflow file temporarily has a `pull_request`
-bootstrap job, but that head-controlled job is explicitly untrusted, has empty
-permissions, performs no checkout, and is never policy or merge evidence. It exists
-only so PR #3 produces a visible bootstrap run after its next `synchronize` event.
+trusted target workflow. `.github/workflows/pr-policy.yml` is a separate temporary
+`pull_request` bootstrap workflow; it is explicitly untrusted, has empty permissions,
+performs no checkout, and is never policy or merge evidence. It cannot create the
+`Agent PR Policy` workflow name or `Trusted main-base policy` job/check name. It
+exists only so PR #3 produces a visible bootstrap run after its next `synchronize`
+event. The trusted target job exists only in `trusted-pr-policy.yml`.
 
 Immediately after PR #3 merges, the author must branch from the new `main` and open a
-cleanup PR that removes the `pull_request` trigger and `bootstrap-untrusted` job,
-restores the permanent target-only workflow name/concurrency, removes this temporary
-section and its migration tests, and leaves `pull_request_target` unchanged. The
-trusted target run from `main` must validate that cleanup PR before merge.
+cleanup PR that deletes `.github/workflows/pr-policy.yml`, removes this temporary
+section and its migration tests, and retains `trusted-pr-policy.yml` without changing
+or renaming its target-only policy job. The trusted target run from `main` must
+validate that cleanup PR before merge.
 
 ## Reviewer and merge gate
 

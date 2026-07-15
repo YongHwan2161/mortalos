@@ -91,6 +91,25 @@ result, and reproducible verification.
 - Handoff: reviewer publishes and confirms a real bootstrap run for PR #3; after merge,
   author creates a fresh target-only cleanup PR from new `main`
 
+## 2026-07-15 — Split-workflow migration correction
+
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`; corrected predecessor
+  `0ab51f2b8514acd3bba14ee01d45c44f9cf9a91f`
+- Branch: `agent/codex-protocol-kernel--governance-hardening`
+- Intended shared paths: two PR policy workflow files, migration/reviewer contracts,
+  governance test, and author ledgers; PR `Shared-Paths` must add
+  `.github/workflows/trusted-pr-policy.yml`
+- Result: moved trusted `pull_request_target` policy into a distinct permanent file
+  and reduced the existing temporary file to one zero-permission untrusted marker;
+  workflow/job names and concurrency are disjoint, so the bootstrap cannot manufacture
+  or satisfy the trusted name-based check
+- Verification: full `npm test`; governance 28/28 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; audit 0 vulnerabilities; YAML syntax, package dry-run,
+  JavaScript syntax, and diff checks passed. Chromium needs a fresh published `Verify`
+  run because this sandbox cannot download the missing browser binary.
+- Handoff: preserve the corrected predecessor and submit this new immutable commit for
+  independent review; author must not push or self-approve
+
 ## Entry template
 
 ### YYYY-MM-DD — Task

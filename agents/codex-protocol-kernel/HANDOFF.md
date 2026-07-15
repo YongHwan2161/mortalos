@@ -9,6 +9,30 @@ None.
 
 ## Completed handoffs
 
+### 2026-07-15 — Split-workflow PR #3 migration correction
+
+- Main base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Corrected predecessor: `0ab51f2b8514acd3bba14ee01d45c44f9cf9a91f`
+- Work branch: `agent/codex-protocol-kernel--governance-hardening`
+- Paths: `.github/workflows/pr-policy.yml`, new
+  `.github/workflows/trusted-pr-policy.yml`, `AGENTS.md`,
+  `docs/AGENT_COLLABORATION.md`, `agents/reviewer-merge-gate/README.md`, governance
+  tests, and this author's handoff/worklog; no runtime or `src/` change
+- Result: the proposed-head bootstrap and trusted target policy now have distinct
+  workflow files, workflow names, job/check names, permissions, and concurrency.
+  No `pull_request` run can create the `Trusted main-base policy` check, and quoted
+  bootstrap names preserve the literal `#3` text under YAML parsing.
+- Author validation: governance 28/28; coverage 92.68% line, 84.39% branch, and
+  93.75% function; full `npm test`; dependency audit 0 vulnerabilities; YAML syntax,
+  package dry-run, JavaScript syntax, and diff checks passed. Local Chromium rerun
+  remains an environment-only pending check because the sandbox lacks the binary and
+  blocks its CDN; the published head requires a fresh `Verify` run before review.
+- PR contract: add `.github/workflows/trusted-pr-policy.yml` to the exact
+  `Shared-Paths` list before policy/reviewer snapshotting.
+- Handoff: reviewer publishes the immutable correction, confirms only the untrusted
+  marker runs for PR #3, requires fresh `Verify`, and independently decides the exact
+  head; no push or self-approval by the author
+
 ### 2026-07-15 — Two-phase PR #3 trigger bootstrap
 
 - Main base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`

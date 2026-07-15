@@ -1,28 +1,21 @@
-name: Agent PR Policy (TEMPORARY migration; bootstrap is UNTRUSTED)
+name: "UNTRUSTED PR #3 migration bootstrap"
 
 on:
-  # TEMPORARY: PR #3 bootstrap signal. Remove this trigger and bootstrap job in
-  # the immediate cleanup PR after the trusted target workflow reaches main.
+  # TEMPORARY: PR #3 bootstrap signal. Delete this entire workflow in the
+  # immediate cleanup PR after trusted-pr-policy.yml reaches main.
   pull_request:
     branches: [main]
     types: [synchronize]
-  pull_request_target:
-    branches: [main]
-    types: [opened, edited, synchronize, reopened, ready_for_review]
 
 concurrency:
-  # Keep the untrusted bootstrap from cancelling the trusted target run.
-  group: agent-pr-policy-${{ github.event_name }}-${{ github.event.pull_request.number }}
+  group: untrusted-pr-3-bootstrap-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  pull-requests: read
+permissions: {}
 
 jobs:
   bootstrap-untrusted:
-    name: UNTRUSTED TEMPORARY bootstrap signal - remove after PR #3
-    if: github.event_name == 'pull_request'
+    name: "UNTRUSTED migration marker (not policy)"
     permissions: {}
     runs-on: ubuntu-latest
     timeout-minutes: 1
@@ -32,26 +25,3 @@ jobs:
         run: |
           echo "::warning::UNTRUSTED TEMPORARY bootstrap signal; this is not a policy verdict"
           echo "No repository checkout, repository script, token, or secret is used."
-
-  policy:
-    name: Trusted main-base policy
-    if: github.event_name == 'pull_request_target'
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Check out trusted PR base
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-
-      - name: Validate PR metadata with trusted policy code
-        run: node scripts/verify-agent-pr.mjs
-        env:
-          GITHUB_TOKEN: ${{ github.token }}

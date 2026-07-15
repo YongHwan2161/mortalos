@@ -94,14 +94,14 @@ implementation is correct.
 
 ### Policy trust boundary
 
-`Agent PR Policy` uses `pull_request_target` only so the workflow and parser come
-from the trusted PR base rather than the proposed head. Its `branches: [main]` event
-filter is a platform-side security boundary: GitHub must discard an alternate-base
-PR before a runner starts, because a JavaScript `baseRef` rejection after checkout
-would be too late. It checks out the immutable main-base SHA with credentials
-disabled, pins every third-party Action to a full commit SHA, grants only
-`contents: read` and `pull-requests: read`, and executes no install, build, test,
-hook, or script from the PR head.
+`.github/workflows/trusted-pr-policy.yml` defines `Agent PR Policy` and uses
+`pull_request_target` only so the workflow and parser come from the trusted PR base
+rather than the proposed head. Its `branches: [main]` event filter is a platform-side
+security boundary: GitHub must discard an alternate-base PR before a runner starts,
+because a JavaScript `baseRef` rejection after checkout would be too late. It checks
+out the immutable main-base SHA with credentials disabled, pins every third-party
+Action to a full commit SHA, grants only `contents: read` and `pull-requests: read`,
+and executes no install, build, test, hook, or script from the PR head.
 
 The trusted parser reads the trusted `agents/README.md` and uses the API PR body as
 the policy input. It requires that body to equal the event body, then re-fetches the
@@ -115,38 +115,38 @@ explicit inputs and is unit tested without network access. The normal `Verify`
 workflow may execute proposed code under the lower-privilege `pull_request` event;
 its purpose is product correctness, not policy self-validation.
 
-During the one-time migration from the legacy `pull_request` policy workflow, the
-public repository's proposed verifier can make those same read-only public API GETs
-without an authorization header because the legacy workflow does not export a token.
-This changes only authentication and rate limits, not the required evidence or
-validation. Private or inaccessible API data still fails closed. After this workflow
-is merged, the trusted `pull_request_target` job always supplies its read-only token.
+For reproducible local review of this public repository, the verifier can make the
+same read-only public API GETs without an authorization header. This changes only
+authentication and rate limits, not the required evidence or validation; private or
+inaccessible API data still fails closed. The temporary bootstrap never invokes the
+verifier. The trusted `pull_request_target` job always supplies its read-only token.
 
 ### Temporary two-phase trigger migration for PR #3
 
-`TEMPORARY-MIGRATION-STATE: ACTIVE` means PR #3 temporarily declares both events in
-the already-registered workflow file. This is required because GitHub cannot run the
-new `pull_request_target` definition from `main` until that definition has merged,
-while removing the legacy `pull_request` event from the proposed head otherwise
-leaves the migration PR with no policy-workflow run at all.
+`TEMPORARY-MIGRATION-STATE: ACTIVE` means PR #3 uses two distinct workflow files.
+This is required because GitHub cannot run the new `pull_request_target` definition
+from `main` until that definition has merged, while replacing the already-registered
+legacy `pull_request` workflow otherwise leaves the migration PR with no visible
+migration run at all.
 
-The two paths are deliberately separate:
+The two workflow identities and check names are deliberately disjoint:
 
-- `pull_request` runs only `bootstrap-untrusted` on `synchronize`. It is head-controlled,
-  has `permissions: {}`, checks out nothing, executes no repository code, reads no
-  token or secret, and emits only an `UNTRUSTED TEMPORARY` warning. It is a migration
-  liveness signal, never policy or normal PASS evidence.
-- `pull_request_target` remains restricted to base `main` and runs only the trusted
-  immutable-base policy job. Event-specific concurrency groups prevent the bootstrap
-  signal from cancelling the trusted run.
+- `.github/workflows/pr-policy.yml` runs only `bootstrap-untrusted` under
+  `pull_request` on `synchronize`. It is head-controlled, has `permissions: {}`,
+  checks out nothing, executes no repository code, reads no token or secret, and
+  emits only an `UNTRUSTED TEMPORARY` warning. Its workflow and job names both say
+  untrusted and cannot produce `Agent PR Policy` or `Trusted main-base policy`.
+- `.github/workflows/trusted-pr-policy.yml` declares only `pull_request_target`,
+  remains restricted to base `main`, and is the sole owner of the trusted immutable-
+  base policy job/check. The files also use separate concurrency groups.
 
 Immediately after PR #3 merges, create a new author branch from the resulting `main`
-and open the cleanup PR. It must remove the legacy `pull_request` trigger, the
-`bootstrap-untrusted` job, the temporary workflow name/comments, this section, the
-root temporary section, the reviewer exception, and the temporary-state regression
-test. The permanent regression must again reject any `pull_request` trigger. Do not
-change or weaken the target job. The now-trusted `pull_request_target` workflow on
-`main` must validate the cleanup PR before it can merge.
+and open the cleanup PR. It must delete `.github/workflows/pr-policy.yml`, remove this
+section, the root temporary section, the reviewer exception, and the temporary-state
+regression test. The permanent regression must again reject every `pull_request`
+policy trigger. Do not rename, change, or weaken `trusted-pr-policy.yml` or its target
+job. That now-trusted `pull_request_target` workflow on `main` must validate the
+cleanup PR before it can merge.
 
 ## Review and merge
 
@@ -155,8 +155,9 @@ It follows `agents/reviewer-merge-gate/README.md` and reviews one immutable snap
 not only a commit. The snapshot binds PR number, base/head SHAs, the SHA-256 of the
 exact GitHub API body UTF-8 bytes, the complete changed-file count/digest, and the
 latest non-cancelled `Agent PR Policy` run ID/attempt with `completed/success` status.
-That permanent attestation also records `Agent-PR-Policy-Event: pull_request_target`;
-an identically named `pull_request` bootstrap run can never satisfy it.
+That permanent attestation also records `Agent-PR-Policy-Event: pull_request_target`.
+The temporary `pull_request` workflow has a different workflow name and job/check
+name, so a name-based required check cannot confuse it with trusted policy evidence.
 The body digest hashes zero bytes for API JSON `null` and otherwise performs no
 trimming, Unicode/line-ending normalization, rendering, or newline insertion. The
 changed-file digest uses the exact JCS record construction defined in the reviewer
@@ -181,7 +182,8 @@ GitHub identity.
 For account-level enforcement, configure a GitHub ruleset for `main` that requires:
 
 1. pull requests instead of direct pushes
-2. successful `Agent PR Policy` and `Verify` checks
+2. the `Trusted main-base policy` job/check from `Agent PR Policy` and the
+   `protocol` job/check from `Verify`
 3. dismissal of stale approvals after new commits
 4. a branch-up-to-date requirement so a policy result cannot outlive a changed base
 5. conversation resolution

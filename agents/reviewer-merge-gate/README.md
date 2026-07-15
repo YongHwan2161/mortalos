@@ -89,8 +89,12 @@ The reviewer never merges merely because the author says tests passed.
 `TEMPORARY-MIGRATION-STATE: ACTIVE` is a narrowly scoped bootstrap exception. The
 `pull_request` run is defined by proposed head YAML and therefore remains untrusted
 even though its exact audited job has empty permissions and executes only a warning
-marker. It must never populate the normal `Agent-PR-Policy` attestation fields or be
-described as a policy verdict. It is never policy or normal PASS evidence.
+marker. It lives in `.github/workflows/pr-policy.yml`; the trusted target job lives
+separately in `.github/workflows/trusted-pr-policy.yml`. The bootstrap workflow and
+job/check names must not equal `Agent PR Policy` or `Trusted main-base policy`, so the
+untrusted run cannot satisfy a name-based trusted required check. It must never
+populate the normal `Agent-PR-Policy` attestation fields or be described as a policy
+verdict. It is never policy or normal PASS evidence.
 
 For PR #3 only, the reviewer may record `Verdict: MIGRATION-EXCEPTION` after completing
 the full immutable snapshot review, independently validating the exact head, and
@@ -98,15 +102,19 @@ observing the temporary bootstrap run as `completed/success`:
 
 ```text
 Bootstrap-Run: <run-id>/<run-attempt>
+Bootstrap-Event: pull_request
+Bootstrap-Workflow: UNTRUSTED PR #3 migration bootstrap
+Bootstrap-Job: UNTRUSTED migration marker (not policy)
 Bootstrap-Status: completed/success
 Cleanup-Required: immediate target-only cleanup PR from post-merge main
 ```
 
 The bootstrap run proves only that the transitional `pull_request` trigger appeared;
 it proves no policy property. Immediately after PR #3 merges, the author must open
-the cleanup PR described in `AGENTS.md`. That cleanup is not eligible for this
-exception: the trusted `pull_request_target` run from `main` must pass, and the normal
-PASS attestation applies.
+the cleanup PR described in `AGENTS.md`, deleting the bootstrap file while retaining
+the trusted target file unchanged. That cleanup is not eligible for this exception:
+the trusted `pull_request_target` run from `main` must pass, and the normal PASS
+attestation applies.
 
 ## Identity limitation
 

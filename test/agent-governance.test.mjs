@@ -432,8 +432,12 @@ test("GitHub evidence loader and event verifier fail closed on malformed API evi
 });
 
 test("policy workflow runs immutable trusted-base code with minimum read permissions", async () => {
-  const workflow = await readFile(new URL("../.github/workflows/pr-policy.yml", import.meta.url), "utf8");
+  const workflow = await readFile(
+    new URL("../.github/workflows/trusted-pr-policy.yml", import.meta.url),
+    "utf8"
+  );
   const lines = workflow.split(/\r?\n/u);
+  assert.equal(lines[0], "name: Agent PR Policy");
   const targetIndex = lines.indexOf("  pull_request_target:");
   assert.ok(targetIndex > lines.indexOf("on:"));
   const targetBlock = lines.slice(
@@ -442,8 +446,10 @@ test("policy workflow runs immutable trusted-base code with minimum read permiss
   );
   assert.deepEqual(targetBlock.filter((line) => line.startsWith("    branches:")), ["    branches: [main]"]);
   assert.ok(targetBlock.includes("    types: [opened, edited, synchronize, reopened, ready_for_review]"));
-  assert.match(workflow, /^concurrency:\n(?:  #.*\n)?  group: agent-pr-policy-\$\{\{ github\.event_name \}\}-\$\{\{ github\.event\.pull_request\.number \}\}\n  cancel-in-progress: true$/mu);
-  assert.match(workflow, /^    if: github\.event_name == 'pull_request_target'$/mu);
+  assert.match(workflow, /^concurrency:\n  group: agent-pr-policy-\$\{\{ github\.event\.pull_request\.number \}\}\n  cancel-in-progress: true$/mu);
+  assert.equal(lines.includes("  pull_request:"), false);
+  assert.equal(lines.includes("  policy:"), true);
+  assert.match(workflow, /^    name: Trusted main-base policy$/mu);
   assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/u);
   assert.doesNotMatch(workflow, /pull_request\.head/u);
   assert.match(workflow, /persist-credentials: false/u);
@@ -456,25 +462,35 @@ test("policy workflow runs immutable trusted-base code with minimum read permiss
 });
 
 test("temporary PR #3 bootstrap is isolated, untrusted, and requires immediate cleanup", async () => {
-  const workflow = await readFile(new URL("../.github/workflows/pr-policy.yml", import.meta.url), "utf8");
-  const lines = workflow.split(/\r?\n/u);
-  assert.equal(lines[0], "name: Agent PR Policy (TEMPORARY migration; bootstrap is UNTRUSTED)");
+  const [bootstrapWorkflow, trustedWorkflow] = await Promise.all([
+    readFile(new URL("../.github/workflows/pr-policy.yml", import.meta.url), "utf8"),
+    readFile(new URL("../.github/workflows/trusted-pr-policy.yml", import.meta.url), "utf8")
+  ]);
+  const lines = bootstrapWorkflow.split(/\r?\n/u);
+  assert.equal(lines[0], 'name: "UNTRUSTED PR #3 migration bootstrap"');
 
   const pullIndex = lines.indexOf("  pull_request:");
-  const targetIndex = lines.indexOf("  pull_request_target:");
-  assert.ok(pullIndex > lines.indexOf("on:") && pullIndex < targetIndex);
-  assert.deepEqual(lines.slice(pullIndex + 1, targetIndex).filter((line) => line.startsWith("    branches:")), ["    branches: [main]"]);
-  assert.ok(lines.slice(pullIndex + 1, targetIndex).includes("    types: [synchronize]"));
+  assert.ok(pullIndex > lines.indexOf("on:"));
+  assert.deepEqual(lines.slice(pullIndex + 1).filter((line) => line.startsWith("    branches:")), ["    branches: [main]"]);
+  assert.ok(lines.slice(pullIndex + 1).includes("    types: [synchronize]"));
+  assert.equal(lines.includes("  pull_request_target:"), false);
 
   const bootstrapIndex = lines.indexOf("  bootstrap-untrusted:");
-  const policyIndex = lines.indexOf("  policy:");
-  assert.ok(bootstrapIndex > lines.indexOf("jobs:") && policyIndex > bootstrapIndex);
-  const bootstrap = lines.slice(bootstrapIndex, policyIndex).join("\n");
-  assert.match(bootstrap, /name: UNTRUSTED TEMPORARY bootstrap signal - remove after PR #3/u);
-  assert.match(bootstrap, /if: github\.event_name == 'pull_request'/u);
+  assert.ok(bootstrapIndex > lines.indexOf("jobs:"));
+  assert.equal(lines.includes("  policy:"), false);
+  const bootstrap = lines.slice(bootstrapIndex).join("\n");
+  assert.match(bootstrap, /name: "UNTRUSTED migration marker \(not policy\)"/u);
   assert.match(bootstrap, /permissions: \{\}/u);
   assert.doesNotMatch(bootstrap, /^\s*uses:|actions\/checkout|GITHUB_TOKEN|secrets\.|scripts\/|^\s*run:\s*(?:npm|node)\b/mu);
   assert.match(bootstrap, /not a policy verdict/u);
+  assert.doesNotMatch(bootstrapWorkflow, /Agent PR Policy|Trusted main-base policy|github\.token|GITHUB_TOKEN/u);
+  assert.match(bootstrapWorkflow, /^permissions: \{\}$/mu);
+
+  assert.match(trustedWorkflow, /^name: Agent PR Policy$/mu);
+  assert.match(trustedWorkflow, /^  pull_request_target:$/mu);
+  assert.doesNotMatch(trustedWorkflow, /^  pull_request:$/mu);
+  assert.match(trustedWorkflow, /^    name: Trusted main-base policy$/mu);
+  assert.doesNotMatch(trustedWorkflow, /UNTRUSTED|bootstrap-untrusted/u);
 
   const [instructions, collaboration, reviewer] = await Promise.all([
     readFile(new URL("../AGENTS.md", import.meta.url), "utf8"),
@@ -485,9 +501,13 @@ test("temporary PR #3 bootstrap is isolated, untrusted, and requires immediate c
     assert.match(document, /TEMPORARY-MIGRATION-STATE: ACTIVE/u);
   }
   assert.match(collaboration, /Immediately after PR #3 merges/u);
-  assert.match(collaboration, /permanent regression must again reject any `pull_request` trigger/u);
-  assert.match(collaboration, /trusted `pull_request_target` workflow on\s+`main` must validate the cleanup PR/u);
+  assert.match(collaboration, /permanent regression must again reject every `pull_request`/u);
+  assert.match(collaboration, /now-trusted `pull_request_target` workflow on\s+`main` must validate the\s+cleanup PR/u);
+  assert.match(collaboration, /different workflow name and job\/check\s+name/u);
   assert.match(reviewer, /Verdict: MIGRATION-EXCEPTION/u);
+  assert.match(reviewer, /Bootstrap-Event: pull_request/u);
+  assert.match(reviewer, /Bootstrap-Workflow: UNTRUSTED PR #3 migration bootstrap/u);
+  assert.match(reviewer, /Bootstrap-Job: UNTRUSTED migration marker \(not policy\)/u);
   assert.match(reviewer, /Bootstrap-Status: completed\/success/u);
   assert.match(reviewer, /never policy or normal PASS evidence/u);
 });
