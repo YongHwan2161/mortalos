@@ -35,6 +35,8 @@ function rawStep(step) {
 test("public API does not expose a caller-selected-head mortality evaluator", () => {
   assert.equal("evaluateMortality" in publicApi, false);
   assert.equal("evaluateMortalityState" in publicApi, false);
+  assert.equal("validateMortalitySuccessor" in publicApi, false);
+  assert.equal("isValidatedMortalitySuccessor" in publicApi, false);
 });
 
 test("lineage mortality states use its private recognized head", () => {
@@ -118,6 +120,35 @@ test("raw pending successors are revalidated as direct children of the current h
   });
   assert.equal(staleRaw.status, "dead_under_v0_assumptions");
   assert.equal(staleRaw.latent_successors, 0);
+});
+
+test("mortality evaluation blocks lineage mutation from pending-input getters", () => {
+  const lineage = openThrough(2);
+  const step = vector.steps[2];
+  const partial = clone(step);
+  partial.envelope.acceptances = [];
+  const headBefore = lineage.head.object_hash;
+  let reentrantAppend;
+
+  const assessment = lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [
+      {
+        get envelopeBytes() {
+          reentrantAppend = lineage.append(rawStep(step));
+          return canonical(partial.envelope);
+        },
+        eventPayloadBytes: canonical(partial.payload)
+      }
+    ],
+    authorityLossIrreversible: true
+  });
+
+  assert.equal(reentrantAppend.code, "E_VALIDATOR_INTERNAL");
+  assert.equal(reentrantAppend.deterministic_detail, "mortality-evaluation-active");
+  assert.equal(assessment.status, "latent_successor_not_dead");
+  assert.equal(lineage.head.object_hash, headBefore);
 });
 
 test("distinct fully valid pending siblings record a fork and leave mortality unclassified", () => {

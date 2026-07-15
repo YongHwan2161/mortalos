@@ -261,18 +261,27 @@ In the v0 honest-custodian model, quorum intersection plus the sign-once rule pr
 
 ### 4.18 Latent successor
 
-A **latent successor** is a not-yet-accepted candidate for which enough durable approval or acceptance evidence already exists that the candidate can still become valid without any new signature from the current custody quorum.
+A **latent successor** is a not-yet-accepted candidate whose verified durable evidence, combined only with signatures still producible by explicitly usable current keys and required new-custodian acceptances, can make the same Pulse body valid without a new signature from any current key assumed lost.
 
-Destroying current private keys does not invalidate signatures already produced. In particular, a fully signed heartbeat or a current-quorum-approved membership change that can later collect only new-custodian acceptances may survive authority loss. Protocol death therefore requires accounting for latent successors, not merely counting remaining private keys.
+For one exact candidate body, let `A` be the verified supplied current-approval IDs, `N` the next-custodian IDs, `X` the verified supplied new-custodian acceptance IDs, and `M` the missing required new-custodian acceptance IDs. Let `U` be the one set of current IDs reported usable for the entire mortality evaluation. The lineage snapshots `U` once and reuses the same set for every candidate body; usability is not supplied or varied per candidate. Conditional completion is feasible only when both:
 
-The reference implementation represents latent succession with a non-cloneable validated evidence result. It reads caller-supplied envelope and payload bytes once into owned snapshots, runs one validation pipeline through current-quorum authorization and every supplied new-custodian acceptance, and lists only the missing new-custodian acceptances. An integer count or hand-built “latent” object is not evidence.
+```text
+|A union U| >= current threshold
+|((A union U) intersect N) union X union M| >= next threshold
+```
+
+Ordinary Pulse acceptance remains stricter: it counts supplied signatures only. Conditional mortality analysis may instead return a non-accepting latent result with deterministic `missing_current_approval_key_ids` and `missing_acceptance_key_ids`. Destroying a key does not revoke its durable signature, while a key in the global `U` snapshot is assumed able to produce a body-bound signature for any candidate considered during that one evaluation.
+
+Approvals and acceptances sign the Pulse body, not their carrier envelope, sidecar, array placement, or `key_id` label. The lineage therefore snapshots the usable-key observation once and independently pools parseable candidate bodies, signature strings found in either evidence array, and payload sidecars indexed by their canonical content hash. For each exact body it cryptographically remaps every pooled signature to an eligible current approver or new-custodian acceptor under the appropriate domain, deduplicates by the verified signer ID, and matches a sidecar through the body's signed `payload_hash`. A signature from a different body cannot verify and therefore cannot cross-union. Missing or misleading unsigned carrier metadata cannot hide a valid observed signature; invalid signatures never contribute or poison valid evidence. A fully recomposed envelope is passed through ordinary `validatePulse` first. Only an incomplete result is considered by a separately branded internal conditional validator that is intentionally not re-exported by the supported `src/index.mjs` API.
+
+Public `validateLatentSuccessor` remains durable-evidence-only: its supplied approvals must already meet the current quorum, and only required new-custodian acceptances may be absent. `Lineage#evaluateMortality` never accepts a caller-built conditional capability and returns only an observer classification. An integer count, public key-ID list, or hand-built “latent” object is not authority evidence.
 
 ### 4.19 Death
 
 A lineage is **protocol-dead in v0** if and only if both conditions hold under the stated observation domain and honest-ephemeral-key assumptions:
 
 1. fewer usable current private keys remain than the quorum requires and that authority loss is irreversible; and
-2. no latent successor exists that can become valid without new signatures from the lost current quorum.
+2. no observed pending body satisfies the conditional-completion rules above without a new signature from a current key assumed lost, after cryptographically reconstructing every compatible body-bound signature and matching sidecar.
 
 Loss of externally associated logical state alone is not protocol death in v0 because current custodians can still authorize a heartbeat or membership change that repeats the authenticated opaque `state_root` declaration. Such a condition is `state-stalled`. A later protocol may make a verifiable state-availability capability indispensable, but it MUST define the evidence and validation rule before claiming state loss as lineage death.
 
@@ -354,7 +363,7 @@ Define the activation set as the union of:
 - valid current approval signer IDs that also appear in `next_custodians`; and
 - valid acceptance signer IDs for newly added custodians.
 
-The activation-set cardinality MUST be at least `next_quorum.threshold`, otherwise validation returns `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT`. For example, changing `{A,B,C}` from `2-of-3` to `3-of-3` with approvals only from A and B is rejected even though no custodian was added. A latent membership candidate MAY count a listed missing new-custodian acceptance as potential activation, because that candidate cannot become complete until that new key actually signs.
+The activation-set cardinality MUST be at least `next_quorum.threshold`, otherwise ordinary validation returns `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT`. For example, changing `{A,B,C}` from `2-of-3` to `3-of-3` with supplied approvals only from A and B remains rejected. In conditional mortality analysis, that same body is completable when C is explicitly usable: C's missing approval is required for activation and is reported rather than treated as supplied. A conditional candidate may likewise count each listed missing required new-custodian acceptance as potential activation because the candidate cannot become complete until that key signs.
 
 New custodians have no authority before the handoff Pulse is accepted. Removed custodians have no authority after it is accepted.
 
@@ -434,15 +443,15 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 - the parent state root;
 - the exact canonical event-payload sidecar bytes;
 - the known accepted graph needed to reject replay and detect alternative valid children as forks; and
-- raw pending successor envelope/payload bytes needed to detect a latent successor in a controlled mortality evaluation.
+- raw pending body/evidence fragments and any matching payload sidecars needed to detect a latent successor in a controlled mortality evaluation.
 
 An implementation MUST establish that context itself. In-process accepted results MAY be represented by an unforgeable capability; across persistence or process boundaries, the implementation MUST replay canonical Genesis/Pulse bytes and rebuild the accepted graph. Callers MUST NOT obtain authority by supplying a plain object with acceptance-shaped fields.
 
-Mortality evaluation MUST be an operation on that lineage graph. The lineage supplies its unique current recognized head and revalidates raw `pendingSuccessors` as direct children of that head. A caller MUST NOT inject a head, accepted result, or latent capability. If this revalidation reveals two distinct fully valid children, the lineage records the fork before any mortality classification. When the graph is forked there is no unique recognized head, so mortality MUST remain unclassified and return the fork state.
+Mortality evaluation MUST be an operation on that lineage graph. The lineage supplies its unique current recognized head, snapshots the explicitly usable current IDs once, and independently collects parseable bodies, signature strings, and content-addressed sidecars from raw `pendingSuccessors`. It then reconstructs evidence separately for each exact canonical body. The same usable-key snapshot drives both current authority count and body-specific completion analysis. A caller MUST NOT inject a head, accepted result, or latent capability. Mutation of the lineage is blocked while pending-input getters are observed. If recomposition reveals two distinct fully valid children, the lineage records the fork before any mortality classification. When the graph is forked there is no unique recognized head, so mortality MUST remain unclassified and return the fork state.
 
 No endpoint type, network, UI, AI, or wall-clock input is part of protocol validity.
 
-This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Its committed result is byte-identical in Node and Chromium; a second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
+This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Its committed expected result, direct Node result, and isolated browser-target result are byte-identical locally; actual Chromium comparison for the exact PR head remains a required CI gate. A second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
 
@@ -481,6 +490,7 @@ Latent {
   organism_id,
   object_hash,
   parent_hash,
+  missing_current_approval_key_ids[],
   missing_acceptance_key_ids[]
 }
 
@@ -513,7 +523,7 @@ The following table prevents a UI from converting uncertainty into a false death
 | Known minority component | `partitioned / stalled` | Entire lineage is dead. |
 | Current candidate lacks quorum | `candidate rejected` | No other valid candidate can exist. |
 | Volatile keys intentionally destroyed below quorum under controlled test | `dead under v0 test assumptions` | Every possible copy was physically erased. |
-| Below-quorum keys but a pre-authorized child remains pending | `latent successor / not dead` | Key destruction retroactively revoked existing signatures. |
+| Below-quorum keys but same-body durable evidence plus explicitly usable signers can complete a child | `latent successor / not dead` | Only already quorum-complete envelopes may count. |
 | Two valid children of one parent | `forked` | Silently select a winner. |
 
 ## 11. Clone procedure
@@ -539,10 +549,10 @@ A v0 implementation is conforming only if it:
 - implements every field rule and event-specific rule;
 - requires and verifies the exact canonical event-payload sidecar;
 - exposes stable rejection codes;
-- treats acceptance and latent-successor evidence as validator-produced capabilities or reconstructs them from canonical raw evidence;
+- treats acceptance and public durable latent evidence as validator-produced capabilities, and reconstructs observer-conditional completion only by cryptographically matching independently observed bodies, signatures, and sidecars plus one usable-key snapshot;
 - proves next-quorum activation for every membership result;
 - uses an accepted-object graph to reject replay and expose forks;
-- evaluates mortality only from the graph-recognized current head and raw revalidated pending successors, leaving forks unclassified;
+- evaluates mortality only from the graph-recognized current head; remaps pooled signatures by verification for each exact candidate body; runs ordinary acceptance before an internal conditional validator that is not re-exported by the supported `src/index.mjs` API; blocks reentrant mutation; and leaves forks unclassified;
 - never treats GPT, endpoint type, UI, transport, or signaling output as authority;
 - enters `FORKED` instead of silently resolving two valid siblings; and
 - states the mortality limitations from the threat model in user-facing documentation.

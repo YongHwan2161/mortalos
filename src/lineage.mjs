@@ -1,15 +1,24 @@
 import {
+  canonicalBytes,
+  canonicalize,
   JsonInputError,
   JSON_LIMITS,
   parseJsonBytes,
   snapshotBytes
 } from "./codec.mjs";
+import {
+  custodyAcceptanceMessage,
+  eventPayloadHash,
+  pulseApprovalMessage,
+  verifyEd25519
+} from "./crypto.mjs";
 import { rejection as reject } from "./rejection-codes.mjs";
 import {
   isValidatedAcceptance,
   isValidatedLatentSuccessor,
+  isValidatedMortalitySuccessor,
   validateGenesis,
-  validateLatentSuccessor,
+  validateMortalitySuccessor,
   validatePulse
 } from "./validator.mjs";
 
@@ -44,7 +53,8 @@ function evaluateMortalityState({
   for (const candidate of latentSuccessors) {
     const trustedSuccessionEvidence =
       (isValidatedAcceptance(candidate) && candidate.kind === "pulse") ||
-      isValidatedLatentSuccessor(candidate);
+      isValidatedLatentSuccessor(candidate) ||
+      isValidatedMortalitySuccessor(candidate);
     requireCondition(
       trustedSuccessionEvidence &&
         candidate.organism_id === head.organism_id &&
@@ -117,6 +127,7 @@ class Lineage {
   #nodes;
   #children;
   #approvalIds;
+  #evaluatingMortality = false;
   #forked = false;
   #forkPoints = new Set();
 
@@ -250,7 +261,19 @@ class Lineage {
     return this.#validateDetailed(input).validation;
   }
 
-  evaluateMortality({
+  evaluateMortality(options = {}) {
+    if (this.#evaluatingMortality) {
+      throw new TypeError("mortality evaluation is already active");
+    }
+    this.#evaluatingMortality = true;
+    try {
+      return this.#evaluateMortalityUnsafe(options);
+    } finally {
+      this.#evaluatingMortality = false;
+    }
+  }
+
+  #evaluateMortalityUnsafe({
     usableKeyIds,
     stateAvailable,
     pendingSuccessors = [],
@@ -275,33 +298,158 @@ class Lineage {
     if (typeof authorityLossIrreversible !== "boolean") {
       throw new TypeError("authorityLossIrreversible must be boolean");
     }
+    const usableKeyIdsSnapshot = [...usableKeyIds];
+
+    const groups = new Map();
+    const payloadsByHash = new Map();
+    const observedSignatures = new Set();
+
+    const rememberPayload = (payload) => {
+      const payloadKey = canonicalize(payload);
+      const payloadHash = eventPayloadHash(payload);
+      let payloads = payloadsByHash.get(payloadHash);
+      if (!payloads) {
+        payloads = new Map();
+        payloadsByHash.set(payloadHash, payloads);
+      }
+      payloads.set(payloadKey, payload);
+    };
+    rememberPayload({});
+
+    for (const input of pendingSuccessors) {
+      const envelopeSnapshot = this.#snapshotEnvelope(input);
+      const payloadSnapshot = this.#snapshotPayload(input);
+      if (!payloadSnapshot.failure) {
+        try {
+          rememberPayload(
+            parseJsonBytes(payloadSnapshot.eventPayloadBytes, {
+              maxBytes: JSON_LIMITS.event_payload_bytes,
+              maxDepth: JSON_LIMITS.max_depth
+            })
+          );
+        } catch (error) {
+          if (!(error instanceof JsonInputError)) throw error;
+        }
+      }
+
+      if (envelopeSnapshot.failure) continue;
+      const inspection = this.#inspect(envelopeSnapshot.envelopeBytes);
+      if (!inspection.ok) continue;
+      const envelope = inspection.envelope;
+      if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) continue;
+
+      for (const entries of [envelope.approvals, envelope.acceptances]) {
+        if (!Array.isArray(entries)) continue;
+        for (const evidence of entries) {
+          if (typeof evidence?.signature === "string") {
+            observedSignatures.add(evidence.signature);
+          }
+        }
+      }
+      if (
+        envelope.body &&
+        typeof envelope.body === "object" &&
+        !Array.isArray(envelope.body)
+      ) {
+        const groupKey = canonicalize(envelope.body);
+        if (!groups.has(groupKey)) groups.set(groupKey, { body: envelope.body });
+      }
+    }
 
     const latentSuccessors = [];
     const acceptedSuccessors = new Map();
-    for (const input of pendingSuccessors) {
-      const envelopeSnapshot = this.#snapshotEnvelope(input);
-      if (envelopeSnapshot.failure) {
-        continue;
+    const currentDescriptor = this.#head.next_custody_descriptor;
+    const allCurrentKeyIds = currentDescriptor.custodians.map((entry) => entry.key_id);
+    const currentById = new Map(
+      currentDescriptor.custodians.map((entry) => [entry.key_id, entry])
+    );
+
+    for (const group of groups.values()) {
+      const skeletonEnvelope = {
+        acceptances: [],
+        approvals: [],
+        body: group.body,
+        kind: "mortalos.pulse"
+      };
+      let validatedPayload = null;
+      const payloads = payloadsByHash.get(group.body?.event?.payload_hash) ?? new Map();
+      for (const payloadKey of [...payloads.keys()].sort()) {
+        const payload = payloads.get(payloadKey);
+        const skeleton = validateMortalitySuccessor(
+          {
+            genesis: this.#genesis,
+            parent: this.#head,
+            envelopeBytes: canonicalBytes(skeletonEnvelope),
+            eventPayloadBytes: canonicalBytes(payload)
+          },
+          allCurrentKeyIds
+        );
+        if (skeleton.status !== "reject") {
+          validatedPayload = payload;
+          break;
+        }
       }
-      const inspection = this.#inspect(envelopeSnapshot.envelopeBytes);
-      if (!inspection.ok) continue;
-      const payloadSnapshot = this.#snapshotPayload(input);
-      if (payloadSnapshot.failure) continue;
-      const candidate = validateLatentSuccessor({
+      if (validatedPayload === null) continue;
+
+      const nextById = new Map(
+        group.body.next_custodians.map((entry) => [entry.key_id, entry])
+      );
+      const newIds = new Set(
+        [...nextById.keys()].filter((keyId) => !currentById.has(keyId))
+      );
+      const approvals = new Map();
+      const acceptances = new Map();
+      const approvalMessage = pulseApprovalMessage(group.body);
+      const acceptanceMessage = custodyAcceptanceMessage(group.body);
+
+      for (const signature of [...observedSignatures].sort()) {
+        for (const signer of currentDescriptor.custodians) {
+          if (!verifyEd25519(signer.public_key, approvalMessage, signature)) continue;
+          const normalized = { key_id: signer.key_id, signature };
+          const existing = approvals.get(signer.key_id);
+          if (!existing || signature < existing.signature) {
+            approvals.set(signer.key_id, normalized);
+          }
+        }
+        for (const keyId of [...newIds].sort()) {
+          const signer = nextById.get(keyId);
+          if (!verifyEd25519(signer.public_key, acceptanceMessage, signature)) continue;
+          const normalized = { key_id: keyId, signature };
+          const existing = acceptances.get(keyId);
+          if (!existing || signature < existing.signature) {
+            acceptances.set(keyId, normalized);
+          }
+        }
+      }
+
+      const combinedEnvelope = {
+        acceptances: [...acceptances.values()].sort((left, right) =>
+          left.key_id < right.key_id ? -1 : left.key_id > right.key_id ? 1 : 0
+        ),
+        approvals: [...approvals.values()].sort((left, right) =>
+          left.key_id < right.key_id ? -1 : left.key_id > right.key_id ? 1 : 0
+        ),
+        body: group.body,
+        kind: "mortalos.pulse"
+      };
+      const combinedInput = {
         genesis: this.#genesis,
         parent: this.#head,
-        envelopeBytes: envelopeSnapshot.envelopeBytes,
-        eventPayloadBytes: payloadSnapshot.eventPayloadBytes
-      });
+        envelopeBytes: canonicalBytes(combinedEnvelope),
+        eventPayloadBytes: canonicalBytes(validatedPayload)
+      };
+      const completeCandidate = validatePulse(combinedInput);
+      const candidate =
+        completeCandidate.status === "accept"
+          ? completeCandidate
+          : validateMortalitySuccessor(combinedInput, usableKeyIdsSnapshot);
       if (candidate.status === "accept" || candidate.status === "latent") {
         latentSuccessors.push(candidate);
       }
       if (candidate.status === "accept") {
         acceptedSuccessors.set(candidate.object_hash, {
           candidate,
-          approvalIds: new Set(
-            inspection.envelope.approvals.map((entry) => entry.key_id)
-          )
+          approvalIds: new Set(approvals.keys())
         });
       }
     }
@@ -327,7 +475,7 @@ class Lineage {
 
     return evaluateMortalityState({
       head: this.#head,
-      usableKeyIds,
+      usableKeyIds: usableKeyIdsSnapshot,
       stateAvailable,
       latentSuccessors,
       authorityLossIrreversible
@@ -335,6 +483,9 @@ class Lineage {
   }
 
   append(input) {
+    if (this.#evaluatingMortality) {
+      return reject("E_VALIDATOR_INTERNAL", "", "mortality-evaluation-active");
+    }
     const { envelope, parent, validation } = this.#validateDetailed(input);
     if (validation.status !== "accept") return validation;
 

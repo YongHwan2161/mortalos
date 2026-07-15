@@ -2,7 +2,7 @@
 
 As of: **2026-07-15**
 
-Stage: **C1 portable deterministic core verified; H3 visual MortalOS Lab next**
+Stage: **C1 portable deterministic core verified locally; exact-head Chromium CI pending; H3 visual MortalOS Lab next**
 
 Security baseline: **portable trust boundaries hardened and reverified**
 
@@ -12,7 +12,7 @@ This is the rolling status and audit document. Update it when evidence changes; 
 
 MortalOS now has a portable authority-lineage kernel. Genesis, signed Pulses, singleton creation, `2-of-3` handoffs, complete original-custodian turnover, replay/fork handling, latent succession, conditional mortality, and clone separation are executable. Byte acquisition, Ed25519 points, validation order, handoff activation, and mortality authority have explicit fail-closed boundaries rather than relying on caller discipline.
 
-The trusted implementation no longer depends on Node.js or the browser. Its committed result is byte-identical in direct Node execution, an isolated browser-target bundle, and actual headless Chromium. The browser can therefore become a visual adapter without creating a second validator.
+The trusted implementation no longer depends on Node.js or the browser. Its committed expected result is byte-identical with direct Node execution and an isolated browser-target bundle. The actual headless-Chromium comparison for the exact PR head remains a required CI gate. The browser can become a visual adapter without creating a second validator, subject to that gate.
 
 The project still does not transition mutable logical state or connect participants. It supports claims about deterministic identity and authority lineage, not yet an OS, independent-host deployment, or state-bearing digital life.
 
@@ -22,15 +22,15 @@ The project still does not transition mutable logical state or connect participa
 |---|---|---|
 | Apache-2.0 licensing | Verified | Root license digest, package metadata, and contribution terms agree. |
 | Canonical input and limits | Verified | Intrinsic-backed snapshots ignore hostile view metadata, reject shared/detached storage, and enforce duplicate, UTF-8, I-JSON, JCS, byte, and exact root-depth rules. |
-| Portable Genesis/Pulse cryptography | Verified | RFC 8032 plus canonical, non-small-order, torsion-free prime-subgroup point checks and signed lifecycle vectors pass in Node and Chromium. |
-| Deterministic validation | Verified | Public validators are total, preserve stable envelope-before-payload first-error precedence, and read latent evidence once. |
+| Portable Genesis/Pulse cryptography | Verified locally; browser CI pending | RFC 8032 plus canonical, non-small-order, torsion-free prime-subgroup point checks and signed lifecycle vectors pass in Node and the isolated browser-target realm. Actual Chromium for the exact PR head is pending CI. |
+| Deterministic validation | Verified | Public validators are total, preserve stable envelope-before-payload first-error precedence, and keep public durable-latent validation supplied-evidence-only. |
 | `1-of-1` bootstrap | Verified | Public signed birth/heartbeat and an ephemeral CLI proof adapter. Creator-controlled, not ownerless. |
 | `1-of-1` → logical `2-of-3` expansion | Verified | One-process generated-key proof: original sole key becomes insufficient and two eligible signers advance; physical distribution is not established. |
 | `2-of-3` continuation | Verified | Current quorum, acceptance signatures, and sufficiency of the supplied next-quorum activation set are enforced. |
 | Stateful lineage | Verified | Replay, fork, equivocator, unknown-parent, and post-fork halt tests pass. |
-| Mortality observer | Verified conditionally | The lineage supplies its recognized head and revalidates raw pending evidence; irreversibility and key absence remain observer assumptions. Forked lineages remain unclassified. |
-| Portable adversarial corpus | Verified within scope | Corpus v2 reports six trust-boundary outcomes plus 15/15 named negatives and 10,000/10,000 fixed-seed rejects. Node/browser-target exercise all six; actual Chromium agrees on cases available without cross-origin isolation, with browser SAB reserved for H3. |
-| Node/Chromium equivalence | Verified | Committed expected result, Node, browser-target realm, and actual Chromium are byte-identical. |
+| Mortality observer | Verified conditionally | The lineage supplies its recognized head, blocks reentrant mutation, pools candidate bodies/signatures/sidecars independently, cryptographically reconstructs evidence per exact body, and combines each body with the same one-shot global usable-key snapshot. Global usable-key availability and irreversibility remain observer assumptions; forks remain unclassified. The internal conditional validator is not re-exported by the supported `src/index.mjs` API. |
+| Portable adversarial corpus | Verified locally within scope | Corpus v3 reports six trust-boundary outcomes, strict-reject versus conditional-current-approval completion, 15/15 named negatives, and 10,000/10,000 fixed-seed rejects in Node/browser-target. Actual Chromium for the exact PR head is pending CI; browser SAB remains reserved for the H3 cross-origin-isolated profile. |
+| Node/Chromium equivalence | Pending exact-head CI | Committed expected result, Node, and browser-target realm are byte-identical locally. Actual Chromium must reproduce that result for the immutable PR head. |
 | Single-browser incubator | Planned | Portable core exists; Worker/WebCrypto key lifecycle and UI are absent. |
 | Stable CLI | Proof only | Creation works in memory; import, persistence, replay, export, and compatibility contract are absent. |
 | Independent-participant survival | Not implemented | Requires adapters, signing lifecycle, handoff, and transport. |
@@ -56,17 +56,17 @@ npm pack --dry-run
 Current results:
 
 - license and specification gates: PASS;
-- conformance tests: 51/51 PASS;
+- conformance tests: 55/55 PASS;
 - fixed-seed Node property cases: 10,000 mixed valid/invalid continuations (1,008 accepts and 8,992 rejects) with exact expected outcomes and invariant preservation;
 - portable named negatives: 15/15 expected codes;
-- portable trust-boundary probes: 6/6 expected outcomes in Node/browser-target; actual Chromium covers probes available without cross-origin isolation;
+- portable trust-boundary probes: 6/6 expected outcomes in Node/browser-target; exact-head actual Chromium coverage is pending CI;
 - portable fixed-seed cases: 10,000/10,000 expected rejects from seed `1297044052`;
-- committed result, Node, browser-target realm, and actual Chromium: byte-identical;
-- trusted-core coverage: 98.38% lines, 93.73% branches, 100% functions;
+- committed result, Node, and browser-target realm: byte-identical; exact-head actual Chromium: pending CI;
+- trusted-core coverage: 98.46% line, `>=93.7%` branch, and 100% function coverage across recorded supported-Node runs; branch accounting varies slightly with Node/V8;
 - fresh-process deterministic trace comparison: PASS;
 - H2 trace format: `mortalos-lifecycle-trace/3`;
 - H2 trace digest: `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
-- clean-room locked install/full suite/Chromium run: PASS;
+- clean-room locked install and full local suite: PASS; exact-head actual Chromium run: pending CI;
 - dependency audit: zero known vulnerabilities at the moderate threshold; and
 - package, link, and repository secret scans: PASS within their declared patterns.
 
@@ -80,7 +80,7 @@ Trusted `src/` modules now use portable bytes, structural validation, SHA-256, a
 
 ### Closed — hostile inputs could cross runtime trust boundaries
 
-The kernel now snapshots byte inputs through captured intrinsics, rejects `SharedArrayBuffer`, validates Ed25519 public/signature points under one strict subgroup profile, and makes validation APIs total. Stable first-error precedence is explicit, next-custody transitions cannot be accepted without an activatable supplied quorum, and mortality cannot trust a caller-selected head or a fabricated latent result.
+The kernel now snapshots byte inputs through captured intrinsics, rejects `SharedArrayBuffer`, validates Ed25519 public/signature points under one strict subgroup profile, and makes validation APIs total. Stable first-error precedence is explicit and next-custody transitions cannot be accepted without an activatable supplied quorum. Mortality cannot trust a caller-selected head, unsigned evidence labels, carrier placement, or fabricated latent result: it reconstructs exact-body evidence cryptographically, tries strict acceptance first, then uses an internal conditional validator only for observer classification. That validator is intentionally not re-exported by the supported `src/index.mjs` API.
 
 ### High — two bootstrap profiles serve different purposes
 

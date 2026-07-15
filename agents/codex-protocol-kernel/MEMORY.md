@@ -19,8 +19,13 @@ Fork point: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
 - Ed25519 identity and evidence use one strict canonical prime-subgroup profile.
 - Public validators are total with stable first-error precedence. Membership
   changes also prove that supplied evidence can activate the declared next quorum.
-- Mortality is a lineage operation over its recognized head and raw pending
-  evidence. Distinct fully valid pending siblings record a fork before mortality.
+- Mortality is a lineage operation over its recognized head. It independently pools
+  parseable candidate bodies, signature strings, and content-addressed sidecars;
+  cryptographically maps evidence per exact body; then combines every candidate with
+  the same one-shot global usable-key snapshot. Its internal conditional validator is
+  intentionally not re-exported by the supported `src/index.mjs` API, reentrant
+  mutation is blocked, and distinct recomposed valid siblings record a fork before
+  mortality.
 - A signed `1-of-1` birth is a valid bootstrap profile, but it remains controlled
   by the sole key until custody is transferred.
 - Logical `2-of-3` keys held in one browser remain one physical/administrative

@@ -92,18 +92,20 @@ There is no public operation that replaces a recognized head with an ancestor, s
 
 ## 7. Approval and acceptance evidence
 
+The mortality-feasibility validator described below is an internal helper intentionally not re-exported by the supported `src/index.mjs` API. It can inform observer classification but cannot publicly accept a Pulse.
+
 | Code | Condition |
 |---|---|
 | `E_APPROVAL_SIGNER_INELIGIBLE` | Approval signer is not a current custodian. |
 | `E_APPROVAL_DUPLICATE` | More than one approval is supplied for the same `key_id`. |
 | `E_APPROVAL_SIGNATURE_INVALID` | Ed25519 approval signature does not verify for the normative message. |
-| `E_APPROVAL_INSUFFICIENT_QUORUM` | Valid eligible unique approvals are below the parent-derived threshold. |
+| `E_APPROVAL_INSUFFICIENT_QUORUM` | Valid eligible unique supplied approvals are below the parent-derived threshold. Internal mortality feasibility reports this only when their union with explicitly usable eligible current signers is still below threshold; ordinary validation never counts hypothetical signatures. |
 | `E_ACCEPTANCE_SIGNER_NOT_NEW` | Acceptance signer remains in both current and next custody and is not newly added. |
-| `E_ACCEPTANCE_MISSING` | A newly added custodian has no acceptance. `validateLatentSuccessor` may convert this into authenticated latent evidence only after every earlier rule and supplied acceptance signature passes. |
+| `E_ACCEPTANCE_MISSING` | A newly added custodian has no acceptance. Public `validateLatentSuccessor` may convert this into durable latent evidence only after the supplied current quorum and every supplied acceptance signature pass. Internal mortality feasibility may report it alongside missing explicitly usable current approvals. |
 | `E_ACCEPTANCE_UNEXPECTED` | A removed or unrelated peer supplies an acceptance. |
 | `E_ACCEPTANCE_DUPLICATE` | More than one acceptance is supplied for the same `key_id`. |
 | `E_ACCEPTANCE_SIGNATURE_INVALID` | A supplied new-custodian acceptance signature does not verify. |
-| `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT` | Valid current approvers retained in next custody plus valid new-custodian acceptances do not cover `next_quorum.threshold`. A latent candidate may count only its explicitly missing required new acceptances as potential activation. |
+| `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT` | Valid retained current approvers plus valid new-custodian acceptances do not cover `next_quorum.threshold`. Ordinary validation counts supplied evidence only. Public durable-latent validation may count explicitly missing required new acceptances; internal mortality feasibility may additionally count a missing retained-current approval only when that key is in the single snapshotted usable set. |
 
 ## 8. Fork safety
 

@@ -319,6 +319,19 @@ test("latent validation snapshots each public input property exactly once", () =
   assert.equal(parentReads, 1);
 });
 
+test("hostile latent completion assumptions cannot overtake envelope validation", () => {
+  const { proxy, revoke } = Proxy.revocable([], {});
+  revoke();
+  const result = validateLatentSuccessor(
+    {
+      envelopeBytes: Buffer.from("{"),
+      eventPayloadBytes: canonical({})
+    },
+    proxy
+  );
+  expectCode(result, "E_PARSE_INVALID_JSON");
+});
+
 test("a later input getter cannot mutate already supplied envelope bytes", () => {
   const { genesis, parents } = acceptedLineage();
   const partial = clone(vector.steps[0]);

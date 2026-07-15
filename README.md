@@ -13,13 +13,13 @@ Implemented:
 - portable `Uint8Array` processing with intrinsic-backed immutable snapshots, `SharedArrayBuffer` rejection, duplicate-aware UTF-8/I-JSON parsing, exact root-depth limits, and RFC 8785 canonicalization;
 - eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification, including canonical prime-subgroup checks for public keys and signature points;
 - Genesis and Pulse validation for strict-majority custody descriptors from `1-of-1` through 16 custodians;
-- total public validators with stable first-error precedence, non-forgeable recursively frozen contexts, and single-read latent-successor evaluation;
+- total public validators with stable first-error precedence, non-forgeable recursively frozen contexts, and supplied-evidence-only public latent validation;
 - membership handoff validation that proves the declared next quorum can activate from supplied approval and acceptance evidence;
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
-- evidence-backed latent-successor and conditional mortality evaluation scoped to the lineage-recognized head;
+- recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; and combines it only with one explicit usable-key snapshot;
 - a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
-- a versioned committed result corpus with 15 named negatives, six reported trust-boundary outcomes, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise all six boundaries, while actual Chromium agrees on the cases available without cross-origin isolation; and
-- byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results.
+- a v3 committed result corpus with 15 named negatives, six reported trust-boundary outcomes, a strict-reject/conditional-completion case, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
+- byte-identical committed, Node.js, and isolated browser-target results. Actual headless-Chromium comparison for the exact PR head remains a required CI gate; the browser `SharedArrayBuffer` case additionally requires the H3 cross-origin-isolated deployment profile.
 
 Not implemented:
 
@@ -45,7 +45,7 @@ npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification/governance gates, 51 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification/governance gates, 55 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
 Expected H2 trace digest:
 
@@ -100,7 +100,7 @@ A public signed-fork fixture also proves `E_FORK_DETECTED`, one intersecting equ
 
 Use `createLineage` for recognized-head, replay, and fork behavior. After restart, replay canonical Genesis/Pulse evidence to reconstruct the graph; never persist or trust an `accepted: true` object.
 
-`Lineage#evaluateMortality` is a controlled-experiment observer, not a global death oracle. It supplies the lineage-recognized current head internally and revalidates raw pending evidence; callers cannot inject either an accepted head or a hand-built latent capability. Key availability, state availability, irreversibility, and absence of hidden copies remain declared assumptions.
+`Lineage#evaluateMortality` is a controlled-experiment observer, not a global death oracle. It supplies the recognized head, blocks reentrant graph mutation, snapshots usable current keys once, and reuses that one global observation while reconstructing every possible successor from independently carried bodies, signatures, and payload sidecars. Unsigned carrier labels do not establish signer identity or evidence role; signatures are remapped only by successful domain-separated verification for an exact body. Public callers cannot inject an accepted head or obtain the separately branded internal conditional validator, which is intentionally not re-exported by the supported `src/index.mjs` API. Global usable-key availability, state availability, irreversibility, and absence of hidden copies remain declared observer assumptions.
 
 ## Documentation
 

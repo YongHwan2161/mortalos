@@ -65,14 +65,13 @@ Transport envelopes may add routing, compression, encryption, chunking, or retry
 
 ## 5. Implemented evidence
 
-The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient-clock, or ambient-random dependency. One committed public corpus produces byte-identical results in:
+The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient-clock, or ambient-random dependency. One committed public corpus currently produces byte-identical local results in:
 
 - direct Node.js execution;
-- an isolated browser-target bundle;
-- actual headless Chromium; and
+- an isolated browser-target bundle; and
 - the committed expected-result document.
 
-The portable corpus covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, authenticated latent succession, recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, six reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise all six boundary cases. Actual Chromium agrees on cases available without cross-origin isolation; an actual-browser SAB case remains an H3 deployment test.
+The actual headless-Chromium runner is implemented, but its portable v3 comparison for the exact PR head remains a required CI gate. The corpus covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, conditional current-approval completion, recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, six reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise every portable case. An actual-browser SAB case remains an H3 cross-origin-isolated deployment test.
 
 The current CLI adapter creates a fresh singleton and heartbeat entirely in memory. It does not yet persist a lineage, listen on a socket, discover peers, or provide a stable end-user command contract.
 
@@ -86,7 +85,7 @@ Portability is not sufficient, however. The current kernel validates who can aut
 
 The implementation order is:
 
-1. **portable life kernel** — complete and cross-runtime verified;
+1. **portable life kernel** — locally verified in Node/browser-target; exact-head actual Chromium remains a CI gate;
 2. **browser Lab adapter** — next delivery milestone for visual explanation and Devpost judging;
 3. **CLI contract** — stable create/import/verify/replay/export commands using the same corpus and trace format;
 4. **deterministic state-bearing kernel** — next foundational research milestone;

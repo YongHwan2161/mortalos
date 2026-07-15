@@ -175,7 +175,7 @@ Validation reads caller byte inputs through trusted typed-array intrinsics into 
 
 ### S-12 — Recognized-head mortality scope
 
-Only a lineage may evaluate mortality. It supplies the current graph-recognized head and revalidates raw pending successors against that head. A fork has no unique head and remains unclassified rather than producing a death result.
+Only a lineage may evaluate mortality. It supplies the current graph-recognized head, snapshots one global usable-current-key observation, reuses that same set for every candidate body, and reconstructs possible direct children from raw pending components. It pools parseable candidate bodies, body-bound signatures, and content-addressed sidecars independently; each signature is reverified against the candidate body's approval and acceptance domains, so unsigned carrier `kind`, array placement, and `key_id` labels cannot hide usable evidence. Different bodies never share a verified signature. A fork has no unique head and remains unclassified rather than producing a death result, and reentrant mutation is blocked while evidence getters are observed.
 
 ## 8. Conditional liveness properties
 
@@ -204,7 +204,7 @@ Examples under the v0 controlled-test assumptions:
 - a `1-of-1` lineage irreversibly loses its sole current private key; or
 - a `2-of-3` lineage loses two current private keys and those keys were never persisted.
 
-The controlled test must also establish that no pending candidate already contains sufficient durable evidence to become valid without new signatures from the lost current quorum. Key destruction does not revoke signatures already created. `Lineage#evaluateMortality` supplies its own current recognized head and revalidates raw `pendingSuccessors`; it accepts as succession evidence either a fully valid direct child or a partial membership handoff whose current quorum is complete, whose supplied acceptances verify, whose next quorum can activate, and whose only missing evidence is explicitly listed new-custodian acceptance. Callers cannot inject a head or hand-built latent capability.
+The controlled test must also establish that no observed candidate body can become valid without a new signature from a current key assumed lost. Key destruction does not revoke signatures already created. `Lineage#evaluateMortality` supplies its own recognized head, pools and cryptographically remaps observed signature strings to eligible signers and roles for each exact body, matches sidecars by the signed payload hash, and deduplicates evidence before running ordinary complete validation. If complete validation fails, an internal conditional validator combines verified durable approvals with the one global usable-current-key snapshot reused for every candidate. Both the possible current-approval set and the resulting next-activation set must reach their thresholds; any missing usable-current approvals and required new-custodian acceptances are reported. This validator is intentionally not re-exported by the supported `src/index.mjs` API. Callers cannot inject a head, conditional capability, per-body usability set, or authoritative key-ID label.
 
 If two distinct raw pending successors are both fully valid children of the recognized head, mortality evaluation records the fork. If the lineage is forked, mortality is not classified. Fork resolution is outside v0, and selecting either sibling merely to obtain a life/death label would make an observer policy authoritative.
 
@@ -313,7 +313,7 @@ Resource contribution must be explicit and revocable in later participant-runtim
 | Minority partition cannot advance | Guaranteed | Under current threshold rule. |
 | Public snapshot cannot sign a successor | Guaranteed | Snapshot excludes private keys. |
 | Destroying keys invalidates pre-existing signatures | Not claimed | A latent authorized successor remains usable. |
-| Caller-selected candidate can be treated as the mortality head | Rejected | The lineage supplies its unique recognized head and revalidates raw pending direct children. |
+| Caller-selected candidate can be treated as the mortality head | Rejected | The lineage supplies its unique recognized head and reconstructs possible direct children from independently observed bodies, signatures, and sidecars. |
 | Forked lineage has a v0 death classification | Not claimed | Without a unique recognized head, mortality remains unclassified. |
 | Missing state alone kills the v0 lineage | Not claimed | v0 preserves an authenticated declared root, not content binding or retrievability; report `state-stalled`. |
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |

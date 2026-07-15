@@ -10,9 +10,10 @@ import {
   validatePulse,
   verifyEd25519Raw
 } from "../src/index.mjs";
+import { validateMortalitySuccessor } from "../src/validator.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
-export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/2";
+export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/3";
 export const ADVERSARIAL_CASES = 10_000;
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
@@ -163,11 +164,33 @@ function runTrustCases(lifecycle, accepted) {
     envelopeBytes: canonicalBytes(partial.envelope),
     eventPayloadBytes: canonicalBytes(partial.payload)
   });
+  const completion = clone(lifecycle.steps[0]);
+  const potentialApprovalKeyId = completion.envelope.approvals.at(-1).key_id;
+  completion.envelope.approvals = completion.envelope.approvals.slice(0, 1);
+  const strictCompletion = validatePulse({
+    genesis: accepted.genesis,
+    parent: accepted.parents[0],
+    envelopeBytes: canonicalBytes(completion.envelope),
+    eventPayloadBytes: canonicalBytes(completion.payload)
+  });
+  const conditionalCompletion = validateMortalitySuccessor(
+    {
+      genesis: accepted.genesis,
+      parent: accepted.parents[0],
+      envelopeBytes: canonicalBytes(completion.envelope),
+      eventPayloadBytes: canonicalBytes(completion.payload)
+    },
+    [potentialApprovalKeyId]
+  );
   return {
     cloned_genesis: clonedGenesis.code,
     cloned_parent: clonedParent.code,
     latent_status: latent.status,
-    latent_missing: latent.missing_acceptance_key_ids.length
+    latent_missing: latent.missing_acceptance_key_ids.length,
+    conditional_completion_status: conditionalCompletion.status,
+    conditional_missing_current_approvals:
+      conditionalCompletion.missing_current_approval_key_ids.length,
+    strict_completion_code: strictCompletion.code
   };
 }
 

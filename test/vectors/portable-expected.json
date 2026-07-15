@@ -1,5 +1,5 @@
 {
-  "format": "mortalos-portable-corpus/2",
+  "format": "mortalos-portable-corpus/3",
   "standards": {
     "rfc8032_vector_1": true,
     "rfc8032_mutation_rejected": true,
@@ -53,7 +53,10 @@
     "cloned_genesis": "E_LINEAGE_UNKNOWN",
     "cloned_parent": "E_PARENT_REQUIRED",
     "latent_status": "latent",
-    "latent_missing": 1
+    "latent_missing": 1,
+    "conditional_completion_status": "latent",
+    "conditional_missing_current_approvals": 1,
+    "strict_completion_code": "E_APPROVAL_INSUFFICIENT_QUORUM"
   },
   "fork_cases": {
     "first": "accept",

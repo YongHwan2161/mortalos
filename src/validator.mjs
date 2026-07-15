@@ -24,6 +24,7 @@ import { rejection as reject } from "./rejection-codes.mjs";
 import { checkGenesisSchema, checkPulseSchema } from "./schema-validation.mjs";
 const acceptedContexts = new WeakSet();
 const latentContexts = new WeakSet();
+const mortalitySuccessorContexts = new WeakSet();
 
 function deepFreeze(value, seen = new WeakSet()) {
   if (!value || typeof value !== "object" || seen.has(value)) return value;
@@ -44,12 +45,22 @@ function acceptLatent(context) {
   return context;
 }
 
+function acceptMortalitySuccessor(context) {
+  deepFreeze(context);
+  mortalitySuccessorContexts.add(context);
+  return context;
+}
+
 export function isValidatedAcceptance(value) {
   return Boolean(value && acceptedContexts.has(value));
 }
 
 export function isValidatedLatentSuccessor(value) {
   return Boolean(value && latentContexts.has(value));
+}
+
+export function isValidatedMortalitySuccessor(value) {
+  return Boolean(value && mortalitySuccessorContexts.has(value));
 }
 
 function total(operation) {
@@ -355,7 +366,13 @@ export function validateGenesis(envelopeBytes) {
 }
 
 function validatePulseDetailed(
-  { contextInput, envelopeBytes, eventPayloadBytes, payloadFailure },
+  {
+    contextInput,
+    envelopeBytes,
+    eventPayloadBytes,
+    payloadFailure,
+    potentialCurrentApprovalKeyIds = []
+  },
   mode
 ) {
   const parsed = parseRawEnvelope(envelopeBytes);
@@ -498,6 +515,7 @@ function validatePulseDetailed(
   const currentById = new Map(
     currentDescriptor.custodians.map((entry) => [entry.key_id, entry])
   );
+  const suppliedApprovalIds = new Set(approvals.map((entry) => entry.key_id));
   const approvalMessage = pulseApprovalMessage(body);
   for (let index = 0; index < approvals.length; index += 1) {
     const approval = approvals[index];
@@ -509,11 +527,31 @@ function validatePulseDetailed(
       return reject("E_APPROVAL_SIGNATURE_INVALID", `/approvals/${index}/signature`, approval.key_id);
     }
   }
-  if (approvals.length < currentDescriptor.quorum.threshold) {
+  let potentialApprovalSnapshot = [];
+  if (mode === "mortality") {
+    try {
+      if (!Array.isArray(potentialCurrentApprovalKeyIds)) {
+        return reject("E_VALIDATOR_INTERNAL");
+      }
+      potentialApprovalSnapshot = [...potentialCurrentApprovalKeyIds];
+    } catch {
+      return reject("E_VALIDATOR_INTERNAL");
+    }
+  }
+  const potentialApprovalIds = new Set(
+    potentialApprovalSnapshot.filter(
+      (keyId) => currentById.has(keyId) && !suppliedApprovalIds.has(keyId)
+    )
+  );
+  const possibleApprovalCount = approvals.length + potentialApprovalIds.size;
+  if (
+    (mode !== "mortality" && approvals.length < currentDescriptor.quorum.threshold) ||
+    (mode === "mortality" && possibleApprovalCount < currentDescriptor.quorum.threshold)
+  ) {
     return reject(
       "E_APPROVAL_INSUFFICIENT_QUORUM",
       "/approvals",
-      `${approvals.length}/${currentDescriptor.quorum.threshold}`
+      `${mode === "mortality" ? possibleApprovalCount : approvals.length}/${currentDescriptor.quorum.threshold}`
     );
   }
 
@@ -554,15 +592,43 @@ function validatePulseDetailed(
     approvals.map((entry) => entry.key_id).filter((keyId) => nextById.has(keyId))
   );
   for (const keyId of suppliedAcceptanceIds) activationIds.add(keyId);
-  if (mode === "latent") {
+  if (mode !== "complete") {
     for (const keyId of missingAcceptanceIds) activationIds.add(keyId);
   }
-  if (activationIds.size < body.next_quorum.threshold) {
+  const retainedPotentialApprovalIds = [...potentialApprovalIds]
+    .filter((keyId) => nextById.has(keyId))
+    .sort();
+  const possibleActivationIds = new Set(activationIds);
+  for (const keyId of retainedPotentialApprovalIds) possibleActivationIds.add(keyId);
+  if (possibleActivationIds.size < body.next_quorum.threshold) {
     return reject(
       "E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT",
       "/body/next_quorum/threshold",
-      `${activationIds.size}/${body.next_quorum.threshold}`
+      `${possibleActivationIds.size}/${body.next_quorum.threshold}`
     );
+  }
+
+  const missingCurrentApprovalIds = [];
+  if (mode === "mortality") {
+    const selected = new Set();
+    const activationNeeded = Math.max(0, body.next_quorum.threshold - activationIds.size);
+    for (const keyId of retainedPotentialApprovalIds.slice(0, activationNeeded)) {
+      selected.add(keyId);
+      missingCurrentApprovalIds.push(keyId);
+    }
+
+    let approvalNeeded = Math.max(
+      0,
+      currentDescriptor.quorum.threshold - approvals.length - selected.size
+    );
+    for (const keyId of [...potentialApprovalIds].sort()) {
+      if (approvalNeeded === 0) break;
+      if (selected.has(keyId)) continue;
+      selected.add(keyId);
+      missingCurrentApprovalIds.push(keyId);
+      approvalNeeded -= 1;
+    }
+    missingCurrentApprovalIds.sort();
   }
 
   const capability = {
@@ -576,16 +642,22 @@ function validatePulseDetailed(
     next_custody_descriptor: nextDescriptor,
     next_state_root: body.state_root
   };
-  if (missingAcceptanceIds.length === 0) return accept(capability);
-  return acceptLatent({
+  if (missingCurrentApprovalIds.length === 0 && missingAcceptanceIds.length === 0) {
+    return accept(capability);
+  }
+  const latentCapability = {
     status: "latent",
     kind: "pulse",
     organism_id: capability.organism_id,
     object_hash: capability.object_hash,
     parent_hash: capability.parent_hash,
     sequence: capability.sequence,
+    missing_current_approval_key_ids: missingCurrentApprovalIds,
     missing_acceptance_key_ids: missingAcceptanceIds
-  });
+  };
+  return mode === "mortality"
+    ? acceptMortalitySuccessor(latentCapability)
+    : acceptLatent(latentCapability);
 }
 
 function readPulseInput(input) {
@@ -649,5 +721,16 @@ export function validateLatentSuccessor(input) {
   return total(() => {
     const ownedInput = readPulseInput(input);
     return ownedInput.failure ?? validatePulseDetailed(ownedInput, "latent");
+  });
+}
+
+export function validateMortalitySuccessor(input, potentialCurrentApprovalKeyIds) {
+  return total(() => {
+    const ownedInput = readPulseInput(input);
+    if (ownedInput.failure) return ownedInput.failure;
+    return validatePulseDetailed(
+      { ...ownedInput, potentialCurrentApprovalKeyIds },
+      "mortality"
+    );
   });
 }

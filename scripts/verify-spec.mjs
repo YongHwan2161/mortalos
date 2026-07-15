@@ -256,8 +256,9 @@ for (const statement of requiredThreatStatements) {
 }
 
 const portableGateStatements = [
-  "Verified gate — C1 portable deterministic core",
-  "Committed, Node, browser-target, and actual Chromium results are byte-identical.",
+  "C1 portable deterministic core — locally verified, exact-head browser gate pending",
+  "Committed, Node, and isolated browser-target results are byte-identical locally.",
+  "Actual Chromium reproduces the portable v3 result for the immutable PR head",
   "Exactly 10,000 cases replay from seed `1297044052`",
   "any cross-runtime mismatch reopens C1"
 ];
@@ -266,8 +267,9 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "C1 portable deterministic core verified; H3 visual MortalOS Lab next",
-  "| Node/Chromium equivalence | Verified |",
+  "C1 portable deterministic core verified locally; exact-head Chromium CI pending; H3 visual MortalOS Lab next",
+  "| Node/Chromium equivalence | Pending exact-head CI |",
+  "exact-head actual Chromium: pending CI",
   "The verified CLI singleton uses one key"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
@@ -315,8 +317,10 @@ assert(
   "Validation context omits the event-payload sidecar"
 );
 assert(
-  text.protocol.includes("Destroying current private keys does not invalidate signatures already produced"),
-  "Protocol omits latent successor authority"
+  text.protocol.includes("Destroying a key does not revoke its durable signature") &&
+    text.protocol.includes("missing_current_approval_key_ids") &&
+    text.protocol.includes("cryptographically remaps every pooled signature"),
+  "Protocol omits durable-plus-usable latent completion or evidence reconstruction"
 );
 for (const statement of [
   "prime-order subgroup",

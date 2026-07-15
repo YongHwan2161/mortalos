@@ -17,7 +17,7 @@ The browser profile will:
 5. allow valid membership handoffs to independent endpoints; and
 6. lose all local continuation authority if the sole page closes before handoff, under controlled ephemeral-key assumptions.
 
-The repository now contains the hardened portable validator and actual Chromium differential. The cross-runtime corpus covers hostile byte metadata, strict points, falsey roots, and deterministic outcomes; Node conformance additionally covers stable first-error precedence and next-quorum activation insufficiency. Shared-memory rejection runs in Node and the isolated browser-target VM; an actual-browser `SharedArrayBuffer` case requires cross-origin isolation and remains an H3 deployment test. The repository does not yet contain the incubator Workers, browser signing, or remote handoff.
+The repository now contains the hardened portable validator and an actual-Chromium differential runner. The portable v3 result passes locally in Node and the isolated browser-target VM; actual Chromium for the exact PR head remains a required CI gate. The cross-runtime corpus covers hostile byte metadata, strict points, falsey roots, and deterministic outcomes; Node conformance additionally covers stable first-error precedence and next-quorum activation insufficiency. Shared-memory rejection runs in Node and the isolated browser-target VM; an actual-browser `SharedArrayBuffer` case requires cross-origin isolation and remains an H3 deployment test. The repository does not yet contain the incubator Workers, browser signing, or remote handoff.
 
 ## 2. Relationship to the singleton profile
 
@@ -66,7 +66,7 @@ three volatile keys in one page
   -> authority lost under controlled ephemeral-key assumptions
 ```
 
-This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or a previously signed latent successor could remain deliverable. The UI must use qualified wording and ask `Lineage#evaluateMortality` to assess raw pending evidence against the recognized head; it must never supply its own head or cached latent verdict.
+This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. The UI must use qualified wording and ask `Lineage#evaluateMortality` to reconstruct raw pending components against the recognized head with one explicit usable-key observation; it must never supply its own head or cached latent verdict.
 
 After enough valid handoffs move authority to other failure domains, the original page may close while the same lineage continues.
 

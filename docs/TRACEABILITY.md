@@ -1,8 +1,8 @@
 # MortalOS v0 Requirements Traceability
 
-Status: **Normative v0 baseline with hardened portable core, Chromium differential, and committed H2 v3 evidence**
+Status: **Normative v0 baseline with hardened portable core, committed H2 v3 evidence, and exact-head Chromium CI pending**
 
-This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, portable Node/Chromium, and H2 evidence are executable; state-runtime, participant-network, visual-UI, and AI IDs remain reserved.
+This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, Node/browser-target portability, and H2 evidence are executable locally; the actual-Chromium runner must still pass for the exact PR head. State-runtime, participant-network, visual-UI, and AI IDs remain reserved.
 
 ## 1. Test ID convention
 
@@ -28,10 +28,10 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | `INV-10` AI, endpoint type, UI, and transport never define validity. | Only pure validator output accepts state; external layers submit bytes/proposals. | Protocol rejection code unchanged by source | `T-P6-UI-001`, `T-P7-TRANSPORT-001`, `T-P9-AI-001`, `T-P9-AI-002` | P6 |
 | `INV-11` Semantic validation uses the exact event payload committed by the Pulse. | Canonical sidecar bytes are mandatory and their domain-separated digest equals `payload_hash`. | `E_EVENT_PAYLOAD_REQUIRED`, `E_EVENT_PAYLOAD_INVALID`, `E_EVENT_PAYLOAD_MISMATCH` | `T-P1-EVENT-002`, `T-P1-EVENT-003`, `T-P1-EVENT-004` | P1 |
 | `INV-12` Authority availability and state availability are never conflated. | v0 state loss is `state-stalled`; only irreversible below-quorum authority loss with no latent successor establishes v0 protocol death under controlled assumptions. | Observer-state result; no death message | `T-P4-DEATH-001`, `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` | P4 |
-| `INV-13` Destroying current private keys does not revoke previously created authorization evidence. | `validateLatentSuccessor` authenticates current quorum and supplied acceptances; lineage mortality revalidates raw pending direct-child evidence against its recognized head. | `latent successor / not dead` observer result | `T-P4-LATENT-001`, `T-P4-LATENT-002`, `T-P5-DELAY-001` | P4 |
+| `INV-13` Destroying current private keys does not revoke previously created authorization evidence. | Public latent validation authenticates a supplied current quorum. Mortality additionally pools observed signature strings and content-addressed sidecars independently, cryptographically remaps signatures to eligible roles for each exact candidate body, and combines each body with the same once-snapshotted global usable-current set. | `latent successor / not dead` observer result | `T-P4-LATENT-001`, `T-P4-LATENT-COMPLETION-001`, `T-P4-EVIDENCE-COALESCE-001`, `T-P5-DELAY-001` | P4 |
 | `INV-14` Invalid Ed25519 point encodings never create identity or authority. | Public keys and signature `R` must be canonical prime-order subgroup points; `S` must be canonical. Peer-ID derivation rejects invalid points. | `E_PUBLIC_KEY_INVALID_POINT` or evidence-specific signature-invalid code | `T-P2-KEY-STRICT-001`, `T-P2-KEY-MIXED-001`, `T-P2-SIGN-R-001`, `T-P2-SIGN-S-001` | P2 |
 | `INV-15` One validation operation observes one immutable byte input. | Intrinsic metadata and an owned snapshot precede parsing; SharedArrayBuffer views and non-I-JSON programmatic values are rejected; public validators are total. | Parse/payload code or `E_VALIDATOR_INTERNAL` | `T-P1-SNAPSHOT-001`, `T-P1-SAB-001`, `T-P1-IJSON-001`, `T-P1-TOTAL-001`, `T-P4-LATENT-TOCTOU-001` | P1 |
-| `INV-16` Mortality never trusts a caller-selected head. | `Lineage#evaluateMortality` uses the graph-recognized current head and revalidates raw pending direct children; distinct valid pending siblings record a fork and forks remain unclassified. | Observer `forked` or conditional mortality result | `T-P4-HEAD-SCOPE-001`, `T-P4-PENDING-RAW-001`, `T-P4-PENDING-FORK-001`, `T-P4-FORK-UNCLASSIFIED-001` | P4 |
+| `INV-16` Mortality never trusts a caller-selected head. | `Lineage#evaluateMortality` uses the graph-recognized current head, blocks reentrant mutation, and reconstructs possible direct children from raw components; distinct accepted bodies record a fork and forks remain unclassified. | Observer `forked` or conditional mortality result | `T-P4-HEAD-SCOPE-001`, `T-P4-PENDING-RAW-001`, `T-P4-PENDING-FORK-001`, `T-P4-FORK-UNCLASSIFIED-001`, `T-P4-REENTRANCY-001` | P4 |
 | `INV-17` Multi-fault inputs have one runtime-independent first result. | Schema errors are normalized by explicit precedence and pointer/keyword order; semantic version/algorithm checks follow canonical encoding. | Stable first rejection code | `T-P1-PRECEDENCE-001`, `T-P1-PRECEDENCE-002`, `T-C1-DIFF-001` | P1 |
 
 ## 3. Specification-baseline traceability
@@ -45,7 +45,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Every Genesis and Pulse field has a validation rule. | `PROTOCOL.md` sections 6.1 and 7.1 plus JSON Schemas. |
 | Every invariant maps to at least one planned automated test. | Invariant table in this document maps `INV-1` through `INV-17`. |
 | Later phases are not required to decide envelope/lifecycle validity. | `PROTOCOL.md` sections 8 and 9; v0 has no implementation-specific genome callback. |
-| One reference validator produces the same first result reproducibly. | The committed expected result, direct Node execution, isolated browser-target bundle, and actual Chromium agree for the portable corpus. A second independently written implementation remains an R1 gate. |
+| One reference validator produces the same first result reproducibly. | The committed expected result, direct Node execution, and isolated browser-target bundle agree locally for portable corpus v3. Actual Chromium must agree for the exact PR head in CI. A second independently written implementation remains an R1 gate. |
 
 ## 4. Message-field traceability
 
@@ -85,7 +85,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 
 ## 5. Threat-to-test traceability
 
-| Included threat/failure | Planned tests |
+| Included threat/failure | Test IDs and executable regressions |
 |---|---|
 | Crash-stop and departure | `T-P3-CHURN-001`, `T-P5-REPAIR-001`, `T-P6-TAB-001`, `T-C2-CLI-EXIT-001` |
 | Message delay/loss/duplication/reordering | `T-P5-NET-001` through `T-P5-NET-004` |
@@ -94,7 +94,9 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Invalid signatures | `T-P2-SIGN-001` through `T-P2-SIGN-004` |
 | Removed or premature signer | `T-P3-HANDOFF-003`, `T-P3-HANDOFF-004` |
 | Public snapshot after death | `T-P4-SNAPSHOT-001`, `T-P4-SNAPSHOT-002` |
-| Delayed or partially completed pre-authorized successor | `T-P4-LATENT-001`, `T-P4-LATENT-002`, `T-P5-DELAY-001` |
+| Delayed or partially completed pre-authorized successor | `T-P4-LATENT-001`, `T-P4-LATENT-002`, `T-P4-LATENT-COMPLETION-001`, `T-P5-DELAY-001`; [`test/lineage.test.mjs`](../test/lineage.test.mjs) — “mortality completion combines durable approvals with explicitly usable current keys” |
+| Evidence split across misleading envelopes, arrays, labels, bodies, and sidecars | `T-P4-EVIDENCE-COALESCE-001`; [`test/lineage.test.mjs`](../test/lineage.test.mjs) — “mortality coalesces verified evidence only within the same candidate body” |
+| Reentrant lineage mutation during mortality observation | `T-P4-REENTRANCY-001`; [`test/mortality.test.mjs`](../test/mortality.test.mjs) — “mortality evaluation blocks lineage mutation from pending-input getters” |
 | Missing, malformed, or substituted event payload | `T-P1-EVENT-002` through `T-P1-EVENT-004` |
 | State loss mislabeled as protocol death | `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` |
 | Invalid GPT proposal | `T-P9-AI-001` through `T-P9-AI-004` |
@@ -103,7 +105,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Low-order, non-canonical, or mixed-order Ed25519 encodings | `T-P2-KEY-STRICT-001`, `T-P2-KEY-MIXED-001`, `T-P2-SIGN-R-001`, `T-P2-SIGN-S-001` |
 | Overrideable byte metadata, shared memory, sparse/non-JSON values, or TOCTOU substitution | `T-P1-SNAPSHOT-001`, `T-P1-SAB-001`, `T-P1-IJSON-001`, `T-P4-LATENT-TOCTOU-001` |
 | Next custody cannot activate its threshold | `T-P3-ACTIVATION-001`, `T-P3-ACTIVATION-002` |
-| Caller-injected mortality head or pending valid-sibling fork classification | `T-P4-HEAD-SCOPE-001`, `T-P4-PENDING-FORK-001`, `T-P4-FORK-UNCLASSIFIED-001` |
+| Caller-injected mortality head or pending valid-sibling fork classification | `T-P4-HEAD-SCOPE-001`, `T-P4-PENDING-FORK-001`, `T-P4-FORK-UNCLASSIFIED-001`; [`test/mortality.test.mjs`](../test/mortality.test.mjs) — “lineage mortality states use its private recognized head” and “distinct fully valid pending siblings record a fork and leave mortality unclassified” |
 | Multi-fault schema precedence disagreement | `T-P1-PRECEDENCE-001`, `T-C1-DIFF-001` |
 
 ## 6. Change rule
@@ -122,17 +124,18 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Current quorum approval, new-custodian acceptance, and next-quorum activation | singleton and `2-of-3` signed handoffs plus activation-insufficient regressions | PASS |
 | `0-of-3`, `1-of-3`, duplicate, ineligible, and corrupt evidence rejection | `test/validator.test.mjs` | PASS |
 | Genuine-context capability, accepted-object replay, fork, and post-fork halt | `test/validator.test.mjs`, `test/lineage.test.mjs` | PASS |
-| Single-pass latent validation, recognized-head mortality scope, and pending valid-sibling fork recording | `validateLatentSuccessor`, `Lineage#evaluateMortality`, `test/lineage.test.mjs`, `test/mortality.test.mjs` | PASS |
+| Durable latent validation plus observer-conditional completion | public `validateLatentSuccessor` stays supplied-evidence-only; lineage-internal feasibility combines verified durable evidence with the same global usable-key snapshot for every candidate and reports missing current approvals/acceptances; the internal validator is not re-exported by supported `src/index.mjs` | PASS |
+| Pending evidence recomposition and recognized-head mortality scope | [`test/lineage.test.mjs`](../test/lineage.test.mjs) “mortality coalesces verified evidence only within the same candidate body” and [`test/mortality.test.mjs`](../test/mortality.test.mjs) reentrancy/fork regressions: signatures, sidecars, and bodies are collected independently; signatures are remapped per body; wrong/missing carriers cannot hide evidence; distinct bodies never cross-union; mutation is blocked; accepted siblings record a fork | PASS |
 | Fixed-seed invariant stress | `test/properties.test.mjs`, 10,000 mixed valid/invalid continuations with exact expected codes | PASS |
 | Cross-process determinism | `test/process-determinism.test.mjs` | PASS |
-| `INV-5`, `INV-7`, `INV-9`, `INV-12`, `INV-13`, and `INV-16` vertical proof | `scripts/demo-trace.mjs` trace format v3, committed full golden comparison, digest `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36` | PASS |
+| `INV-5`, `INV-7`, `INV-9`, and `INV-12` H2 lifecycle proof | `scripts/demo-trace.mjs` trace format v3, committed full golden comparison, digest `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`. The trace also records one supplied-quorum latent successor and one recognized-head mortality outcome, but does not cover `INV-13` conditional current-approval completion/evidence coalescing or `INV-16` reentrancy/fork adversarial cases; those are separate conformance regressions above. | PASS within stated slice |
 | Public snapshot cannot advance a dead lineage | zero-approval sequence-4 candidate returns `E_APPROVAL_INSUFFICIENT_QUORUM (0/2)` | PASS |
 | Endpoint-neutral source boundary | `scripts/verify-portable.mjs` scans every trusted source module | PASS |
 | `1-of-1` birth and controlled singleton mortality | `test/vectors/singleton.json`, `test/singleton.test.mjs`, `scripts/demo-singleton.mjs` | PASS |
 | `1-of-1` to logical `2-of-3` authority expansion | one-process generated-key handoff test; former sole key is then insufficient; physical distribution is not established | PASS |
-| Cross-runtime portable result corpus | format v2 committed expected result, Node, browser-target realm, and actual Chromium cover strict-point, hostile-metadata, and deterministic outcomes; Node/browser-target actively exercise SAB rejection, while actual-browser SAB remains an H3 cross-origin-isolated test | PASS |
+| Cross-runtime portable result corpus | format v3 committed expected result, Node, and browser-target realm cover strict-point, hostile-metadata, deterministic outcomes, and strict-reject versus conditional-current-approval completion locally; exact-head actual Chromium is pending CI; Node/browser-target actively exercise SAB rejection, while actual-browser SAB remains an H3 cross-origin-isolated test | PASS locally; exact-head browser CI pending |
 | Portable replay/fork/equivocation/post-fork halt | `test/vectors/fork.json`, `test/portable-corpus.mjs` | PASS |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.
 
-The portable JavaScript implementation exposes the reference result and a committed, language-readable expected-result fixture. Cross-runtime conformance within that implementation is verified. Full implementation independence still requires a second implementation that consumes canonical evidence records without importing reference code.
+The portable JavaScript implementation exposes the reference result and a committed, language-readable expected-result fixture. Node/browser-target conformance within that implementation is verified locally; actual Chromium remains an exact-head CI gate. Full implementation independence still requires a second implementation that consumes canonical evidence records without importing reference code.
