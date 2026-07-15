@@ -30,7 +30,8 @@ result, and reproducible verification.
 
 ## 2026-07-15 — Portable trust-boundary hardening
 
-- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Original base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Final reconciled base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
 - Branch: `agent/codex-protocol-kernel--trust-boundaries`
 - Intended shared paths: portable bytes/codec/crypto/validation/lineage core,
   schemas and rejection codes, deterministic vectors and tests, current protocol,
@@ -47,11 +48,79 @@ result, and reproducible verification.
   branch across supported Node/V8 runs, and 100% function coverage; H2 digest
   `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
   audit 0 vulnerabilities; 61-file package dry-run; license/spec/governance gates pass
-- CI: publication candidate `9eae8c34` passed Agent PR Policy and the complete
+- Pre-reconciliation CI: publication candidate `9eae8c34` passed the then-current
+  Agent PR Policy and the complete
   Verify workflow, including Node 22, actual Chromium differential verification,
-  coverage, and dependency audit; every changed head must rerun those gates
-- Handoff: local Playwright download returned an empty archive; immutable-head
-  review uses the recorded actual-browser CI evidence
+  coverage, and dependency audit
+- Handoff: the reconciled head must pass the new trusted target policy and complete
+  Verify workflow before immutable-snapshot review
+
+## 2026-07-15 — Governance trust-boundary hardening
+
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Branch: `agent/codex-protocol-kernel--governance-hardening`
+- Intended shared paths: trusted PR workflow/template, agent governance documents,
+  worktree/PR policy scripts, governance tests, and `package.json`
+- Result: bound PR policy execution and evidence to immutable trusted-base code,
+  required registered identities and complete changed/renamed-path declarations,
+  and made worktree creation/resume fail closed for branch reuse, stale ancestry,
+  incorrect upstreams, and restricted remote fetch refspecs; retained a tokenless,
+  read-only public API path for local public-repository verification
+- Verification: full `npm test`; governance 25/25 at 91.91% line, 81.01% branch,
+  and 93.48% function coverage; actual Chromium 149 differential with 10,000/10,000
+  adversarial rejections; audit 0 vulnerabilities; package exclusion, YAML, syntax,
+  and diff checks passed
+- Handoff: local immutable commit to `reviewer-merge-gate` for independent decision;
+  author did not push or approve its own work
+
+## 2026-07-15 — Alternate-base and policy snapshot correction
+
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`; corrected predecessor
+  `a0d1e19a001e1922244dc1d5a6574758620ffc65`
+- Branch: `agent/codex-protocol-kernel--governance-hardening`
+- Intended shared paths: PR policy workflow/verifier/tests and their governance docs
+- Result: added the platform-side `main` base filter, per-PR cancellation, API-body
+  authority, event/API body binding, stable beginning/end PR snapshots, and exact
+  paginated/declared changed-file-count binding
+- Verification: governance 26/26 at 92.68% line, 84.39% branch, and 93.75%
+  function coverage; full, Chromium, audit, package, syntax, YAML, and diff checks
+  passed
+- Handoff: preserve the rejected predecessor and submit a new immutable commit to
+  `reviewer-merge-gate`; author must not push or self-approve
+
+## 2026-07-15 — Reviewer snapshot attestation binding
+
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`; corrected predecessor
+  `5f41549437309eb59b94c2cb6783c31b1ad62941`
+- Branch: `agent/codex-protocol-kernel--governance-hardening`
+- Intended shared paths: reviewer/root/collaboration contracts and governance test
+- Result: defined exact body and changed-file digests, expanded the structured PASS
+  attestation, and required pre-merge revalidation of every mutable review field and
+  the latest non-cancelled policy run
+- Verification: full `npm test`; governance 27/27 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; Chromium 149 differential; audit, package, YAML,
+  syntax, and diff checks passed
+- Handoff: preserve prior commits and submit a new immutable commit for independent
+  decision; author must not push or self-approve
+
+## 2026-07-15 — Trusted target policy cleanup
+
+- Base: `e6dce59fb314266acdd855748a9b1fb996864e81`
+- Branch: `agent/codex-protocol-kernel--trusted-policy-cleanup`
+- Intended shared paths: delete `.github/workflows/pr-policy.yml`; update `AGENTS.md`,
+  this agent's handoff/worklog, the reviewer contract,
+  `docs/AGENT_COLLABORATION.md`, and the governance regression test
+- Result: removed the retired transition workflow and exception text; retained the
+  permanent trusted-base policy unchanged; changed no runtime, protocol, schema, or
+  product file
+- Verification: governance 28/28; governance coverage 92.68% line, 84.39% branch,
+  and 93.75% function; full `npm test`; audit 0 vulnerabilities; package dry-run 61
+  files; YAML/JavaScript syntax, diff, scope, retired-language, and high-confidence
+  secret scans passed; trusted workflow matched `origin/main` byte-for-byte at Git
+  blob `94d2b0353fc44d931acd0a28604786a55e78786f` and SHA-256
+  `42ad69df038be695f589bad02e01504215fef0058bac4d202ff82ba7ba042ee6`
+- Handoff: focused immutable PR to `reviewer-merge-gate`; author does not merge or
+  self-approve
 
 ## Entry template
 

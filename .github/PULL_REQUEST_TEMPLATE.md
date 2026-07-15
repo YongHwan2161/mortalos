@@ -7,6 +7,7 @@ Base-Commit: replace-with-current-40-character-main-sha
 
 ## Scope
 
+<!-- Replace with exact files or non-root directory/** prefixes; remove this item. -->
 Shared-Paths:
 - replace-me
 
@@ -16,7 +17,7 @@ Summary:
 ## Verification
 
 Validation:
-- replace-me
+- replace-me — PASS
 
 ## Risk
 
@@ -28,6 +29,6 @@ North-Star-Impact: replace-me
 
 - [ ] The branch is `agent/<author-agent>--<task>` and was created from current `main`.
 - [ ] Shared-path intent is recorded in the author's `HANDOFF.md`.
+- [ ] `Shared-Paths` covers every changed path exactly or by a non-root `/**` prefix.
 - [ ] No unrelated files, credentials, generated dependencies, or disposable logs are included.
 - [ ] The PR is ready for immutable-head review by `reviewer-merge-gate`.
-

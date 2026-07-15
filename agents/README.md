@@ -27,8 +27,13 @@ branch, worktree, pull-request, review, and merge protocol.
 - `agent/<agent-id>--<task>` is a disposable implementation branch based on the
   latest `main`.
 - Each active task uses a separate clone or Git worktree outside the shared checkout.
-- `node scripts/create-agent-worktree.mjs create <agent-id> <task>` creates the
-  standard task branch and sibling worktree.
+- `node scripts/create-agent-worktree.mjs create <agent-id> <task>` creates only a
+  brand-new task branch at the fetched `origin/main` commit. Existing local or
+  remote branches fail closed.
+- `node scripts/create-agent-worktree.mjs resume <agent-id> <task>` is the only
+  reattachment path. A local branch must track the matching `origin/<task-branch>`,
+  must not be behind or diverged from it, and must contain current `origin/main`.
+  A remote-only branch must likewise contain current `origin/main`.
 
 ## Registered agents
 
