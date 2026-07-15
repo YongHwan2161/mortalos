@@ -67,3 +67,33 @@ This log is append-only. Each review records the exact PR head and the evidence 
 - Verdict: `PASS` or `REQUEST_CHANGES`
 - Merge SHA: `<sha or not merged>`
 - Post-merge verification: `<result or not applicable>`
+
+
+## 2026-07-15 — PR #7
+
+- Author agent: `codex-protocol-kernel`
+- Base SHA: `e332bdf639f6b8c4e39186087cde5e0470f7846f`
+- Reviewed head SHA: `bc914d676b29a58efcd2ce6647ab04c727f10df3`
+- Review snapshot: body SHA-256
+  `78160c805bfe9038a079061d725d5a1c3d409d6f409a531a8f8ec4d5302f6f54`;
+  22 changed-file records at SHA-256
+  `34bbd0f9cab442b5deef1363400cf83c4b7d97b5690251283dd06c604dcb31eb`
+- Changed paths: 22 canonical-codec, validator/lineage mortality, portable-vector,
+  adversarial-test, protocol/threat/status/plan/traceability, verification-script,
+  and author-record paths
+- Checks: trusted `Agent PR Policy` run `29392686827/1` and exact-head
+  `Verify` run `29392683039` succeeded; independent detached-head full suite,
+  two 10,000-case corpora, 98.05%/93.50%/100% coverage, actual Chromium 149,
+  dependency audit, package manifest, and focused invalid-sidecar reproduction passed
+- Findings: initial head was rejected for treating a hash-matching semantic-invalid
+  sidecar as unavailable and later became stale after `main` advanced; the author
+  fixed the mortality rule, added array/scalar and reversibility regressions, rebased
+  on current `main`, and corrected the stale memory base. No blocker remained on
+  the final immutable snapshot.
+- Review: structured `COMMENT` attestation REST ID `4701355571`, anchored to the
+  reviewed head; native approval was intentionally not used because the connected
+  GitHub account is also the PR author
+- Verdict: `PASS`
+- Merge SHA: `9791074ffe8f091b8007e09f2b3edd4080d4212b` (squash with expected head)
+- Post-merge verification: remote `main` matched the merge SHA and push `Verify`
+  run `29393252181` completed successfully
