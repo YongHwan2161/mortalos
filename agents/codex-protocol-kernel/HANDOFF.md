@@ -5,7 +5,27 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-None.
+### ACTIVE — H3A browser Lab vertical slice
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Work branch: `agent/codex-protocol-kernel--h3-lab`
+- Intended paths: `lab/**`, `scripts/build-lab.mjs`, `scripts/serve-lab.mjs`,
+  `scripts/verify-lab.mjs`, `test/lab*.test.mjs`, `package.json`,
+  `.github/workflows/verify.yml`, `README.md`, `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/PROJECT_STATUS.md`, `docs/SINGLE_BROWSER_INCUBATOR.md`,
+  `docs/TRACEABILITY.md`, `docs/SUBMISSION_CHECKLIST.md`, and this agent's
+  `CHARTER.md`, `MEMORY.md`, and `HANDOFF.md`
+- Contract affected: no consensus-rule change; browser adapter, demo surface,
+  executable acceptance gate, and planning/status documentation
+- Required evidence: unit tests, three clean Chromium contexts using real
+  non-extractable Ed25519 keys, exact 10,000-case portable corpus comparison,
+  exported-trace replay, CSP/request audit, full `npm test`, coverage,
+  Chromium differential verification, and dependency audit
+- Expected handoff: draft PR with immutable head for `reviewer-merge-gate`
+- Notes: H3A intentionally excludes public deployment and independent endpoint
+  handoff; the page must disclose `3 logical custodians / 1 physical failure
+  domain` and qualify page-close mortality claims.
 
 ## Completed handoffs
 
