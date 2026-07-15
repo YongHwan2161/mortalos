@@ -9,6 +9,42 @@ None.
 
 ## Completed handoffs
 
+### 2026-07-15 — Canonical workflow identity regression
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Main base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow, runtime, protocol, or governing-doc change
+- Result: every `.github/workflows/*.yml`/`*.yaml` file is enumerated; one canonical
+  root block-form `on:` is required; two-space event keys are extracted; and quoted,
+  flow, alias, inline-event, duplicate, or malformed trigger forms fail closed. Only
+  `trusted-pr-policy.yml` may own the trusted workflow/check identities and its sole
+  event must be `pull_request_target`.
+- Author validation: fresh `npm ci`; full `npm test`; governance 29/29 at 92.68% line,
+  84.39% branch, and 93.75% function coverage; audit 0 vulnerabilities; YAML 1.2,
+  JavaScript syntax, docs/spec, trusted-workflow integrity, scope, and diff checks pass
+- Integrity: `.github/workflows/trusted-pr-policy.yml` remains byte-identical to the
+  base at blob `94d2b0353fc44d931acd0a28604786a55e78786f`
+- Handoff: reviewer publishes one focused three-path PR, requires normal trusted
+  target policy plus `Verify`, and decides the immutable snapshot independently;
+  author does not push, merge, or self-approve
+
+### 2026-07-15 — HISTORICAL-AUDIT-ONLY: two-phase trusted-policy migration
+
+- Status: closed history only; this record grants no active exception, trigger, or
+  merge instruction
+- Sequence: the reviewer rejected proposed-head `pull_request` self-validation, then
+  rejected a combined transition whose untrusted run could expose the trusted check
+  name. The author split the zero-permission liveness marker from the target-only
+  policy before PR #3 merged as
+  `e6dce59fb314266acdd855748a9b1fb996864e81`.
+- Retirement: PR #5 merged as `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+  and deleted the marker workflow and one-time reviewer exception
+- Current decision boundary: only the normal `Agent PR Policy` run with event
+  `pull_request_target` and job/check `Trusted main-base policy` is review evidence;
+  no historical marker or exception may be reused
+
 ### 2026-07-15 — Trusted target policy cleanup
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`

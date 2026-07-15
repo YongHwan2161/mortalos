@@ -94,6 +94,36 @@ result, and reproducible verification.
 - Handoff: focused immutable PR to `reviewer-merge-gate`; author does not merge or
   self-approve
 
+## 2026-07-15 — HISTORICAL-AUDIT-ONLY: two-phase trusted-policy migration
+
+- Status: closed audit trail, not an active workflow or review exception
+- Reviewer decisions: reject proposed-head policy self-validation; reject a combined
+  migration workflow that let an untrusted run expose the trusted check name; accept
+  only the split, zero-permission liveness marker as one-time migration evidence; and
+  require normal target-only policy evidence after cleanup
+- Merge anchors: PR #3 established the split trust boundary at
+  `e6dce59fb314266acdd855748a9b1fb996864e81`; PR #5 retired the marker workflow and
+  exception at `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Permanent state: `.github/workflows/trusted-pr-policy.yml` alone owns
+  `Agent PR Policy` / `Trusted main-base policy`, and its accepted event is only
+  `pull_request_target`
+
+## 2026-07-15 — Canonical workflow identity regression
+
+- Base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression plus append-only author handoff/worklog
+- Result: added repository-wide workflow enumeration and a dependency-free,
+  fail-closed parser for exactly one canonical root block-form `on:` section with
+  two-space event keys; adversarial quoted, flow, alias, inline-event, and duplicate
+  variants are rejected, and trusted names/events are reserved to the unchanged
+  trusted workflow
+- Verification: fresh `npm ci`; full `npm test`; governance 29/29 at 92.68% line,
+  84.39% branch, and 93.75% function coverage; audit 0 vulnerabilities; YAML 1.2,
+  JavaScript syntax, docs/spec, trusted-workflow integrity, scope, and diff checks pass
+- Handoff: focused three-path immutable commit to `reviewer-merge-gate`; author does
+  not push, merge, or self-approve
+
 ## Entry template
 
 ### YYYY-MM-DD — Task
