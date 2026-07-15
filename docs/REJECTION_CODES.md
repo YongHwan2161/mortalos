@@ -32,7 +32,7 @@ Reject {
 | `E_SCHEMA_INVALID` | Input fails its Draft 2020-12 structural schema. |
 | `E_SCHEMA_UNKNOWN_FIELD` | Input contains a property forbidden by `additionalProperties: false`. |
 | `E_CANONICAL_MISMATCH` | Raw bytes are not exactly the RFC 8785 canonical encoding of the parsed value. |
-| `E_ARRAY_NOT_SORTED` | A keyed array is not strictly sorted by complete ASCII `key_id`. |
+| `E_ARRAY_NOT_SORTED` | A keyed array is not strictly sorted by complete `key_id` using lexicographic unsigned UTF-16 code-unit order. |
 | `E_ARRAY_DUPLICATE_KEY_ID` | A custodian array contains a duplicate `key_id`. |
 | `E_BINARY_ENCODING` | A prefixed base64url field has invalid characters, padding, prefix, or decoded length. |
 
