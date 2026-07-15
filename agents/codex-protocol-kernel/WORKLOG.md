@@ -27,6 +27,27 @@ result, and reproducible verification.
   actual Chromium corpus byte-identical with 10,000/10,000 adversarial rejections
 - Handoff: `reviewer-merge-gate` must independently inspect and decide the PR
 
+## 2026-07-15 — Portable trust-boundary hardening
+
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Branch: `agent/codex-protocol-kernel--trust-boundaries`
+- Intended shared paths: portable bytes/codec/crypto/validation/lineage core,
+  schemas and rejection codes, deterministic vectors and tests, current protocol,
+  threat/status/plan/traceability documentation, dependency notices, and CI timeout
+- Result: hardened intrinsic byte snapshots and I-JSON canonicalization; strict
+  Ed25519 point/scalar validation; total deterministic validators; activatable
+  custody handoffs; recognized-head mortality with raw pending revalidation and
+  pending-sibling fork recording; removed the caller-selected mortality API; added
+  portable corpus v2 and H2 lifecycle trace v3
+- Verification: clean `npm ci`; full `npm test`; 49/49 conformance; 10,000 mixed
+  property cases (1,008 accepts/8,992 rejects); portable committed/Node/browser-target
+  byte identity with 10,000/10,000 adversarial rejects; 98.92% line, 94.46% branch,
+  and 100% function coverage; H2 digest
+  `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
+  audit 0 vulnerabilities; 61-file package dry-run; license/spec/governance gates pass
+- Handoff: local Playwright download returned an empty archive, so actual Node 22
+  Chromium equivalence remains mandatory in PR CI before immutable-head review
+
 ## Entry template
 
 ### YYYY-MM-DD — Task

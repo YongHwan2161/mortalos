@@ -1,4 +1,4 @@
-import { equalBytes, utf8Bytes } from "./bytes.mjs";
+import { asBytes, equalBytes, isSharedByteView, utf8Bytes } from "./bytes.mjs";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
@@ -33,6 +33,7 @@ function hasLoneSurrogate(value) {
 }
 
 function assertIJson(value) {
+  if (value === null || typeof value === "boolean") return;
   if (typeof value === "string") {
     if (hasLoneSurrogate(value)) {
       throw new JsonInputError("E_PARSE_NON_IJSON", "lone-surrogate");
@@ -54,7 +55,9 @@ function assertIJson(value) {
       assertIJson(key);
       assertIJson(entry);
     }
+    return;
   }
+  throw new JsonInputError("E_PARSE_NON_IJSON", `unsupported-${typeof value}`);
 }
 
 class DuplicateAwareParser {
@@ -83,13 +86,16 @@ class DuplicateAwareParser {
     return value;
   }
 
-  parseValue(depth) {
-    if (depth > this.maxDepth) {
-      throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `depth>${this.maxDepth}`);
-    }
+  parseValue(containerDepth) {
     const token = this.text[this.index];
-    if (token === "{") return this.parseObject(depth);
-    if (token === "[") return this.parseArray(depth);
+    if (token === "{" || token === "[") {
+      if (containerDepth >= this.maxDepth) {
+        throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `depth>${this.maxDepth}`);
+      }
+      return token === "{"
+        ? this.parseObject(containerDepth + 1)
+        : this.parseArray(containerDepth + 1);
+    }
     if (token === '"') return this.parseString();
     if (token === "t") return this.parseLiteral("true", true);
     if (token === "f") return this.parseLiteral("false", false);
@@ -151,7 +157,7 @@ class DuplicateAwareParser {
     return value;
   }
 
-  parseArray(depth) {
+  parseArray(containerDepth) {
     const result = [];
     this.index += 1;
     this.skipWhitespace();
@@ -161,7 +167,7 @@ class DuplicateAwareParser {
     }
     while (true) {
       this.skipWhitespace();
-      result.push(this.parseValue(depth + 1));
+      result.push(this.parseValue(containerDepth));
       this.skipWhitespace();
       const token = this.text[this.index];
       if (token === "]") {
@@ -173,7 +179,7 @@ class DuplicateAwareParser {
     }
   }
 
-  parseObject(depth) {
+  parseObject(containerDepth) {
     const result = Object.create(null);
     const keys = new Set();
     this.index += 1;
@@ -194,7 +200,7 @@ class DuplicateAwareParser {
       if (this.text[this.index] !== ":") this.fail("expected-colon");
       this.index += 1;
       this.skipWhitespace();
-      result[key] = this.parseValue(depth + 1);
+      result[key] = this.parseValue(containerDepth);
       this.skipWhitespace();
       const token = this.text[this.index];
       if (token === "}") {
@@ -207,20 +213,57 @@ class DuplicateAwareParser {
   }
 }
 
-export function parseJsonBytes(
+function assertLimit(name, value) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `${name}:invalid`);
+  }
+}
+
+export function snapshotBytes(bytes, maxBytes = JSON_LIMITS.default_bytes) {
+  assertLimit("maxBytes", maxBytes);
+  const view = asBytes(bytes);
+  if (!view) {
+    throw new JsonInputError(
+      "E_PARSE_INVALID_UTF8",
+      isSharedByteView(bytes) ? "shared-buffer-unsupported" : "input-not-stable-uint8array"
+    );
+  }
+  if (view.byteLength > maxBytes) {
+    throw new JsonInputError(
+      "E_PARSE_LIMIT_EXCEEDED",
+      `bytes:${view.byteLength}/${maxBytes}`
+    );
+  }
+  const snapshot = new Uint8Array(view.byteLength);
+  try {
+    snapshot.set(view);
+  } catch {
+    throw new JsonInputError("E_PARSE_INVALID_UTF8", "input-buffer-invalid");
+  }
+  return snapshot;
+}
+
+export function parseJsonDocument(
   bytes,
   { maxBytes = JSON_LIMITS.default_bytes, maxDepth = JSON_LIMITS.max_depth } = {}
 ) {
-  if (bytes?.byteLength > maxBytes) {
-    throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `bytes:${bytes.byteLength}/${maxBytes}`);
-  }
+  assertLimit("maxBytes", maxBytes);
+  assertLimit("maxDepth", maxDepth);
+  const snapshot = snapshotBytes(bytes, maxBytes);
   let text;
   try {
-    text = decoder.decode(bytes);
+    text = decoder.decode(snapshot);
   } catch {
     throw new JsonInputError("E_PARSE_INVALID_UTF8", "invalid-utf8");
   }
-  return new DuplicateAwareParser(text, maxDepth).parse();
+  return {
+    bytes: snapshot,
+    value: new DuplicateAwareParser(text, maxDepth).parse()
+  };
+}
+
+export function parseJsonBytes(bytes, options = {}) {
+  return parseJsonDocument(bytes, options).value;
 }
 
 export function canonicalize(value) {
@@ -243,5 +286,5 @@ export function canonicalBytes(value) {
 }
 
 export function isCanonical(bytes, value) {
-  return equalBytes(bytes, canonicalBytes(value));
+  return equalBytes(snapshotBytes(bytes, Number.MAX_SAFE_INTEGER), canonicalBytes(value));
 }

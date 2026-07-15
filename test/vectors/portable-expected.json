@@ -1,5 +1,5 @@
 {
-  "format": "mortalos-portable-corpus/1",
+  "format": "mortalos-portable-corpus/2",
   "standards": {
     "rfc8032_vector_1": true,
     "rfc8032_mutation_rejected": true,
@@ -41,6 +41,14 @@
     { "id": "no-op-membership", "expected": "E_MEMBERSHIP_CUSTODY_UNCHANGED", "actual": "E_MEMBERSHIP_CUSTODY_UNCHANGED", "pass": true }
   ],
   "all_negative_cases_pass": true,
+  "boundary_cases": {
+    "low_order_peer_id_rejected": true,
+    "universal_signature_rejected": true,
+    "low_order_signature_r_rejected": true,
+    "hostile_byte_metadata_ignored": true,
+    "shared_bytes_rejected": true,
+    "falsey_root_code": "E_SCHEMA_WRONG_KIND"
+  },
   "trust_cases": {
     "cloned_genesis": "E_LINEAGE_UNKNOWN",
     "cloned_parent": "E_PARENT_REQUIRED",

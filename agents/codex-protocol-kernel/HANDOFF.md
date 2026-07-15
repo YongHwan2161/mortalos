@@ -5,9 +5,28 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-None.
+- None.
 
 ## Completed handoffs
+
+### 2026-07-15 — Portable-kernel trust-boundary hardening
+
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Work branch: `agent/codex-protocol-kernel--trust-boundaries`
+- Paths: portable trusted core, schemas/rejection codes, deterministic vectors and
+  tests, current protocol/threat/status/plan/traceability/access/submission docs,
+  direct dependency notices, package lock, and CI timeout
+- Author validation: clean locked install and full Node suite passed; 49/49
+  conformance; 10,000 mixed property cases; portable v2 committed/Node/browser-target
+  equality and 10,000/10,000 adversarial rejects; 98.92% line/94.46% branch/100%
+  function coverage; H2 v3 golden; audit, license, spec, governance, package, diff,
+  and source-portability gates passed
+- Independent finding resolved: raw pending fully valid siblings now record a fork
+  and leave mortality unclassified; sparse arrays and early hostile context getters
+  also fail with the specified deterministic behavior
+- Handoff: ready for immutable-head review by `reviewer-merge-gate`; actual Chromium
+  and Node 22 equivalence must pass PR CI because the local browser download endpoint
+  returned an empty archive
 
 ### 2026-07-15 — Agent-isolated contribution and reviewer merge gate
 

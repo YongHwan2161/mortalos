@@ -1,7 +1,6 @@
 import {
   canonicalBytes,
-  createLineage,
-  evaluateMortality
+  createLineage
 } from "../src/index.mjs";
 
 function clone(value) {
@@ -19,17 +18,15 @@ export function runPortableScenario(singleton) {
 
   const unsigned = clone(singleton.heartbeat);
   unsigned.approvals = [];
-  const unsignedResult = opened.lineage.validateCandidate({
+  const unsignedResult = opened.lineage.verifyCandidate({
     envelopeBytes: canonicalBytes(unsigned),
     eventPayloadBytes: canonicalBytes(singleton.payload)
   });
-  const alive = evaluateMortality({
-    head: pulse,
+  const alive = opened.lineage.evaluateMortality({
     usableKeyIds: [singleton.actor.key_id],
     stateAvailable: true
   });
-  const dead = evaluateMortality({
-    head: pulse,
+  const dead = opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: false,
     authorityLossIrreversible: true

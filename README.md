@@ -10,14 +10,15 @@ The current artifact is a verified **portable protocol and evidence kernel with 
 
 Implemented:
 
-- portable `Uint8Array` processing with duplicate-aware UTF-8/I-JSON parsing and RFC 8785 canonicalization;
-- eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification;
+- portable `Uint8Array` processing with intrinsic-backed immutable snapshots, `SharedArrayBuffer` rejection, duplicate-aware UTF-8/I-JSON parsing, exact root-depth limits, and RFC 8785 canonicalization;
+- eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification, including canonical prime-subgroup checks for public keys and signature points;
 - Genesis and Pulse validation for strict-majority custody descriptors from `1-of-1` through 16 custodians;
-- non-forgeable, recursively frozen validation contexts;
+- total public validators with stable first-error precedence, non-forgeable recursively frozen contexts, and single-read latent-successor evaluation;
+- membership handoff validation that proves the declared next quorum can activate from supplied acceptances;
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
-- evidence-backed latent-successor and conditional mortality evaluation;
+- evidence-backed latent-successor and conditional mortality evaluation scoped to the lineage-recognized head;
 - a public singleton birth/heartbeat, a verified `1-of-1` to `2-of-3` authority expansion, and the complete A/B/C → D/E/F lifecycle;
-- a committed result corpus with 15 named negative cases and 10,000 seeded adversarial cases; and
+- a versioned committed result corpus with 15 named negatives, six trust-boundary probes, and 10,000 seeded adversarial cases; and
 - byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results.
 
 Not implemented:
@@ -44,12 +45,12 @@ npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification gates, 26 conformance tests, the committed cross-runtime corpus, a fixed-seed 10,000-case property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification/governance gates, 49 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
 Expected H2 trace digest:
 
 ```text
-1393d92d0d42dea697551c67458d52c59f92ee1067d6dedb1c21225c977ab606
+b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36
 ```
 
 Committed vectors contain public verification material only. Tests that need signing keys generate them in memory and do not persist them.
@@ -98,7 +99,7 @@ A public signed-fork fixture also proves `E_FORK_DETECTED`, one intersecting equ
 
 Use `createLineage` for recognized-head, replay, and fork behavior. After restart, replay canonical Genesis/Pulse evidence to reconstruct the graph; never persist or trust an `accepted: true` object.
 
-`evaluateMortality` is a controlled-experiment observer, not a global death oracle. Key availability, state availability, irreversibility, and absence of hidden copies remain declared assumptions.
+`Lineage#evaluateMortality` is a controlled-experiment observer, not a global death oracle. It supplies the lineage-recognized current head internally and revalidates raw pending evidence; callers cannot inject either an accepted head or a hand-built latent capability. Key availability, state availability, irreversibility, and absence of hidden copies remain declared assumptions.
 
 ## Documentation
 

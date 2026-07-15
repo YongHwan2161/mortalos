@@ -1,0 +1,125 @@
+{
+  "format": "mortalos-lifecycle-trace/3",
+  "protocol": "mortalos/0",
+  "scenario": "birth-succession-death-resurrection-rejection-clone",
+  "events": [
+    {
+      "phase": "birth",
+      "result": "accepted",
+      "sequence": "0",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "custodians": [
+        "A",
+        "B",
+        "C"
+      ],
+      "quorum": 2
+    },
+    {
+      "phase": "handoff-1",
+      "result": "accepted",
+      "sequence": "1",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "object_hash": "sha256:_L36jVZOFIjSL2mVjezeej8aNFxP4jgqYqR4oIjpkq4",
+      "custodians": [
+        "B",
+        "C",
+        "D"
+      ],
+      "quorum": 2
+    },
+    {
+      "phase": "handoff-2",
+      "result": "accepted",
+      "sequence": "2",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "object_hash": "sha256:VMpQL3Rza_76t79rhfnpJaVPP5jax7V-wdOYJygEd-I",
+      "custodians": [
+        "C",
+        "D",
+        "E"
+      ],
+      "quorum": 2
+    },
+    {
+      "phase": "authority-loss-with-latent-successor",
+      "result": "latent_successor_not_dead",
+      "sequence": "2",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "usable_keys": 0,
+      "quorum": 2,
+      "pending_authorized_successors": 1,
+      "missing_new_custodian_acceptances": 1
+    },
+    {
+      "phase": "latent-handoff-3",
+      "result": "accepted",
+      "sequence": "3",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "object_hash": "sha256:OuzdcLTYm0mN0Q-cXavoj_F9b8dlW5TOI5LwlWlDnG0",
+      "custodians": [
+        "D",
+        "E",
+        "F"
+      ],
+      "quorum": 2
+    },
+    {
+      "phase": "accepted-object-replay",
+      "result": "rejected",
+      "sequence": "3",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "rejection_code": "E_REPLAY_STALE"
+    },
+    {
+      "phase": "state-loss-with-live-authority",
+      "result": "state_stalled",
+      "sequence": "3",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "authority_viable": true,
+      "state_viable": false
+    },
+    {
+      "phase": "irreversible-authority-loss",
+      "result": "dead_under_v0_assumptions",
+      "sequence": "3",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "usable_keys": 1,
+      "quorum": 2,
+      "pending_authorized_successors": 0
+    },
+    {
+      "phase": "public-snapshot-resurrection-attempt",
+      "result": "rejected",
+      "sequence": "4",
+      "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "rejection_code": "E_APPROVAL_INSUFFICIENT_QUORUM",
+      "detail": "0/2"
+    },
+    {
+      "phase": "clone-birth",
+      "result": "accepted-as-new-identity",
+      "sequence": "0",
+      "organism_id": "mortalos:Ett2HBZ3iB5QjqMRAETxBOlr5F6wlIt0XpcpGyF0wnU",
+      "original_organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
+      "same_genome": true,
+      "custodians": [
+        "G",
+        "H",
+        "I"
+      ]
+    }
+  ],
+  "assertions": {
+    "original_custodians_fully_replaced": true,
+    "organism_id_preserved_through_succession": true,
+    "accepted_object_replay_rejected": true,
+    "latent_successor_survived_key_loss": true,
+    "mortality_bound_to_lineage_recognized_head": true,
+    "state_loss_reported_as_stalled_not_dead": true,
+    "authority_death_reported_only_after_pending_set_drained": true,
+    "public_snapshot_cannot_resurrect_lineage": true,
+    "clone_has_distinct_identity": true
+  },
+  "trace_sha256": "b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36"
+}

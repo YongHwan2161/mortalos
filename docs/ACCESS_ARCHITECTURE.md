@@ -72,7 +72,7 @@ The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, proces
 - actual headless Chromium; and
 - the committed expected-result document.
 
-The corpus covers RFC 8785 examples, RFC 8032 verification and mutation rejection, `1-of-1` birth, `2-of-3` lineage turnover, clone separation, forged acceptance contexts, authenticated latent succession, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, and 10,000 fixed-seed adversarial cases.
+The versioned corpus covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile/shared byte boundaries, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover, next-quorum activation, clone separation, forged acceptance contexts, authenticated latent succession, recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, six boundary probes, and 10,000 fixed-seed adversarial cases.
 
 The current CLI adapter creates a fresh singleton and heartbeat entirely in memory. It does not yet persist a lineage, listen on a socket, discover peers, or provide a stable end-user command contract.
 

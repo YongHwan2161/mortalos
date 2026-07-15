@@ -6,7 +6,6 @@ import {
   deriveOrganismId,
   derivePeerId,
   encodeBase64Url,
-  evaluateMortality,
   eventPayloadHash,
   genesisApprovalMessage,
   genesisParentHash,
@@ -73,13 +72,11 @@ const trace = {
   genesis_hash: opened.lineage.genesis.object_hash,
   head_hash: pulse.object_hash,
   sequence: pulse.sequence,
-  alive: evaluateMortality({
-    head: pulse,
+  alive: opened.lineage.evaluateMortality({
     usableKeyIds: [actor.key_id],
     stateAvailable: true
   }).status,
-  after_declared_irreversible_process_loss: evaluateMortality({
-    head: pulse,
+  after_declared_irreversible_process_loss: opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: false,
     authorityLossIrreversible: true

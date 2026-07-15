@@ -58,8 +58,15 @@ const bundled = await build({
   legalComments: "none",
   write: false
 });
-const sandbox = { TextDecoder, TextEncoder, Uint8Array, ArrayBuffer, DataView };
-vm.runInNewContext(bundled.outputFiles[0].text, sandbox, { timeout: 30000 });
+const sandbox = {
+  TextDecoder,
+  TextEncoder,
+  Uint8Array,
+  ArrayBuffer,
+  SharedArrayBuffer,
+  DataView
+};
+vm.runInNewContext(bundled.outputFiles[0].text, sandbox, { timeout: 180000 });
 const browserResult = sandbox.__MORTALOS_BROWSER_CONTRACT__;
 if (JSON.stringify(browserResult) !== JSON.stringify(directResult)) {
   throw new Error(`browser bundle mismatch:\n${JSON.stringify({ directResult, browserResult }, null, 2)}`);

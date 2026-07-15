@@ -24,16 +24,17 @@ Browser is first for zero-install visual demonstration, not because the protocol
 
 The reference core verifies:
 
-- canonical bounded Genesis/Pulse/payload bytes;
-- real Ed25519 Genesis approval, Pulse quorum, and custody acceptance;
+- canonical bounded Genesis/Pulse/payload snapshots with hostile-metadata and shared-memory defenses;
+- strict canonical prime-subgroup Ed25519 Genesis approval, Pulse quorum, and custody acceptance;
+- total validation with stable first-error precedence;
 - immutable validator-produced context capabilities;
 - parent resolution from an accepted-object graph;
 - replay rejection, fork evidence, intersecting signer evidence, and post-fork halt;
 - complete A/B/C → D/E/F custodian turnover with stable identity;
-- validated complete and acceptance-incomplete latent successors;
-- conditional authority/state mortality states;
-- 10,000 deterministic invalid-continuation mutations; and
-- byte-identical H2 traces in fresh processes.
+- single-read validation of complete and acceptance-incomplete latent successors, including next-quorum activation proof;
+- conditional authority/state mortality states scoped to the graph-recognized head;
+- 10,000 deterministic mixed valid/invalid continuation cases; and
+- byte-identical H2 v3 traces in fresh processes.
 
 ## 3. Verified gate — C1 portable deterministic core
 
@@ -44,8 +45,11 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 ### Implemented boundary
 
 - portable `Uint8Array`, base64url, UTF-8, and constant-time comparison helpers;
-- portable SHA-256 and strict RFC 8032 Ed25519 using locked pure-JavaScript dependencies;
+- intrinsic-backed owned byte snapshots that reject shared or detached storage and preserve exact root-depth semantics;
+- portable SHA-256 and strict RFC 8032 Ed25519 using locked direct pure-JavaScript dependencies, with canonical prime-subgroup point validation;
 - portable structural validators, differentially checked against normative JSON Schemas with development-only Ajv;
+- total semantic validators with stable first-error precedence and a single internal complete/latent transition pipeline;
+- custody-change activation proof and recognized-head-only conditional mortality;
 - no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient clock, or ambient randomness in trusted `src/` paths;
 - a public signed singleton, distributed lifecycle, clone, and fork corpus;
 - a committed expected result with named first-error outcomes and a fixed-seed histogram; and
@@ -57,6 +61,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - [x] Committed, Node, browser-target, and actual Chromium results are byte-identical.
 - [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in both runtimes.
 - [x] Forged context, replay, fork, equivocation, no-op membership, and latent-successor cases pass in both runtimes.
+- [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
 - [x] Clean locked installation and actual Chromium execution pass.
@@ -199,9 +204,13 @@ Only after state transition, recovery, and participant turnover work should the 
 
 Reopen the earliest responsible gate if:
 
+- hostile, shared, detached, or changing byte storage influences a decision after acquisition;
+- a non-canonical, small-order, torsion, or non-prime-subgroup Ed25519 point is accepted;
 - a cloned or hand-built context is accepted;
 - two runtimes disagree on bytes, signatures, parent resolution, or first rejection code;
+- a custody handoff is accepted although supplied next-custodian acceptances cannot activate the declared threshold;
 - replay or fork silently changes the head;
+- mortality trusts a caller-selected head or prevalidated pending capability;
 - UI, GPT, endpoint, transport, or storage bypasses validation;
 - `1-of-1` or one-browser logical quorum is misrepresented as ownerless physical distribution;
 - death is inferred only from silence, process exit, or an unverified deletion claim; or

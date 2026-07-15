@@ -1,8 +1,10 @@
 import {
   canonicalBytes,
   createLineage,
+  derivePeerId,
   encodeBase64Url,
   hexToBytes,
+  snapshotBytes,
   validateGenesis,
   validateLatentSuccessor,
   validatePulse,
@@ -10,7 +12,7 @@ import {
 } from "../src/index.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
-export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/1";
+export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/2";
 export const ADVERSARIAL_CASES = 10_000;
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
@@ -190,6 +192,57 @@ function runForkCases(fork) {
   };
 }
 
+function runBoundaryCases(lifecycle, rfc8032) {
+  const identity = hexToBytes(`01${"00".repeat(31)}`);
+  const universalSignature = new Uint8Array(64);
+  universalSignature.set(identity);
+  const invalidRSignature = new Uint8Array(64);
+  invalidRSignature.set(identity);
+
+  class HostileBytes extends Uint8Array {
+    get byteLength() {
+      return 0;
+    }
+
+    get buffer() {
+      throw new Error("hostile buffer getter");
+    }
+
+    get [Symbol.toStringTag]() {
+      return "attacker-controlled";
+    }
+  }
+
+  let sharedBytesRejected = true;
+  if (typeof SharedArrayBuffer !== "undefined") {
+    try {
+      snapshotBytes(new Uint8Array(new SharedArrayBuffer(1)));
+      sharedBytesRejected = false;
+    } catch {
+      sharedBytesRejected = true;
+    }
+  }
+
+  return {
+    low_order_peer_id_rejected:
+      derivePeerId(`ed25519:${encodeBase64Url(identity)}`) === null,
+    universal_signature_rejected: !verifyEd25519Raw(
+      identity,
+      new Uint8Array(),
+      universalSignature
+    ),
+    low_order_signature_r_rejected: !verifyEd25519Raw(
+      hexToBytes(rfc8032.public_key_hex),
+      hexToBytes(rfc8032.message_hex),
+      invalidRSignature
+    ),
+    hostile_byte_metadata_ignored:
+      validateGenesis(new HostileBytes(canonicalBytes(lifecycle.birth))).status === "accept",
+    shared_bytes_rejected: sharedBytesRejected,
+    falsey_root_code: validateGenesis(canonicalBytes(0)).code
+  };
+}
+
 export function runPortableCorpus({ lifecycle, singleton, fork, rfc8032 }) {
   const accepted = acceptedLifecycle(lifecycle);
   const negativeCases = runNegativeCases(lifecycle, accepted);
@@ -239,6 +292,7 @@ export function runPortableCorpus({ lifecycle, singleton, fork, rfc8032 }) {
     },
     negative_cases: negativeCases,
     all_negative_cases_pass: negativeCases.every((entry) => entry.pass),
+    boundary_cases: runBoundaryCases(lifecycle, rfc8032),
     trust_cases: runTrustCases(lifecycle, accepted),
     fork_cases: runForkCases(fork),
     adversarial: runAdversarialCorpus(lifecycle, accepted)

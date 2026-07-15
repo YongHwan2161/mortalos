@@ -63,9 +63,13 @@ To keep untrusted-input failure deterministic across implementations, v0 fixes t
 | Genesis or Pulse envelope | 65,536 | 64 |
 | Event-payload sidecar | 262,144 | 64 |
 
-An implementation MUST enforce the byte bound before UTF-8 decoding and the depth bound during duplicate-aware parsing. Exceeding either bound returns `E_PARSE_LIMIT_EXCEEDED` for an envelope or `E_EVENT_PAYLOAD_INVALID` with deterministic detail `E_PARSE_LIMIT_EXCEEDED` for a payload. These limits are consensus input rules, not UI policy.
+An implementation MUST obtain the raw length through trusted typed-array intrinsics, enforce the byte bound before UTF-8 decoding, and validate an owned immutable snapshot for the remainder of that operation. It MUST NOT trust overrideable `byteLength`, `byteOffset`, `buffer`, or tag properties. A view backed by a `SharedArrayBuffer` is not a stable validation input and MUST be rejected.
 
-For v0 keyed arrays, ascending order means lexicographic comparison of the complete ASCII `key_id` bytes as unsigned bytes. Because the v0 prefix and base64url alphabet are ASCII, this is also Unicode code-point order for these strings; locale-sensitive collation MUST NOT be used.
+Programmatic canonicalization MUST reject sparse arrays and `undefined`, function, symbol, or bigint values rather than silently eliding or rewriting them. Only values in the I-JSON data model may enter hashing or signing.
+
+Container depth counts the root object or array as depth 1; a scalar root has depth 0. A depth-64 document is valid and a depth-65 document is rejected. Exceeding either the byte or depth bound returns `E_PARSE_LIMIT_EXCEEDED` for an envelope or `E_EVENT_PAYLOAD_INVALID` with deterministic detail `E_PARSE_LIMIT_EXCEEDED` for a payload. These limits are consensus input rules, not UI policy.
+
+For v0 keyed arrays, ascending order means lexicographic comparison by unsigned UTF-16 code units, matching JCS property ordering. This comparison is applied to every structurally valid string before binary-encoding checks, including a malformed non-ASCII `key_id`, so first-error precedence is deterministic. For a valid v0 `key_id`, the prefix and base64url alphabet are ASCII, making this order identical to unsigned ASCII-byte and Unicode code-point order. Locale-sensitive collation MUST NOT be used.
 
 The JSON Schemas define envelope shape, required fields, unknown-field exclusion, and JSON value types. Protocol encodings and semantic ranges—including prefixed base64url lengths, supported event kinds, custodian count, quorum range, and approval sufficiency—are intentionally enforced by the semantic validator so their stable rejection codes remain reachable. Schema success alone never establishes protocol validity.
 
@@ -81,6 +85,19 @@ The JSON Schemas define envelope shape, required fields, unknown-field exclusion
 | Genesis nonce | `nonce:` + 22 base64url characters | 16 bytes |
 
 Padding (`=`), standard base64 characters (`+`, `/`), or incorrect decoded lengths MUST be rejected.
+
+### 2.3 Strict Ed25519 profile
+
+The 32-byte encoding of every custodian public key and the `R` component of every Ed25519 signature MUST:
+
+1. decode as a canonical Edwards25519 point;
+2. be in the prime-order subgroup;
+3. be torsion-free and neither small-order nor mixed-order; and
+4. round-trip to the exact supplied encoding.
+
+The signature scalar `S` MUST use its canonical RFC 8032 range. Verification MUST use strict RFC 8032 semantics, not permissive cofactored or ZIP-215 acceptance. A public key that has valid base64url length but fails this point profile returns `E_PUBLIC_KEY_INVALID_POINT` before peer-ID comparison. Invalid signature `R` or `S` returns the applicable approval or acceptance signature-invalid code.
+
+`peer_id` derivation is defined only for a public key that passes this strict profile. An invalid or aliased point MUST NOT receive a valid custodian key ID. The reference uses pinned portable Noble dependencies for SHA-256 and this strict verification policy.
 
 ## 3. Domain separation
 
@@ -248,7 +265,7 @@ A **latent successor** is a not-yet-accepted candidate for which enough durable 
 
 Destroying current private keys does not invalidate signatures already produced. In particular, a fully signed heartbeat or a current-quorum-approved membership change that can later collect only new-custodian acceptances may survive authority loss. Protocol death therefore requires accounting for latent successors, not merely counting remaining private keys.
 
-The reference implementation represents latent succession with a non-cloneable validated evidence result. It verifies the complete candidate through current-quorum authorization, verifies every supplied new-custodian acceptance, and lists only the missing new-custodian acceptances. An integer count or hand-built “latent” object is not evidence.
+The reference implementation represents latent succession with a non-cloneable validated evidence result. It reads caller-supplied envelope and payload bytes once into owned snapshots, runs one validation pipeline through current-quorum authorization and every supplied new-custodian acceptance, and lists only the missing new-custodian acceptances. An integer count or hand-built “latent” object is not evidence.
 
 ### 4.19 Death
 
@@ -301,6 +318,7 @@ For v0:
 
 - custodian count MUST be between 1 and 16 inclusive;
 - `key_id` and public key MUST be unique;
+- every public key MUST satisfy the strict Ed25519 point profile in section 2.3;
 - each `key_id` MUST equal the derived peer ID of its public key;
 - threshold MUST be at least 1 and no greater than custodian count;
 - threshold MUST be a strict majority: `2 * threshold > custodian_count`; and
@@ -328,7 +346,15 @@ Failure-domain distribution is deployment evidence and MUST NOT be inferred from
 A valid Pulse may replace custodians. It requires:
 
 1. valid approvals satisfying the current parent-derived quorum; and
-2. one valid custody acceptance from every public key newly added to `next_custodians`.
+2. one valid custody acceptance from every public key newly added to `next_custodians`; and
+3. evidence that can activate the resulting next quorum.
+
+Define the activation set as the union of:
+
+- valid current approval signer IDs that also appear in `next_custodians`; and
+- valid acceptance signer IDs for newly added custodians.
+
+The activation-set cardinality MUST be at least `next_quorum.threshold`, otherwise validation returns `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT`. For example, changing `{A,B,C}` from `2-of-3` to `3-of-3` with approvals only from A and B is rejected even though no custodian was added. A latent membership candidate MAY count a listed missing new-custodian acceptance as potential activation, because that candidate cannot become complete until that new key actually signs.
 
 New custodians have no authority before the handoff Pulse is accepted. Removed custodians have no authority after it is accepted.
 
@@ -346,7 +372,7 @@ The structural schema is [`schemas/genesis.schema.json`](../schemas/genesis.sche
 | `body.signature_algorithm` | MUST equal `ed25519`. |
 | `body.genome_hash` | MUST be a correctly encoded SHA-256 digest. |
 | `body.initial_state_root` | MUST be a correctly encoded SHA-256 digest. |
-| `body.initial_custodians` | MUST satisfy all custody rules and be strictly sorted. |
+| `body.initial_custodians` | MUST satisfy all custody rules, including the strict Ed25519 profile, and be strictly sorted. |
 | `body.initial_quorum` | MUST satisfy threshold and strict-majority rules. |
 | `body.nonce` | MUST be the canonical encoding of exactly 16 bytes. A creator MUST randomly sample it for a distinct birth; validators do not assert global freshness. |
 | `approvals` | MUST contain exactly one valid Genesis approval from every initial custodian, sorted by `key_id`, with no other signers. |
@@ -371,10 +397,10 @@ The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.j
 | `body.state_root` | MUST be a correctly encoded SHA-256 digest and equal the parent state root for every v0 event. |
 | `body.event.kind` | MUST be one of the v0 event kinds below. |
 | `body.event.payload_hash` | MUST equal `event_payload_hash` of the exact canonical event-payload sidecar supplied in validation context. |
-| `body.next_custodians` | MUST satisfy all custody rules and be strictly sorted. |
+| `body.next_custodians` | MUST satisfy all custody rules, including the strict Ed25519 profile, and be strictly sorted. |
 | `body.next_quorum` | MUST satisfy threshold and strict-majority rules. |
 | `approvals` | MUST contain unique valid signatures from current custodians meeting the parent-derived quorum. |
-| `acceptances` | MUST contain exactly one valid custody-acceptance signature from every newly added custodian and no others. |
+| `acceptances` | MUST contain exactly one valid custody-acceptance signature from every newly added custodian and no others; approvals retained in next custody plus new acceptances MUST activate the next threshold. |
 
 ### 7.2 Event-specific rules
 
@@ -408,9 +434,11 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 - the parent state root;
 - the exact canonical event-payload sidecar bytes;
 - the known accepted graph needed to reject replay and detect alternative valid children as forks; and
-- known pending approval and acceptance artifacts needed to detect a latent successor in a controlled mortality evaluation.
+- raw pending successor envelope/payload bytes needed to detect a latent successor in a controlled mortality evaluation.
 
 An implementation MUST establish that context itself. In-process accepted results MAY be represented by an unforgeable capability; across persistence or process boundaries, the implementation MUST replay canonical Genesis/Pulse bytes and rebuild the accepted graph. Callers MUST NOT obtain authority by supplying a plain object with acceptance-shaped fields.
+
+Mortality evaluation MUST be an operation on that lineage graph. The lineage supplies its unique current recognized head and revalidates raw `pendingSuccessors` as direct children of that head. A caller MUST NOT inject a head, accepted result, or latent capability. If this revalidation reveals two distinct fully valid children, the lineage records the fork before any mortality classification. When the graph is forked there is no unique recognized head, so mortality MUST remain unclassified and return the fork state.
 
 No endpoint type, network, UI, AI, or wall-clock input is part of protocol validity.
 
@@ -418,18 +446,25 @@ This specification fully determines all v0 lifecycle and envelope validity rules
 
 ## 9. Deterministic validation order
 
+Validators MUST be total over untrusted public input: they return `Accept`, `Latent`, or `Reject` and MUST NOT leak a platform exception. An unexpected internal failure maps to `E_VALIDATOR_INTERNAL`.
+
 Validators MUST evaluate in the following order and return the first applicable rejection code from [`REJECTION_CODES.md`](REJECTION_CODES.md):
 
 1. envelope and event-payload byte decoding and JSON parsing;
 2. envelope schema, payload-object, and unknown-field validation;
-3. canonical encoding and array ordering for both envelope and payload;
+3. canonical encoding plus keyed-array ordering and duplicate-ID checks for both envelope and payload;
 4. protocol version and algorithm identifiers;
 5. derived identifiers, key IDs, hashes, and commitments;
 6. Genesis or parent context;
 7. sequence, parent, lineage, genome, and event semantics;
-8. signer eligibility, signature validity, duplicate evidence, and quorum;
-9. new-custodian acceptance validation; and
-10. replay, equivocation, and fork-context checks.
+8. current signer eligibility, signature validity, and quorum;
+9. new-custodian acceptance validation and missing-acceptance handling;
+10. next-quorum activation proof; and
+11. replay, equivocation, and fork-context checks.
+
+For Pulse stages 1–3, observable failure precedence is envelope byte/UTF-8/JSON, payload presence/byte/UTF-8/JSON, envelope schema, payload-object shape, envelope canonical bytes, payload canonical bytes, then keyed-array ordering/duplicate IDs. Implementations MAY acquire an owned payload snapshot early, but an acquisition failure MUST NOT overtake an earlier envelope decoding or JSON failure.
+
+Within schema processing, implementations MUST normalize validator-library output rather than trust library enumeration order. Any `additionalProperties` failure takes precedence, then wrong top-level `kind`, then the lexicographically first normalized `(JSON Pointer, schema keyword)` failure, compared by unsigned UTF-16 code units as in JCS property ordering. Protocol version and algorithm values are semantic checks after canonical encoding, not schema-library `const` decisions. This makes multi-fault inputs produce the same first code across runtimes and schema engines.
 
 Validation returns one of:
 
@@ -499,12 +534,15 @@ A v0 implementation is conforming only if it:
 
 - validates the exact schemas;
 - implements the domain-separated derivations above;
+- enforces the strict Ed25519 public-key, signature-`R`, and scalar profile before deriving or counting authority;
 - follows the deterministic validation order;
 - implements every field rule and event-specific rule;
 - requires and verifies the exact canonical event-payload sidecar;
 - exposes stable rejection codes;
 - treats acceptance and latent-successor evidence as validator-produced capabilities or reconstructs them from canonical raw evidence;
+- proves next-quorum activation for every membership result;
 - uses an accepted-object graph to reject replay and expose forks;
+- evaluates mortality only from the graph-recognized current head and raw revalidated pending successors, leaving forks unclassified;
 - never treats GPT, endpoint type, UI, transport, or signaling output as authority;
 - enters `FORKED` instead of silently resolving two valid siblings; and
 - states the mortality limitations from the threat model in user-facing documentation.

@@ -1,6 +1,7 @@
 import { access, readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import Ajv2020 from "ajv/dist/2020.js";
+import { canonicalize } from "../src/codec.mjs";
 import { REJECTION_CODES } from "../src/rejection-codes.mjs";
 
 const ROOT = new URL("../", import.meta.url);
@@ -37,7 +38,8 @@ const paths = {
   pulseSchema: "schemas/pulse.schema.json",
   genesisExample: "examples/schema/genesis.valid.json",
   pulseExample: "examples/schema/pulse.valid.json",
-  heartbeatPayloadExample: "examples/schema/heartbeat-payload.valid.json"
+  heartbeatPayloadExample: "examples/schema/heartbeat-payload.valid.json",
+  h2Golden: "test/vectors/h2-trace.expected.json"
 };
 
 const entries = await Promise.all(
@@ -50,6 +52,7 @@ const pulseSchema = JSON.parse(text.pulseSchema);
 const genesisExample = JSON.parse(text.genesisExample);
 const pulseExample = JSON.parse(text.pulseExample);
 const heartbeatPayloadExample = JSON.parse(text.heartbeatPayloadExample);
+const h2Golden = JSON.parse(text.h2Golden);
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const validateGenesis = ajv.compile(genesisSchema);
@@ -123,6 +126,16 @@ function mustReject(validate, candidate, label) {
   const candidate = clone(pulseExample);
   candidate.body.next_custodians[0].public_key = 1;
   mustReject(validatePulse, candidate, "wrong-type Pulse custodian key");
+}
+{
+  const candidate = clone(genesisExample);
+  candidate.body.protocol_version = {};
+  mustReject(validateGenesis, candidate, "wrong-type Genesis protocol version");
+}
+{
+  const candidate = clone(pulseExample);
+  candidate.body.protocol_version = {};
+  mustReject(validatePulse, candidate, "wrong-type Pulse protocol version");
 }
 
 const lifecycleSections = [
@@ -211,7 +224,7 @@ for (const code of [
   assert(rejectionCodes.includes(code), `Missing event-payload rejection code: ${code}`);
 }
 
-for (let index = 1; index <= 13; index += 1) {
+for (let index = 1; index <= 17; index += 1) {
   const invariant = `INV-${index}`;
   const traceLine = text.traceability
     .split("\n")
@@ -229,7 +242,11 @@ const requiredThreatStatements = [
   "event-payload sidecars",
   "state-stalled",
   "latent successor",
-  "failure domain"
+  "failure domain",
+  "SharedArrayBuffer",
+  "mixed-order",
+  "recognized head",
+  "next threshold"
 ];
 for (const statement of requiredThreatStatements) {
   assert(
@@ -279,6 +296,13 @@ assert(
   "schema must delegate the v0 event vocabulary to semantic validation without enumerating removed events"
 );
 assert(
+  genesisSchema.$defs.genesisBody.properties.protocol_version.type === "string" &&
+    genesisSchema.$defs.genesisBody.properties.hash_algorithm.type === "string" &&
+    genesisSchema.$defs.genesisBody.properties.signature_algorithm.type === "string" &&
+    pulseSchema.$defs.pulseBody.properties.protocol_version.type === "string",
+  "version and algorithm identifiers must be structurally typed before semantic checks"
+);
+assert(
   text.protocol.includes("Global nonce freshness is **not** a validator predicate"),
   "Protocol still exposes globally unverifiable nonce freshness"
 );
@@ -294,6 +318,25 @@ assert(
   text.protocol.includes("Destroying current private keys does not invalidate signatures already produced"),
   "Protocol omits latent successor authority"
 );
+for (const statement of [
+  "prime-order subgroup",
+  "owned immutable snapshot",
+  "next_quorum.threshold",
+  "current recognized head"
+]) {
+  assert(text.protocol.includes(statement), `Protocol omits remediated rule: ${statement}`);
+}
+
+const h2WithoutDigest = clone(h2Golden);
+delete h2WithoutDigest.trace_sha256;
+const h2Digest = createHash("sha256")
+  .update(canonicalize(h2WithoutDigest))
+  .digest("hex");
+assert(h2Golden.format === "mortalos-lifecycle-trace/3", "H2 golden trace format is stale");
+assert(h2Golden.trace_sha256 === h2Digest, "H2 golden trace digest does not match its content");
+for (const artifact of [text.readme, text.projectStatus, text.traceability]) {
+  assert(artifact.includes(h2Digest), "Current documentation omits the committed H2 digest");
+}
 
 const currentDocLinks = [
   "PROJECT_STATUS.md",
@@ -352,13 +395,14 @@ console.log("MortalOS specification verification: PASS");
 console.log(`- Schemas compiled: 2`);
 console.log(`- Structural valid examples accepted: 2`);
 console.log(`- Canonical event-payload fixtures bound: 1`);
-console.log(`- Structural invalid mutations rejected: 8`);
+console.log(`- Structural invalid mutations rejected: 10`);
 console.log(`- Operational lifecycle definitions checked: ${lifecycleSections.length}`);
 console.log(`- Domain separators checked: ${domains.length}`);
 console.log(`- Message validation rows checked: ${genesisFields.length + pulseFields.length}`);
 console.log(`- Unique rejection codes checked: ${rejectionCodes.length}`);
-console.log(`- Invariant-to-test mappings checked: 13`);
-console.log("- Threat-model boundary statements checked: 10");
+console.log(`- Invariant-to-test mappings checked: 17`);
+console.log(`- Threat-model boundary statements checked: ${requiredThreatStatements.length}`);
+console.log(`- H2 golden trace verified: ${h2Golden.format} sha256:${h2Digest}`);
 console.log(`- Relative Markdown links checked: ${relativeLinkCount}`);
 console.log("Document digests:");
 for (const name of ["protocol", "threatModel", "rejectionCodes", "traceability"]) {

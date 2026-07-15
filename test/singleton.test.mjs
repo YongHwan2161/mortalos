@@ -125,7 +125,7 @@ test("a 1-of-1 lineage can grow into 2-of-3 and cease unilateral continuation", 
     approvals: [{ key_id: initial.key_id, signature: signature(initial, pulseApprovalMessage(heartbeatBody)) }],
     acceptances: []
   };
-  const rejected = opened.lineage.validateCandidate({
+  const rejected = opened.lineage.verifyCandidate({
     envelopeBytes: canonicalBytes(oneSigner),
     eventPayloadBytes: canonicalBytes({})
   });

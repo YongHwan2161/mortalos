@@ -2,15 +2,18 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canonicalBytes,
+  derivePulseHash,
   eventPayloadHash,
   JSON_LIMITS,
   validateGenesis,
+  validateLatentSuccessor,
   validatePulse
 } from "../src/index.mjs";
 import { acceptedLineage, canonical, clone, vector } from "./helpers.mjs";
 
 const zeroDigest = `sha256:${Buffer.alloc(32).toString("base64url")}`;
 const zeroSignature = `ed25519:${Buffer.alloc(64).toString("base64url")}`;
+const identityPublicKey = `ed25519:${Buffer.concat([Buffer.from([1]), Buffer.alloc(31)]).toString("base64url")}`;
 
 function expectCode(result, code) {
   assert.equal(result.status, "reject", JSON.stringify(result));
@@ -59,14 +62,116 @@ test("Genesis parsing, schema, canonicality, and algorithm precedence are stable
   expectCode(genesisMutation((value) => { value.body.hash_algorithm = "sha-512"; }), "E_HASH_ALGORITHM_UNSUPPORTED");
   expectCode(genesisMutation((value) => { value.body.signature_algorithm = "rsa"; }), "E_SIGNATURE_ALGORITHM_UNSUPPORTED");
   expectCode(genesisMutation((value) => { delete value.body.nonce; }), "E_SCHEMA_INVALID");
+  expectCode(genesisMutation((value) => { value.kind = {}; }), "E_SCHEMA_WRONG_KIND");
+  expectCode(genesisMutation((value) => { value.body.protocol_version = {}; }), "E_SCHEMA_INVALID");
+});
+
+test("public validators are total and schema failures never stringify hostile JSON objects", () => {
+  expectCode(validatePulse(null), "E_VALIDATOR_INTERNAL");
+  expectCode(
+    validatePulse({
+      get envelopeBytes() {
+        throw new Error("hostile getter");
+      }
+    }),
+    "E_VALIDATOR_INTERNAL"
+  );
+  const { genesis, parents } = acceptedLineage();
+  expectCode(
+    validatePulse({
+      genesis,
+      parent: parents[0],
+      envelopeBytes: canonical(vector.steps[0].envelope),
+      get eventPayloadBytes() {
+        throw new Error("hostile payload getter");
+      }
+    }),
+    "E_VALIDATOR_INTERNAL"
+  );
+  let hostileContextReads = 0;
+  expectCode(
+    validatePulse({
+      get genesis() {
+        hostileContextReads += 1;
+        throw new Error("hostile context getter");
+      },
+      get parent() {
+        hostileContextReads += 1;
+        throw new Error("hostile context getter");
+      },
+      envelopeBytes: Buffer.from("{"),
+      get eventPayloadBytes() {
+        throw new Error("hostile payload getter");
+      }
+    }),
+    "E_PARSE_INVALID_JSON"
+  );
+  assert.equal(hostileContextReads, 0);
+  expectCode(
+    validatePulse({
+      get genesis() {
+        throw new Error("hostile context getter");
+      },
+      parent: parents[0],
+      envelopeBytes: canonical(vector.steps[0].envelope),
+      eventPayloadBytes: canonical(vector.steps[0].payload)
+    }),
+    "E_VALIDATOR_INTERNAL"
+  );
+  expectCode(pulseMutation(0, (step) => { step.envelope.kind = {}; }), "E_SCHEMA_WRONG_KIND");
+  expectCode(
+    pulseMutation(0, (step) => { step.envelope.body.protocol_version = {}; }),
+    "E_SCHEMA_INVALID"
+  );
+  expectCode(
+    pulseMutation(0, (step) => { step.envelope.body.event.kind = {}; }),
+    "E_SCHEMA_INVALID"
+  );
+  expectCode(
+    pulseMutation(0, (step) => { step.envelope.body.sequence = {}; }),
+    "E_SCHEMA_INVALID"
+  );
+});
+
+test("multi-fault rejection precedence is explicit and independent of Ajv error order", () => {
+  const wrongVersion = clone(vector.birth);
+  wrongVersion.body.protocol_version = "mortalos/9";
+  expectCode(
+    validateGenesis(Buffer.from(JSON.stringify(wrongVersion, null, 2))),
+    "E_CANONICAL_MISMATCH"
+  );
+
+  const unknownAndWrongKind = clone(vector.birth);
+  unknownAndWrongKind.kind = "other";
+  unknownAndWrongKind.extra = true;
+  expectCode(validateGenesis(canonical(unknownAndWrongKind)), "E_SCHEMA_UNKNOWN_FIELD");
+
+  const unicodeUnknowns = clone(vector.birth);
+  unicodeUnknowns["\ue000"] = true;
+  unicodeUnknowns["😀"] = true;
+  const unicodeResult = validateGenesis(canonical(unicodeUnknowns));
+  expectCode(unicodeResult, "E_SCHEMA_UNKNOWN_FIELD");
+  assert.equal(unicodeResult.field_path, "/😀");
+
+  const multipleMissing = clone(vector.steps[0].envelope);
+  delete multipleMissing.body.event;
+  delete multipleMissing.body.sequence;
+  const result = pulseMutation(0, () => {}, { envelopeBytes: canonical(multipleMissing) });
+  expectCode(result, "E_SCHEMA_INVALID");
+  assert.equal(result.field_path, "/body/event");
 });
 
 test("Genesis custody, encoding, approval set, and signatures are semantic checks", () => {
   expectCode(genesisMutation((value) => { value.body.genome_hash = "sha256:short"; }), "E_BINARY_ENCODING");
   expectCode(genesisMutation((value) => { value.body.nonce = "nonce:short"; }), "E_BINARY_ENCODING");
   expectCode(genesisMutation((value) => { value.approvals.reverse(); }), "E_ARRAY_NOT_SORTED");
+  expectCode(genesisMutation((value) => {
+    value.body.initial_custodians[0].key_id = "\ue000";
+    value.body.initial_custodians[1].key_id = "😀";
+  }), "E_ARRAY_NOT_SORTED");
   expectCode(genesisMutation((value) => { value.approvals[1] = clone(value.approvals[0]); }), "E_APPROVAL_DUPLICATE");
   expectCode(genesisMutation((value) => { value.body.initial_custodians = []; }), "E_CUSTODIAN_COUNT_RANGE");
+  expectCode(genesisMutation((value) => { value.body.initial_custodians[0].public_key = identityPublicKey; }), "E_PUBLIC_KEY_INVALID_POINT");
   expectCode(genesisMutation((value) => { [value.body.initial_custodians[0].public_key, value.body.initial_custodians[1].public_key] = [value.body.initial_custodians[1].public_key, value.body.initial_custodians[0].public_key]; }), "E_PEER_ID_MISMATCH");
   expectCode(genesisMutation((value) => { value.body.initial_custodians[1].public_key = value.body.initial_custodians[0].public_key; }), "E_CUSTODIAN_DUPLICATE_KEY");
   expectCode(genesisMutation((value) => { value.body.initial_quorum.type = "weight"; }), "E_QUORUM_TYPE_UNSUPPORTED");
@@ -105,6 +210,13 @@ test("Pulse requires canonical envelope and exact canonical object sidecar", () 
     envelopeBytes: Buffer.from('{"kind":'),
     eventPayloadBytes: Buffer.from('{"x":1,"x":2}')
   }), "E_PARSE_INVALID_JSON");
+  expectCode(
+    pulseMutation(0, () => {}, {
+      envelopeBytes: Buffer.from([0xff]),
+      eventPayloadBytes: Buffer.alloc(JSON_LIMITS.event_payload_bytes + 1)
+    }),
+    "E_PARSE_INVALID_UTF8"
+  );
 });
 
 test("Pulse ordering, encoding, custody, and validation context fail closed", () => {
@@ -168,6 +280,53 @@ test("Pulse approval and acceptance evidence enforces eligibility, quorum, and h
   expectCode(pulseMutation(1, (step) => {
     step.envelope.approvals[0].signature = vector.steps[0].envelope.approvals[1].signature;
   }), "E_APPROVAL_SIGNATURE_INVALID");
+});
+
+test("latent validation snapshots each public input property exactly once", () => {
+  const { genesis, parents } = acceptedLineage();
+  const partial = clone(vector.steps[0]);
+  partial.envelope.acceptances = [];
+  const forged = clone(vector.steps[2]);
+  let envelopeReads = 0;
+  let parentReads = 0;
+  const result = validateLatentSuccessor({
+    get genesis() {
+      return genesis;
+    },
+    get parent() {
+      parentReads += 1;
+      return parents[0];
+    },
+    get envelopeBytes() {
+      envelopeReads += 1;
+      return envelopeReads === 1 ? canonical(partial.envelope) : canonical(forged.envelope);
+    },
+    get eventPayloadBytes() {
+      return canonical(partial.payload);
+    }
+  });
+  assert.equal(result.status, "latent", JSON.stringify(result));
+  assert.equal(result.object_hash, derivePulseHash(partial.envelope.body));
+  assert.equal(envelopeReads, 1);
+  assert.equal(parentReads, 1);
+});
+
+test("a later input getter cannot mutate already supplied envelope bytes", () => {
+  const { genesis, parents } = acceptedLineage();
+  const partial = clone(vector.steps[0]);
+  partial.envelope.acceptances = [];
+  const envelopeBytes = canonical(partial.envelope);
+  const result = validateLatentSuccessor({
+    genesis,
+    parent: parents[0],
+    envelopeBytes,
+    get eventPayloadBytes() {
+      envelopeBytes.fill(0x20);
+      return canonical(partial.payload);
+    }
+  });
+  assert.equal(result.status, "latent", JSON.stringify(result));
+  assert.equal(result.object_hash, derivePulseHash(partial.envelope.body));
 });
 
 test("public snapshot continuation is rejected at the semantic quorum gate", () => {

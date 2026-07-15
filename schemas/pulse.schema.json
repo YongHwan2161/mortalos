@@ -115,7 +115,7 @@
       ],
       "properties": {
         "protocol_version": {
-          "const": "mortalos/0"
+          "type": "string"
         },
         "organism_id": {
           "$ref": "#/$defs/organismId"

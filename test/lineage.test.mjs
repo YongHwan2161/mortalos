@@ -11,7 +11,9 @@ import {
   eventPayloadHash,
   genesisApprovalMessage,
   genesisParentHash,
+  JSON_LIMITS,
   pulseApprovalMessage,
+  validatePulse,
   validateLatentSuccessor
 } from "../src/index.mjs";
 
@@ -109,6 +111,35 @@ function buildForkFixture() {
   const partial = branch([current[0], actors[3], actors[4]], "partial");
   partial.envelope.acceptances.pop();
 
+  function thresholdRaise(approvalCount) {
+    const nextQuorum = { threshold: 3, type: "threshold" };
+    const payload = { policy: "raise-threshold" };
+    const pulseBody = {
+      current_custody_hash: custodyCommitment(currentDescriptor),
+      event: { kind: "membership-change", payload_hash: eventPayloadHash(payload) },
+      genome_hash,
+      next_custodians: current.map(publicActor),
+      next_quorum: nextQuorum,
+      organism_id: organismId,
+      parent_hash: genesisParentHash(organismId),
+      protocol_version: "mortalos/0",
+      sequence: "1",
+      state_root: initial_state_root
+    };
+    return {
+      envelope: {
+        acceptances: [],
+        approvals: current.slice(0, approvalCount).map((actor) => ({
+          key_id: actor.key_id,
+          signature: signature(actor.privateKey, pulseApprovalMessage(pulseBody))
+        })),
+        body: pulseBody,
+        kind: "mortalos.pulse"
+      },
+      payload
+    };
+  }
+
   return {
     birth,
     branches: [
@@ -117,6 +148,7 @@ function buildForkFixture() {
       branch([current[1], current[2], actors[5]], "third")
     ],
     partial,
+    thresholdRaise,
     equivocators: current.slice(0, 2).map((actor) => actor.key_id).sort()
   };
 }
@@ -163,18 +195,115 @@ test("lineage registry rejects replay, exposes quorum equivocation, and fails cl
 test("lineage registry resolves parent context from accepted raw ancestry", () => {
   const fixture = buildForkFixture();
   const opened = createLineage(canonicalBytes(fixture.birth));
-  const candidate = opened.lineage.validateCandidate(input(fixture.branches[0]));
+  const candidate = opened.lineage.verifyCandidate(input(fixture.branches[0]));
   assert.equal(candidate.status, "accept");
 
   const unknown = structuredClone(fixture.branches[0]);
   unknown.envelope.body.parent_hash = tagged("sha256:", 32, 9);
-  const result = opened.lineage.validateCandidate(input(unknown));
+  const result = opened.lineage.verifyCandidate(input(unknown));
   assert.equal(result.status, "reject");
   assert.equal(result.code, "E_PARENT_UNKNOWN");
 
   const invalidBirth = structuredClone(fixture.birth);
   invalidBirth.approvals = [];
   assert.equal(createLineage(canonicalBytes(invalidBirth)).code, "E_GENESIS_APPROVAL_SET");
+});
+
+test("lineage candidate boundaries fail closed before graph context is consulted", () => {
+  const fixture = buildForkFixture();
+  const opened = createLineage(canonicalBytes(fixture.birth));
+  const branchInput = input(fixture.branches[0]);
+
+  assert.equal(
+    opened.lineage.verifyCandidate({
+      get envelopeBytes() {
+        throw new Error("hostile envelope getter");
+      }
+    }).code,
+    "E_VALIDATOR_INTERNAL"
+  );
+  assert.equal(
+    opened.lineage.verifyCandidate({ envelopeBytes: branchInput.envelopeBytes }).code,
+    "E_EVENT_PAYLOAD_REQUIRED"
+  );
+  assert.equal(
+    opened.lineage.verifyCandidate({
+      envelopeBytes: branchInput.envelopeBytes,
+      get eventPayloadBytes() {
+        throw new Error("hostile payload getter");
+      }
+    }).code,
+    "E_VALIDATOR_INTERNAL"
+  );
+  assert.equal(
+    opened.lineage.verifyCandidate({
+      envelopeBytes: Buffer.from("{"),
+      eventPayloadBytes: branchInput.eventPayloadBytes
+    }).code,
+    "E_PARSE_INVALID_JSON"
+  );
+  assert.equal(
+    opened.lineage.verifyCandidate({
+      envelopeBytes: Buffer.from([0xff]),
+      eventPayloadBytes: Buffer.alloc(JSON_LIMITS.event_payload_bytes + 1)
+    }).code,
+    "E_PARSE_INVALID_UTF8"
+  );
+});
+
+test("lineage preserves falsey JSON roots and matches direct validation precedence", () => {
+  const fixture = buildForkFixture();
+  const opened = createLineage(canonicalBytes(fixture.birth));
+  const eventPayloadBytes = canonicalBytes({});
+
+  for (const source of ["0", "false", "null", '""']) {
+    const envelopeBytes = Buffer.from(source);
+    const direct = validatePulse({
+      genesis: opened.lineage.genesis,
+      parent: opened.lineage.genesis,
+      envelopeBytes,
+      eventPayloadBytes
+    });
+    const throughLineage = opened.lineage.verifyCandidate({ envelopeBytes, eventPayloadBytes });
+
+    assert.equal(direct.code, "E_SCHEMA_WRONG_KIND", source);
+    assert.deepEqual(throughLineage, direct, source);
+  }
+});
+
+test("a handoff cannot activate a stronger next quorum with unproven continuing keys", () => {
+  const fixture = buildForkFixture();
+  const opened = createLineage(canonicalBytes(fixture.birth));
+  const unsafeInput = input(fixture.thresholdRaise(2));
+  const unsafe = opened.lineage.verifyCandidate(unsafeInput);
+  assert.equal(unsafe.status, "reject");
+  assert.equal(unsafe.code, "E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT");
+  assert.equal(unsafe.deterministic_detail, "2/3");
+  const unsafeLatent = validateLatentSuccessor({
+    genesis: opened.lineage.genesis,
+    parent: opened.lineage.head,
+    ...unsafeInput
+  });
+  assert.equal(unsafeLatent.code, "E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT");
+
+  const activated = opened.lineage.verifyCandidate(input(fixture.thresholdRaise(3)));
+  assert.equal(activated.status, "accept");
+});
+
+test("forked lineage refuses to classify mortality", () => {
+  const fixture = buildForkFixture();
+  const opened = createLineage(canonicalBytes(fixture.birth));
+  assert.equal(opened.lineage.append(input(fixture.branches[0])).status, "accept");
+  assert.equal(opened.lineage.append(input(fixture.branches[1])).status, "forked");
+
+  const assessment = opened.lineage.evaluateMortality();
+  assert.deepEqual(assessment, {
+    status: "forked",
+    mortality_classified: false,
+    fork_points: [opened.lineage.genesis.object_hash]
+  });
+  assert.equal(Object.isFrozen(assessment), true);
+  assert.equal(Object.isFrozen(assessment.fork_points), true);
 });
 
 test("latent verifier authenticates current quorum and every supplied new-custodian acceptance", () => {

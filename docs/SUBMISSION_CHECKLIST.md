@@ -17,7 +17,7 @@ Official event rules and the submission form remain authoritative. This file tra
 | Requirement | State | Evidence or blocker |
 |---|---|---|
 | Public source and Apache-2.0 | Complete | Repository, root license, package metadata, contribution terms |
-| Reproducible portable core | Complete | Locked install, conformance/property tests, coverage, deterministic traces |
+| Reproducible portable core | Complete | Locked install, trust-boundary/conformance/property tests, coverage, deterministic H2 v3 traces |
 | Node/Chromium differential | Complete | Committed result, browser-target realm, and actual Chromium are byte-identical |
 | One-person CLI birth proof | Complete within proof scope | Ephemeral singleton birth/heartbeat; not a stable CLI product |
 | No-rebuild developer-tool path | Blocked | MortalOS Lab not hosted |
@@ -65,6 +65,6 @@ Prefer:
 - `logical 2-of-3 key quorum`;
 - `one physical failure domain before handoff`;
 - `authority lost under controlled ephemeral-key assumptions`; and
-- `peer-held validity with replaceable bootstrap infrastructure`.
+- `peer-validated evidence with participant-held custody authority and replaceable bootstrap infrastructure`.
 
 Do not claim globally provable death, guaranteed erasure, Byzantine safety, Sybil resistance, state-backed mortality, zero infrastructure, a running OS, or ownerless computation before the corresponding gate is implemented and demonstrated.

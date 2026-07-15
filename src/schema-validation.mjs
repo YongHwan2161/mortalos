@@ -73,11 +73,8 @@ function inspectGenesisBody(value, instancePath, errors) {
   ];
   if (!inspectObject(value, instancePath, keys, keys, errors)) return;
   inspectString(value.protocol_version, `${instancePath}/protocol_version`, errors);
-  inspectConst(value.protocol_version, "mortalos/0", `${instancePath}/protocol_version`, errors);
   inspectString(value.hash_algorithm, `${instancePath}/hash_algorithm`, errors);
-  inspectConst(value.hash_algorithm, "sha-256", `${instancePath}/hash_algorithm`, errors);
   inspectString(value.signature_algorithm, `${instancePath}/signature_algorithm`, errors);
-  inspectConst(value.signature_algorithm, "ed25519", `${instancePath}/signature_algorithm`, errors);
   inspectString(value.genome_hash, `${instancePath}/genome_hash`, errors);
   inspectString(value.initial_state_root, `${instancePath}/initial_state_root`, errors);
   inspectArray(value.initial_custodians, `${instancePath}/initial_custodians`, inspectCustodian, errors);
@@ -106,7 +103,6 @@ function inspectPulseBody(value, instancePath, errors) {
   ];
   if (!inspectObject(value, instancePath, keys, keys, errors)) return;
   inspectString(value.protocol_version, `${instancePath}/protocol_version`, errors);
-  inspectConst(value.protocol_version, "mortalos/0", `${instancePath}/protocol_version`, errors);
   for (const key of [
     "organism_id",
     "sequence",
