@@ -2,6 +2,23 @@
 
 This log is append-only. Each review records the exact PR head and the evidence used.
 
+## 2026-07-15 — PR #1
+
+- Author agent: `codex-protocol-kernel`
+- Base SHA: `0a8ce3e2cf09a040758611b3674e92aa32e13c4b`
+- Reviewed head SHA: `c646521fb2b5543b4a65859d01fbfb3cca0fedcf`
+- Changed paths: 20 governance, agent-workspace, worktree/PR-policy, test,
+  documentation, package-script, and package-exclusion paths; trusted `src/` unchanged
+- Checks: `Agent PR Policy` run 29379380257 and `Verify` run 29379380258
+  succeeded; independent detached-head npm, governance, conformance, property,
+  coverage, Chromium differential, audit, package, and secret checks passed
+- Findings: no blocking finding; residual limitation is logical-agent rather than
+  separate GitHub-account identity and absent externally enforced main ruleset
+- Review: structured `COMMENT` attestation 4699808544
+- Verdict: `PASS`
+- Merge SHA: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3` (squash with expected head)
+- Post-merge verification: main `Verify` run 29379690175 succeeded for the merge SHA
+
 ## Entry template
 
 ### YYYY-MM-DD — PR #N
