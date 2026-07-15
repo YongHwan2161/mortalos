@@ -37,7 +37,7 @@ result, and reproducible verification.
   required registered identities and complete changed/renamed-path declarations,
   and made worktree creation/resume fail closed for branch reuse, stale ancestry,
   incorrect upstreams, and restricted remote fetch refspecs; retained a tokenless,
-  read-only public API path solely for the legacy workflow bootstrap
+  read-only public API path for local public-repository verification
 - Verification: full `npm test`; governance 25/25 at 91.91% line, 81.01% branch,
   and 93.48% function coverage; actual Chromium 149 differential with 10,000/10,000
   adversarial rejections; audit 0 vulnerabilities; package exclusion, YAML, syntax,
@@ -75,40 +75,24 @@ result, and reproducible verification.
 - Handoff: preserve prior commits and submit a new immutable commit for independent
   decision; author must not push or self-approve
 
-## 2026-07-15 — Two-phase PR #3 trigger bootstrap
+## 2026-07-15 — Trusted target policy cleanup
 
-- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`; corrected predecessor
-  `121f5269f1a1c146099d1aa936175c25670e3933`
-- Branch: `agent/codex-protocol-kernel--governance-hardening`
-- Intended shared paths: policy workflow, migration/reviewer contracts, and governance
-  regression test
-- Result: added a temporary zero-permission, no-checkout `pull_request` liveness marker
-  alongside the separately conditioned trusted target job, bound permanent reviewer
-  evidence to event `pull_request_target`, and specified the immediate cleanup lifecycle
-- Verification: full `npm test`; governance 28/28 at 92.68% line, 84.39% branch,
-  and 93.75% function coverage; Chromium 149 differential; audit, package, YAML,
-  syntax, and diff checks passed
-- Handoff: reviewer publishes and confirms a real bootstrap run for PR #3; after merge,
-  author creates a fresh target-only cleanup PR from new `main`
-
-## 2026-07-15 — Split-workflow migration correction
-
-- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`; corrected predecessor
-  `0ab51f2b8514acd3bba14ee01d45c44f9cf9a91f`
-- Branch: `agent/codex-protocol-kernel--governance-hardening`
-- Intended shared paths: two PR policy workflow files, migration/reviewer contracts,
-  governance test, and author ledgers; PR `Shared-Paths` must add
-  `.github/workflows/trusted-pr-policy.yml`
-- Result: moved trusted `pull_request_target` policy into a distinct permanent file
-  and reduced the existing temporary file to one zero-permission untrusted marker;
-  workflow/job names and concurrency are disjoint, so the bootstrap cannot manufacture
-  or satisfy the trusted name-based check
-- Verification: full `npm test`; governance 28/28 at 92.68% line, 84.39% branch,
-  and 93.75% function coverage; audit 0 vulnerabilities; YAML syntax, package dry-run,
-  JavaScript syntax, and diff checks passed. Chromium needs a fresh published `Verify`
-  run because this sandbox cannot download the missing browser binary.
-- Handoff: preserve the corrected predecessor and submit this new immutable commit for
-  independent review; author must not push or self-approve
+- Base: `e6dce59fb314266acdd855748a9b1fb996864e81`
+- Branch: `agent/codex-protocol-kernel--trusted-policy-cleanup`
+- Intended shared paths: delete `.github/workflows/pr-policy.yml`; update `AGENTS.md`,
+  this agent's handoff/worklog, the reviewer contract,
+  `docs/AGENT_COLLABORATION.md`, and the governance regression test
+- Result: removed the retired transition workflow and exception text; retained the
+  permanent trusted-base policy unchanged; changed no runtime, protocol, schema, or
+  product file
+- Verification: governance 28/28; governance coverage 92.68% line, 84.39% branch,
+  and 93.75% function; full `npm test`; audit 0 vulnerabilities; package dry-run 61
+  files; YAML/JavaScript syntax, diff, scope, retired-language, and high-confidence
+  secret scans passed; trusted workflow matched `origin/main` byte-for-byte at Git
+  blob `94d2b0353fc44d931acd0a28604786a55e78786f` and SHA-256
+  `42ad69df038be695f589bad02e01504215fef0058bac4d202ff82ba7ba042ee6`
+- Handoff: focused immutable PR to `reviewer-merge-gate`; author does not merge or
+  self-approve
 
 ## Entry template
 

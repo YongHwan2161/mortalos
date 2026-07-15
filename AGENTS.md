@@ -46,23 +46,8 @@ PR head code, and concurrent runs for one PR cancel older runs. It binds the eve
 body to stable beginning/end API snapshots and requires the paginated file count to
 equal both snapshots' `changed_files` count. It obtains immutable base/head metadata,
 ancestry, and changed files through GitHub's read API before applying the unit-tested
-policy parser.
-
-### Temporary PR #3 migration state
-
-`TEMPORARY-MIGRATION-STATE: ACTIVE` applies only to the two-phase rollout of the
-trusted target workflow. `.github/workflows/pr-policy.yml` is a separate temporary
-`pull_request` bootstrap workflow; it is explicitly untrusted, has empty permissions,
-performs no checkout, and is never policy or merge evidence. It cannot create the
-`Agent PR Policy` workflow name or `Trusted main-base policy` job/check name. It
-exists only so PR #3 produces a visible bootstrap run after its next `synchronize`
-event. The trusted target job exists only in `trusted-pr-policy.yml`.
-
-Immediately after PR #3 merges, the author must branch from the new `main` and open a
-cleanup PR that deletes `.github/workflows/pr-policy.yml`, removes this temporary
-section and its migration tests, and retains `trusted-pr-policy.yml` without changing
-or renaming its target-only policy job. The trusted target run from `main` must
-validate that cleanup PR before merge.
+policy parser. It is the repository's sole policy workflow; a `pull_request`-triggered
+workflow is never policy or merge evidence.
 
 ## Reviewer and merge gate
 

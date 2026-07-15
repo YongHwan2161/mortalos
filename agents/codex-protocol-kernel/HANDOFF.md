@@ -9,46 +9,28 @@ None.
 
 ## Completed handoffs
 
-### 2026-07-15 — Split-workflow PR #3 migration correction
+### 2026-07-15 — Trusted target policy cleanup
 
-- Main base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
-- Corrected predecessor: `0ab51f2b8514acd3bba14ee01d45c44f9cf9a91f`
-- Work branch: `agent/codex-protocol-kernel--governance-hardening`
-- Paths: `.github/workflows/pr-policy.yml`, new
-  `.github/workflows/trusted-pr-policy.yml`, `AGENTS.md`,
-  `docs/AGENT_COLLABORATION.md`, `agents/reviewer-merge-gate/README.md`, governance
-  tests, and this author's handoff/worklog; no runtime or `src/` change
-- Result: the proposed-head bootstrap and trusted target policy now have distinct
-  workflow files, workflow names, job/check names, permissions, and concurrency.
-  No `pull_request` run can create the `Trusted main-base policy` check, and quoted
-  bootstrap names preserve the literal `#3` text under YAML parsing.
-- Author validation: governance 28/28; coverage 92.68% line, 84.39% branch, and
-  93.75% function; full `npm test`; dependency audit 0 vulnerabilities; YAML syntax,
-  package dry-run, JavaScript syntax, and diff checks passed. Local Chromium rerun
-  remains an environment-only pending check because the sandbox lacks the binary and
-  blocks its CDN; the published head requires a fresh `Verify` run before review.
-- PR contract: add `.github/workflows/trusted-pr-policy.yml` to the exact
-  `Shared-Paths` list before policy/reviewer snapshotting.
-- Handoff: reviewer publishes the immutable correction, confirms only the untrusted
-  marker runs for PR #3, requires fresh `Verify`, and independently decides the exact
-  head; no push or self-approval by the author
-
-### 2026-07-15 — Two-phase PR #3 trigger bootstrap
-
-- Main base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
-- Corrected predecessor: `121f5269f1a1c146099d1aa936175c25670e3933`
-- Work branch: `agent/codex-protocol-kernel--governance-hardening`
-- Paths: PR policy workflow, root/reviewer/collaboration migration contracts,
-  governance tests, and author handoff/worklog; no runtime or `src/` change
-- Result: an isolated zero-permission `pull_request` bootstrap marker temporarily
-  coexists with the unchanged trusted target job; event-specific concurrency prevents
-  cross-cancellation; permanent attestations require event `pull_request_target`; and
-  docs mandate an immediate post-merge target-only cleanup PR
-- Author validation: full `npm test`; governance 28/28 with 92.68% line, 84.39%
-  branch, and 93.75% function coverage; Chromium 149 differential; dependency,
-  package, syntax, YAML, and diff checks passed
-- Handoff: reviewer must publish, observe the actual bootstrap run, and independently
-  decide the exact new head; no push or self-approval by the author
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Main base: `e6dce59fb314266acdd855748a9b1fb996864e81`
+- Work branch: `agent/codex-protocol-kernel--trusted-policy-cleanup`
+- Paths: deleted `.github/workflows/pr-policy.yml`; updated `AGENTS.md`,
+  `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/WORKLOG.md`,
+  `agents/reviewer-merge-gate/README.md`, `docs/AGENT_COLLABORATION.md`, and
+  `test/agent-governance.test.mjs`; no runtime, protocol, schema, or product file
+- Result: retired the one-time transition path and exception; permanent tests now
+  require the trusted policy to expose only `pull_request_target`, require the former
+  workflow path to be absent, and reject stale exception language in governing docs
+- Author validation: governance 28/28; governance coverage 92.68% line, 84.39%
+  branch, and 93.75% function; full `npm test`; dependency audit 0 vulnerabilities;
+  package dry-run 61 files; YAML and JavaScript syntax, diff, runtime-scope,
+  transition-language, and high-confidence secret scans passed
+- Integrity: `.github/workflows/trusted-pr-policy.yml` remained byte-identical to
+  `origin/main` with Git blob `94d2b0353fc44d931acd0a28604786a55e78786f` and
+  SHA-256 `42ad69df038be695f589bad02e01504215fef0058bac4d202ff82ba7ba042ee6`
+- Handoff: publish one focused immutable PR and require the normal trusted target
+  policy, `Verify`, and independent `reviewer-merge-gate` PASS; do not merge as author
 
 ### 2026-07-15 — Reviewer snapshot attestation binding
 
@@ -91,7 +73,7 @@ None.
 - Result: policy code now executes only from the immutable PR base with read-only
   permissions; declarations and GitHub API ancestry/path evidence fail closed; new
   worktrees reject existing branches and explicit resume rejects stale, local-only,
-  wrongly tracked, behind, or diverged branches; the public legacy-workflow bootstrap
+  wrongly tracked, behind, or diverged branches; local public-repository verification
   can obtain the same read-only API evidence without an exported token
 - Author validation: full `npm test`; governance 25/25 with 91.91% line, 81.01%
   branch, and 93.48% function coverage; actual Chromium 149 differential 10,000/10,000;
@@ -104,7 +86,7 @@ None.
 - Base: `0a8ce3e2cf09a040758611b3674e92aa32e13c4b`
 - Work branch: `agent/codex-protocol-kernel--agent-governance`
 - Paths: `AGENTS.md`, `agents/**`, `docs/AGENT_COLLABORATION.md`,
-  `.github/PULL_REQUEST_TEMPLATE.md`, `.github/workflows/pr-policy.yml`,
+  `.github/PULL_REQUEST_TEMPLATE.md`, the PR policy workflow,
   `scripts/create-agent-worktree.mjs`, `scripts/verify-agent-pr.mjs`,
   `test/agent-governance.test.mjs`, `package.json`, and `.npmignore`
 - Author validation: governance 10/10, full `npm test`, coverage, dependency audit,
