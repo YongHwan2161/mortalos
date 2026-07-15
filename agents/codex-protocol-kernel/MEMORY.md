@@ -4,7 +4,9 @@ Last reconciled: 2026-07-15
 
 Branch: `agent/codex-protocol-kernel--mortality-proof-correction`
 
-Fork point: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
+Current base: `e332bdf639f6b8c4e39186087cde5e0470f7846f`
+
+Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
 
 ## Verified project state
 
