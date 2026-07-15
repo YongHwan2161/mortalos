@@ -47,6 +47,20 @@ paginated file count to equal both snapshots' `changed_files` count. It obtains
 immutable base/head metadata, ancestry, and changed files through GitHub's read API
 before applying the unit-tested policy parser.
 
+### Temporary PR #3 migration state
+
+`TEMPORARY-MIGRATION-STATE: ACTIVE` applies only to the two-phase rollout of the
+trusted target workflow. The same workflow file temporarily has a `pull_request`
+bootstrap job, but that head-controlled job is explicitly untrusted, has empty
+permissions, performs no checkout, and is never policy or merge evidence. It exists
+only so PR #3 produces a visible bootstrap run after its next `synchronize` event.
+
+Immediately after PR #3 merges, the author must branch from the new `main` and open a
+cleanup PR that removes the `pull_request` trigger and `bootstrap-untrusted` job,
+restores the permanent target-only workflow name/concurrency, removes this temporary
+section and its migration tests, and leaves `pull_request_target` unchanged. The
+trusted target run from `main` must validate that cleanup PR before merge.
+
 ## Reviewer and merge gate
 
 The logical reviewer is `reviewer-merge-gate`. It must follow
@@ -57,7 +71,8 @@ confirmed the PR contract and CI, found no unresolved blocking issue, and re-fet
 the body/base/head, changed files, and latest policy run immediately before merging.
 Its attestation must bind the reviewed base/head, exact API-body SHA-256, changed-file
 count/digest, and latest non-cancelled policy run ID/attempt plus `completed/success`
-status. The merge call must include the expected head SHA.
+status and exact `pull_request_target` event. The merge call must include the expected
+head SHA.
 
 If the connected GitHub identity is also the PR author, GitHub cannot represent this
 logical separation as a second native user approval. In that case the reviewer leaves

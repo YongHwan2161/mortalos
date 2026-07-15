@@ -122,6 +122,32 @@ This changes only authentication and rate limits, not the required evidence or
 validation. Private or inaccessible API data still fails closed. After this workflow
 is merged, the trusted `pull_request_target` job always supplies its read-only token.
 
+### Temporary two-phase trigger migration for PR #3
+
+`TEMPORARY-MIGRATION-STATE: ACTIVE` means PR #3 temporarily declares both events in
+the already-registered workflow file. This is required because GitHub cannot run the
+new `pull_request_target` definition from `main` until that definition has merged,
+while removing the legacy `pull_request` event from the proposed head otherwise
+leaves the migration PR with no policy-workflow run at all.
+
+The two paths are deliberately separate:
+
+- `pull_request` runs only `bootstrap-untrusted` on `synchronize`. It is head-controlled,
+  has `permissions: {}`, checks out nothing, executes no repository code, reads no
+  token or secret, and emits only an `UNTRUSTED TEMPORARY` warning. It is a migration
+  liveness signal, never policy or normal PASS evidence.
+- `pull_request_target` remains restricted to base `main` and runs only the trusted
+  immutable-base policy job. Event-specific concurrency groups prevent the bootstrap
+  signal from cancelling the trusted run.
+
+Immediately after PR #3 merges, create a new author branch from the resulting `main`
+and open the cleanup PR. It must remove the legacy `pull_request` trigger, the
+`bootstrap-untrusted` job, the temporary workflow name/comments, this section, the
+root temporary section, the reviewer exception, and the temporary-state regression
+test. The permanent regression must again reject any `pull_request` trigger. Do not
+change or weaken the target job. The now-trusted `pull_request_target` workflow on
+`main` must validate the cleanup PR before it can merge.
+
 ## Review and merge
 
 `reviewer-merge-gate` is the only logical agent role authorized to merge an agent PR.
@@ -129,6 +155,8 @@ It follows `agents/reviewer-merge-gate/README.md` and reviews one immutable snap
 not only a commit. The snapshot binds PR number, base/head SHAs, the SHA-256 of the
 exact GitHub API body UTF-8 bytes, the complete changed-file count/digest, and the
 latest non-cancelled `Agent PR Policy` run ID/attempt with `completed/success` status.
+That permanent attestation also records `Agent-PR-Policy-Event: pull_request_target`;
+an identically named `pull_request` bootstrap run can never satisfy it.
 The body digest hashes zero bytes for API JSON `null` and otherwise performs no
 trimming, Unicode/line-ending normalization, rendering, or newline insertion. The
 changed-file digest uses the exact JCS record construction defined in the reviewer
@@ -137,6 +165,7 @@ contract.
 Immediately before merge, the reviewer re-fetches and recomputes every snapshot
 field plus all required check results. A changed body, base, head, changed-file
 count/digest, policy run identity/status, or required check invalidates the review.
+The policy event is part of that identity and must remain `pull_request_target`.
 Only then may it merge with `expected_head_sha`.
 
 The reviewer must request changes instead of editing the author's branch. This keeps

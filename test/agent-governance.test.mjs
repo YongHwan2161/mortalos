@@ -442,8 +442,8 @@ test("policy workflow runs immutable trusted-base code with minimum read permiss
   );
   assert.deepEqual(targetBlock.filter((line) => line.startsWith("    branches:")), ["    branches: [main]"]);
   assert.ok(targetBlock.includes("    types: [opened, edited, synchronize, reopened, ready_for_review]"));
-  assert.doesNotMatch(workflow, /^\s{2}pull_request:\s*$/mu);
-  assert.match(workflow, /^concurrency:\n  group: agent-pr-policy-\$\{\{ github\.event\.pull_request\.number \}\}\n  cancel-in-progress: true$/mu);
+  assert.match(workflow, /^concurrency:\n(?:  #.*\n)?  group: agent-pr-policy-\$\{\{ github\.event_name \}\}-\$\{\{ github\.event\.pull_request\.number \}\}\n  cancel-in-progress: true$/mu);
+  assert.match(workflow, /^    if: github\.event_name == 'pull_request_target'$/mu);
   assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/u);
   assert.doesNotMatch(workflow, /pull_request\.head/u);
   assert.match(workflow, /persist-credentials: false/u);
@@ -453,6 +453,43 @@ test("policy workflow runs immutable trusted-base code with minimum read permiss
   const actionRefs = [...workflow.matchAll(/uses:\s+actions\/[a-z-]+@([^\s]+)/gu)].map((entry) => entry[1]);
   assert.ok(actionRefs.length >= 2);
   assert.ok(actionRefs.every((reference) => /^[0-9a-f]{40}$/u.test(reference)));
+});
+
+test("temporary PR #3 bootstrap is isolated, untrusted, and requires immediate cleanup", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/pr-policy.yml", import.meta.url), "utf8");
+  const lines = workflow.split(/\r?\n/u);
+  assert.equal(lines[0], "name: Agent PR Policy (TEMPORARY migration; bootstrap is UNTRUSTED)");
+
+  const pullIndex = lines.indexOf("  pull_request:");
+  const targetIndex = lines.indexOf("  pull_request_target:");
+  assert.ok(pullIndex > lines.indexOf("on:") && pullIndex < targetIndex);
+  assert.deepEqual(lines.slice(pullIndex + 1, targetIndex).filter((line) => line.startsWith("    branches:")), ["    branches: [main]"]);
+  assert.ok(lines.slice(pullIndex + 1, targetIndex).includes("    types: [synchronize]"));
+
+  const bootstrapIndex = lines.indexOf("  bootstrap-untrusted:");
+  const policyIndex = lines.indexOf("  policy:");
+  assert.ok(bootstrapIndex > lines.indexOf("jobs:") && policyIndex > bootstrapIndex);
+  const bootstrap = lines.slice(bootstrapIndex, policyIndex).join("\n");
+  assert.match(bootstrap, /name: UNTRUSTED TEMPORARY bootstrap signal - remove after PR #3/u);
+  assert.match(bootstrap, /if: github\.event_name == 'pull_request'/u);
+  assert.match(bootstrap, /permissions: \{\}/u);
+  assert.doesNotMatch(bootstrap, /^\s*uses:|actions\/checkout|GITHUB_TOKEN|secrets\.|scripts\/|^\s*run:\s*(?:npm|node)\b/mu);
+  assert.match(bootstrap, /not a policy verdict/u);
+
+  const [instructions, collaboration, reviewer] = await Promise.all([
+    readFile(new URL("../AGENTS.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/AGENT_COLLABORATION.md", import.meta.url), "utf8"),
+    readFile(new URL("../agents/reviewer-merge-gate/README.md", import.meta.url), "utf8")
+  ]);
+  for (const document of [instructions, collaboration, reviewer]) {
+    assert.match(document, /TEMPORARY-MIGRATION-STATE: ACTIVE/u);
+  }
+  assert.match(collaboration, /Immediately after PR #3 merges/u);
+  assert.match(collaboration, /permanent regression must again reject any `pull_request` trigger/u);
+  assert.match(collaboration, /trusted `pull_request_target` workflow on\s+`main` must validate the cleanup PR/u);
+  assert.match(reviewer, /Verdict: MIGRATION-EXCEPTION/u);
+  assert.match(reviewer, /Bootstrap-Status: completed\/success/u);
+  assert.match(reviewer, /never policy or normal PASS evidence/u);
 });
 
 test("worktree plan isolates task branch outside repository", () => {
@@ -678,7 +715,7 @@ test("registered agents have durable role, memory, worklog, and handoff files", 
 test("root agent instructions identify the logical merge gate and trusted policy boundary", async () => {
   const instructions = await readFile(new URL("../AGENTS.md", import.meta.url), "utf8");
   assert.match(instructions, /reviewer-merge-gate/u);
-  assert.match(instructions, /expected head SHA/u);
+  assert.match(instructions, /expected\s+head SHA/u);
   assert.match(instructions, /trusted base/u);
   assert.match(instructions, /Do not push directly to `main`/u);
 });
@@ -696,6 +733,7 @@ test("reviewer attestation binds the complete mutable PR review snapshot", async
     "Reviewed-Changed-Files-Count: <non-negative integer>",
     "Reviewed-Changed-Files-SHA256: <64 lowercase hex>",
     "Agent-PR-Policy-Run: <run-id>/<run-attempt>",
+    "Agent-PR-Policy-Event: pull_request_target",
     "Agent-PR-Policy-Status: completed/success"
   ]) {
     assert.equal(contract.split(field).length - 1, 1, `${field} must appear exactly once`);
@@ -705,6 +743,7 @@ test("reviewer attestation binds the complete mutable PR review snapshot", async
   assert.match(contract, /Do\s+not trim, normalize Unicode, convert line endings/u);
   assert.match(contract, /RFC 8785 JCS/u);
   assert.match(contract, /latest non-cancelled `Agent PR Policy` run/u);
+  assert.match(contract, /event must be `pull_request_target`/u);
   assert.match(contract, /At review start, fetch and capture/u);
   assert.match(contract, /Immediately before the decision, re-fetch/u);
   assert.match(contract, /If body, base, head, changed-file/u);

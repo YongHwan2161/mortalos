@@ -24,17 +24,18 @@ commit and either requests changes or merges that same commit.
    backward compatibility, and whether the evidence proves the stated claim.
 5. Confirm `Agent PR Policy`, `Verify`, and any other required checks succeeded.
    Capture the latest non-cancelled `Agent PR Policy` run ID and attempt for that PR;
-   its status/conclusion must be `completed/success`. Policy must have run
-   trusted-main-base code from a platform-filtered trigger and its declared shared
-   paths must cover the captured changed/renamed-file evidence. Never substitute a
-   run for another PR or review snapshot.
+   its event must be `pull_request_target` and its status/conclusion must be
+   `completed/success`. Policy must have run trusted-main-base code from a
+   platform-filtered trigger and its declared shared paths must cover the captured
+   changed/renamed-file evidence. Never substitute a run for another event, PR, or
+   review snapshot.
 6. Confirm the PR is mergeable and has no unresolved blocking thread or material
    untested assumption.
 7. Immediately before the decision, re-fetch the PR body/base/head, paginated
    changed-file evidence, and workflow runs; recompute both digests and identify the
    latest non-cancelled `Agent PR Policy` run. If body, base, head, changed-file
-   count/digest, policy run ID/attempt/status/conclusion, or any required check moved,
-   restart the review from step 2.
+   count/digest, policy run ID/attempt/event/status/conclusion, or any required check
+   moved, restart the review from step 2.
 8. Record one structured review attestation. If clean, merge with `expected_head_sha`
    using squash; otherwise request changes and do not merge.
 9. Verify the resulting `main` head and the post-merge workflow result.
@@ -62,6 +63,7 @@ Reviewed-Body-SHA256: <64 lowercase hex>
 Reviewed-Changed-Files-Count: <non-negative integer>
 Reviewed-Changed-Files-SHA256: <64 lowercase hex>
 Agent-PR-Policy-Run: <run-id>/<run-attempt>
+Agent-PR-Policy-Event: pull_request_target
 Agent-PR-Policy-Status: completed/success
 Verdict: PASS
 Scope: <files and behavior reviewed>
@@ -81,6 +83,30 @@ Residual-Risk: <none or precise bounded risk>
 - merge conflict, stale base that affects the result, or unresolved review thread
 
 The reviewer never merges merely because the author says tests passed.
+
+## One-time PR #3 migration exception
+
+`TEMPORARY-MIGRATION-STATE: ACTIVE` is a narrowly scoped bootstrap exception. The
+`pull_request` run is defined by proposed head YAML and therefore remains untrusted
+even though its exact audited job has empty permissions and executes only a warning
+marker. It must never populate the normal `Agent-PR-Policy` attestation fields or be
+described as a policy verdict. It is never policy or normal PASS evidence.
+
+For PR #3 only, the reviewer may record `Verdict: MIGRATION-EXCEPTION` after completing
+the full immutable snapshot review, independently validating the exact head, and
+observing the temporary bootstrap run as `completed/success`:
+
+```text
+Bootstrap-Run: <run-id>/<run-attempt>
+Bootstrap-Status: completed/success
+Cleanup-Required: immediate target-only cleanup PR from post-merge main
+```
+
+The bootstrap run proves only that the transitional `pull_request` trigger appeared;
+it proves no policy property. Immediately after PR #3 merges, the author must open
+the cleanup PR described in `AGENTS.md`. That cleanup is not eligible for this
+exception: the trusted `pull_request_target` run from `main` must pass, and the normal
+PASS attestation applies.
 
 ## Identity limitation
 

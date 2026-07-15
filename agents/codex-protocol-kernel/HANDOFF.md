@@ -9,6 +9,23 @@ None.
 
 ## Completed handoffs
 
+### 2026-07-15 — Two-phase PR #3 trigger bootstrap
+
+- Main base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Corrected predecessor: `121f5269f1a1c146099d1aa936175c25670e3933`
+- Work branch: `agent/codex-protocol-kernel--governance-hardening`
+- Paths: PR policy workflow, root/reviewer/collaboration migration contracts,
+  governance tests, and author handoff/worklog; no runtime or `src/` change
+- Result: an isolated zero-permission `pull_request` bootstrap marker temporarily
+  coexists with the unchanged trusted target job; event-specific concurrency prevents
+  cross-cancellation; permanent attestations require event `pull_request_target`; and
+  docs mandate an immediate post-merge target-only cleanup PR
+- Author validation: full `npm test`; governance 28/28 with 92.68% line, 84.39%
+  branch, and 93.75% function coverage; Chromium 149 differential; dependency,
+  package, syntax, YAML, and diff checks passed
+- Handoff: reviewer must publish, observe the actual bootstrap run, and independently
+  decide the exact new head; no push or self-approval by the author
+
 ### 2026-07-15 — Reviewer snapshot attestation binding
 
 - Main base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`

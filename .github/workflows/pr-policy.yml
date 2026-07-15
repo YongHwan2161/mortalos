@@ -1,12 +1,18 @@
-name: Agent PR Policy
+name: Agent PR Policy (TEMPORARY migration; bootstrap is UNTRUSTED)
 
 on:
+  # TEMPORARY: PR #3 bootstrap signal. Remove this trigger and bootstrap job in
+  # the immediate cleanup PR after the trusted target workflow reaches main.
+  pull_request:
+    branches: [main]
+    types: [synchronize]
   pull_request_target:
     branches: [main]
     types: [opened, edited, synchronize, reopened, ready_for_review]
 
 concurrency:
-  group: agent-pr-policy-${{ github.event.pull_request.number }}
+  # Keep the untrusted bootstrap from cancelling the trusted target run.
+  group: agent-pr-policy-${{ github.event_name }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -14,7 +20,22 @@ permissions:
   pull-requests: read
 
 jobs:
+  bootstrap-untrusted:
+    name: UNTRUSTED TEMPORARY bootstrap signal - remove after PR #3
+    if: github.event_name == 'pull_request'
+    permissions: {}
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Emit migration marker only
+        shell: bash
+        run: |
+          echo "::warning::UNTRUSTED TEMPORARY bootstrap signal; this is not a policy verdict"
+          echo "No repository checkout, repository script, token, or secret is used."
+
   policy:
+    name: Trusted main-base policy
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

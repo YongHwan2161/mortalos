@@ -75,6 +75,22 @@ result, and reproducible verification.
 - Handoff: preserve prior commits and submit a new immutable commit for independent
   decision; author must not push or self-approve
 
+## 2026-07-15 — Two-phase PR #3 trigger bootstrap
+
+- Base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`; corrected predecessor
+  `121f5269f1a1c146099d1aa936175c25670e3933`
+- Branch: `agent/codex-protocol-kernel--governance-hardening`
+- Intended shared paths: policy workflow, migration/reviewer contracts, and governance
+  regression test
+- Result: added a temporary zero-permission, no-checkout `pull_request` liveness marker
+  alongside the separately conditioned trusted target job, bound permanent reviewer
+  evidence to event `pull_request_target`, and specified the immediate cleanup lifecycle
+- Verification: full `npm test`; governance 28/28 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; Chromium 149 differential; audit, package, YAML,
+  syntax, and diff checks passed
+- Handoff: reviewer publishes and confirms a real bootstrap run for PR #3; after merge,
+  author creates a fresh target-only cleanup PR from new `main`
+
 ## Entry template
 
 ### YYYY-MM-DD — Task
