@@ -153,6 +153,14 @@ test("multi-fault rejection precedence is explicit and independent of Ajv error 
   expectCode(unicodeResult, "E_SCHEMA_UNKNOWN_FIELD");
   assert.equal(unicodeResult.field_path, "/😀");
 
+  const prefixUnknowns = clone(vector.birth);
+  prefixUnknowns.a = true;
+  prefixUnknowns["a\u0000"] = true;
+  const prefixResult = validateGenesis(canonical(prefixUnknowns));
+  expectCode(prefixResult, "E_SCHEMA_UNKNOWN_FIELD");
+  assert.equal(prefixResult.field_path, "/a");
+  assert.equal(prefixResult.deterministic_detail, "a");
+
   const multipleMissing = clone(vector.steps[0].envelope);
   delete multipleMissing.body.event;
   delete multipleMissing.body.sequence;

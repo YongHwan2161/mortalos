@@ -17,10 +17,10 @@ The system does not claim that all data copies can be deleted, that death can al
 |---|---|
 | Organism identity | Derived only from the canonical valid Genesis body and immutable within a lineage. |
 | Lineage integrity | Every accepted Pulse has one accepted parent and obeys deterministic transition rules. |
-| Continuity authority | The current descriptor's quorum is required to advance; no individual can advance only when its threshold is greater than one. |
+| Continuity authority | The current descriptor's quorum is required to advance; no single custodian key can advance when its threshold is greater than one. No-individual or no-domain control requires separate deployment evidence. |
 | Custody membership | Changes only through a Pulse authorized by the current custody descriptor, accepted by new custodians, and evidenced strongly enough to activate the next quorum. |
-| State integrity | `state_root` commits to the logical state used by the genome. |
-| Genome integrity | `genome_hash` is fixed as a content commitment; v0 does not execute it. |
+| Declared state-root continuity | v0 authenticates and preserves one immutable declared `state_root`; it does not receive state bytes, derive the root, or execute the genome. Content binding and transition are R2 work. |
+| Declared genome-hash continuity | v0 authenticates and preserves the opaque declared `genome_hash`; it does not receive artifact bytes or derive or verify their hash. An observer may independently bind an externally obtained artifact to the declaration. |
 | Private signing keys | Never intentionally serialized, logged, committed, or sent over the network. |
 | Mortality semantics | Loss of succession authority is not confused with deletion of all historical bytes or temporary loss of state availability. |
 | Validator independence | Endpoint type, transport, UI, GPT, and signaling cannot alter validity rules. |
@@ -208,7 +208,7 @@ The controlled test must also establish that no pending candidate already contai
 
 If two distinct raw pending successors are both fully valid children of the recognized head, mortality evaluation records the fork. If the lineage is forked, mortality is not classified. Fork resolution is outside v0, and selecting either sibling merely to obtain a life/death label would make an observer policy authoritative.
 
-Loss of logical state by itself is `state-stalled`, not protocol-dead, because a valid heartbeat or membership change can still be signed from the committed root. State-backed mortality requires a later protocol with verifiable availability/recovery evidence.
+Loss of logical state by itself is `state-stalled`, not protocol-dead, because current custodians can still sign a valid heartbeat or membership change that repeats the authenticated opaque declared root. State-backed mortality requires a later protocol with verifiable availability/recovery evidence.
 
 ### 9.2 What death does not mean
 
@@ -247,7 +247,7 @@ For `n=3`, `threshold=2`, where one key is held per failure domain:
 
 For every permitted v0 custody descriptor, threshold is a strict majority. Therefore any two quorums intersect. Quorum intersection plus honest sign-once prevents valid siblings, but quorum intersection alone does not protect against a Byzantine intersecting peer.
 
-For `n=1`, `threshold=1`, the sole custodian can progress and can create valid siblings by violating sign-once. This mode establishes portable solitary birth, not distributed or ownerless authority. An accepted handoff to `2-of-3` changes that boundary immediately.
+For `n=1`, `threshold=1`, the sole custodian can progress and can create valid siblings by violating sign-once. This mode establishes portable solitary birth, not distributed or ownerless authority. An accepted handoff to `2-of-3` changes the logical custody boundary immediately and makes the old sole key insufficient; the physical or administrative failure-domain boundary changes only when deployment evidence shows those keys are independently controlled.
 
 If a valid fork is observed, MortalOS v0 halts automatic progress and reports fork evidence. It does not claim Byzantine resolution.
 
@@ -315,7 +315,7 @@ Resource contribution must be explicit and revocable in later participant-runtim
 | Destroying keys invalidates pre-existing signatures | Not claimed | A latent authorized successor remains usable. |
 | Caller-selected candidate can be treated as the mortality head | Rejected | The lineage supplies its unique recognized head and revalidates raw pending direct children. |
 | Forked lineage has a v0 death classification | Not claimed | Without a unique recognized head, mortality remains unclassified. |
-| Missing state alone kills the v0 lineage | Not claimed | v0 commits to integrity, not retrievability; report `state-stalled`. |
+| Missing state alone kills the v0 lineage | Not claimed | v0 preserves an authenticated declared root, not content binding or retrievability; report `state-stalled`. |
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |
 | Byzantine quorum cannot fork | Not guaranteed | Future work. |
 | Sybil-resistant openness | Not implemented | Future work. |

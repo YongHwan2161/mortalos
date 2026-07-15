@@ -8,7 +8,7 @@ This document uses **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY
 
 ## 1. Protocol purpose
 
-MortalOS v0 defines how an entity can have one recognized identity and an authorized state lineage even though every physical host is replaceable. The protocol permits a creator-controlled `1-of-1` bootstrap; the stronger “no individual can continue it alone” property begins only after an accepted custody descriptor has threshold greater than one.
+MortalOS v0 defines how an entity can have one recognized identity and an authorized state lineage even though every physical host is replaceable. The protocol permits a creator-controlled `1-of-1` bootstrap; when an accepted custody descriptor has threshold greater than one, no single custodian key or logical slot can continue alone. A stronger no-individual or no-failure-domain claim requires external deployment evidence that no one controller or domain holds the active threshold.
 
 The protocol does **not** attempt to prove that all copies of data have been deleted. It defines death as loss of the capability to create another valid state in the same lineage under the declared system and threat model.
 
@@ -65,7 +65,7 @@ To keep untrusted-input failure deterministic across implementations, v0 fixes t
 
 An implementation MUST obtain the raw length through trusted typed-array intrinsics, enforce the byte bound before UTF-8 decoding, and validate an owned immutable snapshot for the remainder of that operation. It MUST NOT trust overrideable `byteLength`, `byteOffset`, `buffer`, or tag properties. A view backed by a `SharedArrayBuffer` is not a stable validation input and MUST be rejected.
 
-Programmatic canonicalization MUST reject sparse arrays and `undefined`, function, symbol, or bigint values rather than silently eliding or rewriting them. Only values in the I-JSON data model may enter hashing or signing.
+Programmatic canonicalization MUST accept only primitives, dense arrays without extra properties, and plain or null-prototype records whose own properties are enumerable string-keyed data descriptors. It MUST reject sparse arrays, class instances and other values whose observed structure is not such a record or array, symbol or non-enumerable properties, accessors, cycles, and `undefined`, function, symbol, or bigint values rather than elide or rewrite them. Acceptance is defined over one structural view: the canonicalizer performs one prototype read and one own-descriptor snapshot, and it never invokes an own accessor exposed in the resulting snapshot. Proxies are classified solely by the structural view they expose; their traps and descriptor-conversion code may execute, so hostile callers that require side-effect-free origin validation MUST reject proxies before this portable boundary. Revoked proxies and throwing structural views MUST fail with `E_PARSE_NON_IJSON`. Only values in the I-JSON data model may enter hashing or signing.
 
 Container depth counts the root object or array as depth 1; a scalar root has depth 0. A depth-64 document is valid and a depth-65 document is rejected. Exceeding either the byte or depth bound returns `E_PARSE_LIMIT_EXCEEDED` for an envelope or `E_EVENT_PAYLOAD_INVALID` with deterministic detail `E_PARSE_LIMIT_EXCEEDED` for a payload. These limits are consensus input rules, not UI policy.
 
@@ -164,7 +164,7 @@ A custodian holds authority only as part of a valid quorum. Custodian status is 
 
 ### 4.3 Genome
 
-The **genome** is an immutable content commitment identified by `genome_hash`. It names the intended transition-rule artifact, but MortalOS v0 does not execute that artifact or accept logical state transitions. The v0 `state_root` remains equal to the Genesis state root for every Pulse.
+The **genome** is an intended immutable transition-rule artifact named by the opaque declared `genome_hash`. MortalOS v0 authenticates that declaration but does not receive the artifact bytes, derive or verify their hash, execute the artifact, or accept logical state transitions. An observer that obtains the artifact through an external channel may check the hash independently. The v0 `state_root` declaration remains equal to the Genesis declaration for every Pulse.
 
 A later protocol may define a deterministic genome ABI and execution runtime. That change requires a protocol-version and threat-model revision; merely supplying an implementation-specific callback is insufficient for consensus determinism.
 
@@ -202,7 +202,7 @@ Every Pulse after Genesis MUST name exactly one parent and increment its parent'
 
 ### 4.8 Recognized head
 
-For a validator's known message set, the **recognized head** is the unique highest accepted Pulse reachable from Genesis while the accepted graph is linear.
+For a validator's known message set, the **recognized head** is the unique highest accepted object reachable from Genesis—Genesis itself before any Pulse, otherwise the highest accepted Pulse—while the accepted graph is linear.
 
 If two distinct, individually valid Pulses share one accepted parent, the validator MUST enter `FORKED` state and MUST NOT automatically choose either child. A deterministic winner rule is intentionally absent in v0; Byzantine fork resolution is out of scope.
 
@@ -220,9 +220,9 @@ Authority viability is an ontic property. It need not be observable to any one p
 
 ### 4.11 State-viable
 
-A lineage is **state-viable within observation domain O** if and only if O contains enough state material to reconstruct the logical state committed by the recognized head.
+A lineage is **state-viable within observation domain O** if and only if O reports enough externally associated material to reconstruct the logical state that O associates with the recognized head's opaque declared `state_root`.
 
-MortalOS v0 commits to state integrity but does not include a proof-of-retrievability or state-recovery protocol. State viability is therefore observer-domain-relative and is not inferred from a heartbeat signature.
+MortalOS v0 authenticates and preserves an opaque declared `state_root`, but it does not receive state bytes, derive or verify that root, execute the genome, or include proof-of-retrievability or recovery. The definition above is therefore an external observer classification, not a v0 validator result. Content binding and deterministic transition begin at R2; availability/recovery begins at R3. State viability is observer-domain-relative and is not inferred from a heartbeat signature.
 
 ### 4.12 Alive
 
@@ -234,7 +234,7 @@ A lineage is **continuable to observer O** when O has current cryptographic evid
 
 ### 4.14 State-stalled
 
-A lineage is **state-stalled within observation domain O** if and only if it remains authority-viable but O cannot reconstruct the state committed by the recognized head. A state-stalled lineage may still authorize a heartbeat or custody change and therefore is not protocol-dead in v0.
+A lineage is **state-stalled within observation domain O** if and only if it remains authority-viable but O does not report enough externally associated material to reconstruct the logical state it associates with the recognized head's opaque declared `state_root`. A state-stalled lineage may still authorize a heartbeat or custody change and therefore is not protocol-dead in v0.
 
 ### 4.15 Dormant
 
@@ -274,9 +274,9 @@ A lineage is **protocol-dead in v0** if and only if both conditions hold under t
 1. fewer usable current private keys remain than the quorum requires and that authority loss is irreversible; and
 2. no latent successor exists that can become valid without new signatures from the lost current quorum.
 
-Loss of logical state alone is not protocol death in v0 because current custodians can still authorize a heartbeat or membership change using the committed state root. Such a condition is `state-stalled`. A later protocol may make a verifiable state-availability capability indispensable, but it MUST define the evidence and validation rule before claiming state loss as lineage death.
+Loss of externally associated logical state alone is not protocol death in v0 because current custodians can still authorize a heartbeat or membership change that repeats the authenticated opaque `state_root` declaration. Such a condition is `state-stalled`. A later protocol may make a verifiable state-availability capability indispensable, but it MUST define the evidence and validation rule before claiming state loss as lineage death.
 
-Death does not require historical bytes, public keys, Genesis, Pulses, genome artifacts, or state commitments to disappear. Those artifacts may remain readable.
+Death does not require historical bytes, public keys, Genesis, Pulses, genome artifacts, externally associated state material, or authenticated root declarations to disappear. Those artifacts and declarations may remain readable.
 
 An observer cannot generally prove that no unobserved key or state copy exists. Therefore v0 defines no globally authoritative `death_certificate` message. UIs MAY report `presumed dead` under a stated local policy but MUST distinguish it from protocol-proven invalidity of a candidate Pulse.
 

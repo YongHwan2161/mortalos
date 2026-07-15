@@ -16,9 +16,9 @@ shared project files and must not be used as a lock that blocks the project inde
 - Paths: portable trusted core, schemas/rejection codes, deterministic vectors and
   tests, current protocol/threat/status/plan/traceability/access/submission docs,
   direct dependency notices, package lock, and CI timeout
-- Author validation: clean locked install and full Node suite passed; 49/49
+- Author validation: clean locked install and full Node suite passed; 51/51
   conformance; 10,000 mixed property cases; portable v2 committed/Node/browser-target
-  equality and 10,000/10,000 adversarial rejects; 98.92% line/94.46% branch/100%
+  equality and 10,000/10,000 adversarial rejects; 98.38% line/93.73% branch/100%
   function coverage; H2 v3 golden; audit, license, spec, governance, package, diff,
   and source-portability gates passed
 - Independent finding resolved: raw pending fully valid siblings now record a fork

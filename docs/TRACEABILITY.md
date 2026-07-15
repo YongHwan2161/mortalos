@@ -129,8 +129,8 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Public snapshot cannot advance a dead lineage | zero-approval sequence-4 candidate returns `E_APPROVAL_INSUFFICIENT_QUORUM (0/2)` | PASS |
 | Endpoint-neutral source boundary | `scripts/verify-portable.mjs` scans every trusted source module | PASS |
 | `1-of-1` birth and controlled singleton mortality | `test/vectors/singleton.json`, `test/singleton.test.mjs`, `scripts/demo-singleton.mjs` | PASS |
-| `1-of-1` to `2-of-3` authority expansion | generated-key handoff test; former sole key is then insufficient | PASS |
-| Cross-runtime portable result corpus | format v2 committed expected result, Node, browser-target realm, and actual Chromium, including strict-point/SAB/hostile-metadata boundary cases | PASS |
+| `1-of-1` to logical `2-of-3` authority expansion | one-process generated-key handoff test; former sole key is then insufficient; physical distribution is not established | PASS |
+| Cross-runtime portable result corpus | format v2 committed expected result, Node, browser-target realm, and actual Chromium cover strict-point, hostile-metadata, and deterministic outcomes; Node/browser-target actively exercise SAB rejection, while actual-browser SAB remains an H3 cross-origin-isolated test | PASS |
 | Portable replay/fork/equivocation/post-fork halt | `test/vectors/fork.json`, `test/portable-corpus.mjs` | PASS |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.

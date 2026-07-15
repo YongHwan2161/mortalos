@@ -51,7 +51,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - total semantic validators with stable first-error precedence and a single internal complete/latent transition pipeline;
 - custody-change activation proof and recognized-head-only conditional mortality;
 - no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient clock, or ambient randomness in trusted `src/` paths;
-- a public signed singleton, distributed lifecycle, clone, and fork corpus;
+- a public signed singleton, multi-custodian turnover, clone, and fork corpus;
 - a committed expected result with named first-error outcomes and a fixed-seed histogram; and
 - isolated browser-target plus actual headless-Chromium runners.
 
@@ -107,6 +107,7 @@ run reference lifecycle
 - [ ] Replay, fork, mortality qualifications, clone separation, and the distinction between logical keys and failure domains are visible.
 - [ ] Exported trace digest matches the reference digest.
 - [ ] The complete committed portable corpus runs in the deployed Lab.
+- [ ] In a cross-origin-isolated Chromium profile, `SharedArrayBuffer` is available and SAB-backed validation input is rejected; SAB unavailability is reported as unsupported and does not count as PASS.
 - [ ] The judge path passes three times in a clean browser profile.
 - [ ] Keyboard, contrast, narrow viewport, and reduced-motion checks pass.
 
@@ -174,7 +175,7 @@ H3 remains ahead of C2 for the hackathon because visual explanation and a hosted
 
 ### R1 — ownerless authority lineage ◐
 
-Cross-runtime reference agreement is complete. Remaining exit criteria are a second independently written implementation, persistent evidence replay, and broader correctly re-signed valid-history generation. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; the accepted failure-domain distribution must prevent unilateral continuation.
+Cross-runtime reference agreement is complete. Remaining exit criteria are a second independently written implementation, persistent evidence replay, and broader correctly re-signed valid-history generation. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; the externally evidenced deployment distribution of keys in the accepted descriptor must prevent unilateral continuation.
 
 ### R2 — deterministic state-bearing kernel ⏭ FUNDAMENTAL
 
@@ -208,7 +209,7 @@ Reopen the earliest responsible gate if:
 - a non-canonical, small-order, torsion, or non-prime-subgroup Ed25519 point is accepted;
 - a cloned or hand-built context is accepted;
 - two runtimes disagree on bytes, signatures, parent resolution, or first rejection code;
-- a custody handoff is accepted although supplied next-custodian acceptances cannot activate the declared threshold;
+- a custody handoff is accepted although the supplied approval-and-acceptance activation set cannot activate the declared threshold;
 - replay or fork silently changes the head;
 - mortality trusts a caller-selected head or prevalidated pending capability;
 - UI, GPT, endpoint, transport, or storage bypasses validation;

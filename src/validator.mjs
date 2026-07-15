@@ -93,9 +93,10 @@ function schemaPath(error) {
 
 function stableSchemaErrors(errors) {
   return [...errors].sort((left, right) => {
-    const leftKey = `${schemaPath(left)}\u0000${left.keyword}`;
-    const rightKey = `${schemaPath(right)}\u0000${right.keyword}`;
-    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+    const leftPath = schemaPath(left);
+    const rightPath = schemaPath(right);
+    if (leftPath !== rightPath) return leftPath < rightPath ? -1 : 1;
+    return left.keyword < right.keyword ? -1 : left.keyword > right.keyword ? 1 : 0;
   });
 }
 

@@ -210,3 +210,71 @@ test("canonicalizer rejects sparse arrays and every non-JSON value instead of el
     );
   }
 });
+
+test("canonicalizer accepts only plain data records, including foreign-realm records", () => {
+  const nullPrototype = Object.create(null);
+  nullPrototype.b = [true, null];
+  nullPrototype.a = 1;
+  const foreign = vm.runInNewContext("({ b: [true, null], a: 1 })");
+  const foreignNullPrototype = vm.runInNewContext(
+    "Object.assign(Object.create(null), { b: [true, null], a: 1 })"
+  );
+  const expected = '{"a":1,"b":[true,null]}';
+  assert.equal(canonicalize(Object.freeze({ b: [true, null], a: 1 })), expected);
+  assert.equal(canonicalize(nullPrototype), expected);
+  assert.equal(canonicalize(foreign), expected);
+  assert.equal(canonicalize(foreignNullPrototype), expected);
+});
+
+test("canonicalizer rejects exotic, hidden, accessor, cyclic, and lossy array data", () => {
+  class RecordLike {
+    constructor() {
+      this.visible = true;
+    }
+  }
+
+  const symbolProperty = {};
+  symbolProperty[Symbol("hidden")] = true;
+  const nonEnumerable = {};
+  Object.defineProperty(nonEnumerable, "hidden", { value: true });
+  let accessorReads = 0;
+  const accessor = {};
+  Object.defineProperty(accessor, "value", {
+    enumerable: true,
+    get() {
+      accessorReads += 1;
+      return true;
+    }
+  });
+  const cyclic = {};
+  cyclic.self = cyclic;
+  const arrayWithExtraProperty = [1];
+  arrayWithExtraProperty.extra = 2;
+  const revokedValues = [[], {}].map((target) => {
+    const { proxy, revoke } = Proxy.revocable(target, {});
+    revoke();
+    return proxy;
+  });
+
+  for (const value of [
+    new Date(0),
+    new Map([["x", 1]]),
+    new Set([1]),
+    /not-json/u,
+    new Number(1),
+    new Uint8Array([1]),
+    new RecordLike(),
+    symbolProperty,
+    nonEnumerable,
+    accessor,
+    cyclic,
+    arrayWithExtraProperty,
+    ...revokedValues
+  ]) {
+    assert.throws(
+      () => canonicalize(value),
+      (error) => error instanceof JsonInputError && error.code === "E_PARSE_NON_IJSON"
+    );
+  }
+  assert.equal(accessorReads, 0);
+});

@@ -25,11 +25,11 @@ The project still does not transition mutable logical state or connect participa
 | Portable Genesis/Pulse cryptography | Verified | RFC 8032 plus canonical, non-small-order, torsion-free prime-subgroup point checks and signed lifecycle vectors pass in Node and Chromium. |
 | Deterministic validation | Verified | Public validators are total, preserve stable envelope-before-payload first-error precedence, and read latent evidence once. |
 | `1-of-1` bootstrap | Verified | Public signed birth/heartbeat and an ephemeral CLI proof adapter. Creator-controlled, not ownerless. |
-| `1-of-1` → `2-of-3` expansion | Verified | Original sole key becomes insufficient; two eligible signers advance. |
+| `1-of-1` → logical `2-of-3` expansion | Verified | One-process generated-key proof: original sole key becomes insufficient and two eligible signers advance; physical distribution is not established. |
 | `2-of-3` continuation | Verified | Current quorum, acceptance signatures, and sufficiency of the supplied next-quorum activation set are enforced. |
 | Stateful lineage | Verified | Replay, fork, equivocator, unknown-parent, and post-fork halt tests pass. |
 | Mortality observer | Verified conditionally | The lineage supplies its recognized head and revalidates raw pending evidence; irreversibility and key absence remain observer assumptions. Forked lineages remain unclassified. |
-| Portable adversarial corpus | Verified within scope | Corpus v2 adds six trust-boundary probes to 15/15 named negatives and 10,000/10,000 fixed-seed rejects, with agreement across runtimes. |
+| Portable adversarial corpus | Verified within scope | Corpus v2 reports six trust-boundary outcomes plus 15/15 named negatives and 10,000/10,000 fixed-seed rejects. Node/browser-target exercise all six; actual Chromium agrees on cases available without cross-origin isolation, with browser SAB reserved for H3. |
 | Node/Chromium equivalence | Verified | Committed expected result, Node, browser-target realm, and actual Chromium are byte-identical. |
 | Single-browser incubator | Planned | Portable core exists; Worker/WebCrypto key lifecycle and UI are absent. |
 | Stable CLI | Proof only | Creation works in memory; import, persistence, replay, export, and compatibility contract are absent. |
@@ -56,13 +56,13 @@ npm pack --dry-run
 Current results:
 
 - license and specification gates: PASS;
-- conformance tests: 49/49 PASS;
+- conformance tests: 51/51 PASS;
 - fixed-seed Node property cases: 10,000 mixed valid/invalid continuations (1,008 accepts and 8,992 rejects) with exact expected outcomes and invariant preservation;
 - portable named negatives: 15/15 expected codes;
-- portable trust-boundary probes: 6/6 expected outcomes;
+- portable trust-boundary probes: 6/6 expected outcomes in Node/browser-target; actual Chromium covers probes available without cross-origin isolation;
 - portable fixed-seed cases: 10,000/10,000 expected rejects from seed `1297044052`;
 - committed result, Node, browser-target realm, and actual Chromium: byte-identical;
-- trusted-core coverage: 98.92% lines, 94.46% branches, 100% functions;
+- trusted-core coverage: 98.38% lines, 93.73% branches, 100% functions;
 - fresh-process deterministic trace comparison: PASS;
 - H2 trace format: `mortalos-lifecycle-trace/3`;
 - H2 trace digest: `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
@@ -96,7 +96,7 @@ The private `WeakSet` correctly prevents forged acceptance objects, but it canno
 
 ### Medium — the property corpus has a bounded claim
 
-The 10,000 cases mutate signed fields or evidence and assert rejection. A public signed-fork fixture covers one valid competing history, but future lineage fuzzing should generate broader correctly re-signed churn, delayed acceptances, and restart/rebuild sequences.
+The property corpus mixes 1,008 baseline-valid continuations with 8,992 signed-field or evidence mutations and checks exact outcomes. Its accepted cases reuse fixed signed fixtures; future lineage fuzzing should generate broader correctly re-signed churn, delayed acceptances, and restart/rebuild sequences.
 
 ### Fundamental research gap — no state-bearing life
 

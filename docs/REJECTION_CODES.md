@@ -110,7 +110,7 @@ There is no public operation that replaces a recognized head with an ancestor, s
 | Code | Condition |
 |---|---|
 | `E_FORK_DETECTED` | Two distinct candidates independently validate against the same accepted parent. The registry returns both child hashes and intersecting approval signer IDs, then enters `FORKED`. |
-| `E_LINEAGE_ALREADY_FORKED` | Automatic append is attempted after the registry has entered `FORKED`. |
+| `E_LINEAGE_ALREADY_FORKED` | An otherwise valid, non-replay append is attempted after the registry has entered `FORKED`; intrinsic validation and replay checks retain their earlier precedence. |
 
 Signer equivocation is evidence attached to `E_FORK_DETECTED`, not a competing first-error code. Strict-majority valid siblings necessarily have at least one approval signer in common.
 

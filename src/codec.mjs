@@ -1,6 +1,14 @@
 import { asBytes, equalBytes, isSharedByteView, utf8Bytes } from "./bytes.mjs";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
+const getPrototypeOf = Object.getPrototypeOf;
+const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+const getOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
+const hasOwn = Object.hasOwn;
+const isArray = Array.isArray;
+const ownKeys = Reflect.ownKeys;
+const functionToString = Function.prototype.toString;
+const objectConstructorSource = functionToString.call(Object);
 
 export const JSON_LIMITS = Object.freeze({
   default_bytes: 1024 * 1024,
@@ -266,19 +274,128 @@ export function parseJsonBytes(bytes, options = {}) {
   return parseJsonDocument(bytes, options).value;
 }
 
-export function canonicalize(value) {
-  assertIJson(value);
-  if (value === null || typeof value === "boolean") return JSON.stringify(value);
-  if (typeof value === "number") return JSON.stringify(value);
-  if (typeof value === "string") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
-  if (value && typeof value === "object") {
-    return `{${Object.keys(value)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalize(value[key])}`)
-      .join(",")}}`;
+function failNonIJson(detail) {
+  throw new JsonInputError("E_PARSE_NON_IJSON", detail);
+}
+
+function snapshotOwnDescriptors(value) {
+  try {
+    const descriptorMap = getOwnPropertyDescriptors(value);
+    return ownKeys(descriptorMap).map((key) => [
+      key,
+      getOwnPropertyDescriptor(descriptorMap, key).value
+    ]);
+  } catch {
+    failNonIJson("uninspectable-object");
   }
-  throw new JsonInputError("E_PARSE_NON_IJSON", `unsupported-${typeof value}`);
+}
+
+function isDataProperty(descriptor) {
+  return hasOwn(descriptor, "value");
+}
+
+function isArrayValue(value) {
+  try {
+    return isArray(value);
+  } catch {
+    failNonIJson("uninspectable-array-brand");
+  }
+}
+
+function isPlainRecord(value) {
+  let prototype;
+  try {
+    prototype = getPrototypeOf(value);
+  } catch {
+    failNonIJson("uninspectable-prototype");
+  }
+  if (prototype === null || prototype === Object.prototype) return true;
+
+  try {
+    if (getPrototypeOf(prototype) !== null) return false;
+    const constructorDescriptor = getOwnPropertyDescriptor(prototype, "constructor");
+    return Boolean(
+      constructorDescriptor &&
+        isDataProperty(constructorDescriptor) &&
+        typeof constructorDescriptor.value === "function" &&
+        functionToString.call(constructorDescriptor.value) === objectConstructorSource
+    );
+  } catch {
+    return false;
+  }
+}
+
+function canonicalizeArray(value, active) {
+  const entries = snapshotOwnDescriptors(value);
+  const byKey = new Map(entries);
+  const lengthDescriptor = byKey.get("length");
+  if (
+    !lengthDescriptor ||
+    !isDataProperty(lengthDescriptor) ||
+    lengthDescriptor.enumerable ||
+    !Number.isSafeInteger(lengthDescriptor.value) ||
+    lengthDescriptor.value < 0
+  ) {
+    failNonIJson("array-length-invalid");
+  }
+  const length = lengthDescriptor.value;
+  if (entries.length !== length + 1) failNonIJson("array-hole-or-extra-property");
+
+  const serialized = [];
+  for (let index = 0; index < length; index += 1) {
+    const descriptor = byKey.get(String(index));
+    if (!descriptor || !descriptor.enumerable || !isDataProperty(descriptor)) {
+      failNonIJson("array-hole-or-accessor");
+    }
+    serialized.push(canonicalizeValue(descriptor.value, active));
+  }
+  return `[${serialized.join(",")}]`;
+}
+
+function canonicalizeRecord(value, active) {
+  if (!isPlainRecord(value)) failNonIJson("exotic-object");
+  const entries = snapshotOwnDescriptors(value);
+  for (const [key, descriptor] of entries) {
+    if (typeof key !== "string") failNonIJson("symbol-property");
+    if (hasLoneSurrogate(key)) failNonIJson("lone-surrogate");
+    if (!descriptor.enumerable) failNonIJson("non-enumerable-property");
+    if (!isDataProperty(descriptor)) failNonIJson("accessor-property");
+  }
+  entries.sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+  return `{${entries
+    .map(([key, descriptor]) =>
+      `${JSON.stringify(key)}:${canonicalizeValue(descriptor.value, active)}`
+    )
+    .join(",")}}`;
+}
+
+function canonicalizeValue(value, active) {
+  if (value === null || typeof value === "boolean") return JSON.stringify(value);
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) failNonIJson("non-finite-number");
+    return JSON.stringify(value);
+  }
+  if (typeof value === "string") {
+    if (hasLoneSurrogate(value)) failNonIJson("lone-surrogate");
+    return JSON.stringify(value);
+  }
+  if (!value || typeof value !== "object") {
+    failNonIJson(`unsupported-${typeof value}`);
+  }
+  if (active.has(value)) failNonIJson("cyclic-object");
+
+  active.add(value);
+  try {
+    return isArrayValue(value)
+      ? canonicalizeArray(value, active)
+      : canonicalizeRecord(value, active);
+  } finally {
+    active.delete(value);
+  }
+}
+
+export function canonicalize(value) {
+  return canonicalizeValue(value, new WeakSet());
 }
 
 export function canonicalBytes(value) {

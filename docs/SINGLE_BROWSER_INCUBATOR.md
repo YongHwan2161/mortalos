@@ -17,7 +17,7 @@ The browser profile will:
 5. allow valid membership handoffs to independent endpoints; and
 6. lose all local continuation authority if the sole page closes before handoff, under controlled ephemeral-key assumptions.
 
-The repository now contains the hardened portable validator and actual Chromium differential, including hostile-byte, shared-memory, strict-point, deterministic-error, and next-quorum-activation checks, but not these Workers, browser signing, or remote handoff.
+The repository now contains the hardened portable validator and actual Chromium differential. The cross-runtime corpus covers hostile byte metadata, strict points, falsey roots, and deterministic outcomes; Node conformance additionally covers stable first-error precedence and next-quorum activation insufficiency. Shared-memory rejection runs in Node and the isolated browser-target VM; an actual-browser `SharedArrayBuffer` case requires cross-origin isolation and remains an H3 deployment test. The repository does not yet contain the incubator Workers, browser signing, or remote handoff.
 
 ## 2. Relationship to the singleton profile
 

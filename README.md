@@ -14,11 +14,11 @@ Implemented:
 - eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification, including canonical prime-subgroup checks for public keys and signature points;
 - Genesis and Pulse validation for strict-majority custody descriptors from `1-of-1` through 16 custodians;
 - total public validators with stable first-error precedence, non-forgeable recursively frozen contexts, and single-read latent-successor evaluation;
-- membership handoff validation that proves the declared next quorum can activate from supplied acceptances;
+- membership handoff validation that proves the declared next quorum can activate from supplied approval and acceptance evidence;
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
 - evidence-backed latent-successor and conditional mortality evaluation scoped to the lineage-recognized head;
-- a public singleton birth/heartbeat, a verified `1-of-1` to `2-of-3` authority expansion, and the complete A/B/C → D/E/F lifecycle;
-- a versioned committed result corpus with 15 named negatives, six trust-boundary probes, and 10,000 seeded adversarial cases; and
+- a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
+- a versioned committed result corpus with 15 named negatives, six reported trust-boundary outcomes, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise all six boundaries, while actual Chromium agrees on the cases available without cross-origin isolation; and
 - byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results.
 
 Not implemented:
@@ -45,7 +45,7 @@ npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification/governance gates, 49 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification/governance gates, 51 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
 Expected H2 trace digest:
 
@@ -63,7 +63,7 @@ MortalOS counts distinct eligible custodian **key IDs**, not people, tabs, brows
 - **Single-browser incubator (`2-of-3`)**: one planned page holds three logical keys and can satisfy quorum by itself. It remains one physical failure domain.
 - **Distributed `2-of-3`**: no physical or administrative domain holds two keys, so no one domain can continue alone.
 
-The verified singleton can hand authority to `2-of-3` without changing `organism_id`. After that handoff, the original sole key is insufficient while two eligible keys can advance. This makes the distinction explicit: creation may begin locally, but ownerless continuation is a property of the accepted custody distribution, not the UI used to create it.
+The verified singleton can hand logical custody authority to `2-of-3` without changing `organism_id`. After that handoff, the original sole key is insufficient while two eligible keys can advance. This makes the distinction explicit: creation may begin locally, but ownerless continuation depends on the deployment distribution of keys in the accepted custody descriptor, backed by external failure-domain evidence—not on the UI or descriptor alone.
 
 Closing a browser or CLI process is not automatically a protocol death fact. Mortality remains conditional on the declared ephemeral-key policy, irreversibility, known latent evidence, and observation domain.
 
@@ -77,7 +77,8 @@ The browser is not a protocol boundary. Browser, CLI, native, service, embedded,
 
 ```text
 singleton birth and heartbeat
-  -> optional handoff to distributed 2-of-3 authority
+  -> optional handoff to logical 2-of-3 authority
+     (physical distribution requires external evidence)
 
 birth {A,B,C}
   -> handoff {B,C,D}
