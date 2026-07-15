@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -461,55 +461,50 @@ test("policy workflow runs immutable trusted-base code with minimum read permiss
   assert.ok(actionRefs.every((reference) => /^[0-9a-f]{40}$/u.test(reference)));
 });
 
-test("temporary PR #3 bootstrap is isolated, untrusted, and requires immediate cleanup", async () => {
-  const [bootstrapWorkflow, trustedWorkflow] = await Promise.all([
-    readFile(new URL("../.github/workflows/pr-policy.yml", import.meta.url), "utf8"),
-    readFile(new URL("../.github/workflows/trusted-pr-policy.yml", import.meta.url), "utf8")
-  ]);
-  const lines = bootstrapWorkflow.split(/\r?\n/u);
-  assert.equal(lines[0], 'name: "UNTRUSTED PR #3 migration bootstrap"');
+test("policy identity is permanently reserved for the trusted target-only workflow", async () => {
+  const workflowsUrl = new URL("../.github/workflows/", import.meta.url);
+  const workflowNames = (await readdir(workflowsUrl))
+    .filter((name) => /\.ya?ml$/u.test(name))
+    .sort();
+  assert.equal(workflowNames.includes("pr-policy.yml"), false);
+  assert.equal(workflowNames.includes("trusted-pr-policy.yml"), true);
 
-  const pullIndex = lines.indexOf("  pull_request:");
-  assert.ok(pullIndex > lines.indexOf("on:"));
-  assert.deepEqual(lines.slice(pullIndex + 1).filter((line) => line.startsWith("    branches:")), ["    branches: [main]"]);
-  assert.ok(lines.slice(pullIndex + 1).includes("    types: [synchronize]"));
-  assert.equal(lines.includes("  pull_request_target:"), false);
+  const workflows = await Promise.all(workflowNames.map(async (name) => ({
+    name,
+    source: await readFile(new URL(name, workflowsUrl), "utf8")
+  })));
+  const workflowIdentity = /^name:[ \t]*["']?Agent PR Policy["']?[ \t]*$/mu;
+  const checkIdentity = /^[ \t]+name:[ \t]*["']?Trusted main-base policy["']?[ \t]*$/mu;
 
-  const bootstrapIndex = lines.indexOf("  bootstrap-untrusted:");
-  assert.ok(bootstrapIndex > lines.indexOf("jobs:"));
-  assert.equal(lines.includes("  policy:"), false);
-  const bootstrap = lines.slice(bootstrapIndex).join("\n");
-  assert.match(bootstrap, /name: "UNTRUSTED migration marker \(not policy\)"/u);
-  assert.match(bootstrap, /permissions: \{\}/u);
-  assert.doesNotMatch(bootstrap, /^\s*uses:|actions\/checkout|GITHUB_TOKEN|secrets\.|scripts\/|^\s*run:\s*(?:npm|node)\b/mu);
-  assert.match(bootstrap, /not a policy verdict/u);
-  assert.doesNotMatch(bootstrapWorkflow, /Agent PR Policy|Trusted main-base policy|github\.token|GITHUB_TOKEN/u);
-  assert.match(bootstrapWorkflow, /^permissions: \{\}$/mu);
+  for (const workflow of workflows) {
+    const hasPullRequest = /^  pull_request:[ \t]*$/mu.test(workflow.source);
+    const ownsPolicyIdentity = workflowIdentity.test(workflow.source);
 
-  assert.match(trustedWorkflow, /^name: Agent PR Policy$/mu);
-  assert.match(trustedWorkflow, /^  pull_request_target:$/mu);
-  assert.doesNotMatch(trustedWorkflow, /^  pull_request:$/mu);
-  assert.match(trustedWorkflow, /^    name: Trusted main-base policy$/mu);
-  assert.doesNotMatch(trustedWorkflow, /UNTRUSTED|bootstrap-untrusted/u);
+    if (workflow.name === "trusted-pr-policy.yml") {
+      assert.equal(ownsPolicyIdentity, true);
+      assert.match(workflow.source, checkIdentity);
+      assert.match(workflow.source, /^  pull_request_target:[ \t]*$/mu);
+      assert.equal(hasPullRequest, false);
+    } else {
+      assert.equal(ownsPolicyIdentity, false, `${workflow.name} must not claim the policy workflow name`);
+      assert.doesNotMatch(workflow.source, checkIdentity);
+    }
 
-  const [instructions, collaboration, reviewer] = await Promise.all([
+    if (hasPullRequest) {
+      assert.equal(ownsPolicyIdentity, false);
+      assert.doesNotMatch(workflow.source, checkIdentity);
+    }
+    assert.doesNotMatch(workflow.source, /TEMPORARY-MIGRATION-STATE|MIGRATION-EXCEPTION|bootstrap-untrusted/u);
+  }
+
+  const permanentContracts = await Promise.all([
     readFile(new URL("../AGENTS.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/AGENT_COLLABORATION.md", import.meta.url), "utf8"),
     readFile(new URL("../agents/reviewer-merge-gate/README.md", import.meta.url), "utf8")
   ]);
-  for (const document of [instructions, collaboration, reviewer]) {
-    assert.match(document, /TEMPORARY-MIGRATION-STATE: ACTIVE/u);
+  for (const document of permanentContracts) {
+    assert.doesNotMatch(document, /TEMPORARY-MIGRATION-STATE|MIGRATION-EXCEPTION|One-time PR #3|Bootstrap-Run:/u);
   }
-  assert.match(collaboration, /Immediately after PR #3 merges/u);
-  assert.match(collaboration, /permanent regression must again reject every `pull_request`/u);
-  assert.match(collaboration, /now-trusted `pull_request_target` workflow on\s+`main` must validate the\s+cleanup PR/u);
-  assert.match(collaboration, /different workflow name and job\/check\s+name/u);
-  assert.match(reviewer, /Verdict: MIGRATION-EXCEPTION/u);
-  assert.match(reviewer, /Bootstrap-Event: pull_request/u);
-  assert.match(reviewer, /Bootstrap-Workflow: UNTRUSTED PR #3 migration bootstrap/u);
-  assert.match(reviewer, /Bootstrap-Job: UNTRUSTED migration marker \(not policy\)/u);
-  assert.match(reviewer, /Bootstrap-Status: completed\/success/u);
-  assert.match(reviewer, /never policy or normal PASS evidence/u);
 });
 
 test("worktree plan isolates task branch outside repository", () => {

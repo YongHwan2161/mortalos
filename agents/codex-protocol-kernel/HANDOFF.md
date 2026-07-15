@@ -9,6 +9,30 @@ None.
 
 ## Completed handoffs
 
+### 2026-07-15 — Permanent governance migration cleanup
+
+- Main base: `e6dce59fb314266acdd855748a9b1fb996864e81`
+- Work branch: `agent/codex-protocol-kernel--governance-cleanup`
+- Exact changed paths: delete `.github/workflows/pr-policy.yml`; update `AGENTS.md`,
+  `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/WORKLOG.md`,
+  `agents/reviewer-merge-gate/README.md`, `docs/AGENT_COLLABORATION.md`, and
+  `test/agent-governance.test.mjs`
+- Result: removed the completed migration workflow and all active exception
+  instructions; permanent tests enumerate every workflow, reserve both trusted policy
+  identities, and reject a `pull_request`/trusted-name collision. The trusted target
+  workflow remains byte-for-byte unchanged at blob
+  `94d2b0353fc44d931acd0a28604786a55e78786f`.
+- Author validation: fresh `npm ci`; full `npm test`; governance 28/28 at 92.68% line,
+  84.39% branch, and 93.75% function coverage; audit 0 vulnerabilities; YAML syntax
+  and static trigger/name semantics; package dry-run with 61 entries; JavaScript syntax
+  and diff checks passed
+- PR contract: `Shared-Paths` must list exactly all seven changed paths above,
+  including the deleted workflow path; the unchanged trusted workflow is not declared
+- Handoff: reviewer publishes the immutable commit, requires a successful trusted
+  `pull_request_target` policy run and `Verify`, then independently decides the exact
+  snapshot; no push or self-approval by the author
+
 ### 2026-07-15 — Split-workflow PR #3 migration correction
 
 - Main base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`

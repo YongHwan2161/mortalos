@@ -110,6 +110,22 @@ result, and reproducible verification.
 - Handoff: preserve the corrected predecessor and submit this new immutable commit for
   independent review; author must not push or self-approve
 
+## 2026-07-15 — Permanent governance migration cleanup
+
+- Base: `e6dce59fb314266acdd855748a9b1fb996864e81`
+- Branch: `agent/codex-protocol-kernel--governance-cleanup`
+- Intended shared paths: delete the temporary PR policy workflow; update root,
+  collaboration, reviewer, governance-test, and author-ledger contracts only
+- Result: removed the completed PR #3 migration exception and reserved the permanent
+  workflow/check identities for unchanged `trusted-pr-policy.yml`; the regression now
+  enumerates every workflow and fails on any `pull_request`/trusted-name collision
+- Verification: fresh `npm ci`; full `npm test`; governance 28/28 at 92.68% line,
+  84.39% branch, and 93.75% function coverage; audit 0 vulnerabilities; YAML/static
+  workflow semantics, package dry-run, JavaScript syntax, and diff checks passed;
+  trusted workflow blob remained `94d2b0353fc44d931acd0a28604786a55e78786f`
+- Handoff: submit an immutable seven-path cleanup commit for independent trusted-policy
+  review; author must not push or self-approve
+
 ## Entry template
 
 ### YYYY-MM-DD — Task
