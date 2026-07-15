@@ -9,6 +9,59 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Completed handoffs
 
+### 2026-07-15 — YAML lone-CR workflow identity hardening
+
+- Main base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected local predecessor
+  `bad47e5462725f5752d2a7a2eccf797f7c3d03c6`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow, runtime, protocol, or governing-doc change
+- Reviewer finding: YAML recognizes a standalone carriage return as a line break,
+  while `/\r?\n/` left it embedded in one JavaScript line. A later trusted root name
+  after `run-name: harmless\r` or trusted job name after `timeout-minutes: 1\r`
+  could therefore remain semantically active while invisible to identity ownership.
+- Result: every workflow-parser line split now handles CRLF, LF, and standalone CR.
+  Exact root-name and job-name lone-CR counterfeits plus one CRLF/LF/CR mixed-ending
+  document are permanent adversarial fixtures.
+- Author validation: full `npm test`; governance 30/30 at 92.68% line, 84.39%
+  branch, and 93.75% function coverage; 55/55 conformance; seeded 10,000-case
+  property corpus; portable Node/browser-target equality with 10,000/10,000
+  adversarial rejects; license, spec, singleton, and H2 verification; audit 0
+  vulnerabilities; JavaScript syntax, trusted-workflow integrity, three-path scope,
+  historical-audit retention, and diff checks pass
+- Integrity: `.github/workflows/trusted-pr-policy.yml` remains byte-identical to
+  `f08c8be0fa43d86d706d67dfc56f577cf1a90f72` at Git blob
+  `94d2b0353fc44d931acd0a28604786a55e78786f`
+- Handoff: reviewer publishes the focused follow-up, reruns the exact CR byte
+  fixtures plus trusted policy and `Verify`, and decides the immutable snapshot
+  independently; author does not push, merge, or self-approve
+
+### 2026-07-15 — Multiline plain-scalar workflow identity hardening
+
+- Main base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected rebased
+  predecessor `767a5a5c8007b0ea6a3b107340b35c0efaead34f`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow, runtime, protocol, or governing-doc change
+- Reviewer finding: YAML folds an indented continuation of a plain scalar, so
+  `name: Agent` followed by `  PR Policy` (and the analogous job-name form) retained
+  the semantic trusted identity while the earlier parser saw only the first line
+- Result: canonical root and job names now fail closed when a later significant line
+  can continue the scalar. Exact root-name and job-name multiline reproductions are
+  permanent adversarial tests alongside the existing comment, quoting, escape,
+  folded-scalar, flow, alias, duplicate, and indentation cases.
+- Author validation: full `npm test`; governance 30/30 at 92.68% line, 84.39%
+  branch, and 93.75% function coverage; 55/55 conformance; seeded 10,000-case
+  property corpus; portable Node/browser-target equality with 10,000/10,000
+  adversarial rejects; license, spec, singleton, and H2 verification; audit 0
+  vulnerabilities; trusted-workflow integrity, three-path scope, and diff checks pass
+- Integrity: `.github/workflows/trusted-pr-policy.yml` remains byte-identical to
+  `f08c8be0fa43d86d706d67dfc56f577cf1a90f72` at Git blob
+  `94d2b0353fc44d931acd0a28604786a55e78786f`
+- Handoff: reviewer publishes the focused rebased commit, reruns the exact multiline
+  adversarials plus trusted policy and `Verify`, and decides the immutable snapshot
+  independently; author does not push, merge, or self-approve
+
 ### 2026-07-15 — Portable-kernel trust-boundary hardening
 
 - Original base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
@@ -36,6 +89,62 @@ shared project files and must not be used as a lock that blocks the project inde
   policy and the complete Verify workflow.
 - Handoff: after the reconciled head passes all gates, `reviewer-merge-gate` must
   bind its attestation to the new base/head/body/file-evidence snapshot
+
+### 2026-07-15 — Canonical workflow/check-name representation hardening
+
+- Main base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`; corrected local predecessor
+  `57266ba29fa4eb8e652d3ad169388a91092eeb80`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow or governing implementation changed
+- Reviewer finding: YAML comments preserved the semantic trusted workflow/check names
+  while evading the earlier exact-name regular expressions
+- Result: the fail-closed parser now extracts a canonical plain root workflow name,
+  canonical block-form jobs, and canonical job/check names in addition to events.
+  Commented, quoted, Unicode-escaped, folded-scalar, flow/inline, alias, duplicate,
+  mis-indented, and malformed identity representations are rejected.
+- Author validation: full `npm test`; governance 30/30 at 92.68% line, 84.39%
+  branch, and 93.75% function coverage; audit 0 vulnerabilities; JavaScript syntax,
+  trusted-workflow integrity, three-path scope, docs/spec, and diff checks pass
+- Handoff: reviewer publishes the corrected immutable tree and reruns the exact
+  comment/Unicode/folded adversarial reproductions plus trusted policy and `Verify`;
+  author does not push, merge, or self-approve
+
+### 2026-07-15 — Canonical workflow identity regression
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Main base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow, runtime, protocol, or governing-doc change
+- Result: every `.github/workflows/*.yml`/`*.yaml` file is enumerated; one canonical
+  root block-form `on:` is required; two-space event keys are extracted; and quoted,
+  flow, alias, inline-event, duplicate, or malformed trigger forms fail closed. Only
+  `trusted-pr-policy.yml` may own the trusted workflow/check identities and its sole
+  event must be `pull_request_target`.
+- Author validation: fresh `npm ci`; full `npm test`; governance 29/29 at 92.68% line,
+  84.39% branch, and 93.75% function coverage; audit 0 vulnerabilities; YAML 1.2,
+  JavaScript syntax, docs/spec, trusted-workflow integrity, scope, and diff checks pass
+- Integrity: `.github/workflows/trusted-pr-policy.yml` remains byte-identical to the
+  base at blob `94d2b0353fc44d931acd0a28604786a55e78786f`
+- Handoff: reviewer publishes one focused three-path PR, requires normal trusted
+  target policy plus `Verify`, and decides the immutable snapshot independently;
+  author does not push, merge, or self-approve
+
+### 2026-07-15 — HISTORICAL-AUDIT-ONLY: two-phase trusted-policy migration
+
+- Status: closed history only; this record grants no active exception, trigger, or
+  merge instruction
+- Sequence: the reviewer rejected proposed-head `pull_request` self-validation, then
+  rejected a combined transition whose untrusted run could expose the trusted check
+  name. The author split the zero-permission liveness marker from the target-only
+  policy before PR #3 merged as
+  `e6dce59fb314266acdd855748a9b1fb996864e81`.
+- Retirement: PR #5 merged as `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+  and deleted the marker workflow and one-time reviewer exception
+- Current decision boundary: only the normal `Agent PR Policy` run with event
+  `pull_request_target` and job/check `Trusted main-base policy` is review evidence;
+  no historical marker or exception may be reused
 
 ### 2026-07-15 — Trusted target policy cleanup
 

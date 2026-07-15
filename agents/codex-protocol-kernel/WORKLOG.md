@@ -122,6 +122,87 @@ result, and reproducible verification.
 - Handoff: focused immutable PR to `reviewer-merge-gate`; author does not merge or
   self-approve
 
+## 2026-07-15 — HISTORICAL-AUDIT-ONLY: two-phase trusted-policy migration
+
+- Status: closed audit trail, not an active workflow or review exception
+- Reviewer decisions: reject proposed-head policy self-validation; reject a combined
+  migration workflow that let an untrusted run expose the trusted check name; accept
+  only the split, zero-permission liveness marker as one-time migration evidence; and
+  require normal target-only policy evidence after cleanup
+- Merge anchors: PR #3 established the split trust boundary at
+  `e6dce59fb314266acdd855748a9b1fb996864e81`; PR #5 retired the marker workflow and
+  exception at `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Permanent state: `.github/workflows/trusted-pr-policy.yml` alone owns
+  `Agent PR Policy` / `Trusted main-base policy`, and its accepted event is only
+  `pull_request_target`
+
+## 2026-07-15 — Canonical workflow identity regression
+
+- Base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression plus append-only author handoff/worklog
+- Result: added repository-wide workflow enumeration and a dependency-free,
+  fail-closed parser for exactly one canonical root block-form `on:` section with
+  two-space event keys; adversarial quoted, flow, alias, inline-event, and duplicate
+  variants are rejected, and trusted names/events are reserved to the unchanged
+  trusted workflow
+- Verification: fresh `npm ci`; full `npm test`; governance 29/29 at 92.68% line,
+  84.39% branch, and 93.75% function coverage; audit 0 vulnerabilities; YAML 1.2,
+  JavaScript syntax, docs/spec, trusted-workflow integrity, scope, and diff checks pass
+- Handoff: focused three-path immutable commit to `reviewer-merge-gate`; author does
+  not push, merge, or self-approve
+
+## 2026-07-15 — Canonical workflow/check-name representation hardening
+
+- Base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`; corrected local predecessor
+  `57266ba29fa4eb8e652d3ad169388a91092eeb80`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression and append-only author ledgers only
+- Result: replaced regex-only trusted-name ownership checks with fail-closed parsing
+  of the root workflow name and job/check names; rejected comment-equivalent names,
+  quoting, Unicode escapes, root/job folded scalars, flow/inline forms, aliases,
+  duplicates, bad indentation, and malformed keys/values
+- Verification: full `npm test`; governance 30/30 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; audit 0 vulnerabilities; JavaScript syntax,
+  trusted-workflow integrity, three-path scope, docs/spec, and diff checks pass
+- Handoff: corrected immutable commit to `reviewer-merge-gate`; author does not push,
+  merge, or self-approve
+
+## 2026-07-15 — Multiline plain-scalar workflow identity hardening
+
+- Base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected rebased predecessor
+  `767a5a5c8007b0ea6a3b107340b35c0efaead34f`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression plus append-only author handoff/worklog
+- Result: closed the remaining YAML plain-scalar identity bypass by rejecting
+  significant indented continuations after a canonical root workflow name or direct
+  job/check name; added the exact `Agent` + `PR Policy` and `Trusted` +
+  `main-base policy` multiline adversarial reproductions
+- Verification: full `npm test`; governance 30/30 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; 55/55 conformance; seeded 10,000-case property
+  corpus; portable Node/browser-target equality and 10,000/10,000 adversarial
+  rejects; license/spec/singleton/H2 gates; audit 0 vulnerabilities; trusted workflow
+  unchanged at blob `94d2b0353fc44d931acd0a28604786a55e78786f`; three-path scope and diff checks pass
+- Handoff: focused rebased local commit to `reviewer-merge-gate`; author does not push,
+  merge, or self-approve
+
+## 2026-07-15 — YAML lone-CR workflow identity hardening
+
+- Base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected local predecessor
+  `bad47e5462725f5752d2a7a2eccf797f7c3d03c6`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression plus append-only author handoff/worklog
+- Result: aligned every workflow-parser line split with YAML CRLF, LF, and standalone
+  CR line breaks; added exact root/job identity counterfeits and a mixed-ending
+  document that previously hid trusted names behind `run-name` or `timeout-minutes`
+- Verification: full `npm test`; governance 30/30 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; 55/55 conformance; seeded 10,000-case property
+  corpus; portable Node/browser-target equality and 10,000/10,000 adversarial
+  rejects; license/spec/singleton/H2 gates; audit 0 vulnerabilities; syntax, trusted
+  workflow blob, three-path scope, historical-audit retention, and diff checks pass
+- Handoff: focused local follow-up to `reviewer-merge-gate`; author does not push,
+  merge, or self-approve
+
 ## Entry template
 
 ### YYYY-MM-DD — Task
