@@ -1,6 +1,6 @@
 # MortalOS Implementation Plan
 
-Status: **C1 portable deterministic core verified across Node 22 and Chromium; H3 visual Lab next**
+Status: **H3A local browser Lab verified; H3B public deployment next**
 
 Last reviewed: **2026-07-15**
 
@@ -71,7 +71,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 
 Failure rule: any cross-runtime mismatch reopens C1 and blocks endpoint product work. Do not copy the validator into UI or CLI code as a workaround.
 
-## 4. H3 — single-browser incubator and MortalOS Lab ⏭ NEXT DELIVERY
+## 4. H3 — single-browser incubator and MortalOS Lab
 
 ### Why this is next
 
@@ -99,19 +99,28 @@ run reference lifecycle
   -> export canonical trace bytes and digest
 ```
 
-### Pass criteria
+### H3A local executable slice — verified
 
-- [ ] A public URL works without credentials or rebuilding.
-- [ ] Worker private keys are non-extractable where supported and are never persisted, exported, logged, or sent.
-- [ ] Page close before handoff loses local authority only under visibly declared assumptions.
-- [ ] A valid handoff can move slots to independent endpoints without changing `organism_id`.
-- [ ] The displayed result is exactly the portable-core result.
-- [ ] Replay, fork, mortality qualifications, clone separation, and the distinction between logical keys and failure domains are visible.
-- [ ] Exported trace digest matches the reference digest.
-- [ ] The complete committed portable corpus runs in the deployed Lab.
-- [ ] In a cross-origin-isolated Chromium profile, `SharedArrayBuffer` is available and SAB-backed validation input is rejected; SAB unavailability is reported as unsupported and does not count as PASS.
-- [ ] The judge path passes three times in a clean browser profile.
-- [ ] Keyboard, contrast, narrow viewport, and reduced-motion checks pass.
+- [x] Worker private keys are non-extractable and never persisted, exported, logged, or sent.
+- [x] Controlled Worker termination visibly demonstrates local authority loss without claiming global death.
+- [x] The displayed decisions come from the portable kernel.
+- [x] Replay, fork, mortality qualifications, resurrection rejection, clone separation, and logical-key/failure-domain distinctions are visible.
+- [x] Canonical public evidence exports, independently digests, and raw-replays to the same head.
+- [x] The complete committed portable corpus runs in the Lab.
+- [x] Cross-origin-isolated Chromium exposes `SharedArrayBuffer`, and SAB-backed validator input is rejected.
+- [x] The local judge path passes three clean browser contexts.
+- [x] Keyboard semantics, contrast profile, narrow viewport, and reduced-motion behavior are checked.
+
+The reference handoff trace proves stable identity through complete custody turnover. Moving live Worker slots to genuinely independent endpoints remains a network-adapter milestone, because a browser-only simulation cannot prove physical distribution.
+
+### H3B public deployment — next delivery gate
+
+- [ ] A public HTTPS URL works without credentials, install, or rebuilding.
+- [ ] The deployed commit equals the reviewed repository commit.
+- [ ] CSP, COOP, COEP, CORP, no-store, and MIME behavior match the local acceptance server.
+- [ ] `npm run verify:lab` passes against the deployed URL in three clean contexts.
+- [ ] A logged-out judge can complete birth, heartbeat, falsification, corpus, and export paths.
+- [ ] No analytics, external requests, storage, Service Worker, private material, or console errors appear.
 
 ## 5. H4 — GPT-5.6 adversarial scenario designer
 

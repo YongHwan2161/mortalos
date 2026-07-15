@@ -288,6 +288,29 @@ result, and reproducible verification.
 
 ## Entry template
 
+## 2026-07-15 — H3A local MortalOS Lab
+
+- Base: `9791074ffe8f091b8007e09f2b3edd4080d4212b`
+- Branch: `agent/codex-protocol-kernel--h3-browser-lab`
+- Intended shared paths: the exact Lab, build/verification, workflow, documentation,
+  and agent-record paths declared in the active handoff
+- Result: added a one-page browser adapter over the portable kernel with three
+  dedicated non-extractable/sign-once custodian Workers, live `2-of-3` birth and
+  heartbeat, fixed reference turnover and falsification experiments, corpus replay,
+  and canonical public-evidence export/replay; the UI explicitly reports three
+  logical custodians as one physical/administrative failure domain
+- Verification: Lab unit tests and static build pass; real cross-origin-isolated
+  Chromium passes three clean contexts, every two-key pair, one-key/replay/fork/
+  post-fork/resurrection exact codes, 15 named plus six boundary and 10,000 seeded
+  corpus outcomes, SAB rejection, evidence digest/replay, storage/Service Worker/
+  request/console boundaries, accessibility semantics, narrow viewport, and reduced
+  motion; full `npm test`, actual Chromium differential, 98.05% line/93.50% branch/
+  100% function coverage, audit 0 vulnerabilities, 76-file package dry-run,
+  license/spec/governance, and diff checks pass; remote CI remains required on the
+  immutable PR head
+- Handoff: H3B public hosting is deliberately separate; `reviewer-merge-gate` must
+  inspect the immutable H3A diff and reject UI-side validity or ownerlessness claims
+
 ### YYYY-MM-DD — Task
 
 - Base: `<commit>`

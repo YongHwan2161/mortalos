@@ -47,7 +47,7 @@ Creation is a protocol operation, not a UI privilege.
 
 The verified `1-of-1` mode makes solitary creation possible. It is useful for a personal seed, ephemeral experiment, or CLI bootstrap, but it is not ownerless: one key can unilaterally continue or fork that lineage. The verified `1-of-1` to logical `2-of-3` handoff is the minimal protocol transition from creator-controlled birth toward distributed continuation authority; the generated-key proof itself remains one process and does not establish physical distribution.
 
-The planned single-browser incubator is an alternative visual bootstrap: three logical keys and a `2-of-3` descriptor live in one browser. It demonstrates quorum mechanics but remains one physical failure domain. For either profile, “ownerless continuation” requires deployment evidence that no physical or administrative domain controls the accepted threshold.
+The implemented H3A single-browser incubator is an alternative visual bootstrap: three logical keys and a `2-of-3` descriptor live in one browser. It demonstrates quorum mechanics but remains one physical failure domain. For either profile, “ownerless continuation” requires deployment evidence that no physical or administrative domain controls the accepted threshold.
 
 ## 4. What “any access method” means
 

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>MortalOS Lab — lifecycle protocol workbench</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#live-lab">Skip to the live Lab</a>
+    <header class="hero">
+      <div class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>MortalOS / local H3A proof</div>
+      <h1>A lifecycle you can try to break.</h1>
+      <p class="lede">Create a cryptographic organism in three browser Workers, test its 2-of-3 continuation rule, then inspect a deterministic public lineage through the same portable kernel.</p>
+      <div class="hero-chips" aria-label="Proof boundary summary">
+        <span>Backend authority: none</span>
+        <span>Logical custodians: 3</span>
+        <span>Failure domains: 1</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="boundary panel" aria-labelledby="boundary-title">
+        <div>
+          <p class="section-number">00 / proof boundary</p>
+          <h2 id="boundary-title">What this build proves</h2>
+        </div>
+        <div class="boundary-grid">
+          <article>
+            <h3>It proves</h3>
+            <p>Real non-extractable WebCrypto keys can co-sign canonical evidence that the existing MortalOS kernel accepts or rejects.</p>
+          </article>
+          <article>
+            <h3>It does not prove</h3>
+            <p>Three Workers are not three independent operators. v0 has no mutable state execution, participant transport, or globally provable death.</p>
+          </article>
+        </div>
+        <p class="warning"><strong>Persistent disclosure:</strong> 3 logical custodians / 1 physical and administrative failure domain. This page can command quorum.</p>
+      </section>
+
+      <section id="live-lab" class="panel" aria-labelledby="live-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">01 / live incubator</p>
+            <h2 id="live-title">Create in this browser</h2>
+          </div>
+          <span id="live-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Not created</span>
+        </div>
+        <p class="section-copy">Each dedicated Worker keeps one private key in memory. The page receives only public keys and signatures; the main-page kernel is the sole verdict authority.</p>
+
+        <div class="actions primary-actions">
+          <button id="create-live" class="button primary" type="button">Create live organism</button>
+          <button id="try-one" class="button" type="button" disabled>Try one signature</button>
+          <button id="complete-quorum" class="button" type="button" disabled>Add second signature</button>
+          <button id="replay-live" class="button" type="button" disabled>Replay accepted pulse</button>
+        </div>
+        <div class="signer-controls" aria-label="Heartbeat signer selection">
+          <label for="first-signer">First signer
+            <select id="first-signer">
+              <option value="0">Custodian A</option>
+              <option value="1">Custodian B</option>
+              <option value="2">Custodian C</option>
+            </select>
+          </label>
+          <label for="second-signer">Second signer
+            <select id="second-signer">
+              <option value="1">Custodian B</option>
+              <option value="2">Custodian C</option>
+              <option value="0">Custodian A</option>
+            </select>
+          </label>
+          <p>The second signer must be different; all three 2-key combinations are valid.</p>
+        </div>
+
+        <div class="metrics" aria-label="Live organism metrics">
+          <div class="metric"><span>Identity</span><strong id="live-identity">—</strong></div>
+          <div class="metric"><span>Continuation</span><strong id="live-sequence">—</strong></div>
+          <div class="metric"><span>Quorum</span><strong id="live-quorum">2 of 3</strong></div>
+          <div class="metric"><span>Failure domains</span><strong>1</strong></div>
+        </div>
+
+        <div id="custodian-cards" class="custodian-grid" aria-label="Custodian Workers">
+          <article class="custodian placeholder"><span>A</span><p>Waiting for creation</p></article>
+          <article class="custodian placeholder"><span>B</span><p>Waiting for creation</p></article>
+          <article class="custodian placeholder"><span>C</span><p>Waiting for creation</p></article>
+        </div>
+
+        <div class="verdict-grid">
+          <article class="verdict-card">
+            <span>One-key candidate</span>
+            <strong id="one-key-verdict">Not run</strong>
+            <p>The exact pending body is retained when the second signature is added.</p>
+          </article>
+          <article class="verdict-card">
+            <span>Two-key candidate</span>
+            <strong id="two-key-verdict">Not run</strong>
+            <p>Acceptance must come from <code>Lineage.append()</code>.</p>
+          </article>
+          <article class="verdict-card">
+            <span>Replay attempt</span>
+            <strong id="replay-verdict">Not run</strong>
+            <p>Reusing accepted evidence must not move the head.</p>
+          </article>
+        </div>
+
+        <div class="retirement">
+          <div>
+            <h3>Controlled local authority loss</h3>
+            <p>Terminates the three local signing Workers. This is not an erasure proof or a global death certificate.</p>
+          </div>
+          <button id="retire-live" class="button danger" type="button" disabled>Terminate local custodians</button>
+          <p id="retirement-result" class="wide-result" aria-live="polite">Not run</p>
+        </div>
+
+        <div class="export-row">
+          <div>
+            <h3>Experimental public evidence</h3>
+            <p>Exact canonical envelope and payload bytes only. No key capability or accepted-context object is serialized.</p>
+            <code id="export-digest">No bundle yet</code>
+          </div>
+          <button id="export-live" class="button" type="button" disabled>Export evidence</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="reference-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">02 / fixed public reference</p>
+            <h2 id="reference-title">One identity, complete custodian turnover</h2>
+          </div>
+          <span id="reference-status" class="status neutral" role="status" aria-live="polite">Not run</span>
+        </div>
+        <p class="section-copy">This is a committed, pre-signed public fixture—not the random organism above. Every experiment starts from raw evidence in a fresh lineage and asks the kernel again.</p>
+        <div class="timeline" aria-label="Reference custody timeline">
+          <span>A · B · C</span><i aria-hidden="true">→</i><span>B · C · D</span><i aria-hidden="true">→</i><span>C · D · E</span><i aria-hidden="true">→</i><span>D · E · F</span>
+        </div>
+        <button id="run-reference" class="button primary" type="button">Run reference experiments</button>
+        <div id="reference-results" class="reference-results" aria-live="polite">
+          <p class="empty-state">Replay, four mutations, signed fork, resurrection, conditional mortality, and clone separation will appear here.</p>
+        </div>
+      </section>
+
+      <section class="panel corpus-panel" aria-labelledby="corpus-title">
+        <div>
+          <p class="section-number">03 / cross-runtime contract</p>
+          <h2 id="corpus-title">Run the complete committed corpus</h2>
+          <p class="section-copy">A separate Worker runs the same 15 named negatives, six trust-boundary probes, and fixed-seed 10,000-case corpus, then compares the whole result with the committed reference.</p>
+        </div>
+        <div class="corpus-action">
+          <button id="run-corpus" class="button" type="button">Run corpus</button>
+          <strong id="corpus-result" role="status" aria-live="polite">Not run</strong>
+        </div>
+      </section>
+
+      <section class="panel log-panel" aria-labelledby="log-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">04 / public event log</p>
+            <h2 id="log-title">Kernel verdicts</h2>
+          </div>
+        </div>
+        <ol id="event-log" class="event-log" aria-live="polite">
+          <li>Lab ready. No organism or private key exists yet.</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      <p>MortalOS Lab H3A · static local build · protocol <code>mortalos/0</code></p>
+      <p>Browser first, never browser-only. <a href="./THIRD_PARTY_LICENSES.txt">Third-party licenses</a></p>
+    </footer>
+    <noscript>This Lab requires JavaScript to run the portable validation kernel.</noscript>
+  </body>
+</html>

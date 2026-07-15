@@ -5,43 +5,63 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — Post-merge mortality-proof correction
+### ACTIVE — H3A browser Lab
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `e332bdf639f6b8c4e39186087cde5e0470f7846f`
-- Work branch: `agent/codex-protocol-kernel--mortality-proof-correction`
+- Base: `9791074ffe8f091b8007e09f2b3edd4080d4212b`
+- Work branch: `agent/codex-protocol-kernel--h3-browser-lab`
 - Intended paths (exact):
+  - `.github/workflows/verify.yml`
   - `README.md`
+  - `THIRD_PARTY_NOTICES.md`
   - `agents/codex-protocol-kernel/HANDOFF.md`
   - `agents/codex-protocol-kernel/MEMORY.md`
+  - `agents/codex-protocol-kernel/README.md`
   - `agents/codex-protocol-kernel/WORKLOG.md`
   - `docs/ACCESS_ARCHITECTURE.md`
   - `docs/IMPLEMENTATION_PLAN.md`
   - `docs/PROJECT_STATUS.md`
-  - `docs/PROTOCOL.md`
-  - `docs/REJECTION_CODES.md`
   - `docs/SINGLE_BROWSER_INCUBATOR.md`
-  - `docs/THREAT_MODEL.md`
+  - `docs/SUBMISSION_CHECKLIST.md`
   - `docs/TRACEABILITY.md`
-  - `scripts/verify-portable.mjs`
+  - `lab/THIRD_PARTY_LICENSES.txt`
+  - `lab/app.mjs`
+  - `lab/corpus-summary.mjs`
+  - `lab/corpus-worker.mjs`
+  - `lab/custodian-worker.mjs`
+  - `lab/evidence-export.mjs`
+  - `lab/index.html`
+  - `lab/live-incubator.mjs`
+  - `lab/reference-engine.mjs`
+  - `lab/signing-policy.mjs`
+  - `lab/styles.css`
+  - `package.json`
+  - `scripts/build-lab.mjs`
+  - `scripts/serve-lab.mjs`
+  - `scripts/verify-lab.mjs`
   - `scripts/verify-spec.mjs`
-  - `src/codec.mjs`
-  - `src/lineage.mjs`
-  - `src/validator.mjs`
-  - `test/codec.test.mjs`
-  - `test/mortality.test.mjs`
-  - `test/portable-corpus.mjs`
-  - `test/portable-scenario.mjs`
-  - `test/vectors/portable-expected.json`
-- Contract affected: programmatic canonicalization and conservative observer-relative
-  mortality proof; ordinary strict Genesis/Pulse acceptance remains unchanged
-- Required evidence: full Node suite, coverage, exact actual-Chromium corpus,
-  dependency audit, package scan, trusted Agent PR Policy, Verify, and immutable-head
-  independent review
-- Expected handoff: a focused follow-up PR from current `main`; merged PR #2 remains
-  immutable and is not reopened or rewritten
+  - `test/lab.test.mjs`
+- Contract affected: browser adapter, volatile Worker custody, trace export, Lab
+  verification, and delivery documentation; the portable validator remains the sole
+  validity authority
+- Required evidence: focused Lab tests, full Node suite, actual Chromium judge path,
+  portable corpus equality, SAB rejection under cross-origin isolation, coverage,
+  audit, package scan, trusted Agent PR Policy, Verify, and immutable-head review
+- Expected handoff: a focused H3A PR from current `main`; the reviewer must reject
+  any UI-side validation logic, exported private material, or ownerlessness overclaim
 
 ## Completed handoffs
+
+### 2026-07-15 — Mortality-proof correction merged
+
+- PR: `#7`; final reviewed head:
+  `bc914d676b29a58efcd2ce6647ab04c727f10df3`
+- Squash merge on `main`:
+  `9791074ffe8f091b8007e09f2b3edd4080d4212b`
+- Result: conservative sign-once-aware mortality, semantic-invalid sidecar handling,
+  explicit irreversibility precedence, and current-base records passed independent
+  review plus pre- and post-merge Verify
+- Handoff: H3A may now consume the portable kernel without reopening the death proof
 
 ### 2026-07-15 — YAML lone-CR workflow identity hardening
 

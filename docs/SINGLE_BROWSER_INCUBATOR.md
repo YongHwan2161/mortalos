@@ -1,6 +1,6 @@
 # Single-Browser Incubator Profile
 
-Status: **planned browser deployment profile; hardened portable protocol core verified**
+Status: **H3A implemented and verified locally; public HTTPS deployment pending**
 
 Protocol: `mortalos/0`
 
@@ -8,16 +8,16 @@ Protocol: `mortalos/0`
 
 One person opening one page should be able to create a new organism without recruiting other people or devices, while visually demonstrating quorum and later handoff.
 
-The browser profile will:
+The local browser profile does:
 
 1. start three dedicated in-memory custodian Workers;
 2. generate and retain one non-persisted Ed25519 key per Worker;
 3. obtain all three Genesis approvals;
 4. create a `2-of-3` continuation descriptor;
-5. allow valid membership handoffs to independent endpoints; and
-6. lose all local continuation authority if the sole page closes before handoff, under controlled ephemeral-key assumptions.
+5. run a fixed public reference lineage through complete custodian turnover; and
+6. demonstrate local authority loss by controlled Worker termination under explicit ephemeral-key assumptions.
 
-The repository now contains the hardened portable validator and an actual-Chromium differential runner. Publication candidate `9eae8c34` produced the same then-current portable v3 result in Node 22, the isolated browser-target VM, and actual Chromium CI; every changed head must rerun that gate. The current cross-runtime corpus covers hostile byte metadata, strict points, falsey roots, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, and deterministic outcomes; Node conformance additionally covers stable first-error precedence and next-quorum activation insufficiency. Shared-memory rejection runs in Node and the isolated browser-target VM; an actual-browser `SharedArrayBuffer` case requires cross-origin isolation and remains an H3 deployment test. The repository does not yet contain the incubator Workers, browser signing, or remote handoff.
+The repository contains the hardened portable validator, three dedicated custodian Workers, browser signing, a reference falsification Lab, a static build, and actual-Chromium acceptance. The cross-origin-isolated test exposes `SharedArrayBuffer` and proves that SAB-backed validator input is rejected. It also checks non-extractable/sign-once Worker keys, all three quorum pairs, public-evidence export/replay, storage and Service Worker absence, request/console cleanliness, narrow viewport, and reduced motion. It does not implement remote handoff or prove independent failure domains.
 
 ## 2. Relationship to the singleton profile
 
