@@ -1,13 +1,13 @@
 import { ed25519 } from "@noble/curves/ed25519.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 import {
-  asBytes,
   asciiBytes,
   concatBytes,
   decodeBase64Url,
-  encodeBase64Url
+  encodeBase64Url,
+  equalBytes
 } from "./bytes.mjs";
-import { canonicalBytes } from "./codec.mjs";
+import { canonicalBytes, snapshotBytes } from "./codec.mjs";
 
 export const DOMAINS = Object.freeze({
   GENESIS_ID: "MORTALOS/V0/GENESIS-ID\0",
@@ -41,7 +41,7 @@ export function decodeTagged(value, prefix, length) {
 
 export function derivePeerId(publicKey) {
   const raw = decodeTagged(publicKey, "ed25519:", 32);
-  if (!raw) return null;
+  if (!raw || !strictPointBytes(raw)) return null;
   return tagged("peer:", hash(DOMAIN_BYTES.PEER_ID, raw));
 }
 
@@ -85,6 +85,35 @@ export function eventPayloadHash(payload) {
   return tagged("sha256:", hash(DOMAIN_BYTES.EVENT_PAYLOAD, canonicalBytes(payload)));
 }
 
+function copyBytes(value, expectedLength) {
+  try {
+    const copy = snapshotBytes(value, expectedLength ?? Number.MAX_SAFE_INTEGER);
+    if (expectedLength !== undefined && copy.length !== expectedLength) return null;
+    return copy;
+  } catch {
+    return null;
+  }
+}
+
+function strictPointBytes(value) {
+  const bytes = copyBytes(value, 32);
+  if (!bytes) return null;
+  try {
+    const point = ed25519.Point.fromBytes(bytes, false);
+    point.assertValidity();
+    if (point.isSmallOrder() || !point.isTorsionFree()) return null;
+    if (!equalBytes(point.toBytes(), bytes)) return null;
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+export function isStrictEd25519PublicKey(publicKey) {
+  const publicRaw = decodeTagged(publicKey, "ed25519:", 32);
+  return strictPointBytes(publicRaw) !== null;
+}
+
 export function verifyEd25519(publicKey, message, signature) {
   const publicRaw = decodeTagged(publicKey, "ed25519:", 32);
   const signatureRaw = decodeTagged(signature, "ed25519:", 64);
@@ -94,16 +123,12 @@ export function verifyEd25519(publicKey, message, signature) {
 }
 
 export function verifyEd25519Raw(publicKeyRaw, message, signatureRaw) {
-  const publicBytes = asBytes(publicKeyRaw);
-  const messageBytes = asBytes(message);
-  const signatureBytes = asBytes(signatureRaw);
-  if (
-    publicBytes?.length !== 32 ||
-    !messageBytes ||
-    signatureBytes?.length !== 64
-  ) {
-    return false;
-  }
+  const publicBytes = strictPointBytes(publicKeyRaw);
+  const messageBytes = copyBytes(message);
+  const signatureBytes = copyBytes(signatureRaw, 64);
+  if (!publicBytes || !messageBytes || !signatureBytes) return false;
+  const signatureR = strictPointBytes(signatureBytes.subarray(0, 32));
+  if (!signatureR) return false;
   try {
     return ed25519.verify(signatureBytes, messageBytes, publicBytes, { zip215: false });
   } catch {

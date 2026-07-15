@@ -45,7 +45,7 @@ Creation is a protocol operation, not a UI privilege.
 - Importing an existing Genesis and lineage is observation or reconstruction, not a second birth.
 - Network discovery MUST NOT grant custody. A participant becomes a custodian only through Genesis approval or an accepted membership handoff.
 
-The verified `1-of-1` mode makes solitary creation possible. It is useful for a personal seed, ephemeral experiment, or CLI bootstrap, but it is not ownerless: one key can unilaterally continue or fork that lineage. The verified `1-of-1` to `2-of-3` handoff is the minimal transition from creator-controlled birth toward distributed continuation authority.
+The verified `1-of-1` mode makes solitary creation possible. It is useful for a personal seed, ephemeral experiment, or CLI bootstrap, but it is not ownerless: one key can unilaterally continue or fork that lineage. The verified `1-of-1` to logical `2-of-3` handoff is the minimal protocol transition from creator-controlled birth toward distributed continuation authority; the generated-key proof itself remains one process and does not establish physical distribution.
 
 The planned single-browser incubator is an alternative visual bootstrap: three logical keys and a `2-of-3` descriptor live in one browser. It demonstrates quorum mechanics but remains one physical failure domain. For either profile, “ownerless continuation” requires deployment evidence that no physical or administrative domain controls the accepted threshold.
 
@@ -65,14 +65,13 @@ Transport envelopes may add routing, compression, encryption, chunking, or retry
 
 ## 5. Implemented evidence
 
-The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient-clock, or ambient-random dependency. One committed public corpus produces byte-identical results in:
+The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient-clock, or ambient-random dependency. One committed public corpus currently produces byte-identical local results in:
 
 - direct Node.js execution;
-- an isolated browser-target bundle;
-- actual headless Chromium; and
+- an isolated browser-target bundle; and
 - the committed expected-result document.
 
-The corpus covers RFC 8785 examples, RFC 8032 verification and mutation rejection, `1-of-1` birth, `2-of-3` lineage turnover, clone separation, forged acceptance contexts, authenticated latent succession, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, and 10,000 fixed-seed adversarial cases.
+The actual headless-Chromium runner is implemented, and publication candidate `9eae8c34` produced the same portable v3 result in Node 22, the browser-target realm, and actual Chromium CI. Every changed head must rerun that gate. The corpus covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, conditional current-approval completion, recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, six reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise every portable case. An actual-browser SAB case remains an H3 cross-origin-isolated deployment test.
 
 The current CLI adapter creates a fresh singleton and heartbeat entirely in memory. It does not yet persist a lineage, listen on a socket, discover peers, or provide a stable end-user command contract.
 
@@ -80,13 +79,13 @@ The current CLI adapter creates a fresh singleton and heartbeat entirely in memo
 
 The north star is a network-embodied entity whose identity, executable state, and continuation authority survive host replacement without becoming the property of one host or service. Endpoint neutrality is necessary because tying life to a browser would merely replace “server-owned” with “browser-runtime-owned.”
 
-Portability is not sufficient, however. The current kernel proves who may continue a lineage and when that authority is unavailable. The entity still lacks a deterministic genome, mutable content-addressed state, verifiable state availability, and participant-to-participant embodiment. Those are the next research layers.
+Portability is not sufficient, however. The current kernel validates who can authorize a successor and conditionally classifies reported authority availability under explicit observer assumptions. The entity still lacks a deterministic genome, mutable content-addressed state, verifiable state availability, and participant-to-participant embodiment. Those are the next research layers.
 
 ## 7. Ordered consequence
 
 The implementation order is:
 
-1. **portable life kernel** — complete and cross-runtime verified;
+1. **portable life kernel** — verified in Node 22, browser-target, and actual Chromium CI on publication candidate `9eae8c34`, with the same gate required for every changed head;
 2. **browser Lab adapter** — next delivery milestone for visual explanation and Devpost judging;
 3. **CLI contract** — stable create/import/verify/replay/export commands using the same corpus and trace format;
 4. **deterministic state-bearing kernel** — next foundational research milestone;

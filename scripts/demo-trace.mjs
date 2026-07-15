@@ -4,7 +4,6 @@ import {
   canonicalBytes,
   canonicalize,
   createLineage,
-  evaluateMortality,
   validateGenesis,
   validateLatentSuccessor
 } from "../src/index.mjs";
@@ -43,23 +42,25 @@ for (const step of vector.steps) {
     envelopeBytes: canonicalBytes(step.envelope),
     eventPayloadBytes: canonicalBytes(step.payload)
   };
-  const candidate = lineage.validateCandidate(input);
+  const candidate = lineage.verifyCandidate(input);
   if (step.id === "latent-handoff-3") {
     invariant(candidate.status === "accept", "pending latent candidate lacks complete valid authorization");
     const partialEnvelope = structuredClone(step.envelope);
     partialEnvelope.acceptances = [];
+    const partialInput = {
+      envelopeBytes: canonicalBytes(partialEnvelope),
+      eventPayloadBytes: canonicalBytes(step.payload)
+    };
     const partialLatent = validateLatentSuccessor({
       genesis,
       parent,
-      envelopeBytes: canonicalBytes(partialEnvelope),
-      eventPayloadBytes: canonicalBytes(step.payload)
+      ...partialInput
     });
     invariant(partialLatent.status === "latent", "current-quorum-approved partial successor was not recognized");
-    const latent = evaluateMortality({
-      head: parent,
+    const latent = lineage.evaluateMortality({
       usableKeyIds: [],
       stateAvailable: true,
-      latentSuccessors: [partialLatent],
+      pendingSuccessors: [partialInput],
       authorityLossIrreversible: true
     });
     invariant(latent.status === "latent_successor_not_dead", "latent successor was misclassified as death");
@@ -108,8 +109,7 @@ events.push({
 const finalLabels = labelsFor(parent.next_custody_descriptor);
 invariant(finalLabels.every((label) => !["A", "B", "C"].includes(label)), "original custodian survived turnover");
 
-const stateStalled = evaluateMortality({
-  head: parent,
+const stateStalled = lineage.evaluateMortality({
   usableKeyIds: parent.next_custody_descriptor.custodians.map((entry) => entry.key_id),
   stateAvailable: false
 });
@@ -123,11 +123,10 @@ events.push({
   state_viable: stateStalled.state_viable
 });
 
-const dead = evaluateMortality({
-  head: parent,
+const dead = lineage.evaluateMortality({
   usableKeyIds: [vector.actors.F.key_id],
   stateAvailable: true,
-  latentSuccessors: [],
+  pendingSuccessors: [],
   authorityLossIrreversible: true
 });
 invariant(dead.status === "dead_under_v0_assumptions", "irreversible below-quorum authority loss was not death");
@@ -171,7 +170,7 @@ events.push({
 });
 
 const trace = {
-  format: "mortalos-lifecycle-trace/2",
+  format: "mortalos-lifecycle-trace/3",
   protocol: "mortalos/0",
   scenario: "birth-succession-death-resurrection-rejection-clone",
   events,
@@ -180,6 +179,7 @@ const trace = {
     organism_id_preserved_through_succession: true,
     accepted_object_replay_rejected: true,
     latent_successor_survived_key_loss: true,
+    mortality_bound_to_lineage_recognized_head: true,
     state_loss_reported_as_stalled_not_dead: true,
     authority_death_reported_only_after_pending_set_drained: true,
     public_snapshot_cannot_resurrect_lineage: true,
@@ -189,6 +189,22 @@ const trace = {
 trace.trace_sha256 = createHash("sha256").update(canonicalize(trace)).digest("hex");
 
 if (verifyOnly) {
+  const expected = JSON.parse(
+    await readFile(new URL("../test/vectors/h2-trace.expected.json", import.meta.url), "utf8")
+  );
+  const expectedWithoutDigest = structuredClone(expected);
+  delete expectedWithoutDigest.trace_sha256;
+  const expectedDigest = createHash("sha256")
+    .update(canonicalize(expectedWithoutDigest))
+    .digest("hex");
+  invariant(
+    expected.trace_sha256 === expectedDigest,
+    "committed H2 golden trace has a stale or forged digest"
+  );
+  invariant(
+    canonicalize(trace) === canonicalize(expected),
+    `H2 trace differs from committed golden trace: ${trace.trace_sha256}/${expected.trace_sha256}`
+  );
   console.log(`MortalOS H2 trace verification: PASS (${trace.trace_sha256})`);
 } else {
   console.log(JSON.stringify(trace, null, 2));

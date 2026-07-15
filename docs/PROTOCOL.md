@@ -8,7 +8,7 @@ This document uses **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY
 
 ## 1. Protocol purpose
 
-MortalOS v0 defines how an entity can have one recognized identity and an authorized state lineage even though every physical host is replaceable. The protocol permits a creator-controlled `1-of-1` bootstrap; the stronger “no individual can continue it alone” property begins only after an accepted custody descriptor has threshold greater than one.
+MortalOS v0 defines how an entity can have one recognized identity and an authorized state lineage even though every physical host is replaceable. The protocol permits a creator-controlled `1-of-1` bootstrap; when an accepted custody descriptor has threshold greater than one, no single custodian key or logical slot can continue alone. A stronger no-individual or no-failure-domain claim requires external deployment evidence that no one controller or domain holds the active threshold.
 
 The protocol does **not** attempt to prove that all copies of data have been deleted. It defines death as loss of the capability to create another valid state in the same lineage under the declared system and threat model.
 
@@ -63,9 +63,13 @@ To keep untrusted-input failure deterministic across implementations, v0 fixes t
 | Genesis or Pulse envelope | 65,536 | 64 |
 | Event-payload sidecar | 262,144 | 64 |
 
-An implementation MUST enforce the byte bound before UTF-8 decoding and the depth bound during duplicate-aware parsing. Exceeding either bound returns `E_PARSE_LIMIT_EXCEEDED` for an envelope or `E_EVENT_PAYLOAD_INVALID` with deterministic detail `E_PARSE_LIMIT_EXCEEDED` for a payload. These limits are consensus input rules, not UI policy.
+An implementation MUST obtain the raw length through trusted typed-array intrinsics, enforce the byte bound before UTF-8 decoding, and validate an owned immutable snapshot for the remainder of that operation. It MUST NOT trust overrideable `byteLength`, `byteOffset`, `buffer`, or tag properties. A view backed by a `SharedArrayBuffer` is not a stable validation input and MUST be rejected.
 
-For v0 keyed arrays, ascending order means lexicographic comparison of the complete ASCII `key_id` bytes as unsigned bytes. Because the v0 prefix and base64url alphabet are ASCII, this is also Unicode code-point order for these strings; locale-sensitive collation MUST NOT be used.
+Programmatic canonicalization MUST accept only primitives, dense arrays without extra properties, and plain or null-prototype records whose own properties are enumerable string-keyed data descriptors. It MUST reject sparse arrays, class instances and other values whose observed structure is not such a record or array, symbol or non-enumerable properties, accessors, cycles, and `undefined`, function, symbol, or bigint values rather than elide or rewrite them. Acceptance is defined over one structural view: the canonicalizer performs one prototype read and one own-descriptor snapshot, and it never invokes an own accessor exposed in the resulting snapshot. Proxies are classified solely by the structural view they expose; their traps and descriptor-conversion code may execute, so hostile callers that require side-effect-free origin validation MUST reject proxies before this portable boundary. Revoked proxies and throwing structural views MUST fail with `E_PARSE_NON_IJSON`. Only values in the I-JSON data model may enter hashing or signing.
+
+Container depth counts the root object or array as depth 1; a scalar root has depth 0. A depth-64 document is valid and a depth-65 document is rejected. Exceeding either the byte or depth bound returns `E_PARSE_LIMIT_EXCEEDED` for an envelope or `E_EVENT_PAYLOAD_INVALID` with deterministic detail `E_PARSE_LIMIT_EXCEEDED` for a payload. These limits are consensus input rules, not UI policy.
+
+For v0 keyed arrays, ascending order means lexicographic comparison by unsigned UTF-16 code units, matching JCS property ordering. This comparison is applied to every structurally valid string before binary-encoding checks, including a malformed non-ASCII `key_id`, so first-error precedence is deterministic. For a valid v0 `key_id`, the prefix and base64url alphabet are ASCII, making this order identical to unsigned ASCII-byte and Unicode code-point order. Locale-sensitive collation MUST NOT be used.
 
 The JSON Schemas define envelope shape, required fields, unknown-field exclusion, and JSON value types. Protocol encodings and semantic ranges—including prefixed base64url lengths, supported event kinds, custodian count, quorum range, and approval sufficiency—are intentionally enforced by the semantic validator so their stable rejection codes remain reachable. Schema success alone never establishes protocol validity.
 
@@ -81,6 +85,19 @@ The JSON Schemas define envelope shape, required fields, unknown-field exclusion
 | Genesis nonce | `nonce:` + 22 base64url characters | 16 bytes |
 
 Padding (`=`), standard base64 characters (`+`, `/`), or incorrect decoded lengths MUST be rejected.
+
+### 2.3 Strict Ed25519 profile
+
+The 32-byte encoding of every custodian public key and the `R` component of every Ed25519 signature MUST:
+
+1. decode as a canonical Edwards25519 point;
+2. be in the prime-order subgroup;
+3. be torsion-free and neither small-order nor mixed-order; and
+4. round-trip to the exact supplied encoding.
+
+The signature scalar `S` MUST use its canonical RFC 8032 range. Verification MUST use strict RFC 8032 semantics, not permissive cofactored or ZIP-215 acceptance. A public key that has valid base64url length but fails this point profile returns `E_PUBLIC_KEY_INVALID_POINT` before peer-ID comparison. Invalid signature `R` or `S` returns the applicable approval or acceptance signature-invalid code.
+
+`peer_id` derivation is defined only for a public key that passes this strict profile. An invalid or aliased point MUST NOT receive a valid custodian key ID. The reference uses pinned portable Noble dependencies for SHA-256 and this strict verification policy.
 
 ## 3. Domain separation
 
@@ -147,7 +164,7 @@ A custodian holds authority only as part of a valid quorum. Custodian status is 
 
 ### 4.3 Genome
 
-The **genome** is an immutable content commitment identified by `genome_hash`. It names the intended transition-rule artifact, but MortalOS v0 does not execute that artifact or accept logical state transitions. The v0 `state_root` remains equal to the Genesis state root for every Pulse.
+The **genome** is an intended immutable transition-rule artifact named by the opaque declared `genome_hash`. MortalOS v0 authenticates that declaration but does not receive the artifact bytes, derive or verify their hash, execute the artifact, or accept logical state transitions. An observer that obtains the artifact through an external channel may check the hash independently. The v0 `state_root` declaration remains equal to the Genesis declaration for every Pulse.
 
 A later protocol may define a deterministic genome ABI and execution runtime. That change requires a protocol-version and threat-model revision; merely supplying an implementation-specific callback is insufficient for consensus determinism.
 
@@ -185,7 +202,7 @@ Every Pulse after Genesis MUST name exactly one parent and increment its parent'
 
 ### 4.8 Recognized head
 
-For a validator's known message set, the **recognized head** is the unique highest accepted Pulse reachable from Genesis while the accepted graph is linear.
+For a validator's known message set, the **recognized head** is the unique highest accepted object reachable from Genesis—Genesis itself before any Pulse, otherwise the highest accepted Pulse—while the accepted graph is linear.
 
 If two distinct, individually valid Pulses share one accepted parent, the validator MUST enter `FORKED` state and MUST NOT automatically choose either child. A deterministic winner rule is intentionally absent in v0; Byzantine fork resolution is out of scope.
 
@@ -203,9 +220,9 @@ Authority viability is an ontic property. It need not be observable to any one p
 
 ### 4.11 State-viable
 
-A lineage is **state-viable within observation domain O** if and only if O contains enough state material to reconstruct the logical state committed by the recognized head.
+A lineage is **state-viable within observation domain O** if and only if O reports enough externally associated material to reconstruct the logical state that O associates with the recognized head's opaque declared `state_root`.
 
-MortalOS v0 commits to state integrity but does not include a proof-of-retrievability or state-recovery protocol. State viability is therefore observer-domain-relative and is not inferred from a heartbeat signature.
+MortalOS v0 authenticates and preserves an opaque declared `state_root`, but it does not receive state bytes, derive or verify that root, execute the genome, or include proof-of-retrievability or recovery. The definition above is therefore an external observer classification, not a v0 validator result. Content binding and deterministic transition begin at R2; availability/recovery begins at R3. State viability is observer-domain-relative and is not inferred from a heartbeat signature.
 
 ### 4.12 Alive
 
@@ -217,7 +234,7 @@ A lineage is **continuable to observer O** when O has current cryptographic evid
 
 ### 4.14 State-stalled
 
-A lineage is **state-stalled within observation domain O** if and only if it remains authority-viable but O cannot reconstruct the state committed by the recognized head. A state-stalled lineage may still authorize a heartbeat or custody change and therefore is not protocol-dead in v0.
+A lineage is **state-stalled within observation domain O** if and only if it remains authority-viable but O does not report enough externally associated material to reconstruct the logical state it associates with the recognized head's opaque declared `state_root`. A state-stalled lineage may still authorize a heartbeat or custody change and therefore is not protocol-dead in v0.
 
 ### 4.15 Dormant
 
@@ -244,22 +261,31 @@ In the v0 honest-custodian model, quorum intersection plus the sign-once rule pr
 
 ### 4.18 Latent successor
 
-A **latent successor** is a not-yet-accepted candidate for which enough durable approval or acceptance evidence already exists that the candidate can still become valid without any new signature from the current custody quorum.
+A **latent successor** is a not-yet-accepted candidate whose verified durable evidence, combined only with signatures still producible by explicitly usable current keys and required new-custodian acceptances, can make the same Pulse body valid without a new signature from any current key assumed lost.
 
-Destroying current private keys does not invalidate signatures already produced. In particular, a fully signed heartbeat or a current-quorum-approved membership change that can later collect only new-custodian acceptances may survive authority loss. Protocol death therefore requires accounting for latent successors, not merely counting remaining private keys.
+For one exact candidate body, let `A` be the verified supplied current-approval IDs, `N` the next-custodian IDs, `X` the verified supplied new-custodian acceptance IDs, and `M` the missing required new-custodian acceptance IDs. Let `U` be the one set of current IDs reported usable for the entire mortality evaluation. The lineage snapshots `U` once and reuses the same set for every candidate body; usability is not supplied or varied per candidate. Conditional completion is feasible only when both:
 
-The reference implementation represents latent succession with a non-cloneable validated evidence result. It verifies the complete candidate through current-quorum authorization, verifies every supplied new-custodian acceptance, and lists only the missing new-custodian acceptances. An integer count or hand-built “latent” object is not evidence.
+```text
+|A union U| >= current threshold
+|((A union U) intersect N) union X union M| >= next threshold
+```
+
+Ordinary Pulse acceptance remains stricter: it counts supplied signatures only. Conditional mortality analysis may instead return a non-accepting latent result with deterministic `missing_current_approval_key_ids` and `missing_acceptance_key_ids`. Destroying a key does not revoke its durable signature, while a key in the global `U` snapshot is assumed able to produce a body-bound signature for any candidate considered during that one evaluation.
+
+Approvals and acceptances sign the Pulse body, not their carrier envelope, sidecar, array placement, or `key_id` label. The lineage therefore snapshots the usable-key observation once and independently pools parseable candidate bodies, signature strings found in either evidence array, and payload sidecars indexed by their canonical content hash. For each exact body it cryptographically remaps every pooled signature to an eligible current approver or new-custodian acceptor under the appropriate domain, deduplicates by the verified signer ID, and matches a sidecar through the body's signed `payload_hash`. A signature from a different body cannot verify and therefore cannot cross-union. Missing or misleading unsigned carrier metadata cannot hide a valid observed signature; invalid signatures never contribute or poison valid evidence. A fully recomposed envelope is passed through ordinary `validatePulse` first. Only an incomplete result is considered by a separately branded internal conditional validator that is intentionally not re-exported by the supported `src/index.mjs` API.
+
+Public `validateLatentSuccessor` remains durable-evidence-only: its supplied approvals must already meet the current quorum, and only required new-custodian acceptances may be absent. `Lineage#evaluateMortality` never accepts a caller-built conditional capability and returns only an observer classification. An integer count, public key-ID list, or hand-built “latent” object is not authority evidence.
 
 ### 4.19 Death
 
 A lineage is **protocol-dead in v0** if and only if both conditions hold under the stated observation domain and honest-ephemeral-key assumptions:
 
 1. fewer usable current private keys remain than the quorum requires and that authority loss is irreversible; and
-2. no latent successor exists that can become valid without new signatures from the lost current quorum.
+2. no observed pending body satisfies the conditional-completion rules above without a new signature from a current key assumed lost, after cryptographically reconstructing every compatible body-bound signature and matching sidecar.
 
-Loss of logical state alone is not protocol death in v0 because current custodians can still authorize a heartbeat or membership change using the committed state root. Such a condition is `state-stalled`. A later protocol may make a verifiable state-availability capability indispensable, but it MUST define the evidence and validation rule before claiming state loss as lineage death.
+Loss of externally associated logical state alone is not protocol death in v0 because current custodians can still authorize a heartbeat or membership change that repeats the authenticated opaque `state_root` declaration. Such a condition is `state-stalled`. A later protocol may make a verifiable state-availability capability indispensable, but it MUST define the evidence and validation rule before claiming state loss as lineage death.
 
-Death does not require historical bytes, public keys, Genesis, Pulses, genome artifacts, or state commitments to disappear. Those artifacts may remain readable.
+Death does not require historical bytes, public keys, Genesis, Pulses, genome artifacts, externally associated state material, or authenticated root declarations to disappear. Those artifacts and declarations may remain readable.
 
 An observer cannot generally prove that no unobserved key or state copy exists. Therefore v0 defines no globally authoritative `death_certificate` message. UIs MAY report `presumed dead` under a stated local policy but MUST distinguish it from protocol-proven invalidity of a candidate Pulse.
 
@@ -301,6 +327,7 @@ For v0:
 
 - custodian count MUST be between 1 and 16 inclusive;
 - `key_id` and public key MUST be unique;
+- every public key MUST satisfy the strict Ed25519 point profile in section 2.3;
 - each `key_id` MUST equal the derived peer ID of its public key;
 - threshold MUST be at least 1 and no greater than custodian count;
 - threshold MUST be a strict majority: `2 * threshold > custodian_count`; and
@@ -328,7 +355,15 @@ Failure-domain distribution is deployment evidence and MUST NOT be inferred from
 A valid Pulse may replace custodians. It requires:
 
 1. valid approvals satisfying the current parent-derived quorum; and
-2. one valid custody acceptance from every public key newly added to `next_custodians`.
+2. one valid custody acceptance from every public key newly added to `next_custodians`; and
+3. evidence that can activate the resulting next quorum.
+
+Define the activation set as the union of:
+
+- valid current approval signer IDs that also appear in `next_custodians`; and
+- valid acceptance signer IDs for newly added custodians.
+
+The activation-set cardinality MUST be at least `next_quorum.threshold`, otherwise ordinary validation returns `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT`. For example, changing `{A,B,C}` from `2-of-3` to `3-of-3` with supplied approvals only from A and B remains rejected. In conditional mortality analysis, that same body is completable when C is explicitly usable: C's missing approval is required for activation and is reported rather than treated as supplied. A conditional candidate may likewise count each listed missing required new-custodian acceptance as potential activation because the candidate cannot become complete until that key signs.
 
 New custodians have no authority before the handoff Pulse is accepted. Removed custodians have no authority after it is accepted.
 
@@ -346,7 +381,7 @@ The structural schema is [`schemas/genesis.schema.json`](../schemas/genesis.sche
 | `body.signature_algorithm` | MUST equal `ed25519`. |
 | `body.genome_hash` | MUST be a correctly encoded SHA-256 digest. |
 | `body.initial_state_root` | MUST be a correctly encoded SHA-256 digest. |
-| `body.initial_custodians` | MUST satisfy all custody rules and be strictly sorted. |
+| `body.initial_custodians` | MUST satisfy all custody rules, including the strict Ed25519 profile, and be strictly sorted. |
 | `body.initial_quorum` | MUST satisfy threshold and strict-majority rules. |
 | `body.nonce` | MUST be the canonical encoding of exactly 16 bytes. A creator MUST randomly sample it for a distinct birth; validators do not assert global freshness. |
 | `approvals` | MUST contain exactly one valid Genesis approval from every initial custodian, sorted by `key_id`, with no other signers. |
@@ -371,10 +406,10 @@ The structural schema is [`schemas/pulse.schema.json`](../schemas/pulse.schema.j
 | `body.state_root` | MUST be a correctly encoded SHA-256 digest and equal the parent state root for every v0 event. |
 | `body.event.kind` | MUST be one of the v0 event kinds below. |
 | `body.event.payload_hash` | MUST equal `event_payload_hash` of the exact canonical event-payload sidecar supplied in validation context. |
-| `body.next_custodians` | MUST satisfy all custody rules and be strictly sorted. |
+| `body.next_custodians` | MUST satisfy all custody rules, including the strict Ed25519 profile, and be strictly sorted. |
 | `body.next_quorum` | MUST satisfy threshold and strict-majority rules. |
 | `approvals` | MUST contain unique valid signatures from current custodians meeting the parent-derived quorum. |
-| `acceptances` | MUST contain exactly one valid custody-acceptance signature from every newly added custodian and no others. |
+| `acceptances` | MUST contain exactly one valid custody-acceptance signature from every newly added custodian and no others; approvals retained in next custody plus new acceptances MUST activate the next threshold. |
 
 ### 7.2 Event-specific rules
 
@@ -408,28 +443,37 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 - the parent state root;
 - the exact canonical event-payload sidecar bytes;
 - the known accepted graph needed to reject replay and detect alternative valid children as forks; and
-- known pending approval and acceptance artifacts needed to detect a latent successor in a controlled mortality evaluation.
+- raw pending body/evidence fragments and any matching payload sidecars needed to detect a latent successor in a controlled mortality evaluation.
 
 An implementation MUST establish that context itself. In-process accepted results MAY be represented by an unforgeable capability; across persistence or process boundaries, the implementation MUST replay canonical Genesis/Pulse bytes and rebuild the accepted graph. Callers MUST NOT obtain authority by supplying a plain object with acceptance-shaped fields.
 
+Mortality evaluation MUST be an operation on that lineage graph. The lineage supplies its unique current recognized head, snapshots the explicitly usable current IDs once, and independently collects parseable bodies, signature strings, and content-addressed sidecars from raw `pendingSuccessors`. It then reconstructs evidence separately for each exact canonical body. The same usable-key snapshot drives both current authority count and body-specific completion analysis. A caller MUST NOT inject a head, accepted result, or latent capability. Mutation of the lineage is blocked while pending-input getters are observed. If recomposition reveals two distinct fully valid children, the lineage records the fork before any mortality classification. When the graph is forked there is no unique recognized head, so mortality MUST remain unclassified and return the fork state.
+
 No endpoint type, network, UI, AI, or wall-clock input is part of protocol validity.
 
-This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Its committed result is byte-identical in Node and Chromium; a second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
+This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Publication candidate `9eae8c34` produced byte-identical committed, Node 22, isolated browser-target, and actual Chromium results; every changed head must rerun that CI gate. A second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
+
+Validators MUST be total over untrusted public input: they return `Accept`, `Latent`, or `Reject` and MUST NOT leak a platform exception. An unexpected internal failure maps to `E_VALIDATOR_INTERNAL`.
 
 Validators MUST evaluate in the following order and return the first applicable rejection code from [`REJECTION_CODES.md`](REJECTION_CODES.md):
 
 1. envelope and event-payload byte decoding and JSON parsing;
 2. envelope schema, payload-object, and unknown-field validation;
-3. canonical encoding and array ordering for both envelope and payload;
+3. canonical encoding plus keyed-array ordering and duplicate-ID checks for both envelope and payload;
 4. protocol version and algorithm identifiers;
 5. derived identifiers, key IDs, hashes, and commitments;
 6. Genesis or parent context;
 7. sequence, parent, lineage, genome, and event semantics;
-8. signer eligibility, signature validity, duplicate evidence, and quorum;
-9. new-custodian acceptance validation; and
-10. replay, equivocation, and fork-context checks.
+8. current signer eligibility, signature validity, and quorum;
+9. new-custodian acceptance validation and missing-acceptance handling;
+10. next-quorum activation proof; and
+11. replay, equivocation, and fork-context checks.
+
+For Pulse stages 1–3, observable failure precedence is envelope byte/UTF-8/JSON, payload presence/byte/UTF-8/JSON, envelope schema, payload-object shape, envelope canonical bytes, payload canonical bytes, then keyed-array ordering/duplicate IDs. Implementations MAY acquire an owned payload snapshot early, but an acquisition failure MUST NOT overtake an earlier envelope decoding or JSON failure.
+
+Within schema processing, implementations MUST normalize validator-library output rather than trust library enumeration order. Any `additionalProperties` failure takes precedence, then wrong top-level `kind`, then the lexicographically first normalized `(JSON Pointer, schema keyword)` failure, compared by unsigned UTF-16 code units as in JCS property ordering. Protocol version and algorithm values are semantic checks after canonical encoding, not schema-library `const` decisions. This makes multi-fault inputs produce the same first code across runtimes and schema engines.
 
 Validation returns one of:
 
@@ -446,6 +490,7 @@ Latent {
   organism_id,
   object_hash,
   parent_hash,
+  missing_current_approval_key_ids[],
   missing_acceptance_key_ids[]
 }
 
@@ -478,7 +523,7 @@ The following table prevents a UI from converting uncertainty into a false death
 | Known minority component | `partitioned / stalled` | Entire lineage is dead. |
 | Current candidate lacks quorum | `candidate rejected` | No other valid candidate can exist. |
 | Volatile keys intentionally destroyed below quorum under controlled test | `dead under v0 test assumptions` | Every possible copy was physically erased. |
-| Below-quorum keys but a pre-authorized child remains pending | `latent successor / not dead` | Key destruction retroactively revoked existing signatures. |
+| Below-quorum keys but same-body durable evidence plus explicitly usable signers can complete a child | `latent successor / not dead` | Only already quorum-complete envelopes may count. |
 | Two valid children of one parent | `forked` | Silently select a winner. |
 
 ## 11. Clone procedure
@@ -499,12 +544,15 @@ A v0 implementation is conforming only if it:
 
 - validates the exact schemas;
 - implements the domain-separated derivations above;
+- enforces the strict Ed25519 public-key, signature-`R`, and scalar profile before deriving or counting authority;
 - follows the deterministic validation order;
 - implements every field rule and event-specific rule;
 - requires and verifies the exact canonical event-payload sidecar;
 - exposes stable rejection codes;
-- treats acceptance and latent-successor evidence as validator-produced capabilities or reconstructs them from canonical raw evidence;
+- treats acceptance and public durable latent evidence as validator-produced capabilities, and reconstructs observer-conditional completion only by cryptographically matching independently observed bodies, signatures, and sidecars plus one usable-key snapshot;
+- proves next-quorum activation for every membership result;
 - uses an accepted-object graph to reject replay and expose forks;
+- evaluates mortality only from the graph-recognized current head; remaps pooled signatures by verification for each exact candidate body; runs ordinary acceptance before an internal conditional validator that is not re-exported by the supported `src/index.mjs` API; blocks reentrant mutation; and leaves forks unclassified;
 - never treats GPT, endpoint type, UI, transport, or signaling output as authority;
 - enters `FORKED` instead of silently resolving two valid siblings; and
 - states the mortality limitations from the threat model in user-facing documentation.

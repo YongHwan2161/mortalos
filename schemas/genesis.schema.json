@@ -90,13 +90,13 @@
       ],
       "properties": {
         "protocol_version": {
-          "const": "mortalos/0"
+          "type": "string"
         },
         "hash_algorithm": {
-          "const": "sha-256"
+          "type": "string"
         },
         "signature_algorithm": {
-          "const": "ed25519"
+          "type": "string"
         },
         "genome_hash": {
           "$ref": "#/$defs/digest"

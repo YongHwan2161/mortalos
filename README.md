@@ -10,15 +10,16 @@ The current artifact is a verified **portable protocol and evidence kernel with 
 
 Implemented:
 
-- portable `Uint8Array` processing with duplicate-aware UTF-8/I-JSON parsing and RFC 8785 canonicalization;
-- eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification;
+- portable `Uint8Array` processing with intrinsic-backed immutable snapshots, `SharedArrayBuffer` rejection, duplicate-aware UTF-8/I-JSON parsing, exact root-depth limits, and RFC 8785 canonicalization;
+- eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification, including canonical prime-subgroup checks for public keys and signature points;
 - Genesis and Pulse validation for strict-majority custody descriptors from `1-of-1` through 16 custodians;
-- non-forgeable, recursively frozen validation contexts;
+- total public validators with stable first-error precedence, non-forgeable recursively frozen contexts, and supplied-evidence-only public latent validation;
+- membership handoff validation that proves the declared next quorum can activate from supplied approval and acceptance evidence;
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
-- evidence-backed latent-successor and conditional mortality evaluation;
-- a public singleton birth/heartbeat, a verified `1-of-1` to `2-of-3` authority expansion, and the complete A/B/C → D/E/F lifecycle;
-- a committed result corpus with 15 named negative cases and 10,000 seeded adversarial cases; and
-- byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results.
+- recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; and combines it only with one explicit usable-key snapshot;
+- a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
+- a v3 committed result corpus with 15 named negatives, six reported trust-boundary outcomes, a strict-reject/conditional-completion case, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
+- byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results on publication candidate `9eae8c34`; every changed head reruns that CI gate, while the browser `SharedArrayBuffer` case additionally requires the H3 cross-origin-isolated deployment profile.
 
 Not implemented:
 
@@ -44,12 +45,12 @@ npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification gates, 26 conformance tests, the committed cross-runtime corpus, a fixed-seed 10,000-case property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification/governance gates, 55 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
 Expected H2 trace digest:
 
 ```text
-1393d92d0d42dea697551c67458d52c59f92ee1067d6dedb1c21225c977ab606
+b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36
 ```
 
 Committed vectors contain public verification material only. Tests that need signing keys generate them in memory and do not persist them.
@@ -62,7 +63,7 @@ MortalOS counts distinct eligible custodian **key IDs**, not people, tabs, brows
 - **Single-browser incubator (`2-of-3`)**: one planned page holds three logical keys and can satisfy quorum by itself. It remains one physical failure domain.
 - **Distributed `2-of-3`**: no physical or administrative domain holds two keys, so no one domain can continue alone.
 
-The verified singleton can hand authority to `2-of-3` without changing `organism_id`. After that handoff, the original sole key is insufficient while two eligible keys can advance. This makes the distinction explicit: creation may begin locally, but ownerless continuation is a property of the accepted custody distribution, not the UI used to create it.
+The verified singleton can hand logical custody authority to `2-of-3` without changing `organism_id`. After that handoff, the original sole key is insufficient while two eligible keys can advance. This makes the distinction explicit: creation may begin locally, but ownerless continuation depends on the deployment distribution of keys in the accepted custody descriptor, backed by external failure-domain evidence—not on the UI or descriptor alone.
 
 Closing a browser or CLI process is not automatically a protocol death fact. Mortality remains conditional on the declared ephemeral-key policy, irreversibility, known latent evidence, and observation domain.
 
@@ -76,7 +77,8 @@ The browser is not a protocol boundary. Browser, CLI, native, service, embedded,
 
 ```text
 singleton birth and heartbeat
-  -> optional handoff to distributed 2-of-3 authority
+  -> optional handoff to logical 2-of-3 authority
+     (physical distribution requires external evidence)
 
 birth {A,B,C}
   -> handoff {B,C,D}
@@ -98,7 +100,7 @@ A public signed-fork fixture also proves `E_FORK_DETECTED`, one intersecting equ
 
 Use `createLineage` for recognized-head, replay, and fork behavior. After restart, replay canonical Genesis/Pulse evidence to reconstruct the graph; never persist or trust an `accepted: true` object.
 
-`evaluateMortality` is a controlled-experiment observer, not a global death oracle. Key availability, state availability, irreversibility, and absence of hidden copies remain declared assumptions.
+`Lineage#evaluateMortality` is a controlled-experiment observer, not a global death oracle. It supplies the recognized head, blocks reentrant graph mutation, snapshots usable current keys once, and reuses that one global observation while reconstructing every possible successor from independently carried bodies, signatures, and payload sidecars. Unsigned carrier labels do not establish signer identity or evidence role; signatures are remapped only by successful domain-separated verification for an exact body. Public callers cannot inject an accepted head or obtain the separately branded internal conditional validator, which is intentionally not re-exported by the supported `src/index.mjs` API. Global usable-key availability, state availability, irreversibility, and absence of hidden copies remain declared observer assumptions.
 
 ## Documentation
 
