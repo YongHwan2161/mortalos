@@ -31,7 +31,7 @@ The reference core verifies:
 - parent resolution from an accepted-object graph;
 - replay rejection, fork evidence, intersecting signer evidence, and post-fork halt;
 - complete A/B/C → D/E/F custodian turnover with stable identity;
-- single-read public validation of complete and durable acceptance-incomplete successors, plus lineage-internal conditional completion from coalesced body-bound evidence and one global usable-key snapshot reused across every candidate body;
+- single-read public validation of complete and durable acceptance-incomplete successors, plus lineage-internal completion from independently collected body/signature/sidecar evidence, one early usable-key snapshot filtered per body by sign-once commitments, unclassified authenticated equivocation, and conditional payload-unavailability after irreversible authority loss when an opaque membership body is the sole obstacle to a death conclusion;
 - conditional authority/state mortality states scoped to the graph-recognized head;
 - 10,000 deterministic mixed valid/invalid continuation cases; and
 - byte-identical H2 v3 traces in fresh processes.
@@ -45,10 +45,10 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 ### Implemented boundary
 
 - portable `Uint8Array`, base64url, UTF-8, and constant-time comparison helpers;
-- intrinsic-backed owned byte snapshots that reject shared or detached storage and preserve exact root-depth semantics;
+- intrinsic-backed owned byte snapshots that reject shared or detached storage and preserve exact root-depth semantics, plus data-descriptor canonicalization with captured internal-slot probes and an explicit transparent-Proxy limit;
 - portable SHA-256 and strict RFC 8032 Ed25519 using locked direct pure-JavaScript dependencies, with canonical prime-subgroup point validation;
 - portable structural validators, differentially checked against normative JSON Schemas with development-only Ajv;
-- total semantic validators with stable first-error precedence; strict complete/public-durable validation remains separate from the internally branded mortality-feasibility validator, which is intentionally not re-exported by the supported `src/index.mjs` API;
+- total semantic validators with stable first-error precedence; strict complete/public-durable validation remains separate from lineage-internal mortality completion helpers, which are not re-exported by `src/index.mjs`;
 - custody-change activation proof and recognized-head-only conditional mortality;
 - no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient clock, or ambient randomness in trusted `src/` paths;
 - a public signed singleton, multi-custodian turnover, clone, and fork corpus;
@@ -61,7 +61,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - [x] Committed, Node 22, isolated browser-target, and actual Chromium results are byte-identical on publication candidate `9eae8c34`.
 - [x] The PR workflow requires every changed head to rerun the Node/Chromium differential gate.
 - [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
-- [x] Forged context, replay, fork, equivocation, no-op membership, durable latent succession, and conditional-current-approval completion pass in Node and the isolated browser-target runtime.
+- [x] Forged context, leaked constructor, replay, fork, no-op membership, durable latent succession, conditional-current-approval completion, evidence poisoning, sign-once/equivocation, and payload-unavailability cases pass in Node and the isolated browser-target runtime.
 - [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
@@ -214,6 +214,7 @@ Reopen the earliest responsible gate if:
 - a custody handoff is accepted although the supplied approval-and-acceptance activation set cannot activate the declared threshold;
 - replay or fork silently changes the head;
 - mortality trusts a caller-selected head or prevalidated pending capability;
+- mortality projects a usable signer onto a body after that signer authenticated another body, treats authenticated equivocation as life/death, or ignores a completion-capable membership body solely because its committed sidecar is unavailable;
 - UI, GPT, endpoint, transport, or storage bypasses validation;
 - `1-of-1` or one-browser logical quorum is misrepresented as ownerless physical distribution;
 - death is inferred only from silence, process exit, or an unverified deletion claim; or

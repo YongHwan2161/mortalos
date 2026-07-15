@@ -10,7 +10,6 @@ import {
   validatePulse,
   verifyEd25519Raw
 } from "../src/index.mjs";
-import { validateMortalitySuccessor } from "../src/validator.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
 export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/3";
@@ -164,33 +163,63 @@ function runTrustCases(lifecycle, accepted) {
     envelopeBytes: canonicalBytes(partial.envelope),
     eventPayloadBytes: canonicalBytes(partial.payload)
   });
-  const completion = clone(lifecycle.steps[0]);
-  const potentialApprovalKeyId = completion.envelope.approvals.at(-1).key_id;
-  completion.envelope.approvals = completion.envelope.approvals.slice(0, 1);
-  const strictCompletion = validatePulse({
-    genesis: accepted.genesis,
-    parent: accepted.parents[0],
-    envelopeBytes: canonicalBytes(completion.envelope),
-    eventPayloadBytes: canonicalBytes(completion.payload)
-  });
-  const conditionalCompletion = validateMortalitySuccessor(
-    {
-      genesis: accepted.genesis,
-      parent: accepted.parents[0],
-      envelopeBytes: canonicalBytes(completion.envelope),
-      eventPayloadBytes: canonicalBytes(completion.payload)
-    },
-    [potentialApprovalKeyId]
-  );
   return {
     cloned_genesis: clonedGenesis.code,
     cloned_parent: clonedParent.code,
     latent_status: latent.status,
-    latent_missing: latent.missing_acceptance_key_ids.length,
-    conditional_completion_status: conditionalCompletion.status,
-    conditional_missing_current_approvals:
-      conditionalCompletion.missing_current_approval_key_ids.length,
-    strict_completion_code: strictCompletion.code
+    latent_missing: latent.missing_acceptance_key_ids.length
+  };
+}
+
+function runCompletionCases(lifecycle) {
+  const opened = createLineage(canonicalBytes(lifecycle.birth));
+  if (opened.status !== "accept") throw new Error(`completion Genesis rejected: ${opened.code}`);
+  const step = clone(lifecycle.steps[0]);
+  const first = clone(step);
+  const second = clone(step);
+  first.envelope.approvals = [step.envelope.approvals[0]];
+  second.envelope.approvals = [step.envelope.approvals[1]];
+  const firstRaw = {
+    envelopeBytes: canonicalBytes(first.envelope),
+    eventPayloadBytes: canonicalBytes(first.payload)
+  };
+  const secondRaw = {
+    envelopeBytes: canonicalBytes(second.envelope),
+    eventPayloadBytes: canonicalBytes(second.payload)
+  };
+  const fragmentRejection = opened.lineage.verifyCandidate(firstRaw);
+  const fragmentUnion = opened.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [firstRaw, secondRaw],
+    authorityLossIrreversible: true
+  });
+  const usableCompletion = opened.lineage.evaluateMortality({
+    usableKeyIds: [step.envelope.approvals[1].key_id],
+    stateAvailable: true,
+    pendingSuccessors: [firstRaw],
+    authorityLossIrreversible: true
+  });
+  const incomplete = opened.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [firstRaw],
+    authorityLossIrreversible: true
+  });
+  const missingMembershipPayload = opened.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [{ envelopeBytes: canonicalBytes(step.envelope) }],
+    authorityLossIrreversible: true
+  });
+  return {
+    fragment_rejection: fragmentRejection.code,
+    fragment_union: fragmentUnion.status,
+    fragment_union_successors: fragmentUnion.latent_successors,
+    usable_completion: usableCompletion.status,
+    incomplete: incomplete.status,
+    missing_membership_payload: missingMembershipPayload.status,
+    missing_membership_payload_classified: missingMembershipPayload.mortality_classified
   };
 }
 
@@ -205,13 +234,27 @@ function runForkCases(fork) {
   const replay = opened.lineage.append(input(fork.first));
   const sibling = opened.lineage.append(input(fork.sibling));
   const postFork = opened.lineage.append(input(fork.post_fork));
+  const reparable = createLineage(canonicalBytes(fork.genesis));
+  const prettyInput = (entry) => ({
+    envelopeBytes: new TextEncoder().encode(JSON.stringify(entry.envelope, null, 2)),
+    eventPayloadBytes: new TextEncoder().encode(JSON.stringify(entry.payload, null, 2))
+  });
+  const prettyPending = reparable.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [prettyInput(fork.first), prettyInput(fork.sibling)],
+    authorityLossIrreversible: true
+  });
   return {
     first: first.status,
     replay: replay.code,
     sibling: sibling.code,
     equivocation_count: sibling.equivocating_key_ids?.length ?? 0,
     post_fork: postFork.code,
-    head_after_fork: opened.lineage.head
+    head_after_fork: opened.lineage.head,
+    pretty_pending_status: prettyPending.status,
+    pretty_pending_classified: prettyPending.mortality_classified,
+    pretty_pending_equivocation_count: prettyPending.equivocating_key_ids?.length ?? 0
   };
 }
 
@@ -317,6 +360,7 @@ export function runPortableCorpus({ lifecycle, singleton, fork, rfc8032 }) {
     all_negative_cases_pass: negativeCases.every((entry) => entry.pass),
     boundary_cases: runBoundaryCases(lifecycle, rfc8032),
     trust_cases: runTrustCases(lifecycle, accepted),
+    completion_cases: runCompletionCases(lifecycle),
     fork_cases: runForkCases(fork),
     adversarial: runAdversarialCorpus(lifecycle, accepted)
   };

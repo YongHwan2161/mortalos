@@ -202,6 +202,89 @@ result, and reproducible verification.
   workflow blob, three-path scope, historical-audit retention, and diff checks pass
 - Handoff: focused local follow-up to `reviewer-merge-gate`; author does not push,
   merge, or self-approve
+## 2026-07-15 — Reviewed PR #2 correction integration
+
+- Base: PR #2 head `00af46d53dc4bf02882925e57ae9396d6ae99cca`; current
+  remote `main` was `e6dce59fb314266acdd855748a9b1fb996864e81`
+- Branch: `fix/pr2-integration`
+- Intended shared paths: canonical codec, validator/lineage mortality core,
+  focused conformance and portable vectors, current normative/rolling docs,
+  verification scripts, and agent coordination records
+- Result: retained the remote independent body/signature/sidecar evidence pool,
+  reentrancy guard, usable-key snapshot, and canonical recomposed fork evidence;
+  integrated descriptor-only canonicalization, module-private lineage construction,
+  sign-once projections, explicit `evidence_equivocation`, heartbeat `{}` fallback,
+  and conditional `evidence_payload_unavailable` after irreversible authority loss
+  when an opaque membership body is the sole remaining obstacle to death classification
+- Verification: full `npm test`; 58/58 conformance; seeded 10,000-case properties;
+  portable committed/Node/browser-target byte identity with 10,000/10,000 rejects;
+  actual Headless Chromium 149 byte identity; coverage 98.59% line, 93.97% branch,
+  100% functions; H2 digest
+  `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
+  audit 0 vulnerabilities; 61-file package dry-run; license/spec/governance and
+  diff checks pass
+- Handoff: no commit, push, PR update, or merge was performed here; root publishes
+  the inspected exact tree and `reviewer-merge-gate` re-reviews the immutable head
+
+## 2026-07-15 — Post-merge mortality-proof correction rebased
+
+- Base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72` (merged PR #2)
+- Branch: `agent/codex-protocol-kernel--mortality-proof-correction`
+- Intended shared paths: the 22 runtime, conformance, portable-vector,
+  specification/status, verification, and agent-record paths listed in the active
+  handoff
+- Result: preserved the reviewed correction as a focused follow-up on the exact
+  current `main` tree without rewriting merged PR #2; the rebase applied cleanly
+  over the trusted-policy and PR #2 squash merges
+- Verification: the identical correction tree passed 58/58 conformance, two 10,000
+  case corpora, actual Chromium 149, 98.59%/93.97%/100% coverage, audit, package,
+  H2, license, spec, and diff gates before the clean rebase; final-head governance,
+  full suite, and CI must rerun against this new base
+- Handoff: publish a new PR and require `reviewer-merge-gate` to bind its decision to
+  the final immutable head and fresh trusted-policy/Verify runs
+
+## 2026-07-15 — Mortality proof made monotone under observed evidence
+
+- Base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
+- Branch: `agent/codex-protocol-kernel--mortality-proof-correction`
+- Result: prevented global heartbeat-payload leakage, reconstructed-fork poisoning,
+  split-commitment false liveness, semantic-invalid sign-once bypass, pending
+  list/record/byte TOCTOU, and repeated observer-option reads; fresh authority now
+  means usable keys uncommitted to the current tuple, while opaque membership
+  evidence blocks only an otherwise unsupported death conclusion after authority
+  loss is declared irreversible
+- Input boundary: ordinary own-data observer options and evidence records are copied
+  before analysis; transparent Proxy-backed observer structures remain explicitly
+  outside the v0 mortality-proof profile pending a canonical aggregate record
+- Independent review: no remaining functional, specification, documentation, or
+  governance blocker was found after the adversarial regressions and exact 22-path
+  handoff reconciliation
+- Verification: full `npm test`; governance 28/28; conformance 58/58; seeded 10,000
+  valid/invalid continuation cases; portable committed/Node/browser-target byte
+  identity and 10,000/10,000 rejects; actual Headless Chromium 149 byte identity;
+  98.05% line, at least 93.38% branch across validated Node/V8 runs, and 100%
+  function coverage; H2 digest
+  `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
+  audit 0 vulnerabilities; 61-file package dry-run; spec and diff checks pass
+- Handoff: publish one immutable PR, require trusted Agent PR Policy and Verify on
+  that exact head, then submit it to `reviewer-merge-gate`; author does not merge
+
+## 2026-07-15 — Mortality correction reconciled with current main
+
+- Base: `e332bdf639f6b8c4e39186087cde5e0470f7846f`
+- Branch: `agent/codex-protocol-kernel--mortality-proof-correction`
+- Intended shared paths: the same exact 22 paths listed in the active handoff
+- Result: rebased the three focused correction commits after PR #6 advanced `main`;
+  retained its workflow-identity governance regressions and both append-only agent
+  histories while leaving the mortality/runtime delta unchanged
+- Verification: final-head full `npm test`; governance 30/30; conformance 58/58;
+  seeded 10,000-case properties; portable committed/Node/browser-target equality
+  with 10,000/10,000 rejects; actual Chromium 149 equality; 98.05% line, at least
+  93.38% branch across validated Node/V8 runs, and 100% function coverage; H2 v3
+  digest unchanged; audit 0; 61-file package dry-run; license/spec/diff gates pass.
+  Remote trusted policy and `Verify` must rerun on the replacement immutable head
+- Handoff: replace stale PR #7 head/base evidence, then restart independent review;
+  author does not approve or merge
 
 ## Entry template
 

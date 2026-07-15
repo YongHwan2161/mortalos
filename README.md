@@ -10,16 +10,16 @@ The current artifact is a verified **portable protocol and evidence kernel with 
 
 Implemented:
 
-- portable `Uint8Array` processing with intrinsic-backed immutable snapshots, `SharedArrayBuffer` rejection, duplicate-aware UTF-8/I-JSON parsing, exact root-depth limits, and RFC 8785 canonicalization;
+- portable `Uint8Array` processing with intrinsic-backed immutable snapshots, `SharedArrayBuffer` rejection, duplicate-aware UTF-8/I-JSON parsing, exact root-depth limits, and data-only RFC 8785 canonicalization that rejects accessors and the explicitly probed, detectable internal-slot objects (subject to the Proxy/exotic limits in the protocol);
 - eight domain-separated SHA-256 derivations and strict RFC 8032 Ed25519 verification, including canonical prime-subgroup checks for public keys and signature points;
 - Genesis and Pulse validation for strict-majority custody descriptors from `1-of-1` through 16 custodians;
 - total public validators with stable first-error precedence, non-forgeable recursively frozen contexts, and supplied-evidence-only public latent validation;
 - membership handoff validation that proves the declared next quorum can activate from supplied approval and acceptance evidence;
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
-- recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; and combines it only with one explicit usable-key snapshot;
+- recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; filters one explicit usable-key snapshot through sign-once commitments; keeps equivocation unclassified; and lets completion-capable missing membership payloads block only an otherwise unsupported death classification;
 - a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
-- a v3 committed result corpus with 15 named negatives, six reported trust-boundary outcomes, a strict-reject/conditional-completion case, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
-- byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results on publication candidate `9eae8c34`; every changed head reruns that CI gate, while the browser `SharedArrayBuffer` case additionally requires the H3 cross-origin-isolated deployment profile.
+- a v3 committed result corpus with 15 named negatives, six reported trust-boundary outcomes, same-body completion and payload-unavailability cases, repairable-fork equivocation, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
+- byte-identical then-current committed, Node.js, isolated browser-target, and actual headless-Chromium results on publication candidate `9eae8c34`; this changed corpus head must rerun that CI gate, while the browser `SharedArrayBuffer` case additionally requires the H3 cross-origin-isolated deployment profile.
 
 Not implemented:
 
@@ -45,7 +45,7 @@ npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification/governance gates, 55 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification/governance gates, 58 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
 Expected H2 trace digest:
 
@@ -100,7 +100,7 @@ A public signed-fork fixture also proves `E_FORK_DETECTED`, one intersecting equ
 
 Use `createLineage` for recognized-head, replay, and fork behavior. After restart, replay canonical Genesis/Pulse evidence to reconstruct the graph; never persist or trust an `accepted: true` object.
 
-`Lineage#evaluateMortality` is a controlled-experiment observer, not a global death oracle. It supplies the recognized head, blocks reentrant graph mutation, snapshots usable current keys once, and reuses that one global observation while reconstructing every possible successor from independently carried bodies, signatures, and payload sidecars. Unsigned carrier labels do not establish signer identity or evidence role; signatures are remapped only by successful domain-separated verification for an exact body. Public callers cannot inject an accepted head or obtain the separately branded internal conditional validator, which is intentionally not re-exported by the supported `src/index.mjs` API. Global usable-key availability, state availability, irreversibility, and absence of hidden copies remain declared observer assumptions.
+`Lineage#evaluateMortality` is a controlled-experiment observer, not a global death oracle. It supplies the recognized head, blocks reentrant graph mutation, snapshots usable current keys once, and reconstructs possible successors from independently carried bodies, signatures, and payload sidecars. Unsigned carrier labels do not establish signer identity or evidence role; signatures are remapped only by successful domain-separated verification for an exact body. A usable key is not projected onto a second body after signing another, and authenticated multi-body evidence returns unclassified `evidence_equivocation`. Only after authority loss is declared irreversible can a completion-capable membership body without a verified sidecar return unclassified `evidence_payload_unavailable`, and then only when no fresh quorum or verified latent successor independently establishes non-death. A module-private constructor token prevents chosen-head injection, and internal conditional helpers are not re-exported by `src/index.mjs`. Global usable-key availability, state availability, irreversibility, and absence of hidden copies remain declared observer assumptions.
 
 ## Documentation
 

@@ -317,10 +317,16 @@ assert(
   "Validation context omits the event-payload sidecar"
 );
 assert(
-  text.protocol.includes("Destroying a key does not revoke its durable signature") &&
-    text.protocol.includes("missing_current_approval_key_ids") &&
-    text.protocol.includes("cryptographically remaps every pooled signature"),
-  "Protocol omits durable-plus-usable latent completion or evidence reconstruction"
+  text.protocol.includes(
+    "Destroying current private keys does not invalidate signatures already produced"
+  ) &&
+    text.protocol.includes("cryptographically remaps signatures") &&
+    text.protocol.includes("evidence_equivocation") &&
+    text.protocol.includes("evidence_payload_unavailable") &&
+    text.protocol.includes(
+      "captured from the single own-data observer snapshot before pending-record descriptor inspection"
+    ),
+  "Protocol omits sign-once-aware completion, evidence reconstruction, or payload uncertainty"
 );
 for (const statement of [
   "prime-order subgroup",
