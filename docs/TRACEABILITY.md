@@ -2,7 +2,7 @@
 
 Status: **Normative v0 baseline with hardened portable core, committed H2 v3 evidence, and publication-candidate Chromium CI verification**
 
-This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, Node/browser-target portability, and H2 evidence are executable locally; publication candidate `9eae8c34` also passed the Node 22 and actual-Chromium CI differential, and every changed head must rerun that gate. State-runtime, participant-network, visual-UI, and AI IDs remain reserved.
+This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, Node/browser-target portability, H2 evidence, and the H3A local visual Lab are executable; publication candidate `9eae8c34` also passed the Node 22 and actual-Chromium CI differential, and every changed head must rerun that gate. State-runtime, participant-network, unimplemented visual-UI, and AI IDs remain reserved.
 
 ## 1. Test ID convention
 
@@ -136,7 +136,7 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Endpoint-neutral source boundary | `scripts/verify-portable.mjs` scans every trusted source module | PASS |
 | `1-of-1` birth and controlled singleton mortality | `test/vectors/singleton.json`, `test/singleton.test.mjs`, `scripts/demo-singleton.mjs` | PASS |
 | `1-of-1` to logical `2-of-3` authority expansion | one-process generated-key handoff test; former sole key is then insufficient; physical distribution is not established | PASS |
-| Cross-runtime portable result corpus | Format v3 now covers strict points, hostile metadata, deterministic outcomes, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, and strict rejection. This integration working tree is byte-identical in Node 24, the browser-target realm, and actual Headless Chromium 149. Publication candidate `9eae8c34` passed the preceding remote exact-head Node 22/Chromium gate; the next published head must rerun it. Node/browser-target actively exercise SAB rejection, while actual-browser SAB remains an H3 cross-origin-isolated test. | Local PASS; published-head CI rerun required |
+| Cross-runtime portable result corpus | Format v3 now covers strict points, hostile metadata, deterministic outcomes, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, and strict rejection. This integration working tree is byte-identical in Node 24, the browser-target realm, and actual Headless Chromium 149. Publication candidate `9eae8c34` passed the preceding remote exact-head Node 22/Chromium gate; the next published head must rerun it. Node/browser-target actively exercise SAB rejection, and H3A verifies the same rejection in an actual cross-origin-isolated browser where SAB is available. | Local PASS; published-head CI rerun required |
 | Portable replay/fork/equivocation/post-fork halt | `test/vectors/fork.json`, `test/portable-corpus.mjs` | PASS |
 | Real browser birth with non-extractable Worker keys | `lab/custodian-worker.mjs`, `test/lab.test.mjs`, `scripts/verify-lab.mjs` | PASS |
 | One-key rejection and all three two-key heartbeat combinations | `lab/live-incubator.mjs`, `scripts/verify-lab.mjs` | PASS |
