@@ -10,7 +10,9 @@ result, and reproducible verification.
 - Scope: define role boundaries and create a repository-tracked workspace/memory area
 - Shared runtime files modified: none
 - Result: role, durable memory, handoff protocol, and draft workspace established
-- Validation: branch existence and remote file read-back required before completion
+- Validation: `main` remained at the fork point; the branch was exactly one commit
+  ahead with only the six intended agent files; all remote blob SHAs matched the
+  local files; `npm test` and the workspace secret-pattern scan passed
 
 ## Entry template
 
@@ -22,4 +24,3 @@ result, and reproducible verification.
 - Result: `<concise outcome>`
 - Verification: `<commands, vectors, CI run, or review>`
 - Handoff: `<agent/dependency or none>`
-
