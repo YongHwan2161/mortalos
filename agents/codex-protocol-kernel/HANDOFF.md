@@ -9,6 +9,33 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Completed handoffs
 
+### 2026-07-15 — YAML lone-CR workflow identity hardening
+
+- Main base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected local predecessor
+  `bad47e5462725f5752d2a7a2eccf797f7c3d03c6`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow, runtime, protocol, or governing-doc change
+- Reviewer finding: YAML recognizes a standalone carriage return as a line break,
+  while `/\r?\n/` left it embedded in one JavaScript line. A later trusted root name
+  after `run-name: harmless\r` or trusted job name after `timeout-minutes: 1\r`
+  could therefore remain semantically active while invisible to identity ownership.
+- Result: every workflow-parser line split now handles CRLF, LF, and standalone CR.
+  Exact root-name and job-name lone-CR counterfeits plus one CRLF/LF/CR mixed-ending
+  document are permanent adversarial fixtures.
+- Author validation: full `npm test`; governance 30/30 at 92.68% line, 84.39%
+  branch, and 93.75% function coverage; 55/55 conformance; seeded 10,000-case
+  property corpus; portable Node/browser-target equality with 10,000/10,000
+  adversarial rejects; license, spec, singleton, and H2 verification; audit 0
+  vulnerabilities; JavaScript syntax, trusted-workflow integrity, three-path scope,
+  historical-audit retention, and diff checks pass
+- Integrity: `.github/workflows/trusted-pr-policy.yml` remains byte-identical to
+  `f08c8be0fa43d86d706d67dfc56f577cf1a90f72` at Git blob
+  `94d2b0353fc44d931acd0a28604786a55e78786f`
+- Handoff: reviewer publishes the focused follow-up, reruns the exact CR byte
+  fixtures plus trusted policy and `Verify`, and decides the immutable snapshot
+  independently; author does not push, merge, or self-approve
+
 ### 2026-07-15 — Multiline plain-scalar workflow identity hardening
 
 - Main base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected rebased

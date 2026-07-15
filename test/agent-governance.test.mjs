@@ -28,7 +28,7 @@ function parseCanonicalWorkflowEvents(source) {
     throw new Error("invalid canonical workflow triggers: source must be text");
   }
 
-  const lines = source.split(/\r?\n/u);
+  const lines = source.split(/\r\n|[\n\r]/u);
   const rootOnCandidates = lines
     .map((line, index) => ({ index, line }))
     .filter(({ line }) => /^(?:on|["']on["'])[ \t]*:/u.test(line));
@@ -74,7 +74,7 @@ function parseCanonicalWorkflowEvents(source) {
 const CANONICAL_WORKFLOW_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9 ._()/-]*[A-Za-z0-9)])?$/u;
 
 function parseCanonicalWorkflowIdentity(source) {
-  const lines = source.split(/\r?\n/u);
+  const lines = source.split(/\r\n|[\n\r]/u);
   for (const line of lines) {
     if (line.trim().length === 0 || line.trimStart().startsWith("#") || /^[ \t]/u.test(line)) continue;
     if (!/^[A-Za-z_][A-Za-z0-9_-]*:/u.test(line)) {
@@ -594,7 +594,7 @@ test("policy workflow runs immutable trusted-base code with minimum read permiss
     new URL("../.github/workflows/trusted-pr-policy.yml", import.meta.url),
     "utf8"
   );
-  const lines = workflow.split(/\r?\n/u);
+  const lines = workflow.split(/\r\n|[\n\r]/u);
   assert.equal(lines[0], "name: Agent PR Policy");
   const targetIndex = lines.indexOf("  pull_request_target:");
   assert.ok(targetIndex > lines.indexOf("on:"));
@@ -659,7 +659,32 @@ test("canonical workflow identity parser rejects continuations and non-canonical
     checks: ["Trusted main-base policy"]
   });
 
+  const loneCrRootIdentity = canonical.replace(
+    "name: Agent PR Policy",
+    "name: Verify\nrun-name: harmless\rname: Agent PR Policy"
+  );
+  const loneCrJobIdentity = canonical.replace(
+    "    name: Trusted main-base policy",
+    "    name: Verify\n    timeout-minutes: 1\r    name: Trusted main-base policy"
+  );
+  const mixedLineEndingIdentity = [
+    "name: Verify\r\n",
+    "run-name: harmless\r",
+    "name: Agent PR Policy\n",
+    "on:\r\n",
+    "  pull_request:\n",
+    "jobs:\r\n",
+    "  policy:\n",
+    "    name: Verify\r\n",
+    "    timeout-minutes: 1\r",
+    "    name: Trusted main-base policy\n",
+    "    runs-on: ubuntu-latest\r\n"
+  ].join("");
+
   const adversarial = [
+    loneCrRootIdentity,
+    loneCrJobIdentity,
+    mixedLineEndingIdentity,
     canonical.replace("name: Agent PR Policy", "name: Agent PR Policy # comment"),
     canonical.replace("name: Trusted main-base policy", "name: Trusted main-base policy # comment"),
     canonical.replace("name: Agent PR Policy", 'name: "Agent PR\\u0020Policy"'),

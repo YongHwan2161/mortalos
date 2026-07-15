@@ -186,6 +186,23 @@ result, and reproducible verification.
 - Handoff: focused rebased local commit to `reviewer-merge-gate`; author does not push,
   merge, or self-approve
 
+## 2026-07-15 — YAML lone-CR workflow identity hardening
+
+- Base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected local predecessor
+  `bad47e5462725f5752d2a7a2eccf797f7c3d03c6`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression plus append-only author handoff/worklog
+- Result: aligned every workflow-parser line split with YAML CRLF, LF, and standalone
+  CR line breaks; added exact root/job identity counterfeits and a mixed-ending
+  document that previously hid trusted names behind `run-name` or `timeout-minutes`
+- Verification: full `npm test`; governance 30/30 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; 55/55 conformance; seeded 10,000-case property
+  corpus; portable Node/browser-target equality and 10,000/10,000 adversarial
+  rejects; license/spec/singleton/H2 gates; audit 0 vulnerabilities; syntax, trusted
+  workflow blob, three-path scope, historical-audit retention, and diff checks pass
+- Handoff: focused local follow-up to `reviewer-merge-gate`; author does not push,
+  merge, or self-approve
+
 ## Entry template
 
 ### YYYY-MM-DD — Task
