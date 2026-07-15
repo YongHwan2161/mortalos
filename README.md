@@ -19,17 +19,18 @@ Implemented:
 - recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; filters one explicit usable-key snapshot through sign-once commitments; keeps equivocation unclassified; and lets completion-capable missing membership payloads block only an otherwise unsupported death classification;
 - a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
 - a v3 committed result corpus with 15 named negatives, six reported trust-boundary outcomes, same-body completion and payload-unavailability cases, repairable-fork equivocation, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
-- byte-identical then-current committed, Node.js, isolated browser-target, and actual headless-Chromium results on publication candidate `9eae8c34`; this changed corpus head must rerun that CI gate, while the browser `SharedArrayBuffer` case additionally requires the H3 cross-origin-isolated deployment profile.
+- byte-identical then-current committed, Node.js, isolated browser-target, and actual headless-Chromium results on publication candidate `9eae8c34`; every changed head must rerun that CI gate; and
+- a local H3A MortalOS Lab with three non-extractable Worker keys, live `2-of-3` birth/heartbeat experiments, reference lifecycle falsification, full corpus replay, canonical public-evidence export, and cross-origin-isolated browser boundary checks.
 
 Not implemented:
 
-- the one-page browser incubator and MortalOS Lab judge experience;
+- a public HTTPS deployment of the one-page MortalOS Lab;
 - a stable CLI create/import/replay/export contract;
 - participant-to-participant transport or replicated state;
 - a deterministic executable genome or mutable logical state; and
 - GPT-5.6 runtime integration.
 
-The most important delivery gate is now **H3 MortalOS Lab**. The next fundamental research gate is a versioned deterministic state-bearing kernel. See [Project status](docs/PROJECT_STATUS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
+The most important delivery gate is now **H3B public MortalOS Lab deployment**. The next fundamental research gate is a versioned deterministic state-bearing kernel. See [Project status](docs/PROJECT_STATUS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ## Run
 
@@ -41,11 +42,15 @@ npm test
 npm run test:coverage
 npx playwright install chromium
 npm run test:chromium
+npm run test:lab
+npm run build:lab
+npm run verify:lab
+npm run dev:lab
 npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification/governance gates, 58 conformance tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, and the deterministic lifecycle trace. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification/governance gates, 58 conformance tests, Lab unit tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, the deterministic lifecycle trace, and the static Lab build. `npm run verify:lab` adds real cross-origin-isolated Chromium acceptance. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
 Expected H2 trace digest:
 
@@ -60,7 +65,7 @@ Committed vectors contain public verification material only. Tests that need sig
 MortalOS counts distinct eligible custodian **key IDs**, not people, tabs, browsers, devices, or organizations.
 
 - **CLI singleton (`1-of-1`)**: one ephemeral process can create a valid seed and heartbeat. This is creator-controlled, not ownerless.
-- **Single-browser incubator (`2-of-3`)**: one planned page holds three logical keys and can satisfy quorum by itself. It remains one physical failure domain.
+- **Single-browser incubator (`2-of-3`)**: the local H3A page holds three logical keys and can satisfy quorum by itself. It remains one physical failure domain.
 - **Distributed `2-of-3`**: no physical or administrative domain holds two keys, so no one domain can continue alone.
 
 The verified singleton can hand logical custody authority to `2-of-3` without changing `organism_id`. After that handoff, the original sole key is insufficient while two eligible keys can advance. This makes the distinction explicit: creation may begin locally, but ownerless continuation depends on the deployment distribution of keys in the accepted custody descriptor, backed by external failure-domain evidence—not on the UI or descriptor alone.

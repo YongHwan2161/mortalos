@@ -2,7 +2,7 @@
 
 Status: **Normative v0 baseline with hardened portable core, committed H2 v3 evidence, and publication-candidate Chromium CI verification**
 
-This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, Node/browser-target portability, and H2 evidence are executable locally; publication candidate `9eae8c34` also passed the Node 22 and actual-Chromium CI differential, and every changed head must rerun that gate. State-runtime, participant-network, visual-UI, and AI IDs remain reserved.
+This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, Node/browser-target portability, H2 evidence, and the H3A local visual Lab are executable; publication candidate `9eae8c34` also passed the Node 22 and actual-Chromium CI differential, and every changed head must rerun that gate. State-runtime, participant-network, unimplemented visual-UI, and AI IDs remain reserved.
 
 ## 1. Test ID convention
 
@@ -103,7 +103,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Missing, malformed, or substituted event payload | `T-P1-EVENT-002` through `T-P1-EVENT-004` |
 | State loss mislabeled as protocol death | `T-P4-STATE-STALLED-001`, `T-P6-UI-STATE-001` |
 | Invalid GPT proposal | `T-P9-AI-001` through `T-P9-AI-004` |
-| Multiple logical keys concentrated in one endpoint | `T-H3-INCUBATOR-001`, `T-H3-FAILURE-DOMAIN-001` |
+| Multiple logical keys concentrated in one endpoint | `T-H3A-INCUBATOR-001`, `T-H3A-FAILURE-DOMAIN-001`, `scripts/verify-lab.mjs` |
 | Singleton authority misrepresented as ownerless | `T-C1-SINGLETON-001`, `T-H3-CLAIM-001` |
 | Low-order, non-canonical, or mixed-order Ed25519 encodings | `T-P2-KEY-STRICT-001`, `T-P2-KEY-MIXED-001`, `T-P2-SIGN-R-001`, `T-P2-SIGN-S-001` |
 | Overrideable byte metadata, shared memory, sparse/non-JSON values, or TOCTOU substitution | `T-P1-SNAPSHOT-001`, `T-P1-SAB-001`, `T-P1-IJSON-001`, `T-P4-LATENT-TOCTOU-001` |
@@ -136,8 +136,14 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Endpoint-neutral source boundary | `scripts/verify-portable.mjs` scans every trusted source module | PASS |
 | `1-of-1` birth and controlled singleton mortality | `test/vectors/singleton.json`, `test/singleton.test.mjs`, `scripts/demo-singleton.mjs` | PASS |
 | `1-of-1` to logical `2-of-3` authority expansion | one-process generated-key handoff test; former sole key is then insufficient; physical distribution is not established | PASS |
-| Cross-runtime portable result corpus | Format v3 now covers strict points, hostile metadata, deterministic outcomes, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, and strict rejection. This integration working tree is byte-identical in Node 24, the browser-target realm, and actual Headless Chromium 149. Publication candidate `9eae8c34` passed the preceding remote exact-head Node 22/Chromium gate; the next published head must rerun it. Node/browser-target actively exercise SAB rejection, while actual-browser SAB remains an H3 cross-origin-isolated test. | Local PASS; published-head CI rerun required |
+| Cross-runtime portable result corpus | Format v3 now covers strict points, hostile metadata, deterministic outcomes, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, and strict rejection. This integration working tree is byte-identical in Node 24, the browser-target realm, and actual Headless Chromium 149. Publication candidate `9eae8c34` passed the preceding remote exact-head Node 22/Chromium gate; the next published head must rerun it. Node/browser-target actively exercise SAB rejection, and H3A verifies the same rejection in an actual cross-origin-isolated browser where SAB is available. | Local PASS; published-head CI rerun required |
 | Portable replay/fork/equivocation/post-fork halt | `test/vectors/fork.json`, `test/portable-corpus.mjs` | PASS |
+| Real browser birth with non-extractable Worker keys | `lab/custodian-worker.mjs`, `test/lab.test.mjs`, `scripts/verify-lab.mjs` | PASS |
+| One-key rejection and all three two-key heartbeat combinations | `lab/live-incubator.mjs`, `scripts/verify-lab.mjs` | PASS |
+| Fixed reference turnover, mutations, resurrection, mortality, and clone | `lab/reference-engine.mjs`, `test/lab.test.mjs`, `scripts/verify-lab.mjs` | PASS |
+| Experimental public-evidence canonical export, digest, and raw replay | `lab/evidence-export.mjs`, `test/lab.test.mjs`, `scripts/verify-lab.mjs` | PASS |
+| Browser storage, Service Worker, CSP, request, accessibility, and viewport boundary | `lab/index.html`, `scripts/serve-lab.mjs`, `scripts/verify-lab.mjs` | PASS |
+| Static artifact third-party license preservation | `lab/THIRD_PARTY_LICENSES.txt`, `scripts/build-lab.mjs`, `scripts/verify-lab.mjs` | PASS |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.
 

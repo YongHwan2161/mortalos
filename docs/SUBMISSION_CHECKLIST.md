@@ -20,8 +20,9 @@ Official event rules and the submission form remain authoritative. This file tra
 | Reproducible portable core | Complete | Locked install, trust-boundary/conformance/property tests, coverage, deterministic H2 v3 traces |
 | Node/Chromium differential | Complete for publication candidate | Committed result, Node 22, browser-target realm, and actual Chromium were byte-identical on PR head `9eae8c34`; every changed head must rerun the same gate |
 | One-person CLI birth proof | Complete within proof scope | Ephemeral singleton birth/heartbeat; not a stable CLI product |
-| No-rebuild developer-tool path | Blocked | MortalOS Lab not hosted |
-| One-person visual browser birth | Blocked | Incubator Workers/WebCrypto lifecycle pending |
+| No-rebuild developer-tool path | Blocked | H3A works locally; H3B public HTTPS hosting is not complete |
+| One-person visual browser birth | Complete locally | Three non-extractable Worker keys, 3/3 Genesis, one-key rejection, every 2-key heartbeat combination, and controlled termination pass Chromium acceptance |
+| Reference falsification Lab | Complete locally | Turnover, four mutations, replay, signed fork, resurrection, mortality qualification, clone, corpus, and export are executable |
 | Meaningful GPT-5.6 use | Blocked | Scenario designer not implemented |
 | Accurate project story/tagline | Open | Must describe only the final demonstrated scope |
 | Public demo video | Blocked | Record after build and deployment freeze |
@@ -34,7 +35,7 @@ Git history is the canonical provenance record. The concept predates the event; 
 
 1. one-person browser birth;
 2. valid logical `2-of-3` heartbeat;
-3. complete custody turnover with stable identity;
+3. fixed public reference custody turnover with stable identity, visibly distinct from the random live organism;
 4. replay/fork inspection;
 5. qualified below-quorum mortality and rejected resurrection;
 6. clone with a different identity; and

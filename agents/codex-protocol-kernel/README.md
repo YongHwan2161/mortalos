@@ -33,6 +33,15 @@ browser, CLI, server, transport, or single administrator the source of truth.
 The agent may review those areas for protocol compatibility, but should hand off
 their implementation unless the user explicitly expands this role.
 
+## Current user-directed exception
+
+For task branch `agent/codex-protocol-kernel--h3-browser-lab`, the user explicitly asked
+this agent to select and implement the most important next project stage. The
+temporary scope therefore includes the H3A local browser Lab, but only as a
+protocol-facing vertical slice with executable security and conformance gates.
+Public deployment, ongoing product design, and independent endpoint networking
+remain outside this role and should move to dedicated agents.
+
 ## Branch policy
 
 - Dedicated branch: `agent/codex-protocol-kernel`

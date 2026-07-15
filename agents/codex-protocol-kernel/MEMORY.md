@@ -2,9 +2,9 @@
 
 Last reconciled: 2026-07-15
 
-Branch: `agent/codex-protocol-kernel--mortality-proof-correction`
+Branch: `agent/codex-protocol-kernel--h3-browser-lab`
 
-Current base: `e332bdf639f6b8c4e39186087cde5e0470f7846f`
+Current base: `9791074ffe8f091b8007e09f2b3edd4080d4212b`
 
 Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
 
@@ -44,6 +44,10 @@ Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
   can satisfy the active threshold.
 - Browser-first remains the best demonstration strategy, but the browser is an
   adapter and must not become the authority or protocol boundary.
+- H3A now provides a local one-page Lab: three non-extractable Worker keys,
+  live logical `2-of-3` incubation, fixed reference falsification experiments,
+  full corpus replay, and canonical public-evidence export/replay. It remains
+  one physical/administrative failure domain and is not yet publicly hosted.
 
 ## Stable design decisions
 
@@ -62,7 +66,8 @@ Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
 
 ## Current priorities
 
-1. Deliver H3 MortalOS Lab as a thin, falsifiable visual adapter over the same kernel.
+1. Deploy the verified H3A artifact as an H3B public HTTPS, logged-out judge path
+   with the same cross-origin isolation and security-header contract.
 2. Specify the minimal deterministic state-bearing organism kernel (R2), the next
    fundamental North-Star gap.
 3. Stabilize the C2 CLI create/import/verify/replay/export evidence contract.

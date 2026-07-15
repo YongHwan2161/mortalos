@@ -267,12 +267,23 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "C1 portable deterministic core verified across Node 22 and Chromium; H3 visual MortalOS Lab next",
+  "H3A local MortalOS Lab verified; H3B public HTTPS judge path next",
   "| Node/Chromium equivalence | Verified on publication candidate |",
   "publication-candidate Node 22 and actual Chromium CI: PASS;",
   "The verified CLI singleton uses one key"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
+}
+
+for (const statement of [
+  "H3A local executable slice — verified",
+  "H3B public deployment — next delivery gate",
+  "Three dedicated Workers hold non-extractable WebCrypto keys"
+]) {
+  assert(
+    text.implementationPlan.includes(statement) || text.projectStatus.includes(statement),
+    `H3 status evidence is missing: ${statement}`
+  );
 }
 
 for (const statement of [

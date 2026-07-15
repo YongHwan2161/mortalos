@@ -34,6 +34,9 @@ jobs:
       - name: Run Node and Chromium differential verification
         run: npm run test:chromium
 
+      - name: Run MortalOS Lab browser acceptance gate
+        run: npm run verify:lab
+
       - name: Enforce validator branch coverage
         run: npm run test:coverage
 
