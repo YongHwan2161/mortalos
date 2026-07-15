@@ -12,10 +12,11 @@ shared project files and must not be used as a lock that blocks the project inde
 - Work branch: `agent/codex-protocol-kernel--h3-lab`
 - Intended paths: `lab/**`, `scripts/build-lab.mjs`, `scripts/serve-lab.mjs`,
   `scripts/verify-lab.mjs`, `test/lab*.test.mjs`, `package.json`,
-  `.github/workflows/verify.yml`, `README.md`, `docs/IMPLEMENTATION_PLAN.md`,
+  `scripts/verify-spec.mjs`, `.github/workflows/verify.yml`, `README.md`,
+  `docs/IMPLEMENTATION_PLAN.md`,
   `docs/PROJECT_STATUS.md`, `docs/SINGLE_BROWSER_INCUBATOR.md`,
   `docs/TRACEABILITY.md`, `docs/SUBMISSION_CHECKLIST.md`, and this agent's
-  `CHARTER.md`, `MEMORY.md`, and `HANDOFF.md`
+  `README.md`, `MEMORY.md`, `WORKLOG.md`, and `HANDOFF.md`
 - Contract affected: no consensus-rule change; browser adapter, demo surface,
   executable acceptance gate, and planning/status documentation
 - Required evidence: unit tests, three clean Chromium contexts using real
