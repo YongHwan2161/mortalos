@@ -412,7 +412,7 @@ test("GitHub evidence loader and event verifier fail closed on malformed API evi
         head: { ref: "agent/codex-protocol-kernel--governance-hardening", sha: HEAD_SHA }
       }
     ];
-    const bootstrapRequests = [];
+    const publicRequests = [];
     await verifyEventFile(
       eventPath,
       {
@@ -420,12 +420,12 @@ test("GitHub evidence loader and event verifier fail closed on malformed API evi
         GITHUB_REPOSITORY: "owner/repository"
       },
       async (url, options) => {
-        bootstrapRequests.push({ url, options });
+        publicRequests.push({ url, options });
         return { ok: true, status: 200, json: async () => payloads.shift() };
       }
     );
-    assert.equal(bootstrapRequests.length, 4);
-    assert.ok(bootstrapRequests.every(({ options }) => !("authorization" in options.headers)));
+    assert.equal(publicRequests.length, 4);
+    assert.ok(publicRequests.every(({ options }) => !("authorization" in options.headers)));
   } finally {
     await rm(sandbox, { recursive: true, force: true });
   }
@@ -461,55 +461,45 @@ test("policy workflow runs immutable trusted-base code with minimum read permiss
   assert.ok(actionRefs.every((reference) => /^[0-9a-f]{40}$/u.test(reference)));
 });
 
-test("temporary PR #3 bootstrap is isolated, untrusted, and requires immediate cleanup", async () => {
-  const [bootstrapWorkflow, trustedWorkflow] = await Promise.all([
+test("trusted policy is permanently target-only and has no migration exception", async () => {
+  const trustedWorkflow = await readFile(
+    new URL("../.github/workflows/trusted-pr-policy.yml", import.meta.url),
+    "utf8"
+  );
+  await assert.rejects(
     readFile(new URL("../.github/workflows/pr-policy.yml", import.meta.url), "utf8"),
-    readFile(new URL("../.github/workflows/trusted-pr-policy.yml", import.meta.url), "utf8")
-  ]);
-  const lines = bootstrapWorkflow.split(/\r?\n/u);
-  assert.equal(lines[0], 'name: "UNTRUSTED PR #3 migration bootstrap"');
-
-  const pullIndex = lines.indexOf("  pull_request:");
-  assert.ok(pullIndex > lines.indexOf("on:"));
-  assert.deepEqual(lines.slice(pullIndex + 1).filter((line) => line.startsWith("    branches:")), ["    branches: [main]"]);
-  assert.ok(lines.slice(pullIndex + 1).includes("    types: [synchronize]"));
-  assert.equal(lines.includes("  pull_request_target:"), false);
-
-  const bootstrapIndex = lines.indexOf("  bootstrap-untrusted:");
-  assert.ok(bootstrapIndex > lines.indexOf("jobs:"));
-  assert.equal(lines.includes("  policy:"), false);
-  const bootstrap = lines.slice(bootstrapIndex).join("\n");
-  assert.match(bootstrap, /name: "UNTRUSTED migration marker \(not policy\)"/u);
-  assert.match(bootstrap, /permissions: \{\}/u);
-  assert.doesNotMatch(bootstrap, /^\s*uses:|actions\/checkout|GITHUB_TOKEN|secrets\.|scripts\/|^\s*run:\s*(?:npm|node)\b/mu);
-  assert.match(bootstrap, /not a policy verdict/u);
-  assert.doesNotMatch(bootstrapWorkflow, /Agent PR Policy|Trusted main-base policy|github\.token|GITHUB_TOKEN/u);
-  assert.match(bootstrapWorkflow, /^permissions: \{\}$/mu);
-
+    (error) => error?.code === "ENOENT"
+  );
+  const eventTriggers = trustedWorkflow
+    .split(/\r?\n/u)
+    .filter((line) => /^  pull_request(?:_target)?:$/u.test(line));
+  assert.deepEqual(eventTriggers, ["  pull_request_target:"]);
   assert.match(trustedWorkflow, /^name: Agent PR Policy$/mu);
-  assert.match(trustedWorkflow, /^  pull_request_target:$/mu);
-  assert.doesNotMatch(trustedWorkflow, /^  pull_request:$/mu);
   assert.match(trustedWorkflow, /^    name: Trusted main-base policy$/mu);
-  assert.doesNotMatch(trustedWorkflow, /UNTRUSTED|bootstrap-untrusted/u);
+  assert.doesNotMatch(trustedWorkflow, /UNTRUSTED|bootstrap-untrusted|MIGRATION/u);
 
-  const [instructions, collaboration, reviewer] = await Promise.all([
+  const [instructions, collaboration, reviewer, authorHandoff, authorWorklog] = await Promise.all([
     readFile(new URL("../AGENTS.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/AGENT_COLLABORATION.md", import.meta.url), "utf8"),
-    readFile(new URL("../agents/reviewer-merge-gate/README.md", import.meta.url), "utf8")
+    readFile(new URL("../agents/reviewer-merge-gate/README.md", import.meta.url), "utf8"),
+    readFile(new URL("../agents/codex-protocol-kernel/HANDOFF.md", import.meta.url), "utf8"),
+    readFile(new URL("../agents/codex-protocol-kernel/WORKLOG.md", import.meta.url), "utf8")
   ]);
   for (const document of [instructions, collaboration, reviewer]) {
-    assert.match(document, /TEMPORARY-MIGRATION-STATE: ACTIVE/u);
+    assert.doesNotMatch(
+      document,
+      /TEMPORARY-MIGRATION-STATE|MIGRATION-EXCEPTION|PR #3|bootstrap-untrusted|\.github\/workflows\/pr-policy\.yml/u
+    );
   }
-  assert.match(collaboration, /Immediately after PR #3 merges/u);
-  assert.match(collaboration, /permanent regression must again reject every `pull_request`/u);
-  assert.match(collaboration, /now-trusted `pull_request_target` workflow on\s+`main` must validate the\s+cleanup PR/u);
-  assert.match(collaboration, /different workflow name and job\/check\s+name/u);
-  assert.match(reviewer, /Verdict: MIGRATION-EXCEPTION/u);
-  assert.match(reviewer, /Bootstrap-Event: pull_request/u);
-  assert.match(reviewer, /Bootstrap-Workflow: UNTRUSTED PR #3 migration bootstrap/u);
-  assert.match(reviewer, /Bootstrap-Job: UNTRUSTED migration marker \(not policy\)/u);
-  assert.match(reviewer, /Bootstrap-Status: completed\/success/u);
-  assert.match(reviewer, /never policy or normal PASS evidence/u);
+  for (const document of [authorHandoff, authorWorklog]) {
+    assert.doesNotMatch(
+      document,
+      /TEMPORARY-MIGRATION-STATE|MIGRATION-EXCEPTION|PR #3|bootstrap-untrusted|legacy-workflow/u
+    );
+  }
+  assert.match(instructions, /sole policy workflow/u);
+  assert.match(collaboration, /sole policy workflow/u);
+  assert.match(reviewer, /Agent-PR-Policy-Event: pull_request_target/u);
 });
 
 test("worktree plan isolates task branch outside repository", () => {
