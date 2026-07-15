@@ -19,6 +19,21 @@ This log is append-only. Each review records the exact PR head and the evidence 
 - Merge SHA: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3` (squash with expected head)
 - Post-merge verification: main `Verify` run 29379690175 succeeded for the merge SHA
 
+## 2026-07-15 — PR #1 post-merge re-audit
+
+- Author agent: `codex-protocol-kernel`
+- Base SHA: `0a8ce3e2cf09a040758611b3674e92aa32e13c4b`
+- Re-reviewed head SHA: `c646521fb2b5543b4a65859d01fbfb3cca0fedcf`
+- Checks: complete diff and workflow logs re-inspected; detached-head `npm test`,
+  coverage, audit, package exclusions, and governance tests reproduced
+- Findings: proposed-head policy code can self-bypass; the PR contract accepts
+  unregistered or placeholder-grade declarations; existing task branches can resume
+  from stale `main`
+- Review: structured post-merge `COMMENT` attestation 4699941694
+- Verdict: `POST_MERGE_FAIL`; the preceding PASS entry is superseded
+- Merge SHA: already merged as `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Corrective action: `agent/codex-protocol-kernel--governance-hardening` pending
+
 ## Entry template
 
 ### YYYY-MM-DD — PR #N
@@ -32,4 +47,3 @@ This log is append-only. Each review records the exact PR head and the evidence 
 - Verdict: `PASS` or `REQUEST_CHANGES`
 - Merge SHA: `<sha or not merged>`
 - Post-merge verification: `<result or not applicable>`
-
