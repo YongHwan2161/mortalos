@@ -18,9 +18,21 @@ agents working on MortalOS. It is not part of the runtime or protocol.
 6. An agent workspace is advisory context, not a normative protocol source. The
    repository's specifications, tests, and accepted pull requests remain authoritative.
 
+See [`docs/AGENT_COLLABORATION.md`](../docs/AGENT_COLLABORATION.md) for the full
+branch, worktree, pull-request, review, and merge protocol.
+
+## Branches and worktrees
+
+- `agent/<agent-id>` is the agent's durable identity and memory branch.
+- `agent/<agent-id>--<task>` is a disposable implementation branch based on the
+  latest `main`.
+- Each active task uses a separate clone or Git worktree outside the shared checkout.
+- `node scripts/create-agent-worktree.mjs create <agent-id> <task>` creates the
+  standard task branch and sibling worktree.
+
 ## Registered agents
 
 | Agent ID | Role | Working branch |
 | --- | --- | --- |
 | `codex-protocol-kernel` | Protocol Kernel & Verification Maintainer | `agent/codex-protocol-kernel` |
-
+| `reviewer-merge-gate` | Independent PR Reviewer & Merge Gatekeeper | `agent/reviewer-merge-gate` |

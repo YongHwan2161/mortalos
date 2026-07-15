@@ -38,12 +38,14 @@ their implementation unless the user explicitly expands this role.
 - Dedicated branch: `agent/codex-protocol-kernel`
 - Base branch: `main`
 - Never push directly to `main`.
-- Refresh from `main` before beginning a new implementation unit.
+- Treat the dedicated branch as the durable identity/memory line, not as a feature branch.
+- Create each implementation unit from current `main` as
+  `agent/codex-protocol-kernel--<task>` in a separate worktree.
 - Record shared paths in `HANDOFF.md` before modifying them.
-- Publish shared changes as a focused pull request with passing verification.
+- Publish shared changes as a focused pull request with passing verification and
+  hand it to `reviewer-merge-gate`.
 
-For independent work that must not share one pull-request history, use a disposable
-task branch named `agent/codex-protocol-kernel--<task>` and delete it after merge.
+Delete disposable task branches after their merge evidence has been recorded.
 
 ## Workspace map
 
@@ -51,4 +53,3 @@ task branch named `agent/codex-protocol-kernel--<task>` and delete it after merg
 - `WORKLOG.md`: append-only record of completed work and validation
 - `HANDOFF.md`: planned shared-file edits and cross-agent dependencies
 - `workspace/`: durable drafts and proposals not yet ready for shared project paths
-

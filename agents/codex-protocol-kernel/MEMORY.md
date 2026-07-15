@@ -28,6 +28,9 @@ Fork point: `0a8ce3e2cf09a040758611b3674e92aa32e13c4b`
 5. Security claims must distinguish logical key count from independent failure domains.
 6. The next deep kernel problem is deterministic state: identical valid histories
    must produce the same state root under explicit resource bounds.
+7. Agent identity branches preserve scoped memory; implementation work belongs on
+   task branches from current `main` in separate worktrees.
+8. `reviewer-merge-gate`, not the author agent, decides whether a PR may merge.
 
 ## Current priorities
 
@@ -44,4 +47,3 @@ Fork point: `0a8ce3e2cf09a040758611b3674e92aa32e13c4b`
 - Replace stale current-state statements instead of accumulating contradictions.
 - Preserve completed-task evidence in `WORKLOG.md`.
 - Do not store secrets, access tokens, personal information, or hidden reasoning.
-

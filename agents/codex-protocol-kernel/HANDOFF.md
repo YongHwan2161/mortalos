@@ -5,20 +5,21 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — Agent-isolated contribution and reviewer merge gate
+None.
 
-- Task: implement separate worktrees, task branches, PR policy, and an independent
-  reviewer/merge-gate role
+## Completed handoffs
+
+### 2026-07-15 — Agent-isolated contribution and reviewer merge gate
+
 - Base: `0a8ce3e2cf09a040758611b3674e92aa32e13c4b`
 - Work branch: `agent/codex-protocol-kernel--agent-governance`
-- Intended paths: `AGENTS.md`, `agents/**`, `docs/AGENT_COLLABORATION.md`,
+- Paths: `AGENTS.md`, `agents/**`, `docs/AGENT_COLLABORATION.md`,
   `.github/PULL_REQUEST_TEMPLATE.md`, `.github/workflows/pr-policy.yml`,
   `scripts/create-agent-worktree.mjs`, `scripts/verify-agent-pr.mjs`,
-  `test/agent-governance.test.mjs`, and `package.json`
-- Expected validation: governance unit tests, full `npm test`, PR policy CI,
-  immutable-head reviewer audit, and post-merge `main` verification
-- Handoff: `reviewer-merge-gate` must inspect the PR and may merge only after every
-  mandatory gate passes
+  `test/agent-governance.test.mjs`, `package.json`, and `.npmignore`
+- Author validation: governance 10/10, full `npm test`, coverage, dependency audit,
+  and actual Chromium differential verification passed
+- Handoff: ready for immutable-head review by `reviewer-merge-gate`
 
 ## Before changing shared paths
 
