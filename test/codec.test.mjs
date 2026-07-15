@@ -211,70 +211,165 @@ test("canonicalizer rejects sparse arrays and every non-JSON value instead of el
   }
 });
 
-test("canonicalizer accepts only plain data records, including foreign-realm records", () => {
-  const nullPrototype = Object.create(null);
-  nullPrototype.b = [true, null];
-  nullPrototype.a = 1;
-  const foreign = vm.runInNewContext("({ b: [true, null], a: 1 })");
-  const foreignNullPrototype = vm.runInNewContext(
-    "Object.assign(Object.create(null), { b: [true, null], a: 1 })"
-  );
-  const expected = '{"a":1,"b":[true,null]}';
-  assert.equal(canonicalize(Object.freeze({ b: [true, null], a: 1 })), expected);
-  assert.equal(canonicalize(nullPrototype), expected);
-  assert.equal(canonicalize(foreign), expected);
-  assert.equal(canonicalize(foreignNullPrototype), expected);
-});
-
-test("canonicalizer rejects exotic, hidden, accessor, cyclic, and lossy array data", () => {
+test("canonicalizer accepts only data-only JSON containers and never invokes accessors", () => {
   class RecordLike {
     constructor() {
       this.visible = true;
     }
   }
 
-  const symbolProperty = {};
-  symbolProperty[Symbol("hidden")] = true;
+  const symbolOnly = { [Symbol("hidden")]: 1 };
   const nonEnumerable = {};
-  Object.defineProperty(nonEnumerable, "hidden", { value: true });
-  let accessorReads = 0;
+  Object.defineProperty(nonEnumerable, "hidden", { value: 1 });
+  const customPrototype = Object.create({ inherited: true });
+  customPrototype.visible = 1;
+  const arrayWithExtraProperty = [1];
+  arrayWithExtraProperty.extra = 2;
+  const arrayWithSymbol = [1];
+  arrayWithSymbol[Symbol("hidden")] = 2;
+  let getterReads = 0;
   const accessor = {};
   Object.defineProperty(accessor, "value", {
     enumerable: true,
     get() {
-      accessorReads += 1;
-      return true;
+      getterReads += 1;
+      return 1;
     }
   });
   const cyclic = {};
   cyclic.self = cyclic;
-  const arrayWithExtraProperty = [1];
-  arrayWithExtraProperty.extra = 2;
-  const revokedValues = [[], {}].map((target) => {
-    const { proxy, revoke } = Proxy.revocable(target, {});
-    revoke();
-    return proxy;
-  });
 
   for (const value of [
     new Date(0),
-    new Map([["x", 1]]),
+    new Map([["a", 1]]),
     new Set([1]),
-    /not-json/u,
     new Number(1),
-    new Uint8Array([1]),
+    new String("value"),
+    new Boolean(true),
+    Object(Symbol("boxed")),
+    /pattern/u,
     new RecordLike(),
-    symbolProperty,
+    symbolOnly,
     nonEnumerable,
-    accessor,
-    cyclic,
+    customPrototype,
     arrayWithExtraProperty,
-    ...revokedValues
+    arrayWithSymbol,
+    accessor,
+    cyclic
   ]) {
     assert.throws(
       () => canonicalize(value),
       (error) => error instanceof JsonInputError && error.code === "E_PARSE_NON_IJSON"
     );
   }
-  assert.equal(accessorReads, 0);
+  assert.equal(getterReads, 0);
+
+  const foreignPlain = vm.runInNewContext("({ b: [2], a: 1 })");
+  const foreignNullPrototype = vm.runInNewContext(
+    "Object.assign(Object.create(null), { b: [2], a: 1 })"
+  );
+  assert.equal(canonicalize(foreignPlain), '{"a":1,"b":[2]}');
+  assert.equal(canonicalize(foreignNullPrototype), '{"a":1,"b":[2]}');
+  assert.equal(canonicalize(Object.assign(Object.create(null), { a: 1 })), '{"a":1}');
+  assert.equal(canonicalize(Object.freeze({ a: 1 })), '{"a":1}');
+  assert.equal(canonicalize(Object.freeze([1, { a: 2 }])), '[1,{"a":2}]');
+
+  const strippedExotics = [
+    new Date(0),
+    new Map([["x", 1]]),
+    new Set([1]),
+    new WeakMap(),
+    new WeakSet(),
+    new Boolean(true),
+    new Number(7),
+    new String("value"),
+    Object(1n),
+    Object(Symbol("boxed")),
+    /pattern/u,
+    new ArrayBuffer(8),
+    new DataView(new ArrayBuffer(8)),
+    new Uint8Array([1, 2])
+  ];
+  if (typeof SharedArrayBuffer === "function") {
+    strippedExotics.push(new SharedArrayBuffer(8));
+  }
+  if (typeof WeakRef === "function") {
+    strippedExotics.push(new WeakRef({}));
+  }
+  for (const exotic of strippedExotics) {
+    Object.setPrototypeOf(exotic, null);
+    assert.throws(
+      () => canonicalize(exotic),
+      (error) => error instanceof JsonInputError && error.code === "E_PARSE_NON_IJSON"
+    );
+  }
+  const disguisedDate = new Date(0);
+  Object.setPrototypeOf(disguisedDate, Object.prototype);
+  assert.equal(canonicalize(disguisedDate), "{}");
+  const foreignStrippedDate = vm.runInNewContext(
+    "Object.setPrototypeOf(new Date(0), null)"
+  );
+  assert.throws(() => canonicalize(foreignStrippedDate), JsonInputError);
+
+  const spoofedPrototype = Object.create(null);
+  Object.defineProperty(spoofedPrototype, "constructor", {
+    value: Object,
+    enumerable: false
+  });
+  const spoofedRecord = Object.create(spoofedPrototype);
+  spoofedRecord.a = 1;
+  assert.throws(() => canonicalize(spoofedRecord), JsonInputError);
+
+  let arrayGetterReads = 0;
+  const accessorArray = [];
+  Object.defineProperty(accessorArray, "0", {
+    enumerable: true,
+    get() {
+      arrayGetterReads += 1;
+      return 1;
+    }
+  });
+  accessorArray.length = 1;
+  assert.throws(() => canonicalize(accessorArray), JsonInputError);
+  assert.equal(arrayGetterReads, 0);
+
+  const hugeSparse = [];
+  hugeSparse.length = 1_000_000_000;
+  assert.throws(() => canonicalize(hugeSparse), JsonInputError);
+  assert.throws(() => canonicalize({ "\ud800": 1 }), JsonInputError);
+
+  const indirect = { child: [] };
+  indirect.child.push(indirect);
+  assert.throws(() => canonicalize(indirect), JsonInputError);
+
+  const counters = { descriptors: 0, gets: 0, getPrototypeOf: 0, ownKeys: 0 };
+  const proxy = new Proxy({ x: 1 }, {
+    get(target, key, receiver) {
+      counters.gets += 1;
+      return Reflect.get(target, key, receiver);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      counters.descriptors += 1;
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+    getPrototypeOf(target) {
+      counters.getPrototypeOf += 1;
+      return Reflect.getPrototypeOf(target);
+    },
+    ownKeys(target) {
+      counters.ownKeys += 1;
+      return Reflect.ownKeys(target);
+    }
+  });
+  assert.equal(canonicalize({ a: proxy, b: proxy }), '{"a":{"x":1},"b":{"x":1}}');
+  assert.deepEqual(counters, { descriptors: 1, gets: 0, getPrototypeOf: 1, ownKeys: 1 });
+
+  for (const target of [{ a: 1 }, [1]]) {
+    const revocable = Proxy.revocable(target, {});
+    revocable.revoke();
+    assert.throws(
+      () => canonicalize(revocable.proxy),
+      (error) => error instanceof JsonInputError && error.code === "E_PARSE_NON_IJSON"
+    );
+  }
 });

@@ -5,7 +5,41 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-- None.
+### ACTIVE — Post-merge mortality-proof correction
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `e332bdf639f6b8c4e39186087cde5e0470f7846f`
+- Work branch: `agent/codex-protocol-kernel--mortality-proof-correction`
+- Intended paths (exact):
+  - `README.md`
+  - `agents/codex-protocol-kernel/HANDOFF.md`
+  - `agents/codex-protocol-kernel/MEMORY.md`
+  - `agents/codex-protocol-kernel/WORKLOG.md`
+  - `docs/ACCESS_ARCHITECTURE.md`
+  - `docs/IMPLEMENTATION_PLAN.md`
+  - `docs/PROJECT_STATUS.md`
+  - `docs/PROTOCOL.md`
+  - `docs/REJECTION_CODES.md`
+  - `docs/SINGLE_BROWSER_INCUBATOR.md`
+  - `docs/THREAT_MODEL.md`
+  - `docs/TRACEABILITY.md`
+  - `scripts/verify-portable.mjs`
+  - `scripts/verify-spec.mjs`
+  - `src/codec.mjs`
+  - `src/lineage.mjs`
+  - `src/validator.mjs`
+  - `test/codec.test.mjs`
+  - `test/mortality.test.mjs`
+  - `test/portable-corpus.mjs`
+  - `test/portable-scenario.mjs`
+  - `test/vectors/portable-expected.json`
+- Contract affected: programmatic canonicalization and conservative observer-relative
+  mortality proof; ordinary strict Genesis/Pulse acceptance remains unchanged
+- Required evidence: full Node suite, coverage, exact actual-Chromium corpus,
+  dependency audit, package scan, trusted Agent PR Policy, Verify, and immutable-head
+  independent review
+- Expected handoff: a focused follow-up PR from current `main`; merged PR #2 remains
+  immutable and is not reopened or rewritten
 
 ## Completed handoffs
 
@@ -61,6 +95,37 @@ shared project files and must not be used as a lock that blocks the project inde
 - Handoff: reviewer publishes the focused rebased commit, reruns the exact multiline
   adversarials plus trusted policy and `Verify`, and decides the immutable snapshot
   independently; author does not push, merge, or self-approve
+
+### 2026-07-15 — Post-merge mortality-proof correction prepared
+
+- Final reconciled `main` base:
+  `e332bdf639f6b8c4e39186087cde5e0470f7846f`; initial post-PR-#2 base:
+  `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
+- Historical comparison base: PR #2 head
+  `00af46d53dc4bf02882925e57ae9396d6ae99cca`
+- Reviewed correction source: `fe27a4cc601335a0458269b13808312499f439cf`
+- Work branch: `agent/codex-protocol-kernel--mortality-proof-correction`
+- Paths: canonical codec and portability scan; lineage/validator mortality core;
+  codec, mortality, portable-corpus/scenario tests and expected vector; current
+  protocol/threat/status/plan/traceability/access/rejection docs; spec gate; and
+  this agent's handoff/memory/worklog
+- Result: preserved carrier-independent body/signature/sidecar recomposition,
+  reentrant-mutation protection, one early usable-key snapshot, and canonical
+  reconstructed-fork regressions; added data-only intrinsic-slot canonicalization,
+  private lineage construction, sign-once-aware projection/equivocation, heartbeat
+  fallback, and conditional payload-opaque membership uncertainty after irreversible
+  authority loss when no fresh quorum or verified latent child independently
+  establishes non-death
+- Author validation: full `npm test`; 58/58 conformance; 10,000 mixed property
+  cases; portable committed/Node/browser-target equality and 10,000/10,000 rejects;
+  actual Headless Chromium 149 byte equality; 98.05% line, at least 93.38% branch
+  across validated Node/V8 runs, and 100% function coverage; H2 v3 digest unchanged;
+  audit 0 vulnerabilities; 61-file
+  package dry-run; license/spec/governance/diff gates pass
+- Historical CI retained: publication candidate `9eae8c34` passed the preceding
+  exact-head Node 22/actual-Chromium workflow; the newly published head must rerun CI
+- Handoff: publish as a new focused PR from current `main` and submit its immutable
+  head to `reviewer-merge-gate`; do not modify the already merged PR #2 branch
 
 ### 2026-07-15 — Portable-kernel trust-boundary hardening
 

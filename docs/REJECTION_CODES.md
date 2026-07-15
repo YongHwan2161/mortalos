@@ -26,7 +26,7 @@ Reject {
 | `E_PARSE_INVALID_UTF8` | Input is not an accepted stable `Uint8Array` snapshot source (including SharedArrayBuffer-backed views), or its bytes are not valid UTF-8. |
 | `E_PARSE_INVALID_JSON` | Input is not valid JSON. |
 | `E_PARSE_DUPLICATE_PROPERTY` | A raw JSON object contains a duplicate property name. |
-| `E_PARSE_NON_IJSON` | Input violates the I-JSON value constraints required by JCS. |
+| `E_PARSE_NON_IJSON` | Input violates the I-JSON/JCS value model, including an out-of-range number or lone surrogate; for programmatic input this also includes a recognized intrinsic-slot/custom-prototype container, cycle, sparse/extended array, symbol/non-enumerable/accessor property, unsupported value, or failed structural snapshot. |
 | `E_PARSE_LIMIT_EXCEEDED` | Raw input exceeds the normative byte or JSON nesting-depth limit. |
 | `E_SCHEMA_WRONG_KIND` | Top-level `kind` is absent or unsupported. |
 | `E_SCHEMA_INVALID` | Input fails its Draft 2020-12 structural schema. |
@@ -114,7 +114,7 @@ The mortality-feasibility validator described below is an internal helper intent
 | `E_FORK_DETECTED` | Two distinct candidates independently validate against the same accepted parent. The registry returns both child hashes and intersecting approval signer IDs, then enters `FORKED`. |
 | `E_LINEAGE_ALREADY_FORKED` | An otherwise valid, non-replay append is attempted after the registry has entered `FORKED`; intrinsic validation and replay checks retain their earlier precedence. |
 
-Signer equivocation is evidence attached to `E_FORK_DETECTED`, not a competing first-error code. Strict-majority valid siblings necessarily have at least one approval signer in common.
+Signer equivocation in two accepted sibling appends is evidence attached to `E_FORK_DETECTED`, not a competing first-error code. Strict-majority valid siblings necessarily have at least one approval signer in common. During conservative mortality analysis, authenticated multi-body evidence that cannot safely be promoted to an accepted fork instead yields the observer state `evidence_equivocation`; that state is not a rejection code.
 
 ## 9. Internal fail-closed code
 

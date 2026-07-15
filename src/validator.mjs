@@ -375,23 +375,28 @@ function validatePulseDetailed(
   },
   mode
 ) {
+  const mortalityMode = mode === "mortality" || mode === "mortality-opaque";
+  const opaquePayload = mode === "mortality-opaque";
   const parsed = parseRawEnvelope(envelopeBytes);
   if (parsed.failure) return parsed.failure;
-  if (payloadFailure) return payloadFailure;
-  const payload = parseRawPayload(eventPayloadBytes);
-  if (payload.failure) return payload.failure;
+  if (!opaquePayload && payloadFailure) return payloadFailure;
+  const payload = opaquePayload ? null : parseRawPayload(eventPayloadBytes);
+  if (payload?.failure) return payload.failure;
 
   const envelope = parsed.parsedDocument.value;
-  const payloadValue = payload.parsedDocument.value;
+  const payloadValue = payload?.parsedDocument.value;
   const schemaFailure = schemaRejection(envelope, checkPulseSchema, "mortalos.pulse");
   if (schemaFailure) return schemaFailure;
-  if (!payloadValue || Array.isArray(payloadValue) || typeof payloadValue !== "object") {
+  if (
+    !opaquePayload &&
+    (!payloadValue || Array.isArray(payloadValue) || typeof payloadValue !== "object")
+  ) {
     return reject("E_EVENT_PAYLOAD_INVALID", "/event_payload", "object-required");
   }
   if (!documentIsCanonical(parsed.parsedDocument)) {
     return reject("E_CANONICAL_MISMATCH", "", "envelope");
   }
-  if (!documentIsCanonical(payload.parsedDocument)) {
+  if (!opaquePayload && !documentIsCanonical(payload.parsedDocument)) {
     return reject("E_EVENT_PAYLOAD_INVALID", "/event_payload", "canonical-required");
   }
 
@@ -465,6 +470,9 @@ function validatePulseDetailed(
   if (typeof body.event.kind !== "string" || !["heartbeat", "membership-change"].includes(body.event.kind)) {
     return reject("E_EVENT_KIND_UNSUPPORTED", "/body/event/kind", safeDetail(body.event.kind));
   }
+  if (opaquePayload && body.event.kind !== "membership-change") {
+    return reject("E_EVENT_PAYLOAD_REQUIRED", "/event_payload", "opaque-membership-only");
+  }
   if (body.organism_id !== genesis.organism_id) {
     return reject("E_ORGANISM_ID_MISMATCH", "/body/organism_id", body.organism_id);
   }
@@ -495,7 +503,7 @@ function validatePulseDetailed(
       body.state_root
     );
   }
-  if (body.event.payload_hash !== eventPayloadHash(payloadValue)) {
+  if (!opaquePayload && body.event.payload_hash !== eventPayloadHash(payloadValue)) {
     return reject("E_EVENT_PAYLOAD_MISMATCH", "/body/event/payload_hash", body.event.payload_hash);
   }
 
@@ -528,7 +536,7 @@ function validatePulseDetailed(
     }
   }
   let potentialApprovalSnapshot = [];
-  if (mode === "mortality") {
+  if (mortalityMode) {
     try {
       if (!Array.isArray(potentialCurrentApprovalKeyIds)) {
         return reject("E_VALIDATOR_INTERNAL");
@@ -545,13 +553,13 @@ function validatePulseDetailed(
   );
   const possibleApprovalCount = approvals.length + potentialApprovalIds.size;
   if (
-    (mode !== "mortality" && approvals.length < currentDescriptor.quorum.threshold) ||
-    (mode === "mortality" && possibleApprovalCount < currentDescriptor.quorum.threshold)
+    (!mortalityMode && approvals.length < currentDescriptor.quorum.threshold) ||
+    (mortalityMode && possibleApprovalCount < currentDescriptor.quorum.threshold)
   ) {
     return reject(
       "E_APPROVAL_INSUFFICIENT_QUORUM",
       "/approvals",
-      `${mode === "mortality" ? possibleApprovalCount : approvals.length}/${currentDescriptor.quorum.threshold}`
+      `${mortalityMode ? possibleApprovalCount : approvals.length}/${currentDescriptor.quorum.threshold}`
     );
   }
 
@@ -609,7 +617,7 @@ function validatePulseDetailed(
   }
 
   const missingCurrentApprovalIds = [];
-  if (mode === "mortality") {
+  if (mortalityMode) {
     const selected = new Set();
     const activationNeeded = Math.max(0, body.next_quorum.threshold - activationIds.size);
     for (const keyId of retainedPotentialApprovalIds.slice(0, activationNeeded)) {
@@ -642,7 +650,11 @@ function validatePulseDetailed(
     next_custody_descriptor: nextDescriptor,
     next_state_root: body.state_root
   };
-  if (missingCurrentApprovalIds.length === 0 && missingAcceptanceIds.length === 0) {
+  if (
+    !opaquePayload &&
+    missingCurrentApprovalIds.length === 0 &&
+    missingAcceptanceIds.length === 0
+  ) {
     return accept(capability);
   }
   const latentCapability = {
@@ -655,7 +667,7 @@ function validatePulseDetailed(
     missing_current_approval_key_ids: missingCurrentApprovalIds,
     missing_acceptance_key_ids: missingAcceptanceIds
   };
-  return mode === "mortality"
+  return mortalityMode
     ? acceptMortalitySuccessor(latentCapability)
     : acceptLatent(latentCapability);
 }
@@ -731,6 +743,17 @@ export function validateMortalitySuccessor(input, potentialCurrentApprovalKeyIds
     return validatePulseDetailed(
       { ...ownedInput, potentialCurrentApprovalKeyIds },
       "mortality"
+    );
+  });
+}
+
+export function validateOpaqueMortalitySuccessor(input, potentialCurrentApprovalKeyIds) {
+  return total(() => {
+    const ownedInput = readPulseInput(input);
+    if (ownedInput.failure) return ownedInput.failure;
+    return validatePulseDetailed(
+      { ...ownedInput, potentialCurrentApprovalKeyIds },
+      "mortality-opaque"
     );
   });
 }

@@ -1,14 +1,44 @@
 import { asBytes, equalBytes, isSharedByteView, utf8Bytes } from "./bytes.mjs";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
-const getPrototypeOf = Object.getPrototypeOf;
-const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-const getOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
-const hasOwn = Object.hasOwn;
-const isArray = Array.isArray;
-const ownKeys = Reflect.ownKeys;
+const arrayBufferIsView = ArrayBuffer.isView;
+const arrayIsArray = Array.isArray;
 const functionToString = Function.prototype.toString;
+const jsonStringify = JSON.stringify;
 const objectConstructorSource = functionToString.call(Object);
+const objectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+const objectGetOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
+const objectGetPrototypeOf = Object.getPrototypeOf;
+const reflectApply = Reflect.apply;
+const reflectOwnKeys = Reflect.ownKeys;
+const invalidRecordPrototype = Symbol("invalid record prototype");
+const parsedRecords = new WeakSet();
+const slotProbeSentinel = Object.freeze({});
+const intrinsicSlotProbes = [
+  [Date.prototype.getTime, []],
+  [objectGetOwnPropertyDescriptor(Map.prototype, "size").get, []],
+  [objectGetOwnPropertyDescriptor(Set.prototype, "size").get, []],
+  [WeakMap.prototype.has, [slotProbeSentinel]],
+  [WeakSet.prototype.has, [slotProbeSentinel]],
+  [Boolean.prototype.valueOf, []],
+  [Number.prototype.valueOf, []],
+  [String.prototype.valueOf, []],
+  [BigInt.prototype.valueOf, []],
+  [Symbol.prototype.valueOf, []],
+  [objectGetOwnPropertyDescriptor(RegExp.prototype, "source").get, []],
+  [objectGetOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength").get, []],
+  [objectGetOwnPropertyDescriptor(DataView.prototype, "byteLength").get, []]
+];
+if (typeof SharedArrayBuffer === "function") {
+  intrinsicSlotProbes.push([
+    objectGetOwnPropertyDescriptor(SharedArrayBuffer.prototype, "byteLength").get,
+    []
+  ]);
+}
+if (typeof WeakRef === "function") {
+  intrinsicSlotProbes.push([WeakRef.prototype.deref, []]);
+}
+Object.freeze(intrinsicSlotProbes);
 
 export const JSON_LIMITS = Object.freeze({
   default_bytes: 1024 * 1024,
@@ -40,32 +70,148 @@ function hasLoneSurrogate(value) {
   return false;
 }
 
-function assertIJson(value) {
-  if (value === null || typeof value === "boolean") return;
-  if (typeof value === "string") {
-    if (hasLoneSurrogate(value)) {
-      throw new JsonInputError("E_PARSE_NON_IJSON", "lone-surrogate");
+function nonIJson(detail) {
+  throw new JsonInputError("E_PARSE_NON_IJSON", detail);
+}
+
+function hasRecognizedIntrinsicSlots(value) {
+  if (arrayBufferIsView(value)) return true;
+  for (const [probe, args] of intrinsicSlotProbes) {
+    try {
+      reflectApply(probe, value, args);
+      return true;
+    } catch {
+      // An incompatible receiver proves only that this particular slot is absent.
     }
-    return;
+  }
+  return false;
+}
+
+function plainRecordPrototype(value) {
+  let prototype;
+  try {
+    prototype = objectGetPrototypeOf(value);
+  } catch {
+    return invalidRecordPrototype;
+  }
+  if (prototype === null) return null;
+
+  let parent;
+  let constructorDescriptor;
+  try {
+    parent = objectGetPrototypeOf(prototype);
+    constructorDescriptor = objectGetOwnPropertyDescriptor(prototype, "constructor");
+  } catch {
+    return invalidRecordPrototype;
+  }
+  if (parent !== null || !constructorDescriptor || !("value" in constructorDescriptor)) {
+    return invalidRecordPrototype;
+  }
+  try {
+    const prototypeDescriptor = objectGetOwnPropertyDescriptor(
+      constructorDescriptor.value,
+      "prototype"
+    );
+    return (
+      typeof constructorDescriptor.value === "function" &&
+      prototypeDescriptor &&
+      "value" in prototypeDescriptor &&
+      prototypeDescriptor.value === prototype &&
+      functionToString.call(constructorDescriptor.value) === objectConstructorSource
+    ) ? prototype : invalidRecordPrototype;
+  } catch {
+    return invalidRecordPrototype;
+  }
+}
+
+function ownDataDescriptors(value) {
+  let descriptors;
+  let keys;
+  try {
+    descriptors = objectGetOwnPropertyDescriptors(value);
+    keys = reflectOwnKeys(descriptors);
+  } catch {
+    nonIJson("container-inspection-failed");
+  }
+  if (keys.some((key) => typeof key === "symbol")) nonIJson("symbol-property");
+  return { descriptors, keys };
+}
+
+function dataValue(descriptor, detail) {
+  if (!descriptor || !("value" in descriptor) || !descriptor.enumerable) {
+    nonIJson(detail);
+  }
+  return descriptor.value;
+}
+
+function canonicalizeIJson(value, memo, active) {
+  if (value === null || typeof value === "boolean") return jsonStringify(value);
+  if (typeof value === "string") {
+    if (hasLoneSurrogate(value)) nonIJson("lone-surrogate");
+    return jsonStringify(value);
   }
   if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      throw new JsonInputError("E_PARSE_NON_IJSON", "non-finite-number");
+    if (!Number.isFinite(value)) nonIJson("non-finite-number");
+    return jsonStringify(value);
+  }
+  if (!value || typeof value !== "object") nonIJson(`unsupported-${typeof value}`);
+  if (memo.has(value)) return memo.get(value);
+  if (active.has(value)) nonIJson("cyclic-reference");
+
+  active.add(value);
+  let result;
+  try {
+    if (arrayIsArray(value)) {
+      const { descriptors, keys } = ownDataDescriptors(value);
+      const lengthDescriptor = descriptors.length;
+      if (!lengthDescriptor || !("value" in lengthDescriptor)) nonIJson("array-length");
+      const length = lengthDescriptor.value;
+      if (!Number.isSafeInteger(length) || length < 0 || keys.length !== length + 1) {
+        nonIJson("sparse-or-extended-array");
+      }
+      const entries = [];
+      for (let index = 0; index < length; index += 1) {
+        entries.push(
+          canonicalizeIJson(
+            dataValue(descriptors[String(index)], "array-accessor-or-hole"),
+            memo,
+            active
+          )
+        );
+      }
+      result = `[${entries.join(",")}]`;
+    } else {
+      const recordPrototype = plainRecordPrototype(value);
+      if (recordPrototype === invalidRecordPrototype) nonIJson("non-plain-object");
+      if (
+        recordPrototype === null &&
+        !parsedRecords.has(value) &&
+        hasRecognizedIntrinsicSlots(value)
+      ) {
+        nonIJson("intrinsic-slot-object");
+      }
+      const { descriptors, keys } = ownDataDescriptors(value);
+      const names = keys;
+      for (const name of names) {
+        if (typeof name !== "string") nonIJson("symbol-property");
+      }
+      names.sort();
+      result = `{${names
+        .map((name) => {
+          const entry = dataValue(descriptors[name], "object-accessor-or-non-enumerable");
+          return `${canonicalizeIJson(name, memo, active)}:${canonicalizeIJson(entry, memo, active)}`;
+        })
+        .join(",")}}`;
     }
-    return;
+  } finally {
+    active.delete(value);
   }
-  if (Array.isArray(value)) {
-    for (const entry of value) assertIJson(entry);
-    return;
-  }
-  if (value && typeof value === "object") {
-    for (const [key, entry] of Object.entries(value)) {
-      assertIJson(key);
-      assertIJson(entry);
-    }
-    return;
-  }
-  throw new JsonInputError("E_PARSE_NON_IJSON", `unsupported-${typeof value}`);
+  memo.set(value, result);
+  return result;
+}
+
+function assertIJson(value) {
+  canonicalizeIJson(value, new WeakMap(), new WeakSet());
 }
 
 class DuplicateAwareParser {
@@ -189,6 +335,7 @@ class DuplicateAwareParser {
 
   parseObject(containerDepth) {
     const result = Object.create(null);
+    parsedRecords.add(result);
     const keys = new Set();
     this.index += 1;
     this.skipWhitespace();
@@ -274,128 +421,13 @@ export function parseJsonBytes(bytes, options = {}) {
   return parseJsonDocument(bytes, options).value;
 }
 
-function failNonIJson(detail) {
-  throw new JsonInputError("E_PARSE_NON_IJSON", detail);
-}
-
-function snapshotOwnDescriptors(value) {
-  try {
-    const descriptorMap = getOwnPropertyDescriptors(value);
-    return ownKeys(descriptorMap).map((key) => [
-      key,
-      getOwnPropertyDescriptor(descriptorMap, key).value
-    ]);
-  } catch {
-    failNonIJson("uninspectable-object");
-  }
-}
-
-function isDataProperty(descriptor) {
-  return hasOwn(descriptor, "value");
-}
-
-function isArrayValue(value) {
-  try {
-    return isArray(value);
-  } catch {
-    failNonIJson("uninspectable-array-brand");
-  }
-}
-
-function isPlainRecord(value) {
-  let prototype;
-  try {
-    prototype = getPrototypeOf(value);
-  } catch {
-    failNonIJson("uninspectable-prototype");
-  }
-  if (prototype === null || prototype === Object.prototype) return true;
-
-  try {
-    if (getPrototypeOf(prototype) !== null) return false;
-    const constructorDescriptor = getOwnPropertyDescriptor(prototype, "constructor");
-    return Boolean(
-      constructorDescriptor &&
-        isDataProperty(constructorDescriptor) &&
-        typeof constructorDescriptor.value === "function" &&
-        functionToString.call(constructorDescriptor.value) === objectConstructorSource
-    );
-  } catch {
-    return false;
-  }
-}
-
-function canonicalizeArray(value, active) {
-  const entries = snapshotOwnDescriptors(value);
-  const byKey = new Map(entries);
-  const lengthDescriptor = byKey.get("length");
-  if (
-    !lengthDescriptor ||
-    !isDataProperty(lengthDescriptor) ||
-    lengthDescriptor.enumerable ||
-    !Number.isSafeInteger(lengthDescriptor.value) ||
-    lengthDescriptor.value < 0
-  ) {
-    failNonIJson("array-length-invalid");
-  }
-  const length = lengthDescriptor.value;
-  if (entries.length !== length + 1) failNonIJson("array-hole-or-extra-property");
-
-  const serialized = [];
-  for (let index = 0; index < length; index += 1) {
-    const descriptor = byKey.get(String(index));
-    if (!descriptor || !descriptor.enumerable || !isDataProperty(descriptor)) {
-      failNonIJson("array-hole-or-accessor");
-    }
-    serialized.push(canonicalizeValue(descriptor.value, active));
-  }
-  return `[${serialized.join(",")}]`;
-}
-
-function canonicalizeRecord(value, active) {
-  if (!isPlainRecord(value)) failNonIJson("exotic-object");
-  const entries = snapshotOwnDescriptors(value);
-  for (const [key, descriptor] of entries) {
-    if (typeof key !== "string") failNonIJson("symbol-property");
-    if (hasLoneSurrogate(key)) failNonIJson("lone-surrogate");
-    if (!descriptor.enumerable) failNonIJson("non-enumerable-property");
-    if (!isDataProperty(descriptor)) failNonIJson("accessor-property");
-  }
-  entries.sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
-  return `{${entries
-    .map(([key, descriptor]) =>
-      `${JSON.stringify(key)}:${canonicalizeValue(descriptor.value, active)}`
-    )
-    .join(",")}}`;
-}
-
-function canonicalizeValue(value, active) {
-  if (value === null || typeof value === "boolean") return JSON.stringify(value);
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) failNonIJson("non-finite-number");
-    return JSON.stringify(value);
-  }
-  if (typeof value === "string") {
-    if (hasLoneSurrogate(value)) failNonIJson("lone-surrogate");
-    return JSON.stringify(value);
-  }
-  if (!value || typeof value !== "object") {
-    failNonIJson(`unsupported-${typeof value}`);
-  }
-  if (active.has(value)) failNonIJson("cyclic-object");
-
-  active.add(value);
-  try {
-    return isArrayValue(value)
-      ? canonicalizeArray(value, active)
-      : canonicalizeRecord(value, active);
-  } finally {
-    active.delete(value);
-  }
-}
-
 export function canonicalize(value) {
-  return canonicalizeValue(value, new WeakSet());
+  try {
+    return canonicalizeIJson(value, new WeakMap(), new WeakSet());
+  } catch (error) {
+    if (error instanceof JsonInputError) throw error;
+    throw new JsonInputError("E_PARSE_NON_IJSON", "canonicalization-failed");
+  }
 }
 
 export function canonicalBytes(value) {

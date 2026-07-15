@@ -14,6 +14,7 @@
     "genesis_hash": "sha256:G1c4zxonM6nTGA8ZOycC7FIHj5kqrR6_pFnF3yWXdm8",
     "pulse_hash": "sha256:1FFUQHwRe_zDxVMZ9mNSc1x354fypq5eesSMhMiPc9M",
     "unsigned_code": "E_APPROVAL_INSUFFICIENT_QUORUM",
+    "missing_heartbeat_payload_status": "latent_successor_not_dead",
     "alive_status": "operationally_alive",
     "dead_status": "dead_under_v0_assumptions"
   },
@@ -53,10 +54,16 @@
     "cloned_genesis": "E_LINEAGE_UNKNOWN",
     "cloned_parent": "E_PARENT_REQUIRED",
     "latent_status": "latent",
-    "latent_missing": 1,
-    "conditional_completion_status": "latent",
-    "conditional_missing_current_approvals": 1,
-    "strict_completion_code": "E_APPROVAL_INSUFFICIENT_QUORUM"
+    "latent_missing": 1
+  },
+  "completion_cases": {
+    "fragment_rejection": "E_APPROVAL_INSUFFICIENT_QUORUM",
+    "fragment_union": "latent_successor_not_dead",
+    "fragment_union_successors": 1,
+    "usable_completion": "latent_successor_not_dead",
+    "incomplete": "dead_under_v0_assumptions",
+    "missing_membership_payload": "evidence_payload_unavailable",
+    "missing_membership_payload_classified": false
   },
   "fork_cases": {
     "first": "accept",
@@ -64,7 +71,10 @@
     "sibling": "E_FORK_DETECTED",
     "equivocation_count": 1,
     "post_fork": "E_LINEAGE_ALREADY_FORKED",
-    "head_after_fork": null
+    "head_after_fork": null,
+    "pretty_pending_status": "evidence_equivocation",
+    "pretty_pending_classified": false,
+    "pretty_pending_equivocation_count": 1
   },
   "adversarial": {
     "seed_decimal": 1297044052,

@@ -8,6 +8,13 @@ function clone(value) {
 }
 
 export function runPortableScenario(singleton) {
+  const missingPayloadLineage = createLineage(canonicalBytes(singleton.birth));
+  const missingHeartbeatPayload = missingPayloadLineage.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [{ envelopeBytes: canonicalBytes(singleton.heartbeat) }],
+    authorityLossIrreversible: true
+  });
   const opened = createLineage(canonicalBytes(singleton.birth));
   if (opened.status !== "accept") throw new Error(`singleton Genesis rejected: ${opened.code}`);
   const pulse = opened.lineage.append({
@@ -39,6 +46,7 @@ export function runPortableScenario(singleton) {
     genesis_hash: opened.lineage.genesis.object_hash,
     pulse_hash: pulse.object_hash,
     unsigned_code: unsignedResult.code,
+    missing_heartbeat_payload_status: missingHeartbeatPayload.status,
     alive_status: alive.status,
     dead_status: dead.status
   };

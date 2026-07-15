@@ -2,9 +2,11 @@
 
 Last reconciled: 2026-07-15
 
-Branch: `agent/codex-protocol-kernel--trust-boundaries`
+Branch: `agent/codex-protocol-kernel--mortality-proof-correction`
 
-Fork point: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+Current base: `e332bdf639f6b8c4e39186087cde5e0470f7846f`
+
+Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
 
 ## Verified project state
 
@@ -13,19 +15,27 @@ Fork point: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
 - The trusted `src/` kernel is endpoint-neutral. Publication candidate `9eae8c34`
   produced byte-identical committed, Node 22, isolated browser-target, and actual
   Chromium results. Every changed kernel must rerun the same CI gate.
-- Byte acquisition uses captured typed-array intrinsics and owned snapshots;
-  shared storage, detached storage, hostile metadata, and non-I-JSON programmatic
-  values fail closed.
+- Byte acquisition uses captured typed-array intrinsics and owned snapshots.
+  Programmatic canonicalization uses captured internal-slot probes and one
+  data-descriptor snapshot; shared/detached storage, recognized exotica,
+  accessors, hostile metadata, and non-I-JSON values fail closed. Canonical byte
+  parsing remains the stronger boundary for transparent Proxies and
+  indistinguishable host objects.
 - Ed25519 identity and evidence use one strict canonical prime-subgroup profile.
 - Public validators are total with stable first-error precedence. Membership
   changes also prove that supplied evidence can activate the declared next quorum.
-- Mortality is a lineage operation over its recognized head. It independently pools
-  parseable candidate bodies, signature strings, and content-addressed sidecars;
-  cryptographically maps evidence per exact body; then combines every candidate with
-  the same one-shot global usable-key snapshot. Its internal conditional validator is
-  intentionally not re-exported by the supported `src/index.mjs` API, reentrant
-  mutation is blocked, and distinct recomposed valid siblings record a fork before
-  mortality.
+- Mortality is a lineage operation over its recognized head. A module-private
+  constructor token blocks chosen-head injection. Within its non-Proxy v0 input
+  profile, the operation captures own-data observer options and pending records,
+  owns all evidence bytes before analysis, blocks reentrant mutation, independently
+  pools parseable bodies/signatures/content-addressed sidecars, and maps evidence
+  cryptographically per exact body. Usable-key projection obeys observed sign-once
+  commitments. Authenticated multi-body signing is `evidence_equivocation`. A
+  completion-capable membership body without a verified sidecar becomes
+  `evidence_payload_unavailable` only after authority loss is declared irreversible
+  and no fresh quorum or verified latent child independently establishes non-death.
+  Internal conditional helpers are not
+  re-exported by `src/index.mjs`.
 - A signed `1-of-1` birth is a valid bootstrap profile, but it remains controlled
   by the sole key until custody is transferred.
 - Logical `2-of-3` keys held in one browser remain one physical/administrative

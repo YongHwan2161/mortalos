@@ -19,7 +19,7 @@ const forbidden = [
   ["CommonJS require", /\brequire\s*\(/],
   ["DOM dependency", /\b(?:window|document)\s*\./],
   ["network dependency", /\b(?:fetch|WebSocket)\s*\(?/],
-  ["ambient clock", /\bDate\s*\./],
+  ["ambient clock", /\b(?:new\s+Date\s*\(|Date\s*\.\s*now\s*\(|Date\s*\()/],
   ["ambient randomness", /\bMath\s*\.\s*random\s*\(/]
 ];
 
