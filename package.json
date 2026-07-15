@@ -13,6 +13,7 @@
     "verify:license": "node scripts/verify-license.mjs",
     "verify:spec": "node scripts/verify-spec.mjs",
     "test:governance": "node --test test/agent-governance.test.mjs",
+    "test:governance:coverage": "node --test --experimental-test-coverage --test-coverage-include=scripts/create-agent-worktree.mjs --test-coverage-include=scripts/verify-agent-pr.mjs --test-coverage-lines=90 --test-coverage-branches=75 --test-coverage-functions=90 test/agent-governance.test.mjs",
     "verify:agent-pr": "node scripts/verify-agent-pr.mjs",
     "agent:worktree": "node scripts/create-agent-worktree.mjs",
     "test:conformance": "node --test test/bytes.test.mjs test/codec.test.mjs test/crypto.test.mjs test/schema-validation.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/singleton.test.mjs test/process-determinism.test.mjs",

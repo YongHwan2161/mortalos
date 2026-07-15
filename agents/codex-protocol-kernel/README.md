@@ -47,6 +47,11 @@ their implementation unless the user explicitly expands this role.
 
 Delete disposable task branches after their merge evidence has been recorded.
 
+The worktree helper's `create` mode never attaches an existing branch. Use its
+explicit `resume` mode only after the task branch has the matching remote upstream
+and contains the freshly fetched `origin/main`; stale or diverged branches must be
+synchronized deliberately before reattachment.
+
 ## Workspace map
 
 - `MEMORY.md`: durable, verified context needed in later sessions

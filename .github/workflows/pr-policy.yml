@@ -1,25 +1,27 @@
-name: Agent PR Policy
+name: "UNTRUSTED PR #3 migration bootstrap"
 
 on:
+  # TEMPORARY: PR #3 bootstrap signal. Delete this entire workflow in the
+  # immediate cleanup PR after trusted-pr-policy.yml reaches main.
   pull_request:
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    branches: [main]
+    types: [synchronize]
 
-permissions:
-  contents: read
+concurrency:
+  group: untrusted-pr-3-bootstrap-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
-  policy:
+  bootstrap-untrusted:
+    name: "UNTRUSTED migration marker (not policy)"
+    permissions: {}
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 1
     steps:
-      - name: Check out proposed head
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Validate agent pull-request contract
-        run: node scripts/verify-agent-pr.mjs
-
+      - name: Emit migration marker only
+        shell: bash
+        run: |
+          echo "::warning::UNTRUSTED TEMPORARY bootstrap signal; this is not a policy verdict"
+          echo "No repository checkout, repository script, token, or secret is used."
