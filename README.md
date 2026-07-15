@@ -19,7 +19,7 @@ Implemented:
 - recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; and combines it only with one explicit usable-key snapshot;
 - a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
 - a v3 committed result corpus with 15 named negatives, six reported trust-boundary outcomes, a strict-reject/conditional-completion case, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
-- byte-identical committed, Node.js, and isolated browser-target results. Actual headless-Chromium comparison for the exact PR head remains a required CI gate; the browser `SharedArrayBuffer` case additionally requires the H3 cross-origin-isolated deployment profile.
+- byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium results on publication candidate `9eae8c34`; every changed head reruns that CI gate, while the browser `SharedArrayBuffer` case additionally requires the H3 cross-origin-isolated deployment profile.
 
 Not implemented:
 

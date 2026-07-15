@@ -451,7 +451,7 @@ Mortality evaluation MUST be an operation on that lineage graph. The lineage sup
 
 No endpoint type, network, UI, AI, or wall-clock input is part of protocol validity.
 
-This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Its committed expected result, direct Node result, and isolated browser-target result are byte-identical locally; actual Chromium comparison for the exact PR head remains a required CI gate. A second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
+This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Publication candidate `9eae8c34` produced byte-identical committed, Node 22, isolated browser-target, and actual Chromium results; every changed head must rerun that CI gate. A second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
 

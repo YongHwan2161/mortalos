@@ -28,9 +28,12 @@ shared project files and must not be used as a lock that blocks the project inde
   records recomposed valid sibling forks, and does not re-export its internal
   conditional validator from the supported `src/index.mjs` API;
   sparse/exotic programmatic values and hostile context getters also fail closed
-- Handoff: ready for immutable-head review by `reviewer-merge-gate`; actual Chromium
-  and Node 22 equivalence must pass PR CI because the local browser download endpoint
-  returned an empty archive
+- CI evidence: publication candidate `9eae8c34` passed Agent PR Policy and every
+  Verify step, including Node 22, actual Chromium differential verification,
+  coverage, and dependency audit. Every changed head must rerun the same gates.
+- Handoff: ready for immutable-head review by `reviewer-merge-gate`; the local
+  browser download endpoint returned an empty archive, so actual-browser evidence
+  comes from the recorded GitHub CI run
 
 ### 2026-07-15 — Agent-isolated contribution and reviewer merge gate
 

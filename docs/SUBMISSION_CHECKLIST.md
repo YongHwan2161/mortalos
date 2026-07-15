@@ -18,7 +18,7 @@ Official event rules and the submission form remain authoritative. This file tra
 |---|---|---|
 | Public source and Apache-2.0 | Complete | Repository, root license, package metadata, contribution terms |
 | Reproducible portable core | Complete | Locked install, trust-boundary/conformance/property tests, coverage, deterministic H2 v3 traces |
-| Node/Chromium differential | Pending exact-head CI | Committed result, Node, and browser-target realm are byte-identical locally; actual Chromium must match the immutable PR head |
+| Node/Chromium differential | Complete for publication candidate | Committed result, Node 22, browser-target realm, and actual Chromium were byte-identical on PR head `9eae8c34`; every changed head must rerun the same gate |
 | One-person CLI birth proof | Complete within proof scope | Ephemeral singleton birth/heartbeat; not a stable CLI product |
 | No-rebuild developer-tool path | Blocked | MortalOS Lab not hosted |
 | One-person visual browser birth | Blocked | Incubator Workers/WebCrypto lifecycle pending |

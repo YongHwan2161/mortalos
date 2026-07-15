@@ -1,8 +1,8 @@
 # MortalOS v0 Requirements Traceability
 
-Status: **Normative v0 baseline with hardened portable core, committed H2 v3 evidence, and exact-head Chromium CI pending**
+Status: **Normative v0 baseline with hardened portable core, committed H2 v3 evidence, and publication-candidate Chromium CI verification**
 
-This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, Node/browser-target portability, and H2 evidence are executable locally; the actual-Chromium runner must still pass for the exact PR head. State-runtime, participant-network, visual-UI, and AI IDs remain reserved.
+This document maps every foundational invariant to protocol requirements, rejection codes, and automated or planned tests. Transition, lineage, mortality, singleton, Node/browser-target portability, and H2 evidence are executable locally; publication candidate `9eae8c34` also passed the Node 22 and actual-Chromium CI differential, and every changed head must rerun that gate. State-runtime, participant-network, visual-UI, and AI IDs remain reserved.
 
 ## 1. Test ID convention
 
@@ -133,9 +133,9 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Endpoint-neutral source boundary | `scripts/verify-portable.mjs` scans every trusted source module | PASS |
 | `1-of-1` birth and controlled singleton mortality | `test/vectors/singleton.json`, `test/singleton.test.mjs`, `scripts/demo-singleton.mjs` | PASS |
 | `1-of-1` to logical `2-of-3` authority expansion | one-process generated-key handoff test; former sole key is then insufficient; physical distribution is not established | PASS |
-| Cross-runtime portable result corpus | format v3 committed expected result, Node, and browser-target realm cover strict-point, hostile-metadata, deterministic outcomes, and strict-reject versus conditional-current-approval completion locally; exact-head actual Chromium is pending CI; Node/browser-target actively exercise SAB rejection, while actual-browser SAB remains an H3 cross-origin-isolated test | PASS locally; exact-head browser CI pending |
+| Cross-runtime portable result corpus | Format v3 committed expected result, Node 22, browser-target realm, and actual Chromium cover strict-point, hostile-metadata, deterministic outcomes, and strict-reject versus conditional-current-approval completion on publication candidate `9eae8c34`; Node/browser-target actively exercise SAB rejection, while actual-browser SAB remains an H3 cross-origin-isolated test | PASS on publication candidate; rerun required for changed heads |
 | Portable replay/fork/equivocation/post-fork halt | `test/vectors/fork.json`, `test/portable-corpus.mjs` | PASS |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.
 
-The portable JavaScript implementation exposes the reference result and a committed, language-readable expected-result fixture. Node/browser-target conformance within that implementation is verified locally; actual Chromium remains an exact-head CI gate. Full implementation independence still requires a second implementation that consumes canonical evidence records without importing reference code.
+The portable JavaScript implementation exposes the reference result and a committed, language-readable expected-result fixture. Node/browser-target conformance is verified locally, and publication candidate `9eae8c34` passed actual Chromium CI; the workflow must rerun for every changed head. Full implementation independence still requires a second implementation that consumes canonical evidence records without importing reference code.

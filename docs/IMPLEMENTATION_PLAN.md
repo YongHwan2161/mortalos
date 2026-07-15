@@ -1,6 +1,6 @@
 # MortalOS Implementation Plan
 
-Status: **C1 portable deterministic core verified locally; exact-head Chromium CI pending; H3 visual Lab next**
+Status: **C1 portable deterministic core verified across Node 22 and Chromium; H3 visual Lab next**
 
 Last reviewed: **2026-07-15**
 
@@ -36,7 +36,7 @@ The reference core verifies:
 - 10,000 deterministic mixed valid/invalid continuation cases; and
 - byte-identical H2 v3 traces in fresh processes.
 
-## 3. C1 portable deterministic core — locally verified, exact-head browser gate pending
+## 3. Verified gate — C1 portable deterministic core
 
 ### Objective
 
@@ -58,15 +58,15 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 ### Pass record
 
 - [x] Portable modules contain no forbidden platform dependency.
-- [x] Committed, Node, and isolated browser-target results are byte-identical locally.
-- [ ] Actual Chromium reproduces the portable v3 result for the immutable PR head; this remains a required CI gate.
+- [x] Committed, Node 22, isolated browser-target, and actual Chromium results are byte-identical on publication candidate `9eae8c34`.
+- [x] The PR workflow requires every changed head to rerun the Node/Chromium differential gate.
 - [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
 - [x] Forged context, replay, fork, equivocation, no-op membership, durable latent succession, and conditional-current-approval completion pass in Node and the isolated browser-target runtime.
 - [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
 - [x] Clean locked installation and the full local suite pass.
-- [ ] Actual Chromium execution passes against the immutable PR head in CI.
+- [x] Actual Chromium execution passes on publication candidate `9eae8c34`; later heads remain subject to the same required CI gate.
 - [x] An adapter cannot alter canonical bytes, validation order, rejection codes, or lineage decisions.
 
 Failure rule: any cross-runtime mismatch reopens C1 and blocks endpoint product work. Do not copy the validator into UI or CLI code as a workaround.
@@ -177,7 +177,7 @@ H3 remains ahead of C2 for the hackathon because visual explanation and a hosted
 
 ### R1 — ownerless authority lineage ◐
 
-Node/browser-target reference agreement is complete locally; actual Chromium agreement for the exact PR head remains a CI gate. Further exit criteria are a second independently written implementation, persistent evidence replay, and broader correctly re-signed valid-history generation. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; the externally evidenced deployment distribution of keys in the accepted descriptor must prevent unilateral continuation.
+Node/browser-target/actual-Chromium reference agreement passed on publication candidate `9eae8c34`, and every changed head must rerun that CI gate. Further exit criteria are a second independently written implementation, persistent evidence replay, and broader correctly re-signed valid-history generation. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; the externally evidenced deployment distribution of keys in the accepted descriptor must prevent unilateral continuation.
 
 ### R2 — deterministic state-bearing kernel ⏭ FUNDAMENTAL
 

@@ -256,9 +256,9 @@ for (const statement of requiredThreatStatements) {
 }
 
 const portableGateStatements = [
-  "C1 portable deterministic core — locally verified, exact-head browser gate pending",
-  "Committed, Node, and isolated browser-target results are byte-identical locally.",
-  "Actual Chromium reproduces the portable v3 result for the immutable PR head",
+  "Verified gate — C1 portable deterministic core",
+  "Committed, Node 22, isolated browser-target, and actual Chromium results are byte-identical on publication candidate `9eae8c34`.",
+  "The PR workflow requires every changed head to rerun the Node/Chromium differential gate.",
   "Exactly 10,000 cases replay from seed `1297044052`",
   "any cross-runtime mismatch reopens C1"
 ];
@@ -267,9 +267,9 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "C1 portable deterministic core verified locally; exact-head Chromium CI pending; H3 visual MortalOS Lab next",
-  "| Node/Chromium equivalence | Pending exact-head CI |",
-  "exact-head actual Chromium: pending CI",
+  "C1 portable deterministic core verified across Node 22 and Chromium; H3 visual MortalOS Lab next",
+  "| Node/Chromium equivalence | Verified on publication candidate |",
+  "publication-candidate Node 22 and actual Chromium CI: PASS;",
   "The verified CLI singleton uses one key"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);

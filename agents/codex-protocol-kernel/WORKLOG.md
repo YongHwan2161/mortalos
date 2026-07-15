@@ -47,8 +47,11 @@ result, and reproducible verification.
   branch across supported Node/V8 runs, and 100% function coverage; H2 digest
   `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
   audit 0 vulnerabilities; 61-file package dry-run; license/spec/governance gates pass
-- Handoff: local Playwright download returned an empty archive, so actual Node 22
-  Chromium equivalence remains mandatory in PR CI before immutable-head review
+- CI: publication candidate `9eae8c34` passed Agent PR Policy and the complete
+  Verify workflow, including Node 22, actual Chromium differential verification,
+  coverage, and dependency audit; every changed head must rerun those gates
+- Handoff: local Playwright download returned an empty archive; immutable-head
+  review uses the recorded actual-browser CI evidence
 
 ## Entry template
 

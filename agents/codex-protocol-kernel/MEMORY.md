@@ -10,9 +10,9 @@ Fork point: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
 
 - MortalOS currently implements a portable lifecycle/evidence kernel, not yet a
   complete network OS, distributed state machine, or ownerless LLM runtime.
-- The trusted `src/` kernel is endpoint-neutral. Its versioned corpus produces
-  byte-identical committed, Node.js, and isolated browser-target results; actual
-  Chromium remains a required immutable-head CI gate for every changed kernel.
+- The trusted `src/` kernel is endpoint-neutral. Publication candidate `9eae8c34`
+  produced byte-identical committed, Node 22, isolated browser-target, and actual
+  Chromium results. Every changed kernel must rerun the same CI gate.
 - Byte acquisition uses captured typed-array intrinsics and owned snapshots;
   shared storage, detached storage, hostile metadata, and non-I-JSON programmatic
   values fail closed.
