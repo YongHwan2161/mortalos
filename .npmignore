@@ -4,6 +4,8 @@ coverage/
 upload/
 .agents/
 .codex/
+agents/
+AGENTS.md
 *.tgz
 *.log
 .env
