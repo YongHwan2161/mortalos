@@ -17,14 +17,15 @@ The system does not claim that all data copies can be deleted, that death can al
 |---|---|
 | Organism identity | Derived only from the canonical valid Genesis body and immutable within a lineage. |
 | Lineage integrity | Every accepted Pulse has one accepted parent and obeys deterministic transition rules. |
-| Continuity authority | The current descriptor's quorum is required to advance; no individual can advance only when its threshold is greater than one. |
-| Custody membership | Changes only through a Pulse authorized by the current custody descriptor and accepted by new custodians. |
-| State integrity | `state_root` commits to the logical state used by the genome. |
-| Genome integrity | `genome_hash` is fixed as a content commitment; v0 does not execute it. |
+| Continuity authority | The current descriptor's quorum is required to advance; no single custodian key can advance when its threshold is greater than one. No-individual or no-domain control requires separate deployment evidence. |
+| Custody membership | Changes only through a Pulse authorized by the current custody descriptor, accepted by new custodians, and evidenced strongly enough to activate the next quorum. |
+| Declared state-root continuity | v0 authenticates and preserves one immutable declared `state_root`; it does not receive state bytes, derive the root, or execute the genome. Content binding and transition are R2 work. |
+| Declared genome-hash continuity | v0 authenticates and preserves the opaque declared `genome_hash`; it does not receive artifact bytes or derive or verify their hash. An observer may independently bind an externally obtained artifact to the declaration. |
 | Private signing keys | Never intentionally serialized, logged, committed, or sent over the network. |
 | Mortality semantics | Loss of succession authority is not confused with deletion of all historical bytes or temporary loss of state availability. |
 | Validator independence | Endpoint type, transport, UI, GPT, and signaling cannot alter validity rules. |
 | Failure-domain honesty | Distinct key IDs are never presented as proof of independent people, browsers, devices, or operators. |
+| Input consistency | A validation decision uses owned snapshots, not caller-controlled bytes that may change between checks. |
 
 ## 3. Trust boundaries
 
@@ -54,6 +55,7 @@ The following MUST be treated as untrusted inputs:
 - GPT-5.6 and every other model output;
 - user-entered text and imported files;
 - event-payload sidecars, until canonical bytes and their domain-separated commitment are verified;
+- mutable, subclassed, proxied, or SharedArrayBuffer-backed byte views;
 - remote peer capability claims;
 - public snapshots and historical messages; and
 - deserialized, cloned, or hand-built objects that claim to be accepted or latent evidence.
@@ -94,8 +96,11 @@ The implementation and tests MUST cover:
 - concurrent honest proposals;
 - malformed JSON and schema violations;
 - oversized or excessively nested JSON input;
+- overrideable byte metadata, SharedArrayBuffer mutation, and time-of-check/time-of-use input substitution;
 - wrong hashes, parents, sequence values, identities, or algorithms;
-- invalid, duplicate, ineligible, or insufficient signatures; and
+- low-order, non-canonical, and mixed-order Ed25519 public keys or signature `R` encodings;
+- invalid, duplicate, ineligible, or insufficient signatures;
+- membership descriptors whose supplied authorization cannot activate the next threshold; and
 - attempted action by a peer removed from custody.
 
 Safety MUST hold for every included failure. Liveness is conditional as specified below.
@@ -138,7 +143,7 @@ Fewer than the current threshold of eligible unique custodian keys cannot author
 
 ### S-4 — Membership safety
 
-Only the current quorum may change custody, and every newly added custodian must prove possession by accepting the handoff.
+Only the current quorum may change custody, every newly added custodian must prove possession by accepting the handoff, and the retained current approvers plus new acceptors must cover the next threshold. A handoff cannot install a quorum that its transition evidence cannot activate.
 
 ### S-5 — No silent rollback
 
@@ -159,6 +164,18 @@ A new birth using prior genome/state material but no parent authority samples a 
 ### S-9 — Payload binding
 
 Every accepted Pulse binds the exact canonical event-payload sidecar used by semantic validation. Missing or hash-mismatched sidecars fail closed.
+
+### S-10 — Strict key identity
+
+Custodian public keys and signature `R` values must be canonical prime-order subgroup points. Low-order, non-canonical, and mixed-order encodings cannot create authority, peer-ID aliases, or universal signatures.
+
+### S-11 — Snapshot consistency and totality
+
+Validation reads caller byte inputs through trusted typed-array intrinsics into owned snapshots before semantic use. Shared backing memory is rejected, and hostile input maps to a stable rejection rather than escaping as an exception.
+
+### S-12 — Recognized-head mortality scope
+
+Only a lineage may evaluate mortality. It supplies the current graph-recognized head, snapshots one global usable-current-key observation, reuses that same set for every candidate body, and reconstructs possible direct children from raw pending components. It pools parseable candidate bodies, body-bound signatures, and content-addressed sidecars independently; each signature is reverified against the candidate body's approval and acceptance domains, so unsigned carrier `kind`, array placement, and `key_id` labels cannot hide usable evidence. Different bodies never share a verified signature. A fork has no unique head and remains unclassified rather than producing a death result, and reentrant mutation is blocked while evidence getters are observed.
 
 ## 8. Conditional liveness properties
 
@@ -187,9 +204,11 @@ Examples under the v0 controlled-test assumptions:
 - a `1-of-1` lineage irreversibly loses its sole current private key; or
 - a `2-of-3` lineage loses two current private keys and those keys were never persisted.
 
-The controlled test must also establish that no pending candidate already contains sufficient durable evidence to become valid without new signatures from the lost current quorum. Key destruction does not revoke signatures already created. The reference evaluator accepts either a fully valid direct child or a validator-authenticated partial membership handoff whose current quorum is complete and whose only missing evidence is explicitly listed new-custodian acceptance.
+The controlled test must also establish that no observed candidate body can become valid without a new signature from a current key assumed lost. Key destruction does not revoke signatures already created. `Lineage#evaluateMortality` supplies its own recognized head, pools and cryptographically remaps observed signature strings to eligible signers and roles for each exact body, matches sidecars by the signed payload hash, and deduplicates evidence before running ordinary complete validation. If complete validation fails, an internal conditional validator combines verified durable approvals with the one global usable-current-key snapshot reused for every candidate. Both the possible current-approval set and the resulting next-activation set must reach their thresholds; any missing usable-current approvals and required new-custodian acceptances are reported. This validator is intentionally not re-exported by the supported `src/index.mjs` API. Callers cannot inject a head, conditional capability, per-body usability set, or authoritative key-ID label.
 
-Loss of logical state by itself is `state-stalled`, not protocol-dead, because a valid heartbeat or membership change can still be signed from the committed root. State-backed mortality requires a later protocol with verifiable availability/recovery evidence.
+If two distinct raw pending successors are both fully valid children of the recognized head, mortality evaluation records the fork. If the lineage is forked, mortality is not classified. Fork resolution is outside v0, and selecting either sibling merely to obtain a life/death label would make an observer policy authoritative.
+
+Loss of logical state by itself is `state-stalled`, not protocol-dead, because current custodians can still sign a valid heartbeat or membership change that repeats the authenticated opaque declared root. State-backed mortality requires a later protocol with verifiable availability/recovery evidence.
 
 ### 9.2 What death does not mean
 
@@ -228,7 +247,7 @@ For `n=3`, `threshold=2`, where one key is held per failure domain:
 
 For every permitted v0 custody descriptor, threshold is a strict majority. Therefore any two quorums intersect. Quorum intersection plus honest sign-once prevents valid siblings, but quorum intersection alone does not protect against a Byzantine intersecting peer.
 
-For `n=1`, `threshold=1`, the sole custodian can progress and can create valid siblings by violating sign-once. This mode establishes portable solitary birth, not distributed or ownerless authority. An accepted handoff to `2-of-3` changes that boundary immediately.
+For `n=1`, `threshold=1`, the sole custodian can progress and can create valid siblings by violating sign-once. This mode establishes portable solitary birth, not distributed or ownerless authority. An accepted handoff to `2-of-3` changes the logical custody boundary immediately and makes the old sole key insufficient; the physical or administrative failure-domain boundary changes only when deployment evidence shows those keys are independently controlled.
 
 If a valid fork is observed, MortalOS v0 halts automatic progress and reports fork evidence. It does not claim Byzantine resolution.
 
@@ -285,6 +304,8 @@ Resource contribution must be explicit and revocable in later participant-runtim
 | Claim | v0 status | Qualification |
 |---|---|---|
 | Holder of one current key cannot advance a 2-of-3 lineage | Guaranteed | Quorum counts distinct eligible keys. |
+| Low-order or mixed-order key aliases can satisfy quorum | Rejected | Strict public-key and signature-`R` subgroup/canonical checks run before authority is counted. |
+| A transition can install an evidenced-but-inactive next quorum | Rejected | Retained valid approvers plus valid new acceptors must cover the next threshold. |
 | One endpoint holding two of three keys cannot advance alone | Not claimed | It can satisfy logical quorum; failure-domain distribution is separate. |
 | One key controls a 1-of-1 lineage | Explicit bootstrap property | Do not describe this custody state as ownerless authority. |
 | Bootstrap close loses continuation authority | Conditional | Requires ephemeral keys, no hidden copy, irreversibility, and no latent successor. |
@@ -292,7 +313,9 @@ Resource contribution must be explicit and revocable in later participant-runtim
 | Minority partition cannot advance | Guaranteed | Under current threshold rule. |
 | Public snapshot cannot sign a successor | Guaranteed | Snapshot excludes private keys. |
 | Destroying keys invalidates pre-existing signatures | Not claimed | A latent authorized successor remains usable. |
-| Missing state alone kills the v0 lineage | Not claimed | v0 commits to integrity, not retrievability; report `state-stalled`. |
+| Caller-selected candidate can be treated as the mortality head | Rejected | The lineage supplies its unique recognized head and reconstructs possible direct children from independently observed bodies, signatures, and sidecars. |
+| Forked lineage has a v0 death classification | Not claimed | Without a unique recognized head, mortality remains unclassified. |
+| Missing state alone kills the v0 lineage | Not claimed | v0 preserves an authenticated declared root, not content binding or retrievability; report `state-stalled`. |
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |
 | Byzantine quorum cannot fork | Not guaranteed | Future work. |
 | Sybil-resistant openness | Not implemented | Future work. |

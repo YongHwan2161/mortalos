@@ -1,6 +1,14 @@
-import { equalBytes, utf8Bytes } from "./bytes.mjs";
+import { asBytes, equalBytes, isSharedByteView, utf8Bytes } from "./bytes.mjs";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
+const getPrototypeOf = Object.getPrototypeOf;
+const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+const getOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
+const hasOwn = Object.hasOwn;
+const isArray = Array.isArray;
+const ownKeys = Reflect.ownKeys;
+const functionToString = Function.prototype.toString;
+const objectConstructorSource = functionToString.call(Object);
 
 export const JSON_LIMITS = Object.freeze({
   default_bytes: 1024 * 1024,
@@ -33,6 +41,7 @@ function hasLoneSurrogate(value) {
 }
 
 function assertIJson(value) {
+  if (value === null || typeof value === "boolean") return;
   if (typeof value === "string") {
     if (hasLoneSurrogate(value)) {
       throw new JsonInputError("E_PARSE_NON_IJSON", "lone-surrogate");
@@ -54,7 +63,9 @@ function assertIJson(value) {
       assertIJson(key);
       assertIJson(entry);
     }
+    return;
   }
+  throw new JsonInputError("E_PARSE_NON_IJSON", `unsupported-${typeof value}`);
 }
 
 class DuplicateAwareParser {
@@ -83,13 +94,16 @@ class DuplicateAwareParser {
     return value;
   }
 
-  parseValue(depth) {
-    if (depth > this.maxDepth) {
-      throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `depth>${this.maxDepth}`);
-    }
+  parseValue(containerDepth) {
     const token = this.text[this.index];
-    if (token === "{") return this.parseObject(depth);
-    if (token === "[") return this.parseArray(depth);
+    if (token === "{" || token === "[") {
+      if (containerDepth >= this.maxDepth) {
+        throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `depth>${this.maxDepth}`);
+      }
+      return token === "{"
+        ? this.parseObject(containerDepth + 1)
+        : this.parseArray(containerDepth + 1);
+    }
     if (token === '"') return this.parseString();
     if (token === "t") return this.parseLiteral("true", true);
     if (token === "f") return this.parseLiteral("false", false);
@@ -151,7 +165,7 @@ class DuplicateAwareParser {
     return value;
   }
 
-  parseArray(depth) {
+  parseArray(containerDepth) {
     const result = [];
     this.index += 1;
     this.skipWhitespace();
@@ -161,7 +175,7 @@ class DuplicateAwareParser {
     }
     while (true) {
       this.skipWhitespace();
-      result.push(this.parseValue(depth + 1));
+      result.push(this.parseValue(containerDepth));
       this.skipWhitespace();
       const token = this.text[this.index];
       if (token === "]") {
@@ -173,7 +187,7 @@ class DuplicateAwareParser {
     }
   }
 
-  parseObject(depth) {
+  parseObject(containerDepth) {
     const result = Object.create(null);
     const keys = new Set();
     this.index += 1;
@@ -194,7 +208,7 @@ class DuplicateAwareParser {
       if (this.text[this.index] !== ":") this.fail("expected-colon");
       this.index += 1;
       this.skipWhitespace();
-      result[key] = this.parseValue(depth + 1);
+      result[key] = this.parseValue(containerDepth);
       this.skipWhitespace();
       const token = this.text[this.index];
       if (token === "}") {
@@ -207,35 +221,181 @@ class DuplicateAwareParser {
   }
 }
 
-export function parseJsonBytes(
+function assertLimit(name, value) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `${name}:invalid`);
+  }
+}
+
+export function snapshotBytes(bytes, maxBytes = JSON_LIMITS.default_bytes) {
+  assertLimit("maxBytes", maxBytes);
+  const view = asBytes(bytes);
+  if (!view) {
+    throw new JsonInputError(
+      "E_PARSE_INVALID_UTF8",
+      isSharedByteView(bytes) ? "shared-buffer-unsupported" : "input-not-stable-uint8array"
+    );
+  }
+  if (view.byteLength > maxBytes) {
+    throw new JsonInputError(
+      "E_PARSE_LIMIT_EXCEEDED",
+      `bytes:${view.byteLength}/${maxBytes}`
+    );
+  }
+  const snapshot = new Uint8Array(view.byteLength);
+  try {
+    snapshot.set(view);
+  } catch {
+    throw new JsonInputError("E_PARSE_INVALID_UTF8", "input-buffer-invalid");
+  }
+  return snapshot;
+}
+
+export function parseJsonDocument(
   bytes,
   { maxBytes = JSON_LIMITS.default_bytes, maxDepth = JSON_LIMITS.max_depth } = {}
 ) {
-  if (bytes?.byteLength > maxBytes) {
-    throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `bytes:${bytes.byteLength}/${maxBytes}`);
-  }
+  assertLimit("maxBytes", maxBytes);
+  assertLimit("maxDepth", maxDepth);
+  const snapshot = snapshotBytes(bytes, maxBytes);
   let text;
   try {
-    text = decoder.decode(bytes);
+    text = decoder.decode(snapshot);
   } catch {
     throw new JsonInputError("E_PARSE_INVALID_UTF8", "invalid-utf8");
   }
-  return new DuplicateAwareParser(text, maxDepth).parse();
+  return {
+    bytes: snapshot,
+    value: new DuplicateAwareParser(text, maxDepth).parse()
+  };
+}
+
+export function parseJsonBytes(bytes, options = {}) {
+  return parseJsonDocument(bytes, options).value;
+}
+
+function failNonIJson(detail) {
+  throw new JsonInputError("E_PARSE_NON_IJSON", detail);
+}
+
+function snapshotOwnDescriptors(value) {
+  try {
+    const descriptorMap = getOwnPropertyDescriptors(value);
+    return ownKeys(descriptorMap).map((key) => [
+      key,
+      getOwnPropertyDescriptor(descriptorMap, key).value
+    ]);
+  } catch {
+    failNonIJson("uninspectable-object");
+  }
+}
+
+function isDataProperty(descriptor) {
+  return hasOwn(descriptor, "value");
+}
+
+function isArrayValue(value) {
+  try {
+    return isArray(value);
+  } catch {
+    failNonIJson("uninspectable-array-brand");
+  }
+}
+
+function isPlainRecord(value) {
+  let prototype;
+  try {
+    prototype = getPrototypeOf(value);
+  } catch {
+    failNonIJson("uninspectable-prototype");
+  }
+  if (prototype === null || prototype === Object.prototype) return true;
+
+  try {
+    if (getPrototypeOf(prototype) !== null) return false;
+    const constructorDescriptor = getOwnPropertyDescriptor(prototype, "constructor");
+    return Boolean(
+      constructorDescriptor &&
+        isDataProperty(constructorDescriptor) &&
+        typeof constructorDescriptor.value === "function" &&
+        functionToString.call(constructorDescriptor.value) === objectConstructorSource
+    );
+  } catch {
+    return false;
+  }
+}
+
+function canonicalizeArray(value, active) {
+  const entries = snapshotOwnDescriptors(value);
+  const byKey = new Map(entries);
+  const lengthDescriptor = byKey.get("length");
+  if (
+    !lengthDescriptor ||
+    !isDataProperty(lengthDescriptor) ||
+    lengthDescriptor.enumerable ||
+    !Number.isSafeInteger(lengthDescriptor.value) ||
+    lengthDescriptor.value < 0
+  ) {
+    failNonIJson("array-length-invalid");
+  }
+  const length = lengthDescriptor.value;
+  if (entries.length !== length + 1) failNonIJson("array-hole-or-extra-property");
+
+  const serialized = [];
+  for (let index = 0; index < length; index += 1) {
+    const descriptor = byKey.get(String(index));
+    if (!descriptor || !descriptor.enumerable || !isDataProperty(descriptor)) {
+      failNonIJson("array-hole-or-accessor");
+    }
+    serialized.push(canonicalizeValue(descriptor.value, active));
+  }
+  return `[${serialized.join(",")}]`;
+}
+
+function canonicalizeRecord(value, active) {
+  if (!isPlainRecord(value)) failNonIJson("exotic-object");
+  const entries = snapshotOwnDescriptors(value);
+  for (const [key, descriptor] of entries) {
+    if (typeof key !== "string") failNonIJson("symbol-property");
+    if (hasLoneSurrogate(key)) failNonIJson("lone-surrogate");
+    if (!descriptor.enumerable) failNonIJson("non-enumerable-property");
+    if (!isDataProperty(descriptor)) failNonIJson("accessor-property");
+  }
+  entries.sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+  return `{${entries
+    .map(([key, descriptor]) =>
+      `${JSON.stringify(key)}:${canonicalizeValue(descriptor.value, active)}`
+    )
+    .join(",")}}`;
+}
+
+function canonicalizeValue(value, active) {
+  if (value === null || typeof value === "boolean") return JSON.stringify(value);
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) failNonIJson("non-finite-number");
+    return JSON.stringify(value);
+  }
+  if (typeof value === "string") {
+    if (hasLoneSurrogate(value)) failNonIJson("lone-surrogate");
+    return JSON.stringify(value);
+  }
+  if (!value || typeof value !== "object") {
+    failNonIJson(`unsupported-${typeof value}`);
+  }
+  if (active.has(value)) failNonIJson("cyclic-object");
+
+  active.add(value);
+  try {
+    return isArrayValue(value)
+      ? canonicalizeArray(value, active)
+      : canonicalizeRecord(value, active);
+  } finally {
+    active.delete(value);
+  }
 }
 
 export function canonicalize(value) {
-  assertIJson(value);
-  if (value === null || typeof value === "boolean") return JSON.stringify(value);
-  if (typeof value === "number") return JSON.stringify(value);
-  if (typeof value === "string") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
-  if (value && typeof value === "object") {
-    return `{${Object.keys(value)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalize(value[key])}`)
-      .join(",")}}`;
-  }
-  throw new JsonInputError("E_PARSE_NON_IJSON", `unsupported-${typeof value}`);
+  return canonicalizeValue(value, new WeakSet());
 }
 
 export function canonicalBytes(value) {
@@ -243,5 +403,5 @@ export function canonicalBytes(value) {
 }
 
 export function isCanonical(bytes, value) {
-  return equalBytes(bytes, canonicalBytes(value));
+  return equalBytes(snapshotBytes(bytes, Number.MAX_SAFE_INTEGER), canonicalBytes(value));
 }

@@ -81,14 +81,22 @@ function parseCanonicalWorkflowIdentity(source) {
       throw new Error("invalid canonical workflow identity: root keys must be plain scalars");
     }
   }
-  const rootNameCandidates = lines.filter(
-    (line) => /^(?:name|["']name["'])[ \t]*:/u.test(line)
-  );
+  const rootNameCandidates = lines
+    .map((line, index) => ({ index, line }))
+    .filter(({ line }) => /^(?:name|["']name["'])[ \t]*:/u.test(line));
   const rootNameMatch = rootNameCandidates.length === 1
-    ? /^name: (.+)$/u.exec(rootNameCandidates[0])
+    ? /^name: (.+)$/u.exec(rootNameCandidates[0].line)
     : null;
   if (!rootNameMatch || !CANONICAL_WORKFLOW_NAME.test(rootNameMatch[1])) {
     throw new Error("invalid canonical workflow identity: require one plain root name");
+  }
+  for (let index = rootNameCandidates[0].index + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line.trim().length === 0 || line.trimStart().startsWith("#")) continue;
+    if (/^[ \t]/u.test(line)) {
+      throw new Error("invalid canonical workflow identity: root name cannot continue on another line");
+    }
+    break;
   }
 
   const rootJobsCandidates = lines
@@ -120,7 +128,12 @@ function parseCanonicalWorkflowIdentity(source) {
       if (currentJob && !currentJob.hasProperty) {
         throw new Error("invalid canonical workflow identity: job requires canonical properties");
       }
-      currentJob = { id: jobMatch[1], name: undefined, hasProperty: false };
+      currentJob = {
+        id: jobMatch[1],
+        name: undefined,
+        hasProperty: false,
+        lastPropertyWasName: false
+      };
       jobs.push(currentJob);
       continue;
     }
@@ -128,13 +141,17 @@ function parseCanonicalWorkflowIdentity(source) {
     if (!currentJob) {
       throw new Error("invalid canonical workflow identity: property precedes a job");
     }
+    if (currentJob.lastPropertyWasName && /^ {4}[ \t]/u.test(line)) {
+      throw new Error("invalid canonical workflow identity: job name cannot continue on another line");
+    }
     if (/^    [^ ]/u.test(line)) {
       const propertyMatch = /^    ([A-Za-z_][A-Za-z0-9_-]*):/u.exec(line);
       if (!propertyMatch) {
         throw new Error("invalid canonical workflow identity: job property keys must be plain scalars");
       }
       currentJob.hasProperty = true;
-      if (propertyMatch[1] !== "name") continue;
+      currentJob.lastPropertyWasName = propertyMatch[1] === "name";
+      if (!currentJob.lastPropertyWasName) continue;
       if (currentJob.name !== undefined) {
         throw new Error("invalid canonical workflow identity: duplicate or misplaced job name");
       }
@@ -626,7 +643,7 @@ test("canonical workflow trigger parser rejects quoted, flow, alias, and duplica
   }
 });
 
-test("canonical workflow identity parser rejects comments, quoting, escapes, flow, and duplicates", () => {
+test("canonical workflow identity parser rejects continuations and non-canonical representations", () => {
   const canonical = [
     "name: Agent PR Policy",
     "on:",
@@ -649,6 +666,8 @@ test("canonical workflow identity parser rejects comments, quoting, escapes, flo
     canonical.replace("name: Trusted main-base policy", 'name: "Trusted main-base\\u0020policy"'),
     canonical.replace("name: Agent PR Policy", "name: >\n  Agent PR Policy"),
     canonical.replace("name: Trusted main-base policy", "name: >\n      Trusted main-base policy"),
+    canonical.replace("name: Agent PR Policy", "name: Agent\n  PR Policy"),
+    canonical.replace("name: Trusted main-base policy", "name: Trusted\n      main-base policy"),
     canonical.replace("name: Agent PR Policy", "name: [Agent PR Policy]"),
     canonical.replace("name: Agent PR Policy", "name: *policy-name"),
     canonical.replace("name: Agent PR Policy", 'name: Verify\n"n\\u0061me": "Agent PR Policy"'),

@@ -1,6 +1,6 @@
 # MortalOS Implementation Plan
 
-Status: **C1 portable deterministic core verified; H3 visual Lab next**
+Status: **C1 portable deterministic core verified across Node 22 and Chromium; H3 visual Lab next**
 
 Last reviewed: **2026-07-15**
 
@@ -24,16 +24,17 @@ Browser is first for zero-install visual demonstration, not because the protocol
 
 The reference core verifies:
 
-- canonical bounded Genesis/Pulse/payload bytes;
-- real Ed25519 Genesis approval, Pulse quorum, and custody acceptance;
+- canonical bounded Genesis/Pulse/payload snapshots with hostile-metadata and shared-memory defenses;
+- strict canonical prime-subgroup Ed25519 Genesis approval, Pulse quorum, and custody acceptance;
+- total validation with stable first-error precedence;
 - immutable validator-produced context capabilities;
 - parent resolution from an accepted-object graph;
 - replay rejection, fork evidence, intersecting signer evidence, and post-fork halt;
 - complete A/B/C → D/E/F custodian turnover with stable identity;
-- validated complete and acceptance-incomplete latent successors;
-- conditional authority/state mortality states;
-- 10,000 deterministic invalid-continuation mutations; and
-- byte-identical H2 traces in fresh processes.
+- single-read public validation of complete and durable acceptance-incomplete successors, plus lineage-internal conditional completion from coalesced body-bound evidence and one global usable-key snapshot reused across every candidate body;
+- conditional authority/state mortality states scoped to the graph-recognized head;
+- 10,000 deterministic mixed valid/invalid continuation cases; and
+- byte-identical H2 v3 traces in fresh processes.
 
 ## 3. Verified gate — C1 portable deterministic core
 
@@ -44,22 +45,28 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 ### Implemented boundary
 
 - portable `Uint8Array`, base64url, UTF-8, and constant-time comparison helpers;
-- portable SHA-256 and strict RFC 8032 Ed25519 using locked pure-JavaScript dependencies;
+- intrinsic-backed owned byte snapshots that reject shared or detached storage and preserve exact root-depth semantics;
+- portable SHA-256 and strict RFC 8032 Ed25519 using locked direct pure-JavaScript dependencies, with canonical prime-subgroup point validation;
 - portable structural validators, differentially checked against normative JSON Schemas with development-only Ajv;
+- total semantic validators with stable first-error precedence; strict complete/public-durable validation remains separate from the internally branded mortality-feasibility validator, which is intentionally not re-exported by the supported `src/index.mjs` API;
+- custody-change activation proof and recognized-head-only conditional mortality;
 - no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient clock, or ambient randomness in trusted `src/` paths;
-- a public signed singleton, distributed lifecycle, clone, and fork corpus;
+- a public signed singleton, multi-custodian turnover, clone, and fork corpus;
 - a committed expected result with named first-error outcomes and a fixed-seed histogram; and
 - isolated browser-target plus actual headless-Chromium runners.
 
 ### Pass record
 
 - [x] Portable modules contain no forbidden platform dependency.
-- [x] Committed, Node, browser-target, and actual Chromium results are byte-identical.
-- [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in both runtimes.
-- [x] Forged context, replay, fork, equivocation, no-op membership, and latent-successor cases pass in both runtimes.
+- [x] Committed, Node 22, isolated browser-target, and actual Chromium results are byte-identical on publication candidate `9eae8c34`.
+- [x] The PR workflow requires every changed head to rerun the Node/Chromium differential gate.
+- [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
+- [x] Forged context, replay, fork, equivocation, no-op membership, durable latent succession, and conditional-current-approval completion pass in Node and the isolated browser-target runtime.
+- [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
-- [x] Clean locked installation and actual Chromium execution pass.
+- [x] Clean locked installation and the full local suite pass.
+- [x] Actual Chromium execution passes on publication candidate `9eae8c34`; later heads remain subject to the same required CI gate.
 - [x] An adapter cannot alter canonical bytes, validation order, rejection codes, or lineage decisions.
 
 Failure rule: any cross-runtime mismatch reopens C1 and blocks endpoint product work. Do not copy the validator into UI or CLI code as a workaround.
@@ -102,6 +109,7 @@ run reference lifecycle
 - [ ] Replay, fork, mortality qualifications, clone separation, and the distinction between logical keys and failure domains are visible.
 - [ ] Exported trace digest matches the reference digest.
 - [ ] The complete committed portable corpus runs in the deployed Lab.
+- [ ] In a cross-origin-isolated Chromium profile, `SharedArrayBuffer` is available and SAB-backed validation input is rejected; SAB unavailability is reported as unsupported and does not count as PASS.
 - [ ] The judge path passes three times in a clean browser profile.
 - [ ] Keyboard, contrast, narrow viewport, and reduced-motion checks pass.
 
@@ -169,7 +177,7 @@ H3 remains ahead of C2 for the hackathon because visual explanation and a hosted
 
 ### R1 — ownerless authority lineage ◐
 
-Cross-runtime reference agreement is complete. Remaining exit criteria are a second independently written implementation, persistent evidence replay, and broader correctly re-signed valid-history generation. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; the accepted failure-domain distribution must prevent unilateral continuation.
+Node/browser-target/actual-Chromium reference agreement passed on publication candidate `9eae8c34`, and every changed head must rerun that CI gate. Further exit criteria are a second independently written implementation, persistent evidence replay, and broader correctly re-signed valid-history generation. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; the externally evidenced deployment distribution of keys in the accepted descriptor must prevent unilateral continuation.
 
 ### R2 — deterministic state-bearing kernel ⏭ FUNDAMENTAL
 
@@ -199,9 +207,13 @@ Only after state transition, recovery, and participant turnover work should the 
 
 Reopen the earliest responsible gate if:
 
+- hostile, shared, detached, or changing byte storage influences a decision after acquisition;
+- a non-canonical, small-order, torsion, or non-prime-subgroup Ed25519 point is accepted;
 - a cloned or hand-built context is accepted;
 - two runtimes disagree on bytes, signatures, parent resolution, or first rejection code;
+- a custody handoff is accepted although the supplied approval-and-acceptance activation set cannot activate the declared threshold;
 - replay or fork silently changes the head;
+- mortality trusts a caller-selected head or prevalidated pending capability;
 - UI, GPT, endpoint, transport, or storage bypasses validation;
 - `1-of-1` or one-browser logical quorum is misrepresented as ownerless physical distribution;
 - death is inferred only from silence, process exit, or an unverified deletion claim; or

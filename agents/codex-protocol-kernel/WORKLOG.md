@@ -22,10 +22,38 @@ result, and reproducible verification.
   governance tests, PR template/workflow, `package.json`, and package exclusions
 - Result: implemented isolated task-worktree creation, machine-readable PR policy,
   scoped agent memories, and an independent immutable-head reviewer/merge contract
-- Verification: governance tests 10/10; full `npm test`; 98.69% line, 93.40%
-  branch, and 100% function coverage; dependency audit 0 vulnerabilities; Node and
-  actual Chromium corpus byte-identical with 10,000/10,000 adversarial rejections
+- Verification: governance tests 10/10; full `npm test`; the then-current coverage
+  gate passed; dependency audit 0 vulnerabilities; Node and the then-current pre-v3
+  actual Chromium corpus were byte-identical with 10,000/10,000 adversarial rejections.
+  This historical run does not satisfy the later v3 exact-head gate
 - Handoff: `reviewer-merge-gate` must independently inspect and decide the PR
+
+## 2026-07-15 — Portable trust-boundary hardening
+
+- Original base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Final reconciled base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Branch: `agent/codex-protocol-kernel--trust-boundaries`
+- Intended shared paths: portable bytes/codec/crypto/validation/lineage core,
+  schemas and rejection codes, deterministic vectors and tests, current protocol,
+  threat/status/plan/traceability documentation, dependency notices, and CI timeout
+- Result: hardened intrinsic byte snapshots and I-JSON canonicalization; strict
+  Ed25519 point/scalar validation; total deterministic validators; activatable
+  custody handoffs; recognized-head mortality with independently pooled body,
+  signature, and sidecar components, strict-first recomposition, explicit usable-key
+  completion, reentrancy protection, and pending-sibling fork recording; removed the
+  caller-selected mortality API; added portable corpus v3 and H2 lifecycle trace v3
+- Verification: clean `npm ci`; full `npm test`; 55/55 conformance; 10,000 mixed
+  property cases (1,008 accepts/8,992 rejects); portable committed/Node/browser-target
+  byte identity with 10,000/10,000 adversarial rejects; 98.46% line, `>=93.7%`
+  branch across supported Node/V8 runs, and 100% function coverage; H2 digest
+  `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
+  audit 0 vulnerabilities; 61-file package dry-run; license/spec/governance gates pass
+- Pre-reconciliation CI: publication candidate `9eae8c34` passed the then-current
+  Agent PR Policy and the complete
+  Verify workflow, including Node 22, actual Chromium differential verification,
+  coverage, and dependency audit
+- Handoff: the reconciled head must pass the new trusted target policy and complete
+  Verify workflow before immutable-snapshot review
 
 ## 2026-07-15 — Governance trust-boundary hardening
 
@@ -138,6 +166,24 @@ result, and reproducible verification.
   and 93.75% function coverage; audit 0 vulnerabilities; JavaScript syntax,
   trusted-workflow integrity, three-path scope, docs/spec, and diff checks pass
 - Handoff: corrected immutable commit to `reviewer-merge-gate`; author does not push,
+  merge, or self-approve
+
+## 2026-07-15 — Multiline plain-scalar workflow identity hardening
+
+- Base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected rebased predecessor
+  `767a5a5c8007b0ea6a3b107340b35c0efaead34f`
+- Branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Intended shared paths: governance regression plus append-only author handoff/worklog
+- Result: closed the remaining YAML plain-scalar identity bypass by rejecting
+  significant indented continuations after a canonical root workflow name or direct
+  job/check name; added the exact `Agent` + `PR Policy` and `Trusted` +
+  `main-base policy` multiline adversarial reproductions
+- Verification: full `npm test`; governance 30/30 at 92.68% line, 84.39% branch,
+  and 93.75% function coverage; 55/55 conformance; seeded 10,000-case property
+  corpus; portable Node/browser-target equality and 10,000/10,000 adversarial
+  rejects; license/spec/singleton/H2 gates; audit 0 vulnerabilities; trusted workflow
+  unchanged at blob `94d2b0353fc44d931acd0a28604786a55e78786f`; three-path scope and diff checks pass
+- Handoff: focused rebased local commit to `reviewer-merge-gate`; author does not push,
   merge, or self-approve
 
 ## Entry template

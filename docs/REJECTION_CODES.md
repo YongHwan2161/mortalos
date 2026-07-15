@@ -23,7 +23,7 @@ Reject {
 
 | Code | Condition |
 |---|---|
-| `E_PARSE_INVALID_UTF8` | Input is not valid UTF-8. |
+| `E_PARSE_INVALID_UTF8` | Input is not an accepted stable `Uint8Array` snapshot source (including SharedArrayBuffer-backed views), or its bytes are not valid UTF-8. |
 | `E_PARSE_INVALID_JSON` | Input is not valid JSON. |
 | `E_PARSE_DUPLICATE_PROPERTY` | A raw JSON object contains a duplicate property name. |
 | `E_PARSE_NON_IJSON` | Input violates the I-JSON value constraints required by JCS. |
@@ -32,7 +32,7 @@ Reject {
 | `E_SCHEMA_INVALID` | Input fails its Draft 2020-12 structural schema. |
 | `E_SCHEMA_UNKNOWN_FIELD` | Input contains a property forbidden by `additionalProperties: false`. |
 | `E_CANONICAL_MISMATCH` | Raw bytes are not exactly the RFC 8785 canonical encoding of the parsed value. |
-| `E_ARRAY_NOT_SORTED` | A keyed array is not strictly sorted by complete ASCII `key_id`. |
+| `E_ARRAY_NOT_SORTED` | A keyed array is not strictly sorted by complete `key_id` using lexicographic unsigned UTF-16 code-unit order. |
 | `E_ARRAY_DUPLICATE_KEY_ID` | A custodian array contains a duplicate `key_id`. |
 | `E_BINARY_ENCODING` | A prefixed base64url field has invalid characters, padding, prefix, or decoded length. |
 
@@ -48,6 +48,7 @@ Reject {
 
 | Code | Condition |
 |---|---|
+| `E_PUBLIC_KEY_INVALID_POINT` | A correctly sized Ed25519 public-key encoding is non-canonical, low-order, mixed-order, or outside the required prime-order subgroup. This precedes peer-ID comparison. |
 | `E_PEER_ID_MISMATCH` | A custodian `key_id` is not derived from its declared public key. |
 | `E_ORGANISM_ID_MISMATCH` | Pulse `organism_id` differs from the validated Genesis-derived ID. |
 | `E_GENOME_HASH_MISMATCH` | Pulse genome hash differs from Genesis. |
@@ -91,24 +92,27 @@ There is no public operation that replaces a recognized head with an ancestor, s
 
 ## 7. Approval and acceptance evidence
 
+The mortality-feasibility validator described below is an internal helper intentionally not re-exported by the supported `src/index.mjs` API. It can inform observer classification but cannot publicly accept a Pulse.
+
 | Code | Condition |
 |---|---|
 | `E_APPROVAL_SIGNER_INELIGIBLE` | Approval signer is not a current custodian. |
 | `E_APPROVAL_DUPLICATE` | More than one approval is supplied for the same `key_id`. |
 | `E_APPROVAL_SIGNATURE_INVALID` | Ed25519 approval signature does not verify for the normative message. |
-| `E_APPROVAL_INSUFFICIENT_QUORUM` | Valid eligible unique approvals are below the parent-derived threshold. |
+| `E_APPROVAL_INSUFFICIENT_QUORUM` | Valid eligible unique supplied approvals are below the parent-derived threshold. Internal mortality feasibility reports this only when their union with explicitly usable eligible current signers is still below threshold; ordinary validation never counts hypothetical signatures. |
 | `E_ACCEPTANCE_SIGNER_NOT_NEW` | Acceptance signer remains in both current and next custody and is not newly added. |
-| `E_ACCEPTANCE_MISSING` | A newly added custodian has no acceptance. `validateLatentSuccessor` may convert this into authenticated latent evidence only after every earlier rule and supplied acceptance signature passes. |
+| `E_ACCEPTANCE_MISSING` | A newly added custodian has no acceptance. Public `validateLatentSuccessor` may convert this into durable latent evidence only after the supplied current quorum and every supplied acceptance signature pass. Internal mortality feasibility may report it alongside missing explicitly usable current approvals. |
 | `E_ACCEPTANCE_UNEXPECTED` | A removed or unrelated peer supplies an acceptance. |
 | `E_ACCEPTANCE_DUPLICATE` | More than one acceptance is supplied for the same `key_id`. |
 | `E_ACCEPTANCE_SIGNATURE_INVALID` | A supplied new-custodian acceptance signature does not verify. |
+| `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT` | Valid retained current approvers plus valid new-custodian acceptances do not cover `next_quorum.threshold`. Ordinary validation counts supplied evidence only. Public durable-latent validation may count explicitly missing required new acceptances; internal mortality feasibility may additionally count a missing retained-current approval only when that key is in the single snapshotted usable set. |
 
 ## 8. Fork safety
 
 | Code | Condition |
 |---|---|
 | `E_FORK_DETECTED` | Two distinct candidates independently validate against the same accepted parent. The registry returns both child hashes and intersecting approval signer IDs, then enters `FORKED`. |
-| `E_LINEAGE_ALREADY_FORKED` | Automatic append is attempted after the registry has entered `FORKED`. |
+| `E_LINEAGE_ALREADY_FORKED` | An otherwise valid, non-replay append is attempted after the registry has entered `FORKED`; intrinsic validation and replay checks retain their earlier precedence. |
 
 Signer equivocation is evidence attached to `E_FORK_DETECTED`, not a competing first-error code. Strict-majority valid siblings necessarily have at least one approval signer in common.
 
@@ -116,12 +120,16 @@ Signer equivocation is evidence attached to `E_FORK_DETECTED`, not a competing f
 
 | Code | Condition |
 |---|---|
-| `E_VALIDATOR_INTERNAL` | An unknown internal rejection identifier or invariant-breaking error is mapped to the stable fail-closed result. |
+| `E_VALIDATOR_INTERNAL` | An unknown internal rejection identifier, hostile public input that cannot be safely inspected, or invariant-breaking exception is mapped to the stable fail-closed result. Public validation operations do not throw. |
 
 ## 10. Precedence examples
 
 - Malformed JSON with forged signatures returns `E_PARSE_INVALID_JSON` before any cryptographic result.
+- An invalid-UTF-8 envelope with an oversized payload returns envelope `E_PARSE_INVALID_UTF8`; payload acquisition cannot overtake envelope parsing.
+- If a schema engine reports several faults, unknown fields take precedence, then wrong top-level kind, then the lexicographically first normalized JSON-Pointer/keyword pair by unsigned UTF-16 code units; engine error enumeration order is ignored.
+- A canonical, correctly sized low-order public key with a mismatched key ID returns `E_PUBLIC_KEY_INVALID_POINT` before `E_PEER_ID_MISMATCH`.
 - A structurally valid Pulse with the wrong organism ID and insufficient signatures returns `E_ORGANISM_ID_MISMATCH` first.
 - A validly signed heartbeat that changes state returns `E_HEARTBEAT_STATE_CHANGED` before quorum acceptance can make it valid.
+- A complete handoff whose valid evidence cannot activate the next threshold returns `E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT` after acceptance checks.
 - A cloned accepted parent returns `E_PARENT_REQUIRED`; acceptance-shaped fields do not create a capability.
 - A second valid sibling produces `E_FORK_DETECTED` only after it passes every intrinsic transition check.

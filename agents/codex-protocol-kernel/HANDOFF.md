@@ -5,9 +5,63 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-None.
+- None.
 
 ## Completed handoffs
+
+### 2026-07-15 — Multiline plain-scalar workflow identity hardening
+
+- Main base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`; corrected rebased
+  predecessor `767a5a5c8007b0ea6a3b107340b35c0efaead34f`
+- Work branch: `agent/codex-protocol-kernel--policy-identity-regression`
+- Exact changed paths: `test/agent-governance.test.mjs` and this author's append-only
+  `HANDOFF.md`/`WORKLOG.md`; no workflow, runtime, protocol, or governing-doc change
+- Reviewer finding: YAML folds an indented continuation of a plain scalar, so
+  `name: Agent` followed by `  PR Policy` (and the analogous job-name form) retained
+  the semantic trusted identity while the earlier parser saw only the first line
+- Result: canonical root and job names now fail closed when a later significant line
+  can continue the scalar. Exact root-name and job-name multiline reproductions are
+  permanent adversarial tests alongside the existing comment, quoting, escape,
+  folded-scalar, flow, alias, duplicate, and indentation cases.
+- Author validation: full `npm test`; governance 30/30 at 92.68% line, 84.39%
+  branch, and 93.75% function coverage; 55/55 conformance; seeded 10,000-case
+  property corpus; portable Node/browser-target equality with 10,000/10,000
+  adversarial rejects; license, spec, singleton, and H2 verification; audit 0
+  vulnerabilities; trusted-workflow integrity, three-path scope, and diff checks pass
+- Integrity: `.github/workflows/trusted-pr-policy.yml` remains byte-identical to
+  `f08c8be0fa43d86d706d67dfc56f577cf1a90f72` at Git blob
+  `94d2b0353fc44d931acd0a28604786a55e78786f`
+- Handoff: reviewer publishes the focused rebased commit, reruns the exact multiline
+  adversarials plus trusted policy and `Verify`, and decides the immutable snapshot
+  independently; author does not push, merge, or self-approve
+
+### 2026-07-15 — Portable-kernel trust-boundary hardening
+
+- Original base: `ec59f9cd17c99c972321e2fabbd7bee7a5735ff3`
+- Final reconciled base: `012bfc3cc1eabf3326e601f8a7e66f6de44d1920`
+- Work branch: `agent/codex-protocol-kernel--trust-boundaries`
+- Paths: portable trusted core, schemas/rejection codes, deterministic vectors and
+  tests, current protocol/threat/status/plan/traceability/access/submission docs,
+  direct dependency notices, package lock, and CI timeout
+- Author validation: clean locked install and full Node suite passed; 55/55
+  conformance; 10,000 mixed property cases; portable v3 committed/Node/browser-target
+  equality and 10,000/10,000 adversarial rejects; 98.46% line, `>=93.7%` branch,
+  and 100% function coverage across supported Node runs (branch accounting varies
+  slightly with Node/V8); H2 v3 golden; audit, license, spec, governance, package,
+  diff, and source-portability gates passed
+- Independent findings resolved: mortality now combines durable evidence with
+  explicitly usable current signers, reconstructs bodies/signatures/sidecars across
+  misleading carriers by cryptographic verification, blocks reentrant mutation,
+  records recomposed valid sibling forks, and does not re-export its internal
+  conditional validator from the supported `src/index.mjs` API;
+  sparse/exotic programmatic values and hostile context getters also fail closed
+- Pre-reconciliation CI evidence: publication candidate `9eae8c34` passed the
+  then-current Agent PR Policy and every
+  Verify step, including Node 22, actual Chromium differential verification,
+  coverage, and dependency audit. The reconciled head must rerun the new trusted
+  policy and the complete Verify workflow.
+- Handoff: after the reconciled head passes all gates, `reviewer-merge-gate` must
+  bind its attestation to the new base/head/body/file-evidence snapshot
 
 ### 2026-07-15 — Canonical workflow/check-name representation hardening
 
@@ -136,7 +190,6 @@ None.
   dependency audit 0 vulnerabilities; package exclusion, YAML, syntax, and diff checks
   passed
 - Handoff: ready for immutable-head review by `reviewer-merge-gate`
-
 ### 2026-07-15 — Agent-isolated contribution and reviewer merge gate
 
 - Base: `0a8ce3e2cf09a040758611b3674e92aa32e13c4b`
@@ -146,7 +199,8 @@ None.
   `scripts/create-agent-worktree.mjs`, `scripts/verify-agent-pr.mjs`,
   `test/agent-governance.test.mjs`, `package.json`, and `.npmignore`
 - Author validation: governance 10/10, full `npm test`, coverage, dependency audit,
-  and actual Chromium differential verification passed
+  and the then-current pre-v3 actual Chromium differential verification passed; this
+  historical result does not satisfy the trust-boundary branch's v3 exact-head gate
 - Handoff: ready for immutable-head review by `reviewer-merge-gate`
 
 ## Before changing shared paths

@@ -1,16 +1,19 @@
 import {
   canonicalBytes,
   createLineage,
+  derivePeerId,
   encodeBase64Url,
   hexToBytes,
+  snapshotBytes,
   validateGenesis,
   validateLatentSuccessor,
   validatePulse,
   verifyEd25519Raw
 } from "../src/index.mjs";
+import { validateMortalitySuccessor } from "../src/validator.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
-export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/1";
+export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/3";
 export const ADVERSARIAL_CASES = 10_000;
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
@@ -161,11 +164,33 @@ function runTrustCases(lifecycle, accepted) {
     envelopeBytes: canonicalBytes(partial.envelope),
     eventPayloadBytes: canonicalBytes(partial.payload)
   });
+  const completion = clone(lifecycle.steps[0]);
+  const potentialApprovalKeyId = completion.envelope.approvals.at(-1).key_id;
+  completion.envelope.approvals = completion.envelope.approvals.slice(0, 1);
+  const strictCompletion = validatePulse({
+    genesis: accepted.genesis,
+    parent: accepted.parents[0],
+    envelopeBytes: canonicalBytes(completion.envelope),
+    eventPayloadBytes: canonicalBytes(completion.payload)
+  });
+  const conditionalCompletion = validateMortalitySuccessor(
+    {
+      genesis: accepted.genesis,
+      parent: accepted.parents[0],
+      envelopeBytes: canonicalBytes(completion.envelope),
+      eventPayloadBytes: canonicalBytes(completion.payload)
+    },
+    [potentialApprovalKeyId]
+  );
   return {
     cloned_genesis: clonedGenesis.code,
     cloned_parent: clonedParent.code,
     latent_status: latent.status,
-    latent_missing: latent.missing_acceptance_key_ids.length
+    latent_missing: latent.missing_acceptance_key_ids.length,
+    conditional_completion_status: conditionalCompletion.status,
+    conditional_missing_current_approvals:
+      conditionalCompletion.missing_current_approval_key_ids.length,
+    strict_completion_code: strictCompletion.code
   };
 }
 
@@ -187,6 +212,57 @@ function runForkCases(fork) {
     equivocation_count: sibling.equivocating_key_ids?.length ?? 0,
     post_fork: postFork.code,
     head_after_fork: opened.lineage.head
+  };
+}
+
+function runBoundaryCases(lifecycle, rfc8032) {
+  const identity = hexToBytes(`01${"00".repeat(31)}`);
+  const universalSignature = new Uint8Array(64);
+  universalSignature.set(identity);
+  const invalidRSignature = new Uint8Array(64);
+  invalidRSignature.set(identity);
+
+  class HostileBytes extends Uint8Array {
+    get byteLength() {
+      return 0;
+    }
+
+    get buffer() {
+      throw new Error("hostile buffer getter");
+    }
+
+    get [Symbol.toStringTag]() {
+      return "attacker-controlled";
+    }
+  }
+
+  let sharedBytesRejected = true;
+  if (typeof SharedArrayBuffer !== "undefined") {
+    try {
+      snapshotBytes(new Uint8Array(new SharedArrayBuffer(1)));
+      sharedBytesRejected = false;
+    } catch {
+      sharedBytesRejected = true;
+    }
+  }
+
+  return {
+    low_order_peer_id_rejected:
+      derivePeerId(`ed25519:${encodeBase64Url(identity)}`) === null,
+    universal_signature_rejected: !verifyEd25519Raw(
+      identity,
+      new Uint8Array(),
+      universalSignature
+    ),
+    low_order_signature_r_rejected: !verifyEd25519Raw(
+      hexToBytes(rfc8032.public_key_hex),
+      hexToBytes(rfc8032.message_hex),
+      invalidRSignature
+    ),
+    hostile_byte_metadata_ignored:
+      validateGenesis(new HostileBytes(canonicalBytes(lifecycle.birth))).status === "accept",
+    shared_bytes_rejected: sharedBytesRejected,
+    falsey_root_code: validateGenesis(canonicalBytes(0)).code
   };
 }
 
@@ -239,6 +315,7 @@ export function runPortableCorpus({ lifecycle, singleton, fork, rfc8032 }) {
     },
     negative_cases: negativeCases,
     all_negative_cases_pass: negativeCases.every((entry) => entry.pass),
+    boundary_cases: runBoundaryCases(lifecycle, rfc8032),
     trust_cases: runTrustCases(lifecycle, accepted),
     fork_cases: runForkCases(fork),
     adversarial: runAdversarialCorpus(lifecycle, accepted)

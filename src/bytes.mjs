@@ -1,17 +1,72 @@
 const encoder = new TextEncoder();
 const BASE64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
+const typedArrayByteLength = Object.getOwnPropertyDescriptor(
+  typedArrayPrototype,
+  "byteLength"
+).get;
+const typedArrayByteOffset = Object.getOwnPropertyDescriptor(
+  typedArrayPrototype,
+  "byteOffset"
+).get;
+const typedArrayBuffer = Object.getOwnPropertyDescriptor(
+  typedArrayPrototype,
+  "buffer"
+).get;
+const typedArrayTag = Object.getOwnPropertyDescriptor(
+  typedArrayPrototype,
+  Symbol.toStringTag
+).get;
+const arrayBufferByteLength = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype,
+  "byteLength"
+).get;
+const sharedArrayBufferByteLength =
+  typeof SharedArrayBuffer === "undefined"
+    ? undefined
+    : Object.getOwnPropertyDescriptor(SharedArrayBuffer.prototype, "byteLength").get;
 const BASE64URL_INDEX = Object.freeze(
   Object.fromEntries([...BASE64URL].map((character, index) => [character, index]))
 );
 
 export function asBytes(value) {
-  if (
-    value instanceof Uint8Array ||
-    (value && ArrayBuffer.isView(value) && value.BYTES_PER_ELEMENT === 1)
-  ) {
-    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  let byteLength;
+  let byteOffset;
+  let backingBuffer;
+  try {
+    if (typedArrayTag.call(value) !== "Uint8Array") return null;
+    byteLength = typedArrayByteLength.call(value);
+    byteOffset = typedArrayByteOffset.call(value);
+    backingBuffer = typedArrayBuffer.call(value);
+  } catch {
+    return null;
   }
-  return null;
+
+  if (sharedArrayBufferByteLength) {
+    try {
+      sharedArrayBufferByteLength.call(backingBuffer);
+      return null;
+    } catch {
+      // A normal ArrayBuffer fails the SharedArrayBuffer brand check.
+    }
+  }
+  try {
+    arrayBufferByteLength.call(backingBuffer);
+    return new Uint8Array(backingBuffer, byteOffset, byteLength);
+  } catch {
+    return null;
+  }
+}
+
+export function isSharedByteView(value) {
+  if (!sharedArrayBufferByteLength) return false;
+  try {
+    const backingBuffer = typedArrayBuffer.call(value);
+    sharedArrayBufferByteLength.call(backingBuffer);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function utf8Bytes(value) {
