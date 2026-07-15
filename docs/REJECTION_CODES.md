@@ -116,13 +116,17 @@ The mortality-feasibility validator described below is an internal helper intent
 
 Signer equivocation in two accepted sibling appends is evidence attached to `E_FORK_DETECTED`, not a competing first-error code. Strict-majority valid siblings necessarily have at least one approval signer in common. During conservative mortality analysis, authenticated multi-body evidence that cannot safely be promoted to an accepted fork instead yields the observer state `evidence_equivocation`; that state is not a rejection code.
 
-## 9. Internal fail-closed code
+## 9. Mortality observer limits
+
+Mortality work-budget exhaustion returns observer state `indeterminate` with reason `limit_exceeded`, `mortality_classified: false`, and stable `resource`, `observed`, and `maximum` fields. It is not a rejection code because it says nothing about whether any candidate Pulse is valid. Implementations must not truncate pending evidence and continue to a life or death classification.
+
+## 10. Internal fail-closed code
 
 | Code | Condition |
 |---|---|
 | `E_VALIDATOR_INTERNAL` | An unknown internal rejection identifier, hostile public input that cannot be safely inspected, or invariant-breaking exception is mapped to the stable fail-closed result. Public validation operations do not throw. |
 
-## 10. Precedence examples
+## 11. Precedence examples
 
 - Malformed JSON with forged signatures returns `E_PARSE_INVALID_JSON` before any cryptographic result.
 - An invalid-UTF-8 envelope with an oversized payload returns envelope `E_PARSE_INVALID_UTF8`; payload acquisition cannot overtake envelope parsing.

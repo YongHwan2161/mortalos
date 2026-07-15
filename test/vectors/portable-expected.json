@@ -1,5 +1,5 @@
 {
-  "format": "mortalos-portable-corpus/3",
+  "format": "mortalos-portable-corpus/4",
   "standards": {
     "rfc8032_vector_1": true,
     "rfc8032_mutation_rejected": true,
@@ -48,7 +48,15 @@
     "low_order_signature_r_rejected": true,
     "hostile_byte_metadata_ignored": true,
     "shared_bytes_rejected": true,
-    "falsey_root_code": "E_SCHEMA_WRONG_KIND"
+    "falsey_root_code": "E_SCHEMA_WRONG_KIND",
+    "mortality_pending_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "pending_records",
+      "observed": 129,
+      "maximum": 128
+    }
   },
   "trust_cases": {
     "cloned_genesis": "E_LINEAGE_UNKNOWN",

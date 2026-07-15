@@ -1,10 +1,10 @@
 # Durable memory
 
-Last reconciled: 2026-07-15
+Last reconciled: 2026-07-16
 
-Branch: `agent/codex-protocol-kernel--h3-browser-lab`
+Branch: `agent/codex-protocol-kernel--north-star-foundation`
 
-Current base: `9791074ffe8f091b8007e09f2b3edd4080d4212b`
+Current base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
 
 Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
 
@@ -26,7 +26,7 @@ Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
   changes also prove that supplied evidence can activate the declared next quorum.
 - Mortality is a lineage operation over its recognized head. A module-private
   constructor token blocks chosen-head injection. Within its non-Proxy v0 input
-  profile, the operation captures own-data observer options and pending records,
+  profile, the operation acquires only bounded named/indexed own-data fields,
   owns all evidence bytes before analysis, blocks reentrant mutation, independently
   pools parseable bodies/signatures/content-addressed sidecars, and maps evidence
   cryptographically per exact body. Usable-key projection obeys observed sign-once
@@ -34,8 +34,11 @@ Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
   completion-capable membership body without a verified sidecar becomes
   `evidence_payload_unavailable` only after authority loss is declared irreversible
   and no fresh quorum or verified latent child independently establishes non-death.
-  Internal conditional helpers are not
-  re-exported by `src/index.mjs`.
+  The current P0 candidate fixes whole-observation limits for usable IDs, pending
+  records, owned pending bytes, and conservative signature-verification work;
+  overflow returns `indeterminate / limit_exceeded` without graph mutation or a
+  truncated death decision. Internal conditional helpers are not re-exported by
+  `src/index.mjs`.
 - A signed `1-of-1` birth is a valid bootstrap profile, but it remains controlled
   by the sole key until custody is transferred.
 - Logical `2-of-3` keys held in one browser remain one physical/administrative
@@ -63,15 +66,18 @@ Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
 8. `reviewer-merge-gate`, not the author agent, decides whether a PR may merge.
 9. One validation operation must decide from one owned byte snapshot; callers do
    not control metadata, accepted context, recognized head, or cached latent results.
+10. Resource exhaustion is observer uncertainty, not evidence absence. Mortality
+    analysis must return indeterminate instead of truncating toward life or death.
 
 ## Current priorities
 
-1. Deploy the verified H3A artifact as an H3B public HTTPS, logged-out judge path
+1. Publish the P0 resource-bound candidate after exact-head cross-runtime review.
+2. Deploy the verified H3A artifact as an H3B public HTTPS, logged-out judge path
    with the same cross-origin isolation and security-header contract.
-2. Specify the minimal deterministic state-bearing organism kernel (R2), the next
+3. Specify the minimal deterministic state-bearing organism kernel (R2), the next
    fundamental North-Star gap.
-3. Stabilize the C2 CLI create/import/verify/replay/export evidence contract.
-4. Delay real transport selection until the same traces pass over an in-memory
+4. Stabilize the C2 CLI create/import/verify/replay/export evidence contract.
+5. Delay real transport selection until the same traces pass over an in-memory
    virtual transport with deterministic fault injection.
 
 ## Memory maintenance

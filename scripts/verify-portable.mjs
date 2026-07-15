@@ -66,7 +66,7 @@ const sandbox = {
   SharedArrayBuffer,
   DataView
 };
-vm.runInNewContext(bundled.outputFiles[0].text, sandbox, { timeout: 180000 });
+vm.runInNewContext(bundled.outputFiles[0].text, sandbox, { timeout: 300000 });
 const browserResult = sandbox.__MORTALOS_BROWSER_CONTRACT__;
 if (JSON.stringify(browserResult) !== JSON.stringify(directResult)) {
   throw new Error(`browser bundle mismatch:\n${JSON.stringify({ directResult, browserResult }, null, 2)}`);

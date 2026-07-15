@@ -6,7 +6,7 @@ import {
   parseJsonBytes,
   snapshotBytes
 } from "./codec.mjs";
-import { equalBytes } from "./bytes.mjs";
+import { asBytes, equalBytes } from "./bytes.mjs";
 import {
   custodyAcceptanceMessage,
   derivePulseHash,
@@ -26,18 +26,33 @@ import {
 } from "./validator.mjs";
 
 const arrayIsArray = Array.isArray;
-const objectGetOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
-const reflectOwnKeys = Reflect.ownKeys;
+const objectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 
-function snapshotDataArray(value, label) {
-  let descriptors;
+export const MORTALITY_LIMITS = Object.freeze({
+  pending_records: 128,
+  pending_bytes: 4 * 1024 * 1024,
+  signature_verifications: 4096,
+  usable_key_ids: 16
+});
+
+class MortalityLimitExceeded extends Error {
+  constructor(resource, observed, maximum) {
+    super(`mortality ${resource} limit exceeded`);
+    this.name = "MortalityLimitExceeded";
+    this.resource = resource;
+    this.observed = observed;
+    this.maximum = maximum;
+  }
+}
+
+function snapshotDataArray(value, label, limit = null) {
+  let lengthDescriptor;
   try {
     if (!arrayIsArray(value)) throw new TypeError();
-    descriptors = objectGetOwnPropertyDescriptors(value);
+    lengthDescriptor = objectGetOwnPropertyDescriptor(value, "length");
   } catch {
     throw new TypeError(`${label} must be an array`);
   }
-  const lengthDescriptor = descriptors.length;
   const length = lengthDescriptor?.value;
   if (
     !lengthDescriptor ||
@@ -47,24 +62,25 @@ function snapshotDataArray(value, label) {
   ) {
     throw new TypeError(`${label} must have a stable length`);
   }
+  if (limit !== null && length > limit.maximum) {
+    throw new MortalityLimitExceeded(limit.resource, length, limit.maximum);
+  }
 
   const snapshot = [];
-  let entryCount = 0;
-  for (const key of reflectOwnKeys(descriptors)) {
-    if (typeof key !== "string" || key === "length" || !/^(0|[1-9][0-9]*)$/.test(key)) {
-      continue;
+  for (let index = 0; index < length; index += 1) {
+    let descriptor;
+    try {
+      descriptor = objectGetOwnPropertyDescriptor(value, String(index));
+    } catch {
+      throw new TypeError(`${label} must be an inspectable array`);
     }
-    const index = Number(key);
-    if (!Number.isSafeInteger(index) || index >= length) continue;
-    const descriptor = descriptors[key];
+    if (!descriptor) {
+      throw new TypeError(`${label} must be a dense data-only array`);
+    }
     if (!("value" in descriptor)) {
       throw new TypeError(`${label} must contain only own data entries`);
     }
-    snapshot[index] = descriptor.value;
-    entryCount += 1;
-  }
-  if (entryCount !== length) {
-    throw new TypeError(`${label} must be a dense data-only array`);
+    snapshot.push(descriptor.value);
   }
   return snapshot;
 }
@@ -73,14 +89,13 @@ function snapshotObserverOptions(value) {
   if (value === null || (typeof value !== "object" && typeof value !== "function")) {
     throw new TypeError("mortality options must be an object");
   }
-  let descriptors;
-  try {
-    descriptors = objectGetOwnPropertyDescriptors(value);
-  } catch {
-    throw new TypeError("mortality options must be an inspectable record");
-  }
   const dataField = (name) => {
-    const descriptor = descriptors[name];
+    let descriptor;
+    try {
+      descriptor = objectGetOwnPropertyDescriptor(value, name);
+    } catch {
+      throw new TypeError("mortality options must be an inspectable record");
+    }
     if (descriptor === undefined) return undefined;
     if (!("value" in descriptor)) {
       throw new TypeError(`mortality options.${name} must be an own data property`);
@@ -96,21 +111,23 @@ function snapshotObserverOptions(value) {
 }
 
 function snapshotPendingRecords(value) {
-  const references = snapshotDataArray(value, "pendingSuccessors");
+  const references = snapshotDataArray(value, "pendingSuccessors", {
+    resource: "pending_records",
+    maximum: MORTALITY_LIMITS.pending_records
+  });
+  let observedBytes = 0;
   return references.map((input, index) => {
     if (input === null || (typeof input !== "object" && typeof input !== "function")) {
       return Object.freeze({});
     }
 
-    let descriptors;
-    try {
-      descriptors = objectGetOwnPropertyDescriptors(input);
-    } catch {
-      throw new TypeError(`pendingSuccessors[${index}] must be an inspectable record`);
-    }
-
     const dataField = (name) => {
-      const descriptor = descriptors[name];
+      let descriptor;
+      try {
+        descriptor = objectGetOwnPropertyDescriptor(input, name);
+      } catch {
+        throw new TypeError(`pendingSuccessors[${index}] must be an inspectable record`);
+      }
       if (descriptor === undefined) return undefined;
       if (!("value" in descriptor)) {
         throw new TypeError(
@@ -122,8 +139,31 @@ function snapshotPendingRecords(value) {
     const ownBytes = (source, maxBytes) => {
       if (source === undefined || source === null) return undefined;
       try {
-        return snapshotBytes(source, maxBytes);
-      } catch {
+        const stableView = asBytes(source);
+        if (
+          stableView &&
+          stableView.byteLength <= maxBytes &&
+          observedBytes + stableView.byteLength > MORTALITY_LIMITS.pending_bytes
+        ) {
+          throw new MortalityLimitExceeded(
+            "pending_bytes",
+            observedBytes + stableView.byteLength,
+            MORTALITY_LIMITS.pending_bytes
+          );
+        }
+        const owned = snapshotBytes(source, maxBytes);
+        const nextObservedBytes = observedBytes + owned.byteLength;
+        if (nextObservedBytes > MORTALITY_LIMITS.pending_bytes) {
+          throw new MortalityLimitExceeded(
+            "pending_bytes",
+            nextObservedBytes,
+            MORTALITY_LIMITS.pending_bytes
+          );
+        }
+        observedBytes = nextObservedBytes;
+        return owned;
+      } catch (error) {
+        if (error instanceof MortalityLimitExceeded) throw error;
         // Malformed byte fields are retained only as absence of usable evidence.
         // No caller-owned reference crosses into the mortality analysis.
         return undefined;
@@ -147,6 +187,46 @@ function freezeResult(value) {
     if (Array.isArray(entry)) Object.freeze(entry);
   }
   return Object.freeze(value);
+}
+
+function limitExceededResult(error) {
+  return freezeResult({
+    status: "indeterminate",
+    reason: "limit_exceeded",
+    mortality_classified: false,
+    resource: error.resource,
+    observed: error.observed,
+    maximum: error.maximum
+  });
+}
+
+function createVerificationBudget() {
+  let used = 0;
+  const reserve = (count = 1) => {
+    const observed = used + count;
+    if (observed > MORTALITY_LIMITS.signature_verifications) {
+      throw new MortalityLimitExceeded(
+        "signature_verifications",
+        observed,
+        MORTALITY_LIMITS.signature_verifications
+      );
+    }
+    used = observed;
+  };
+  return Object.freeze({
+    reserve,
+    reserveEnvelope(envelope) {
+      const approvals = arrayIsArray(envelope?.approvals) ? envelope.approvals.length : 0;
+      const acceptances = arrayIsArray(envelope?.acceptances)
+        ? envelope.acceptances.length
+        : 0;
+      reserve(approvals + acceptances);
+    },
+    verify(publicKey, message, signature) {
+      reserve();
+      return verifyEd25519(publicKey, message, signature);
+    }
+  });
 }
 
 function requireCondition(condition, message) {
@@ -395,6 +475,11 @@ class Lineage {
     this.#evaluatingMortality = true;
     try {
       return this.#evaluateMortalityUnsafe(options);
+    } catch (error) {
+      if (error instanceof MortalityLimitExceeded) {
+        return limitExceededResult(error);
+      }
+      throw error;
     } finally {
       this.#evaluatingMortality = false;
     }
@@ -410,7 +495,10 @@ class Lineage {
     }
     const observerOptions = snapshotObserverOptions(options);
     const usableKeyIdsInput = observerOptions.usableKeyIds;
-    const usableKeyIdsSnapshot = snapshotDataArray(usableKeyIdsInput, "usableKeyIds");
+    const usableKeyIdsSnapshot = snapshotDataArray(usableKeyIdsInput, "usableKeyIds", {
+      resource: "usable_key_ids",
+      maximum: MORTALITY_LIMITS.usable_key_ids
+    });
     const stateAvailable = observerOptions.stateAvailable;
     if (typeof stateAvailable !== "boolean") {
       throw new TypeError("stateAvailable must be boolean");
@@ -429,6 +517,7 @@ class Lineage {
     const payloadsByHash = new Map();
     const observedSignatures = new Set();
     const directlyAcceptedSuccessors = new Map();
+    const verificationBudget = createVerificationBudget();
 
     const rememberPayload = (payload) => {
       const payloadKey = canonicalize(payload);
@@ -474,6 +563,7 @@ class Lineage {
       }
 
       if (!payloadSnapshot.failure) {
+        verificationBudget.reserveEnvelope(envelope);
         const direct = validatePulse({
           genesis: this.#genesis,
           parent: this.#head,
@@ -512,6 +602,7 @@ class Lineage {
     }
 
     const currentDescriptor = this.#head.next_custody_descriptor;
+    const sortedObservedSignatures = [...observedSignatures].sort();
     const allCurrentKeyIds = currentDescriptor.custodians.map((entry) => entry.key_id);
     const currentById = new Map(
       currentDescriptor.custodians.map((entry) => [entry.key_id, entry])
@@ -540,8 +631,8 @@ class Lineage {
       const approvalMessage = pulseApprovalMessage(body);
       const bodyHash = derivePulseHash(body);
       for (const signer of currentDescriptor.custodians) {
-        if ([...observedSignatures].some((signature) =>
-          verifyEd25519(signer.public_key, approvalMessage, signature)
+        if (sortedObservedSignatures.some((signature) =>
+          verificationBudget.verify(signer.public_key, approvalMessage, signature)
         )) {
           recordSignerBodies([signer.key_id], bodyHash);
         }
@@ -609,9 +700,11 @@ class Lineage {
       const approvalMessage = pulseApprovalMessage(group.body);
       const acceptanceMessage = custodyAcceptanceMessage(group.body);
 
-      for (const signature of [...observedSignatures].sort()) {
+      for (const signature of sortedObservedSignatures) {
         for (const signer of currentDescriptor.custodians) {
-          if (!verifyEd25519(signer.public_key, approvalMessage, signature)) continue;
+          if (!verificationBudget.verify(signer.public_key, approvalMessage, signature)) {
+            continue;
+          }
           const normalized = { key_id: signer.key_id, signature };
           const existing = approvals.get(signer.key_id);
           if (!existing || signature < existing.signature) {
@@ -620,7 +713,9 @@ class Lineage {
         }
         for (const keyId of [...newIds].sort()) {
           const signer = nextById.get(keyId);
-          if (!verifyEd25519(signer.public_key, acceptanceMessage, signature)) continue;
+          if (!verificationBudget.verify(signer.public_key, acceptanceMessage, signature)) {
+            continue;
+          }
           const normalized = { key_id: keyId, signature };
           const existing = acceptances.get(keyId);
           if (!existing || signature < existing.signature) {
@@ -677,6 +772,7 @@ class Lineage {
     const reconstructedAcceptances = new Map();
     for (const group of preparedGroups) {
       if (!group.payloadAvailable) continue;
+      verificationBudget.reserveEnvelope(group.combinedEnvelope);
       const candidate = validatePulse({
         genesis: this.#genesis,
         parent: this.#head,
@@ -738,6 +834,7 @@ class Lineage {
       };
 
       if (!group.payloadAvailable) {
+        verificationBudget.reserveEnvelope(group.combinedEnvelope);
         const candidate = validateOpaqueMortalitySuccessor(
           combinedInput,
           usableForBody
@@ -750,6 +847,9 @@ class Lineage {
 
       combinedInput.eventPayloadBytes = canonicalBytes(group.payload);
       const completeCandidate = reconstructedAcceptances.get(group.objectHash)?.candidate;
+      if (completeCandidate === undefined) {
+        verificationBudget.reserveEnvelope(group.combinedEnvelope);
+      }
       const candidate =
         completeCandidate ?? validateMortalitySuccessor(combinedInput, usableForBody);
       if (candidate.status === "accept" || candidate.status === "latent") {

@@ -1,7 +1,7 @@
 # MortalOS Endpoint-Neutral Access Architecture
 
 Status: **architectural decision; portable kernel implemented**  
-Date: **2026-07-15**
+Date: **2026-07-16**
 
 ## 1. Decision
 
@@ -71,7 +71,7 @@ The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, proces
 - an isolated browser-target bundle; and
 - the committed expected-result document.
 
-The actual headless-Chromium runner is implemented, and publication candidate `9eae8c34` produced the same then-current portable v3 result in Node 22, the browser-target realm, and actual Chromium CI. Every changed head must rerun that gate. The current corpus covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, same-body conditional completion, sign-once-aware equivocation, missing-membership-payload uncertainty, recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, six reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise every current portable case. An actual-browser SAB case remains an H3 cross-origin-isolated deployment test.
+The actual headless-Chromium runner is implemented, and every changed head must rerun the Node/browser-target/actual-browser differential gate. Portable corpus v4 covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, same-body conditional completion, sign-once-aware equivocation, missing-membership-payload uncertainty, resource-bounded recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, seven reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise every current portable case. H3A also verifies SAB rejection in an actual cross-origin-isolated Chromium context where `SharedArrayBuffer` is available.
 
 The current CLI adapter creates a fresh singleton and heartbeat entirely in memory. It does not yet persist a lineage, listen on a socket, discover peers, or provide a stable end-user command contract.
 
@@ -85,10 +85,10 @@ Portability is not sufficient, however. The current kernel validates who can aut
 
 The implementation order is:
 
-1. **portable life kernel** — verified in Node 22, browser-target, and actual Chromium CI on publication candidate `9eae8c34`, with the same gate required for every changed head;
-2. **browser Lab adapter** — next delivery milestone for visual explanation and Devpost judging;
-3. **CLI contract** — stable create/import/verify/replay/export commands using the same corpus and trace format;
-4. **deterministic state-bearing kernel** — next foundational research milestone;
+1. **portable life kernel** — verified across Node, browser-target, and actual Chromium, with the same gate required for every changed head and mortality overflow now explicitly indeterminate;
+2. **browser Lab adapter** — H3A is locally executable; H3B must publish the reviewed artifact with the same isolation headers and logged-out judge verification;
+3. **deterministic state-bearing kernel** — next foundational North-Star milestone;
+4. **CLI contract** — stable create/import/verify/replay/export commands using the same evidence and trace contracts;
 5. **transport-neutral participant runtime** — adapter interface plus deterministic virtual transport before real networks;
 6. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
 7. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.

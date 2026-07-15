@@ -224,7 +224,7 @@ for (const code of [
   assert(rejectionCodes.includes(code), `Missing event-payload rejection code: ${code}`);
 }
 
-for (let index = 1; index <= 17; index += 1) {
+for (let index = 1; index <= 18; index += 1) {
   const invariant = `INV-${index}`;
   const traceLine = text.traceability
     .split("\n")
@@ -267,12 +267,25 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "H3A local MortalOS Lab verified; H3B public HTTPS judge path next",
+  "P0 resource-bounded mortality locally verified; exact-head Chromium CI pending",
   "| Node/Chromium equivalence | Verified on publication candidate |",
-  "publication-candidate Node 22 and actual Chromium CI: PASS;",
+  "exact-head Node 22 and actual Chromium CI remain required for publication;",
   "The verified CLI singleton uses one key"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
+}
+
+for (const statement of [
+  "Pending successor records | 128",
+  "Signature-verification work units | 4,096",
+  "reason: \"limit_exceeded\"",
+  "MUST NOT yield alive, dead",
+  "INV-18"
+]) {
+  assert(
+    text.protocol.includes(statement) || text.traceability.includes(statement),
+    `Mortality resource-bound contract is missing: ${statement}`
+  );
 }
 
 for (const statement of [
@@ -335,7 +348,7 @@ assert(
     text.protocol.includes("evidence_equivocation") &&
     text.protocol.includes("evidence_payload_unavailable") &&
     text.protocol.includes(
-      "captured from the single own-data observer snapshot before pending-record descriptor inspection"
+      "captured through bounded own-data field acquisition before pending-record field inspection"
     ),
   "Protocol omits sign-once-aware completion, evidence reconstruction, or payload uncertainty"
 );
@@ -421,7 +434,7 @@ console.log(`- Operational lifecycle definitions checked: ${lifecycleSections.le
 console.log(`- Domain separators checked: ${domains.length}`);
 console.log(`- Message validation rows checked: ${genesisFields.length + pulseFields.length}`);
 console.log(`- Unique rejection codes checked: ${rejectionCodes.length}`);
-console.log(`- Invariant-to-test mappings checked: 17`);
+console.log(`- Invariant-to-test mappings checked: 18`);
 console.log(`- Threat-model boundary statements checked: ${requiredThreatStatements.length}`);
 console.log(`- H2 golden trace verified: ${h2Golden.format} sha256:${h2Digest}`);
 console.log(`- Relative Markdown links checked: ${relativeLinkCount}`);

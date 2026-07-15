@@ -311,6 +311,31 @@ result, and reproducible verification.
 - Handoff: H3B public hosting is deliberately separate; `reviewer-merge-gate` must
   inspect the immutable H3A diff and reject UI-side validity or ownerlessness claims
 
+## 2026-07-16 — Resource-bounded mortality observation
+
+- Base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Branch: `agent/codex-protocol-kernel--north-star-foundation`
+- Intended shared paths: the exact runtime, portable-vector, verification,
+  specification/status, README, and agent-record paths declared in the active handoff
+- Result: fixed whole-observation limits now cap usable key IDs at 16, pending
+  records at 128, owned pending bytes at 4 MiB, and conservative signature-
+  verification work at 4,096 units. Overflow returns structured
+  `indeterminate / limit_exceeded` without truncating evidence, classifying death,
+  or mutating the graph. Observer containers use bounded named/indexed descriptor
+  acquisition instead of caller-controlled enumeration. Portable corpus v4 records
+  the deterministic overflow contract.
+- Verification: clean locked install; full `npm test`; governance 30/30;
+  conformance 59/59; 10,000 fixed-seed mixed property cases; Lab 5/5 and static
+  build; committed/Node 24/browser-target portable v4 byte identity with
+  10,000/10,000 rejects; trusted-core coverage 97.97% line, 93.65% branch, and
+  100% function; governance coverage 92.68%/84.39%/93.75%; audit 0; 76-file
+  package dry-run; license/spec/syntax/diff checks pass. Local actual Chromium was
+  blocked before launch because the Playwright CDN returned a zero-byte archive in
+  this environment; exact-head remote Chromium CI remains mandatory.
+- Handoff: publish one focused P0 PR, require trusted Agent PR Policy and the full
+  Verify workflow including actual Chromium, then obtain a fresh immutable-snapshot
+  review from `reviewer-merge-gate`; author does not merge or self-approve
+
 ### YYYY-MM-DD — Task
 
 - Base: `<commit>`

@@ -11,6 +11,7 @@ import {
   encodeBase64Url,
   eventPayloadHash,
   genesisApprovalMessage,
+  MORTALITY_LIMITS,
   pulseApprovalMessage,
   validateLatentSuccessor
 } from "../src/index.mjs";
@@ -763,9 +764,11 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
   let reentrantAppend;
 
   const reentrantInput = new Proxy(rawStep(partial), {
-    ownKeys(target) {
-      reentrantAppend = lineage.append(rawStep(step));
-      return Reflect.ownKeys(target);
+    getOwnPropertyDescriptor(target, key) {
+      if (key === "envelopeBytes") {
+        reentrantAppend = lineage.append(rawStep(step));
+      }
+      return Reflect.getOwnPropertyDescriptor(target, key);
     }
   });
   const assessment = lineage.evaluateMortality({
@@ -787,9 +790,9 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
   ]) {
     const pending = [];
     const mutationTrigger = new Proxy({ envelopeBytes: Uint8Array.of(0) }, {
-      ownKeys(target) {
-        mutate(pending);
-        return Reflect.ownKeys(target);
+      getOwnPropertyDescriptor(target, key) {
+        if (key === "envelopeBytes") mutate(pending);
+        return Reflect.getOwnPropertyDescriptor(target, key);
       }
     });
     pending.push(mutationTrigger, rawStep(step));
@@ -813,6 +816,27 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
     pendingSuccessors: iteratorTrap,
     authorityLossIrreversible: true
   }).status, "latent_successor_not_dead");
+
+  let ownKeysCalls = 0;
+  const noEnumeration = {
+    ownKeys() {
+      ownKeysCalls += 1;
+      throw new Error("observer containers must not be enumerated");
+    }
+  };
+  const boundedEvidence = new Proxy(rawStep(step), noEnumeration);
+  const boundedPending = new Proxy([boundedEvidence], noEnumeration);
+  const boundedOptions = new Proxy({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: boundedPending,
+    authorityLossIrreversible: true
+  }, noEnumeration);
+  assert.equal(
+    lineage.evaluateMortality(boundedOptions).status,
+    "latent_successor_not_dead"
+  );
+  assert.equal(ownKeysCalls, 0);
 
   const accessorArray = [];
   Object.defineProperty(accessorArray, "0", {
@@ -992,4 +1016,81 @@ test("mortality input contracts reject ambiguous observer assumptions", () => {
     );
     assert.equal(getterCalls, 0);
   }
+});
+
+test("mortality resource limits return indeterminate without truncating into death", () => {
+  const lineage = openThrough(0);
+  const assumptions = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    authorityLossIrreversible: true
+  };
+  const expectedLimit = (resource, observed, maximum) => ({
+    status: "indeterminate",
+    reason: "limit_exceeded",
+    mortality_classified: false,
+    resource,
+    observed,
+    maximum
+  });
+
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    usableKeyIds: Array(MORTALITY_LIMITS.usable_key_ids + 1).fill("irrelevant")
+  }), expectedLimit(
+    "usable_key_ids",
+    MORTALITY_LIMITS.usable_key_ids + 1,
+    MORTALITY_LIMITS.usable_key_ids
+  ));
+
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: Array.from(
+      { length: MORTALITY_LIMITS.pending_records + 1 },
+      () => ({})
+    )
+  }), expectedLimit(
+    "pending_records",
+    MORTALITY_LIMITS.pending_records + 1,
+    MORTALITY_LIMITS.pending_records
+  ));
+
+  const fullEnvelopeBytes = new Uint8Array(64 * 1024);
+  const byteLimited = lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: Array.from({ length: 65 }, () => ({
+      envelopeBytes: fullEnvelopeBytes
+    }))
+  });
+  assert.deepEqual(byteLimited, expectedLimit(
+    "pending_bytes",
+    65 * fullEnvelopeBytes.byteLength,
+    MORTALITY_LIMITS.pending_bytes
+  ));
+
+  const pendingSuccessors = Array.from({ length: 16 }, (_, bodyIndex) => {
+    const body = clone(vector.steps[0].envelope.body);
+    body.event.payload_hash = tagged("sha256:", 32, bodyIndex);
+    return {
+      envelopeBytes: canonicalBytes({
+        kind: "mortalos.pulse",
+        body,
+        approvals: Array.from({ length: 64 }, (_, signatureIndex) => ({
+          key_id: `untrusted-${bodyIndex}-${signatureIndex}`,
+          signature: `invalid-${bodyIndex}-${signatureIndex}`
+        })),
+        acceptances: []
+      })
+    };
+  });
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors
+  }), expectedLimit(
+    "signature_verifications",
+    MORTALITY_LIMITS.signature_verifications + 1,
+    MORTALITY_LIMITS.signature_verifications
+  ));
+
+  assert.equal(lineage.evaluateMortality(assumptions).status, "dead_under_v0_assumptions");
 });

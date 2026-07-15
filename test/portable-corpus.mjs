@@ -4,6 +4,7 @@ import {
   derivePeerId,
   encodeBase64Url,
   hexToBytes,
+  MORTALITY_LIMITS,
   snapshotBytes,
   validateGenesis,
   validateLatentSuccessor,
@@ -12,7 +13,7 @@ import {
 } from "../src/index.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
-export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/3";
+export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/4";
 export const ADVERSARIAL_CASES = 10_000;
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
@@ -289,6 +290,20 @@ function runBoundaryCases(lifecycle, rfc8032) {
     }
   }
 
+  const limited = createLineage(canonicalBytes(lifecycle.birth));
+  if (limited.status !== "accept") {
+    throw new Error(`limit-probe Genesis rejected: ${limited.code}`);
+  }
+  const mortalityPendingLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: Array.from(
+      { length: MORTALITY_LIMITS.pending_records + 1 },
+      () => ({})
+    ),
+    authorityLossIrreversible: true
+  });
+
   return {
     low_order_peer_id_rejected:
       derivePeerId(`ed25519:${encodeBase64Url(identity)}`) === null,
@@ -305,7 +320,8 @@ function runBoundaryCases(lifecycle, rfc8032) {
     hostile_byte_metadata_ignored:
       validateGenesis(new HostileBytes(canonicalBytes(lifecycle.birth))).status === "accept",
     shared_bytes_rejected: sharedBytesRejected,
-    falsey_root_code: validateGenesis(canonicalBytes(0)).code
+    falsey_root_code: validateGenesis(canonicalBytes(0)).code,
+    mortality_pending_limit: mortalityPendingLimit
   };
 }
 

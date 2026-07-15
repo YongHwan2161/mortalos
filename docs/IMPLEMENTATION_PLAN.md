@@ -1,8 +1,8 @@
 # MortalOS Implementation Plan
 
-Status: **H3A local browser Lab verified; H3B public deployment next**
+Status: **P0 resource-bounded mortality locally verified; exact-head Chromium CI pending**
 
-Last reviewed: **2026-07-15**
+Last reviewed: **2026-07-16**
 
 This is a rolling, gate-based plan. Current evidence belongs in [`PROJECT_STATUS.md`](PROJECT_STATUS.md); historical decisions belong in Git history.
 
@@ -33,6 +33,8 @@ The reference core verifies:
 - complete A/B/C → D/E/F custodian turnover with stable identity;
 - single-read public validation of complete and durable acceptance-incomplete successors, plus lineage-internal completion from independently collected body/signature/sidecar evidence, one early usable-key snapshot filtered per body by sign-once commitments, unclassified authenticated equivocation, and conditional payload-unavailability after irreversible authority loss when an opaque membership body is the sole obstacle to a death conclusion;
 - conditional authority/state mortality states scoped to the graph-recognized head;
+- fixed whole-observation mortality limits that return indeterminate rather than
+  classifying a truncated evidence set;
 - 10,000 deterministic mixed valid/invalid continuation cases; and
 - byte-identical H2 v3 traces in fresh processes.
 
@@ -63,6 +65,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
 - [x] Forged context, leaked constructor, replay, fork, no-op membership, durable latent succession, conditional-current-approval completion, evidence poisoning, sign-once/equivocation, and payload-unavailability cases pass in Node and the isolated browser-target runtime.
 - [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
+- [x] Pending-record, owned-byte, usable-ID, and signature-work overflow returns portable `indeterminate / limit_exceeded` without graph mutation or a death decision.
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
 - [x] Clean locked installation and the full local suite pass.
@@ -70,6 +73,8 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - [x] An adapter cannot alter canonical bytes, validation order, rejection codes, or lineage decisions.
 
 Failure rule: any cross-runtime mismatch reopens C1 and blocks endpoint product work. Do not copy the validator into UI or CLI code as a workaround.
+
+The resource-limit candidate must still pass the exact-head actual-Chromium and remote CI gates before its evidence can be described as published. Limit values are versioned observer semantics; adapters may submit a smaller complete set but may not truncate, silently raise the limits, or reinterpret overflow as missing evidence.
 
 ## 4. H3 — single-browser incubator and MortalOS Lab
 
@@ -224,6 +229,7 @@ Reopen the earliest responsible gate if:
 - replay or fork silently changes the head;
 - mortality trusts a caller-selected head or prevalidated pending capability;
 - mortality projects a usable signer onto a body after that signer authenticated another body, treats authenticated equivocation as life/death, or ignores a completion-capable membership body solely because its committed sidecar is unavailable;
+- mortality truncates over-limit evidence or converts resource exhaustion into an alive/dead classification;
 - UI, GPT, endpoint, transport, or storage bypasses validation;
 - `1-of-1` or one-browser logical quorum is misrepresented as ownerless physical distribution;
 - death is inferred only from silence, process exit, or an unverified deletion claim; or

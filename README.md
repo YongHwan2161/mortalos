@@ -16,10 +16,10 @@ Implemented:
 - total public validators with stable first-error precedence, non-forgeable recursively frozen contexts, and supplied-evidence-only public latent validation;
 - membership handoff validation that proves the declared next quorum can activate from supplied approval and acceptance evidence;
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
-- recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; filters one explicit usable-key snapshot through sign-once commitments; keeps equivocation unclassified; and lets completion-capable missing membership payloads block only an otherwise unsupported death classification;
+- resource-bounded recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; filters one explicit usable-key snapshot through sign-once commitments; keeps equivocation and payload uncertainty unclassified; and returns `indeterminate / limit_exceeded` instead of classifying a truncated evidence set;
 - a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
-- a v3 committed result corpus with 15 named negatives, six reported trust-boundary outcomes, same-body completion and payload-unavailability cases, repairable-fork equivocation, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
-- byte-identical then-current committed, Node.js, isolated browser-target, and actual headless-Chromium results on publication candidate `9eae8c34`; every changed head must rerun that CI gate; and
+- a v4 committed result corpus with 15 named negatives, seven reported boundary outcomes, same-body completion, payload-unavailability, resource-limit, repairable-fork equivocation, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
+- byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium gates that every changed head must rerun before publication; and
 - a local H3A MortalOS Lab with three non-extractable Worker keys, live `2-of-3` birth/heartbeat experiments, reference lifecycle falsification, full corpus replay, canonical public-evidence export, and cross-origin-isolated browser boundary checks.
 
 Not implemented:
@@ -30,7 +30,7 @@ Not implemented:
 - a deterministic executable genome or mutable logical state; and
 - GPT-5.6 runtime integration.
 
-The most important delivery gate is now **H3B public MortalOS Lab deployment**. The next fundamental research gate is a versioned deterministic state-bearing kernel. See [Project status](docs/PROJECT_STATUS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
+The immediate safety gate is publication of the resource-bounded mortality candidate. The next delivery gate is **H3B public MortalOS Lab deployment**, and the next fundamental research gate is a versioned deterministic state-bearing kernel. See [Project status](docs/PROJECT_STATUS.md) and the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ## Run
 
@@ -50,7 +50,7 @@ npm run demo:singleton
 npm run demo:trace
 ```
 
-`npm test` runs license/specification/governance gates, 58 conformance tests, Lab unit tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, the deterministic lifecycle trace, and the static Lab build. `npm run verify:lab` adds real cross-origin-isolated Chromium acceptance. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
+`npm test` runs license/specification/governance gates, 59 conformance tests, Lab unit tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed valid/invalid property corpus, the deterministic lifecycle trace, and the static Lab build. `npm run verify:lab` adds real cross-origin-isolated Chromium acceptance. Coverage enforces at least 90% aggregate branch coverage across the trusted core.
 
 Expected H2 trace digest:
 

@@ -5,52 +5,48 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — H3A browser Lab
+### ACTIVE — Resource-bounded mortality observation
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `9791074ffe8f091b8007e09f2b3edd4080d4212b`
-- Work branch: `agent/codex-protocol-kernel--h3-browser-lab`
+- Base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Work branch: `agent/codex-protocol-kernel--north-star-foundation`
 - Intended paths (exact):
-  - `.github/workflows/verify.yml`
-  - `README.md`
-  - `THIRD_PARTY_NOTICES.md`
   - `agents/codex-protocol-kernel/HANDOFF.md`
   - `agents/codex-protocol-kernel/MEMORY.md`
-  - `agents/codex-protocol-kernel/README.md`
   - `agents/codex-protocol-kernel/WORKLOG.md`
+  - `README.md`
   - `docs/ACCESS_ARCHITECTURE.md`
   - `docs/IMPLEMENTATION_PLAN.md`
   - `docs/PROJECT_STATUS.md`
-  - `docs/SINGLE_BROWSER_INCUBATOR.md`
-  - `docs/SUBMISSION_CHECKLIST.md`
+  - `docs/PROTOCOL.md`
+  - `docs/REJECTION_CODES.md`
+  - `docs/THREAT_MODEL.md`
   - `docs/TRACEABILITY.md`
-  - `lab/THIRD_PARTY_LICENSES.txt`
-  - `lab/app.mjs`
-  - `lab/corpus-summary.mjs`
-  - `lab/corpus-worker.mjs`
-  - `lab/custodian-worker.mjs`
-  - `lab/evidence-export.mjs`
-  - `lab/index.html`
-  - `lab/live-incubator.mjs`
-  - `lab/reference-engine.mjs`
-  - `lab/signing-policy.mjs`
-  - `lab/styles.css`
-  - `package.json`
-  - `scripts/build-lab.mjs`
-  - `scripts/serve-lab.mjs`
-  - `scripts/verify-lab.mjs`
+  - `scripts/verify-portable.mjs`
   - `scripts/verify-spec.mjs`
-  - `test/lab.test.mjs`
-- Contract affected: browser adapter, volatile Worker custody, trace export, Lab
-  verification, and delivery documentation; the portable validator remains the sole
-  validity authority
-- Required evidence: focused Lab tests, full Node suite, actual Chromium judge path,
-  portable corpus equality, SAB rejection under cross-origin isolation, coverage,
-  audit, package scan, trusted Agent PR Policy, Verify, and immutable-head review
-- Expected handoff: a focused H3A PR from current `main`; the reviewer must reject
-  any UI-side validation logic, exported private material, or ownerlessness overclaim
+  - `src/lineage.mjs`
+  - `test/mortality.test.mjs`
+  - `test/portable-corpus.mjs`
+  - `test/vectors/portable-expected.json`
+- Contract affected: fixed mortality-observer resource limits and the portable
+  `indeterminate` / `limit_exceeded` result; no accepted-object or wire-format change
+- Required evidence: focused mortality limits, complete conformance/property/portable
+  suites, actual Chromium differential, trusted-core coverage, audit, package scan,
+  trusted Agent PR Policy, Verify, and immutable-head review
+- Expected handoff: a focused P0 safety PR; the reviewer must reject truncation that
+  could turn excessive pending evidence into a death or life classification
 
 ## Completed handoffs
+
+### 2026-07-16 — H3A browser Lab merged
+
+- PR: `#8`; squash merge on `main`:
+  `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Result: the local one-page Lab, three volatile Worker custodians, reference
+  experiments, canonical export/replay, complete portable corpus, and actual-browser
+  cross-origin-isolated SAB rejection passed review and post-merge verification
+- Handoff: H3B public HTTPS deployment is a separate delivery task; the portable
+  kernel remains the sole validity authority
 
 ### 2026-07-15 — Mortality-proof correction merged
 
