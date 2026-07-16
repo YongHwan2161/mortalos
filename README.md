@@ -29,35 +29,44 @@ Implemented:
 - a local H3A MortalOS Lab with three non-extractable Worker keys, live `2-of-3`
   birth/heartbeat experiments, reference lifecycle falsification, full corpus replay,
   canonical public-evidence export, and cross-origin-isolated browser boundary checks.
-- an H3B deployment candidate that binds a clean static build to one source commit,
+- an H3B deployment contract on `main` that binds a clean static build to one source commit,
   hashes every served asset, mirrors the local security-header contract on Cloudflare
   Pages, and verifies the public bytes and Chromium judge path after deployment;
 - an R1 canonical operation/result contract for Genesis validation, lineage replay,
   and qualified mortality, with exact byte ceilings, stable rejection results, eight
   committed goldens, and byte-identical JavaScript/Python corpus-profile differential
-  verification;
-  and
+  verification; and
 - a public [MortalOS Evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site)
   that contrasts incomplete and complete mortality evidence and uses GPT-5.6 only as
   a server-side, schema-constrained, non-authoritative witness.
 
 Not implemented:
 
+- a direct, exact-commit-verified Cloudflare Pages release of the full H3A Lab;
+- the deployed Sites frontend/server source in this `main` tree;
 - a stable CLI create/import/replay/export contract;
 - participant-to-participant transport or replicated state;
-- a deterministic executable genome or mutable logical state; and
-- R1 consumption inside the full H3A experiment surface (the public evidence Lab
-  consumes committed R1 outcomes, while H3A remains the deeper local experiment).
+- a deterministic executable genome or mutable logical state.
 
-This tree implements the **P0 mortality-proof and bounded-observation correction**.
+Submission status outside this `main` snapshot: the public
+[MortalOS Evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site)
+provides a zero-install A/B view of two R1 mortality outcomes and an explicitly
+non-authoritative GPT-5.6 explanation. Logged-out HTTP, GPT response, and private-field
+rejection smoke tests pass. R1 merged through PR #12 at
+`6c5b85fd8e467feb4df63556864ea5f8949e7b61`; the separate Sites source/version
+provenance must still be reconciled with that reviewed repository evidence before
+submission freeze.
+
+This tree implements the **P0 mortality-safe kernel, H3A/H3B Lab contract, and bounded
+R1-A/R1-B evidence profile**.
 Any SHA is publishable only after immutable-head review and its own successful Verify
-run. The Build Week submission lane publishes the existing Lab as an explicitly
-qualified exact-commit preview:
+run. The Build Week submission lane now follows:
 
-`P0 merged → H3B honest Lab preview → release evidence → video → submit`
+`truthful status → Sites provenance → video → fields → submit`
 
 That deadline exception improves judge access without claiming that hosting closes
-the JavaScript observer boundary. The post-submission protocol lane remains:
+the JavaScript observer boundary. R1-A/R1-B are merged; R1-C, R2, and networking
+remain after the submission-critical provenance and media work:
 
 `independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
@@ -67,8 +76,8 @@ plan](docs/IMPLEMENTATION_PLAN.md).
 ## Run
 
 Supported platforms: Node.js 22.5 or later on macOS, Linux, or Windows for local
-verification; a current Chromium-class browser for MortalOS Lab. The public Lab is
-static and needs no account or extension.
+verification; a current Chromium-class browser for MortalOS Lab. The local H3A Lab is
+static; the public Sites Lab needs no account or extension.
 
 ```bash
 npm ci
@@ -97,6 +106,12 @@ npm run verify:deployed-lab
 Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is the
 equivalent local maintainer command and requires Cloudflare credentials; judges do
 not need those credentials.
+
+Current release status: the H3B contract is merged and the post-merge Verify run
+passes, but the first direct Pages workflow stopped at credential preflight because
+the repository has neither `CLOUDFLARE_ACCOUNT_ID` nor `CLOUDFLARE_API_TOKEN`.
+Therefore the `pages.dev` URL above is only a target. The separate Sites URL is the
+current public judge path; it does not satisfy H3B's exact-asset contract.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed
@@ -130,7 +145,7 @@ Closing a browser or CLI process can remove every locally usable key and make th
 
 ## Why browser first, but not browser only
 
-The Build Week product is **MortalOS Lab**, a browser-based Developer Tools experience for inspecting and falsifying lifecycle traces. The [public evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site) is the zero-install judge entry point; the deeper local H3A experiment remains available from this repository.
+The Build Week product is **MortalOS Lab**, a browser-based Developer Tools experience for inspecting and falsifying lifecycle traces. The browser is first because it offers a zero-install judge path and makes identity, custody, turnover, fork, and mortality visible.
 
 The browser is not a protocol boundary. Browser, CLI, native, service, embedded, and future network participants must carry the same canonical evidence to the same portable kernel. UI, transport, storage, signaling, and model output cannot define validity.
 
@@ -181,12 +196,11 @@ Current documentation contains only normative rules, rolling status/plan, deploy
 
 ## Project direction
 
-R1-A now exposes bounded versioned raw operations and results plus a JavaScript golden
-corpus, and R1-B replays that eight-record, empty-pending profile in an independently
-written Python verifier. The public
-evidence Lab consumes representative R1 outcomes; moving the full H3A experiment onto
-the wire contract remains R1-C. R2 then adds deterministic state. CLI and network
-adapters remain thin consumers of the same contract.
+R1-A now exposes bounded versioned raw operations/results and a JavaScript golden
+corpus; R1-B replays that eight-record profile in an independently written Python
+verifier. The public Sites Lab consumes two committed R1 outcomes, while R1-C must
+still move the full H3A experiment onto the wire contract. R2 then adds deterministic
+state. CLI and network adapters remain thin consumers of the same contract.
 
 ## How Codex and GPT-5.6 were used
 
@@ -196,13 +210,13 @@ resurrection rejection. It was used to red-team evidence completeness and hostil
 observer inputs, implement deterministic conformance/property/browser tests, compare
 the project against Devpost requirements, and design the exact-asset Cloudflare
 deployment verifier. Git history and committed vectors make those contributions
-reviewable instead of treating model prose as evidence.
+reviewable instead of treating model prose as evidence. The public Lab's GPT-5.6
+witness explains only a supplied public R1 result and cannot sign, validate, select a
+head, or declare death.
 
 The human retained the consequential decisions: North Star, threat assumptions,
 scope, browser-first product strategy, claim limits, Apache-2.0 license, and final
-submission wording. The public evidence Lab calls GPT-5.6 through a server-only
-Responses API route with `store: false` and strict structured output. GPT receives
-only the public R1 result and cannot sign, validate, choose a head, or declare death.
+submission wording. GPT-5.6 output is never a validity authority.
 
 ## License
 

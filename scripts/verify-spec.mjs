@@ -283,7 +283,7 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "P0 merged on `main`; H3A local Lab implemented; H3B deployment candidate in review",
+  "P0/H3A/H3B/R1 merged; public Sites judge path live; direct H3B deployment credential-blocked",
   "| Node/browser agreement | Required per review head |",
   "an old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"
@@ -292,8 +292,8 @@ for (const statement of [
 }
 
 for (const statement of [
-  "H3A implemented",
-  "H3B honest Lab preview",
+  "H3A MortalOS Lab",
+  "Additional H3B exact-deployment criteria",
   "Three non-extractable Worker keys"
 ]) {
   assert(
@@ -444,14 +444,23 @@ const orderedGateStatement =
 for (const [name, artifact] of Object.entries({
   readme: text.readme,
   projectStatus: text.projectStatus,
-  implementationPlan: text.implementationPlan,
-  accessArchitecture: text.accessArchitecture
+  implementationPlan: text.implementationPlan
 })) {
   assert(
     artifact.includes(orderedGateStatement),
     `${name} does not state the reviewed total gate order`
   );
 }
+
+const remainingGateStatement =
+  "R1-C Lab wire consumption → R2 deterministic state → R3 availability → " +
+  "R4 network embodiment";
+assert(
+  text.accessArchitecture.includes(remainingGateStatement) &&
+    text.accessArchitecture.includes("R1-A has frozen") &&
+    text.accessArchitecture.includes("R1-B independently reproduces"),
+  "accessArchitecture does not distinguish merged R1-A/R1-B from the remaining gate order"
+);
 
 for (const statement of [
   "Proxy-free ordinary own-data",
