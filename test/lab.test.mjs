@@ -152,6 +152,8 @@ test("reference Lab derives lifecycle, mutation, fork, mortality, resurrection, 
   assert.equal(result.fork.head_after_fork, null);
   assert.equal(result.resurrection.code, "E_APPROVAL_INSUFFICIENT_QUORUM");
   assert.equal(result.mortality.status, "dead_under_v0_assumptions");
+  assert.equal(result.mortality.latent_evidence_complete, true);
+  assert.match(result.mortality.qualification, /closed fixture only/);
   assert.equal(result.clone.same_genome, true);
   assert.equal(result.clone.identity_separate, true);
 });
@@ -211,6 +213,12 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(html, /worker-src 'self'/);
   assert.doesNotMatch(html, /https?:\/\//);
   assert.match(html, /THIRD_PARTY_LICENSES\.txt/);
+  assert.match(html, /pending-evidence inventory is explicitly complete/);
+
+  const liveSource = await readFile(new URL("../lab/live-incubator.mjs", import.meta.url), "utf8");
+  assert.match(liveSource, /authorityLossIrreversible:\s*false,\s*latentEvidenceComplete:\s*false/);
+  const referenceSource = await readFile(new URL("../lab/reference-engine.mjs", import.meta.url), "utf8");
+  assert.match(referenceSource, /authorityLossIrreversible:\s*true,\s*latentEvidenceComplete:\s*true/);
 
   const bundledLicenses = await readFile(new URL("../lab/THIRD_PARTY_LICENSES.txt", import.meta.url), "utf8");
   assert.match(bundledLicenses, /@noble\/curves 2\.2\.0/);

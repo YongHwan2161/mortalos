@@ -1,4 +1,20 @@
-import { asBytes, equalBytes, isSharedByteView, utf8Bytes } from "./bytes.mjs";
+import {
+  asBytes,
+  byteLengthOfBytes,
+  equalBytes,
+  isSharedByteView,
+  utf8Bytes
+} from "./bytes.mjs";
+import {
+  createUint8Array,
+  createWeakSet,
+  defineOwnDataProperty,
+  freeze,
+  numberIsSafeInteger,
+  typedArraySet,
+  weakSetAdd,
+  weakSetHas
+} from "./primordials.mjs";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const arrayBufferIsView = ArrayBuffer.isView;
@@ -13,6 +29,7 @@ const reflectApply = Reflect.apply;
 const reflectOwnKeys = Reflect.ownKeys;
 const invalidRecordPrototype = Symbol("invalid record prototype");
 const parsedRecords = new WeakSet();
+const jsonInputErrorBrands = createWeakSet();
 const slotProbeSentinel = Object.freeze({});
 const intrinsicSlotProbes = [
   [Date.prototype.getTime, []],
@@ -50,11 +67,19 @@ export const JSON_LIMITS = Object.freeze({
 export class JsonInputError extends Error {
   constructor(code, detail) {
     super(detail);
-    this.name = "JsonInputError";
-    this.code = code;
-    this.detail = detail;
+    weakSetAdd(jsonInputErrorBrands, this);
+    defineOwnDataProperty(this, "name", "JsonInputError");
+    defineOwnDataProperty(this, "code", code);
+    defineOwnDataProperty(this, "detail", detail);
   }
 }
+
+export function isJsonInputError(value) {
+  return weakSetHas(jsonInputErrorBrands, value);
+}
+
+freeze(JsonInputError.prototype);
+freeze(JsonInputError);
 
 function hasLoneSurrogate(value) {
   for (let index = 0; index < value.length; index += 1) {
@@ -369,7 +394,7 @@ class DuplicateAwareParser {
 }
 
 function assertLimit(name, value) {
-  if (!Number.isSafeInteger(value) || value < 0) {
+  if (!numberIsSafeInteger(value) || value < 0) {
     throw new JsonInputError("E_PARSE_LIMIT_EXCEEDED", `${name}:invalid`);
   }
 }
@@ -383,15 +408,19 @@ export function snapshotBytes(bytes, maxBytes = JSON_LIMITS.default_bytes) {
       isSharedByteView(bytes) ? "shared-buffer-unsupported" : "input-not-stable-uint8array"
     );
   }
-  if (view.byteLength > maxBytes) {
+  const byteLength = byteLengthOfBytes(view);
+  if (byteLength === null) {
+    throw new JsonInputError("E_PARSE_INVALID_UTF8", "input-buffer-invalid");
+  }
+  if (byteLength > maxBytes) {
     throw new JsonInputError(
       "E_PARSE_LIMIT_EXCEEDED",
-      `bytes:${view.byteLength}/${maxBytes}`
+      `bytes:${byteLength}/${maxBytes}`
     );
   }
-  const snapshot = new Uint8Array(view.byteLength);
+  const snapshot = createUint8Array(byteLength);
   try {
-    snapshot.set(view);
+    typedArraySet(snapshot, view, 0);
   } catch {
     throw new JsonInputError("E_PARSE_INVALID_UTF8", "input-buffer-invalid");
   }
@@ -425,7 +454,7 @@ export function canonicalize(value) {
   try {
     return canonicalizeIJson(value, new WeakMap(), new WeakSet());
   } catch (error) {
-    if (error instanceof JsonInputError) throw error;
+    if (isJsonInputError(error)) throw error;
     throw new JsonInputError("E_PARSE_NON_IJSON", "canonicalization-failed");
   }
 }

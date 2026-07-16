@@ -1,5 +1,5 @@
 {
-  "format": "mortalos-lifecycle-trace/3",
+  "format": "mortalos-lifecycle-trace/4",
   "protocol": "mortalos/0",
   "scenario": "birth-succession-death-resurrection-rejection-clone",
   "events": [
@@ -86,7 +86,9 @@
       "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
       "usable_keys": 1,
       "quorum": 2,
-      "pending_authorized_successors": 0
+      "pending_authorized_successors": 0,
+      "authority_loss_irreversible": true,
+      "latent_evidence_complete": true
     },
     {
       "phase": "public-snapshot-resurrection-attempt",
@@ -117,9 +119,9 @@
     "latent_successor_survived_key_loss": true,
     "mortality_bound_to_lineage_recognized_head": true,
     "state_loss_reported_as_stalled_not_dead": true,
-    "authority_death_reported_only_after_pending_set_drained": true,
+    "authority_death_requires_irreversible_loss_and_complete_evidence": true,
     "public_snapshot_cannot_resurrect_lineage": true,
     "clone_has_distinct_identity": true
   },
-  "trace_sha256": "b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36"
+  "trace_sha256": "19fa3080831cb94f29bfda2e7e1f04f86927057f0823834a6bcbc7d746e25399"
 }

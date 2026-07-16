@@ -1,45 +1,66 @@
+import {
+  arrayIncludes,
+  arrayPush,
+  freeze,
+  isArray,
+  numberIsInteger,
+  objectHasOwn,
+  objectKeys
+} from "./primordials.mjs";
+
 function issue(keyword, instancePath, params = {}) {
   return { keyword, instancePath, params };
 }
 
 function isRecord(value) {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+  return Boolean(value && typeof value === "object" && !isArray(value));
 }
 
 function inspectObject(value, instancePath, required, allowed, errors) {
   if (!isRecord(value)) {
-    errors.push(issue("type", instancePath, { type: "object" }));
+    arrayPush(errors, issue("type", instancePath, { type: "object" }));
     return false;
   }
-  for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) {
-      errors.push(issue("additionalProperties", instancePath, { additionalProperty: key }));
+  const actualKeys = objectKeys(value);
+  for (let index = 0; index < actualKeys.length; index += 1) {
+    const key = actualKeys[index];
+    if (!arrayIncludes(allowed, key)) {
+      arrayPush(errors, issue("additionalProperties", instancePath, { additionalProperty: key }));
     }
   }
-  for (const key of required) {
-    if (!Object.hasOwn(value, key)) errors.push(issue("required", instancePath, { missingProperty: key }));
+  for (let index = 0; index < required.length; index += 1) {
+    const key = required[index];
+    if (!objectHasOwn(value, key)) {
+      arrayPush(errors, issue("required", instancePath, { missingProperty: key }));
+    }
   }
   return true;
 }
 
 function inspectString(value, instancePath, errors) {
-  if (typeof value !== "string") errors.push(issue("type", instancePath, { type: "string" }));
+  if (typeof value !== "string") {
+    arrayPush(errors, issue("type", instancePath, { type: "string" }));
+  }
 }
 
 function inspectInteger(value, instancePath, errors) {
-  if (!Number.isInteger(value)) errors.push(issue("type", instancePath, { type: "integer" }));
+  if (!numberIsInteger(value)) arrayPush(errors, issue("type", instancePath, { type: "integer" }));
 }
 
 function inspectConst(value, expected, instancePath, errors) {
-  if (value !== expected) errors.push(issue("const", instancePath, { allowedValue: expected }));
+  if (value !== expected) {
+    arrayPush(errors, issue("const", instancePath, { allowedValue: expected }));
+  }
 }
 
 function inspectArray(value, instancePath, inspectEntry, errors) {
-  if (!Array.isArray(value)) {
-    errors.push(issue("type", instancePath, { type: "array" }));
+  if (!isArray(value)) {
+    arrayPush(errors, issue("type", instancePath, { type: "array" }));
     return;
   }
-  value.forEach((entry, index) => inspectEntry(entry, `${instancePath}/${index}`, errors));
+  for (let index = 0; index < value.length; index += 1) {
+    inspectEntry(value[index], `${instancePath}/${index}`, errors);
+  }
 }
 
 function inspectCustodian(value, instancePath, errors) {
@@ -103,14 +124,16 @@ function inspectPulseBody(value, instancePath, errors) {
   ];
   if (!inspectObject(value, instancePath, keys, keys, errors)) return;
   inspectString(value.protocol_version, `${instancePath}/protocol_version`, errors);
-  for (const key of [
+  const stringFields = [
     "organism_id",
     "sequence",
     "parent_hash",
     "genome_hash",
     "current_custody_hash",
     "state_root"
-  ]) {
+  ];
+  for (let index = 0; index < stringFields.length; index += 1) {
+    const key = stringFields[index];
     inspectString(value[key], `${instancePath}/${key}`, errors);
   }
   inspectEvent(value.event, `${instancePath}/event`, errors);
@@ -131,11 +154,9 @@ function createEnvelopeValidator(kind) {
       inspectArray(value.approvals, "/approvals", inspectEvidence, errors);
       if (!genesis) inspectArray(value.acceptances, "/acceptances", inspectEvidence, errors);
     }
-    validate.errors = errors;
-    return errors.length === 0;
+    return { errors, valid: errors.length === 0 };
   };
-  validate.errors = [];
-  return validate;
+  return freeze(validate);
 }
 
 export const checkGenesisSchema = createEnvelopeValidator("mortalos.genesis");

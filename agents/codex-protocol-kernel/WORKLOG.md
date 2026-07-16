@@ -319,3 +319,58 @@ result, and reproducible verification.
 - Result: `<concise outcome>`
 - Verification: `<commands, vectors, CI run, or review>`
 - Handoff: `<agent/dependency or none>`
+
+## 2026-07-16 — Superseding P0 mortality proof reconciled on current main
+
+- Base: exact `origin/main`
+  `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Branch: `agent/codex-protocol-kernel--mortality-proof-reconcile-main`
+- Sources reviewed: correction `38458708c9df38214664953112edcf2c6a61e5ed`
+  plus useful resource/history deltas through blocked PR #9 head
+  `12cee117367dbe0afe0c0650c5bbdf24e8fbf53f`; PR #9 was not edited,
+  force-pushed, approved, closed, or merged
+- Result: requires independent irreversibility and completeness assertions for death;
+  acquires only bounded named observer fields/indices; snapshots hostile bytes through
+  captured typed-array copy; checks realm/dependency integrity for every result,
+  including already-forked state; bounds candidate occurrences/canonical bytes and
+  five other resources; and preserves all verifying signers under exact-body,
+  sign-once-aware reconstruction. The calibrated signature ceiling is 1,152: a
+  maximum 16-current/16-new transition uses 1,088 with 64 units of headroom, three
+  identical complete carriers consume exactly 1,152, and a fourth returns frozen,
+  graph-atomic, retryable 1,153/1,152 overflow.
+- Test architecture: genuine Node Ed25519 exact/+1 and maximum-role regressions run
+  once in conformance and are excluded only from the redundant coverage replay;
+  portable browser evidence checks the normalized reservation overflow. The CI
+  sequence first establishes committed/Node/browser-target equality in `npm test`,
+  then compares committed/actual-Chromium without recomputing Node a second time.
+- Documentation: the evergreen critical order is P0 → independent-verifier
+  registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab
+  wire consumption → H3B public deployment → R2. Registration preserves logical
+  task/workspace separation; a separate GitHub App/bot is still required for
+  account-level independence. Stable CLI work is non-blocking after R1-C.
+- Verification: clean `npm ci` and full `npm test` PASS in 963.46 s: governance
+  30/30, conformance 75/75 (including both genuine full-signature-budget tests),
+  seeded 10,000-case properties, Lab unit/build, singleton, H2 v4 digest
+  `19fa3080831cb94f29bfda2e7e1f04f86927057f0823834a6bcbc7d746e25399`,
+  and committed/Node/browser-target portable equality with 10,000/10,000 rejects.
+  An exact-source, environment-unset mortality replay then passed 27/27 with zero
+  skips, explicitly executing the 1,152/+1 and maximum 16→16 boundary tests;
+  coverage replay skipped exactly those two redundant tests and still passed at
+  96.00% line, 92.64% branch, and 95.22% function coverage. Governance coverage
+  passed 30/30 at 92.68%/84.39%/93.75%; spec/limit parity, license, Lab build,
+  package dry-run (77 files), and audit (0 vulnerabilities) passed. Seven focused
+  mortality tests also passed in 84.4 s. Actual Chromium and browser-driven Lab
+  checks could not start locally because no browser executable is installed and
+  Playwright's sandboxed and approved download attempts both returned empty,
+  invalid archives; this is an environment limitation, not a browser PASS. Exact-head
+  GitHub Chromium/Lab evidence therefore remains required before merge.
+- Concurrent-review follow-up: PR #9 later moved to observed head
+  `13428fa6905508c0a97649ebf46b9e4826f98403` and remained blocked under review
+  `4710440852`: a prototype trap could poison `Array.prototype.sort` during option
+  acquisition and then reach an immediate usable-key limit without a trusted-basis
+  recheck. This local tree already aborted that probe; the exact regression is now
+  permanent. Focused replay passed 1/1, and the environment-unset mortality file
+  passed 28/28 with zero skips before spec, syntax, stale-language, and diff checks.
+- Handoff: publish one ready superseding PR and bind review to its immutable base,
+  head, body, changed-file digest, trusted policy run, and Verify run. The author does
+  not self-review or merge.

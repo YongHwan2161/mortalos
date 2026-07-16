@@ -1,7 +1,7 @@
 # MortalOS Endpoint-Neutral Access Architecture
 
 Status: **architectural decision; portable kernel implemented**  
-Date: **2026-07-15**
+Date: **2026-07-16**
 
 ## 1. Decision
 
@@ -23,7 +23,7 @@ human, agent, or program intent
   file | stdin | IPC | WebRTC | WebSocket | libp2p | other
               |
               v
-  canonical evidence bytes + explicit observations
+  canonical bounded operation/result wire bytes
               |
               v
   portable life kernel
@@ -71,7 +71,7 @@ The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, proces
 - an isolated browser-target bundle; and
 - the committed expected-result document.
 
-The actual headless-Chromium runner is implemented, and publication candidate `9eae8c34` produced the same then-current portable v3 result in Node 22, the browser-target realm, and actual Chromium CI. Every changed head must rerun that gate. The current corpus covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, same-body conditional completion, sign-once-aware equivocation, missing-membership-payload uncertainty, recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, six reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise every current portable case. An actual-browser SAB case remains an H3 cross-origin-isolated deployment test.
+The actual headless-Chromium runner is implemented. Every changed review head must reproduce the committed portable v4 result byte-for-byte in Node 22, the browser-target realm, and actual Chromium; the latest successful exact-head Verify run is the publication evidence. The corpus covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, same-body conditional completion, sign-once-aware equivocation, missing-membership-payload uncertainty, explicit incomplete-versus-complete mortality evidence, recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, all seven mortality resource-limit variants among 13 reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node, the isolated browser-target VM, and actual Chromium exercise every portable case. The cross-origin-isolated H3A Chromium run additionally proves actual-browser `SharedArrayBuffer` rejection.
 
 The current CLI adapter creates a fresh singleton and heartbeat entirely in memory. It does not yet persist a lineage, listen on a socket, discover peers, or provide a stable end-user command contract.
 
@@ -85,15 +85,32 @@ Portability is not sufficient, however. The current kernel validates who can aut
 
 The implementation order is:
 
-1. **portable life kernel** — verified in Node 22, browser-target, and actual Chromium CI on publication candidate `9eae8c34`, with the same gate required for every changed head;
-2. **browser Lab adapter** — next delivery milestone for visual explanation and Devpost judging;
-3. **CLI contract** — stable create/import/verify/replay/export commands using the same corpus and trace format;
-4. **deterministic state-bearing kernel** — next foundational research milestone;
-5. **transport-neutral participant runtime** — adapter interface plus deterministic virtual transport before real networks;
-6. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
-7. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
+`P0 → independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → H3B public deployment → R2`
 
-Browser and CLI work may proceed in parallel at the adapter layer, but neither may invent a second validator or become mandatory authority infrastructure.
+Established baseline, not an additional next gate: the portable life kernel and H3A
+Lab already have a byte-identity gate spanning Node 22, browser-target, and actual
+Chromium. The critical sequence is:
+
+1. **P0 bounded mortality correction** — immutable-head review of complete-evidence and whole-observation resource safety;
+2. **independent-verifier registration** — reserve a logically isolated identity,
+   task, and workspace before golden records are authored; account-level independence
+   still requires a separate GitHub App or bot;
+3. **R1-A JavaScript wire/golden** — freeze versioned canonical bounded
+   operation/result bytes and their golden corpus;
+4. **R1-B Python differential** — independently implement the same contract without
+   importing or translating the JavaScript kernel;
+5. **R1-C Lab wire consumption** — make the local Lab a thin consumer of those
+   operation/result records;
+6. **H3B public deployment** — publish the reviewed Lab without adding validity logic;
+7. **R2 deterministic state-bearing kernel** — the next foundational protocol milestone;
+8. **transport-neutral participant runtime** — adapter interface plus deterministic virtual transport before real networks;
+9. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
+10. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
+
+A stable CLI create/import/verify/replay/export contract may proceed after R1-C as
+non-blocking adapter work outside the critical arrow. It cannot reorder or substitute
+for H3B → R2. Browser and CLI adapters may share implementation effort, but neither
+may invent a second validator or become mandatory authority infrastructure.
 
 ## 8. Stop conditions
 

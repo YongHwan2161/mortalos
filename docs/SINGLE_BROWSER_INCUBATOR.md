@@ -1,6 +1,6 @@
 # Single-Browser Incubator Profile
 
-Status: **H3A implemented and verified locally; public HTTPS deployment pending**
+Status: **H3A implemented; every publishable SHA requires exact-head actual-Chromium evidence; public HTTPS deployment waits for R1-C/H3B**
 
 Protocol: `mortalos/0`
 
@@ -15,9 +15,18 @@ The local browser profile does:
 3. obtain all three Genesis approvals;
 4. create a `2-of-3` continuation descriptor;
 5. run a fixed public reference lineage through complete custodian turnover; and
-6. demonstrate local authority loss by controlled Worker termination under explicit ephemeral-key assumptions.
+6. demonstrate local authority loss by controlled Worker termination under explicit
+   ephemeral-key assumptions.
 
-The repository contains the hardened portable validator, three dedicated custodian Workers, browser signing, a reference falsification Lab, a static build, and actual-Chromium acceptance. The cross-origin-isolated test exposes `SharedArrayBuffer` and proves that SAB-backed validator input is rejected. It also checks non-extractable/sign-once Worker keys, all three quorum pairs, public-evidence export/replay, storage and Service Worker absence, request/console cleanliness, narrow viewport, and reduced motion. It does not implement remote handoff or prove independent failure domains.
+The repository contains the hardened portable validator, three dedicated custodian
+Workers, browser signing, a reference falsification Lab, a static build, and
+actual-Chromium acceptance. Every changed review head must reproduce the same
+portable v4 result in Node, the isolated browser-target VM, and actual Chromium.
+The cross-origin-isolated Lab test additionally exposes `SharedArrayBuffer` and proves
+that SAB-backed validator input is rejected. The Lab checks non-extractable/sign-once
+Worker keys, all three quorum pairs, public-evidence export/replay, storage and Service
+Worker absence, request/console cleanliness, narrow viewport, and reduced motion. It
+does not implement remote handoff or prove independent failure domains.
 
 ## 2. Relationship to the singleton profile
 
@@ -48,7 +57,7 @@ The sole-browser profile has three logical custodian slots but one physical fail
 
 | Profile | Logical custodians | Physical failure domains | Consequence |
 |---|---:|---:|---|
-| Sole-browser incubator | 3 | 1 | One person can create and continue; closing the page loses local authority under assumptions. |
+| Sole-browser incubator | 3 | 1 | One person can create and continue; closing the page loses local authority under assumptions but is not itself global death. |
 | Two-domain mixed handoff | 3 | 2 | Resilience depends on whether either domain controls two keys. |
 | Three independent endpoints | 3 | 3 | Loss of one endpoint leaves two keys able to continue or repair. |
 
@@ -66,7 +75,7 @@ three volatile keys in one page
   -> authority lost under controlled ephemeral-key assumptions
 ```
 
-This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. The UI must use qualified wording and ask `Lineage#evaluateMortality` to reconstruct raw pending components against the recognized head with one explicit usable-key observation; it must never supply its own head or cached latent verdict.
+This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. The UI must describe the immediate result as local authority loss or local disappearance. Until R1 supplies canonical operation bytes, a trusted adapter must build honest Proxy-free own-data options and carriers plus dense arrays and canonical usable-key IDs for `Lineage#evaluateMortality`; raw evidence bytes remain hostile. Only the documented named fields and bounded indices are read; unrelated properties are ignored and cannot contribute evidence. Recognized accessors, invalid key representations, or any malformed, oversized, wrong-type, detached, or otherwise unsnapshotable declared byte source abort the whole observation as uncertainty and must be shown as such. The seven whole-observation limits return frozen unclassified overflow rather than analyze a truncated inventory. The adapter must never supply its own head or cached latent verdict. The controlled reference fixture may set both `authorityLossIrreversible: true` and `latentEvidenceComplete: true` because its local evidence inventory is closed and explicitly enumerated. Live-incubator Worker retirement sets both to false: closing the page demonstrates local disappearance but is not a complete death basis. An omitted or false completeness flag, or an empty array alone, remains `authority_unavailable_not_proven_dead`.
 
 After enough valid handoffs move authority to other failure domains, the original page may close while the same lineage continues.
 
@@ -95,4 +104,4 @@ one page creates Genesis
   -> the same organism_id continues
 ```
 
-A second run closes before handoff and shows that public evidence alone cannot create the next valid Pulse.
+A second run closes before handoff and shows immediate local authority loss: public evidence alone cannot create the next valid Pulse. It must separately show the difference between an incomplete evidence view (`authority_unavailable_not_proven_dead`) and a controlled, explicitly complete successor-free view (`dead_under_v0_assumptions`).

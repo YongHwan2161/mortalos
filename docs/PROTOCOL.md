@@ -65,7 +65,7 @@ To keep untrusted-input failure deterministic across implementations, v0 fixes t
 
 An implementation MUST obtain the raw length through trusted typed-array intrinsics, enforce the byte bound before UTF-8 decoding, and validate an owned immutable snapshot for the remainder of that operation. It MUST NOT trust overrideable `byteLength`, `byteOffset`, `buffer`, or tag properties. A view backed by a `SharedArrayBuffer` is not a stable validation input and MUST be rejected.
 
-Programmatic canonicalization MUST accept only I-JSON primitives, dense arrays, and own-data records whose reported direct prototype is either `null` or the realm's intrinsic `Object.prototype`. It MUST reject sparse or extended arrays, custom prototypes, recognized ECMAScript internal-slot or boxed objects, cycles, accessors, symbols, non-enumerable properties, and `undefined`, function, symbol, or bigint values rather than silently eliding or rewriting them. Parser-created null-prototype records carry an internal brand; arbitrary null-prototype inputs are checked with captured, read-only intrinsic-slot probes that reject Date, Map, Set, WeakMap, WeakSet, boxed primitive, RegExp, ArrayBuffer, SharedArrayBuffer, DataView, typed-array, and WeakRef instances after prototype removal. Accessors exposed by the resulting snapshot MUST NOT be invoked. Each container is canonicalized from one own-property descriptor snapshot; repeated aliases reuse that snapshot. Property writability and configurability do not change the JSON value, so frozen data-only containers remain valid.
+Programmatic canonicalization MUST accept only I-JSON primitives, dense arrays, and own-data records whose reported direct prototype is either `null` or the realm's intrinsic `Object.prototype`. It MUST reject sparse or extended arrays, custom record prototypes, cycles, accessors, symbols, non-enumerable properties, and `undefined`, function, symbol, or bigint values rather than silently eliding or rewriting them. Parser-created null-prototype records carry an internal brand; arbitrary null-prototype record inputs are checked with captured, read-only intrinsic-slot probes that reject recognizable Date, Map, Set, WeakMap, WeakSet, boxed primitive, RegExp, ArrayBuffer, SharedArrayBuffer, DataView, typed-array, and WeakRef instances after prototype removal. Accessors exposed by the resulting snapshot MUST NOT be invoked. Each container is canonicalized from one own-property descriptor snapshot; repeated aliases reuse that snapshot. Property writability and configurability do not change the JSON value, so frozen data-only containers remain valid. Array density and own-property shape are enforced, but an array's prototype is not part of this programmatic canonicalization check.
 
 Portable JavaScript has no universal side-effect-free test for every current or future host/internal-slot object and cannot identify a transparent Proxy. An exotic that reports an ordinary `Object.prototype`, or any otherwise indistinguishable value, is judged by its one reported prototype and descriptor snapshot. Proxy traps and descriptor-conversion code may execute; a trap failure MUST fail closed as `E_PARSE_NON_IJSON`. Applications requiring a stronger, side-effect-free trust boundary MUST pass canonical bytes through the branded duplicate-aware parser rather than admit arbitrary programmatic objects.
 
@@ -267,7 +267,7 @@ A **latent successor** is a not-yet-accepted candidate whose verified durable ev
 
 Destroying current private keys does not invalidate signatures already produced. Durable evidence fragments may be combined only for one exact Pulse body. Evidence from distinct bodies MUST NOT cross-union.
 
-For body `b`, let `A_b` be the cryptographically recovered current-approval IDs, `N_b` the next-custodian IDs, `X_b` the recovered new-custodian acceptance IDs, and `M_b` the missing required new-custodian acceptance IDs. Let `U` be the one set of current IDs reported usable for the entire mortality evaluation, captured from the single own-data observer snapshot before pending-record descriptor inspection. Let `S_k` be the set of distinct observed bodies authenticated by current key `k`, and define `U_b` as usable current keys for which `S_k` is empty or contains only `b`. Conditional completion is feasible only when both:
+For body `b`, let `A_b` be the cryptographically recovered current-approval IDs, `N_b` the next-custodian IDs, `X_b` the recovered new-custodian acceptance IDs, and `M_b` the missing required new-custodian acceptance IDs. Let `U` be the one set of current IDs reported usable for the entire mortality evaluation, captured through bounded named-field and dense-index own-data acquisition before pending-record inspection. Let `S_k` be the set of distinct observed bodies authenticated by current key `k`, and define `U_b` as usable current keys for which `S_k` is empty or contains only `b`. Conditional completion is feasible only when both:
 
 ```text
 |A_b union U_b| >= current threshold
@@ -276,18 +276,19 @@ For body `b`, let `A_b` be the cryptographically recovered current-approval IDs,
 
 Completion projection MUST obey the sign-once rule in Section 5. A usable key that already authenticated another body is excluded from `U_b`. If one current key authenticated multiple bodies for the current `(organism_id, sequence, parent_hash)`, the honest-custodian assumption has failed and mortality is unclassified as `evidence_equivocation`.
 
-Approvals and acceptances sign the Pulse body, not their carrier envelope, sidecar, array placement, or `key_id` label. The lineage independently pools parseable candidate bodies, correctly encoded signature strings found in either known evidence array, and parseable sidecars indexed by canonical content hash. For each exact body it cryptographically remaps signatures to eligible current approvers or new-custodian acceptors under the appropriate domain, deduplicates by recovered signer ID, and matches a sidecar through the signed `payload_hash`. Missing or misleading unsigned carrier metadata cannot hide valid evidence; malformed, duplicate, unsorted, irrelevant, or incorrectly labelled outer evidence cannot poison a valid signature. Invalid JSON, duplicate JSON properties, or evidence outside both known arrays remains an extraction boundary.
+Approvals and acceptances sign the Pulse body, not their carrier envelope, sidecar, array placement, property name, or `key_id` label. For every parsed declared envelope and payload tree, the lineage recursively discovers every exact canonical `ed25519:` 64-byte tagged string appearing as either a value or an object property name, and every object carrying the exact current target `(organism_id, sequence, parent_hash)` tuple as a candidate body. Each declared payload root is also indexed as a sidecar by canonical content hash. For each candidate body the lineage cryptographically remaps collected signatures to eligible current approvers or new-custodian acceptors under the appropriate domain, deduplicates by recovered signer ID, and matches a sidecar through the signed `payload_hash`; structural and semantic validation still decides whether that collected object can be a successor. Unsigned placement and labels therefore cannot hide authentic body-bound evidence, while duplicate, unsorted, irrelevant, or incorrectly labelled parseable outer evidence cannot poison a valid signature. Invalid JSON, duplicate JSON properties, or any other malformed declared byte source aborts the whole mortality observation as uncertainty.
 
-For completion analysis only, a missing, malformed, noncanonical, or mismatched heartbeat sidecar is replaced with canonical `{}` because heartbeat semantics fix that payload and the signed `payload_hash` is still checked. This fallback creates only internal completion evidence, never ordinary acceptance. A membership-change sidecar cannot be synthesized. The analyzer may authenticate a structurally valid membership body and its signatures as a payload-opaque fragment only when no parseable sidecar matching the signed `payload_hash` was observed; a matching valid object sidecar observed with another carrier unlocks that same body. A hash-matching parseable sidecar with an invalid root or invalid membership semantics proves that exact body cannot be completed and MUST NOT be reclassified as payload opacity. If authority loss is declared irreversible, an actually opaque body can satisfy both thresholds, the fresh uncommitted usable set is below the current threshold, and no verified latent successor already establishes non-death, the result is `evidence_payload_unavailable` with `mortality_classified: false`. Without declared irreversibility the result remains `authority_unavailable_not_proven_dead`; a fresh quorum still establishes `operationally_alive` or `state_stalled` independently of the opaque body. An invalid or authority-incomplete opaque body does not block death.
+For completion analysis only, an absent heartbeat sidecar, or a parseable sidecar whose canonical form does not match the signed heartbeat payload, is supplemented with canonical `{}` because heartbeat semantics fix that payload and the signed `payload_hash` is still checked. Malformed declared bytes abort before this fallback. The fallback creates only internal completion evidence, never ordinary acceptance. A membership-change sidecar cannot be synthesized. The analyzer may authenticate a structurally valid membership body and its signatures as a payload-opaque fragment only when no parseable sidecar matching the signed `payload_hash` was observed; a matching valid object sidecar observed with another carrier unlocks that same body. A hash-matching parseable sidecar with an invalid root or invalid membership semantics proves that exact body cannot be completed and MUST NOT be reclassified as payload opacity. If authority loss is declared irreversible, an actually opaque body can satisfy both thresholds, the fresh uncommitted usable set is below the current threshold, and no verified latent successor already establishes non-death, the result is `evidence_payload_unavailable` with `mortality_classified: false`. Without declared irreversibility the result remains `authority_unavailable_not_proven_dead`; a fresh quorum still establishes `operationally_alive` or `state_stalled` independently of the opaque body. An invalid or authority-incomplete opaque body does not block death.
 
 Original-byte ordinary validation runs first. Public `validateLatentSuccessor` remains durable-evidence-only, while conditional completion is lineage-internal and is not re-exported from `src/index.mjs`. Two original fully valid siblings record a fork. Recomposition from canonical body carriers may conservatively expose an equivalent fork; noncanonical repair alone remains non-appendable and reports equivocation without mutating the graph. `Lineage` construction requires a module-private token, and `Lineage#evaluateMortality` never accepts a caller-built capability. An integer count, leaked constructor, public key-ID list, or hand-built “latent” object is not authority evidence.
 
 ### 4.19 Death
 
-A lineage is **protocol-dead in v0** if and only if both conditions hold under the stated observation domain and honest-ephemeral-key assumptions:
+A lineage is **protocol-dead in v0** if and only if all three conditions hold under the stated observation domain and honest-ephemeral-key assumptions:
 
 1. fewer still-usable current keys remain uncommitted to any observed body for the current tuple than a fresh body quorum requires, and that sign-once-compatible authority loss is irreversible; and
-2. no observed pending body satisfies the sign-once-aware conditional-completion rules above without a new signature from a current key assumed lost, no authenticated equivocation is observed, and no completion-capable payload-opaque membership body is the sole remaining obstacle to death classification.
+2. the observer explicitly attests that collection of every pending body, signature, and matching sidecar in that declared domain is complete; and
+3. no collected pending body satisfies the sign-once-aware conditional-completion rules above without a new signature from a current key assumed lost, no authenticated equivocation is observed, and no completion-capable payload-opaque membership body is the sole remaining obstacle to death classification.
 
 The mortality result field `usable_keys` reports the size of that uncommitted usable set, not the raw number of private keys the observer supplied. Keys already committed to one observed same-tuple body are evaluated only for that body through the latent-successor analysis. This distinction prevents two physically available keys locked onto incompatible bodies from being misreported as a fresh quorum.
 
@@ -455,11 +456,106 @@ A Pulse cannot be validated from its bytes alone. The complete required context 
 
 An implementation MUST establish that context itself. In-process accepted results MAY be represented by an unforgeable capability; across persistence or process boundaries, the implementation MUST replay canonical Genesis/Pulse bytes and rebuild the accepted graph. Callers MUST NOT obtain authority by supplying a plain object with acceptance-shaped fields.
 
-Mortality evaluation MUST be an operation on that lineage graph. The lineage supplies its unique current recognized head and captures the four observer options from one own-property descriptor snapshot. Every supplied option MUST be an own data property. It then snapshots the explicitly usable current IDs, acquires a dense own-data list of pending references, and requires every pending `envelopeBytes` and `eventPayloadBytes` field to be an own data property. All usable byte fields are copied into owned snapshots before semantic analysis. Accessor or sparse options and pending lists, plus accessor-backed evidence fields, are ambiguous and MUST NOT produce a mortality classification; their value getters are not invoked. A caller-supplied array iterator is not evidence and is not invoked. This snapshot guarantee applies to ordinary non-Proxy observer records and arrays. Metadata traps on a transparent `Proxy` may execute during descriptor inspection and can mutate aliased caller data before it is copied; Proxy-backed observer structures are outside the v0 mortality-proof input profile. Reentrant graph mutation is still blocked, and no caller-owned byte reference crosses into semantic analysis. A future canonical aggregate observer-record format is required to remove this residual platform boundary. The operation independently collects parseable bodies, signature strings, and content-addressed sidecars. It reconstructs evidence per exact body, filters the one global usable-key snapshot by every authenticated same-tuple sign-once commitment—including commitments to semantically invalid bodies—and never trusts carrier labels as signer identity or evidence role. A committed usable key can contribute only to its already signed body; only usable keys with no observed same-tuple commitment count toward a fresh successor. A caller MUST NOT inject a head, accepted result, latent capability, or chosen per-body usability set. Strict valid siblings record a fork; canonical reconstructable siblings may expose the same fork conservatively, while noncanonical multi-body evidence returns unclassified equivocation without graph mutation. When the graph is forked there is no unique recognized head, so mortality MUST remain unclassified.
+Mortality evaluation MUST be an operation on that lineage graph. The lineage supplies its unique current recognized head and blocks graph mutation for the operation. Its logical input recognizes only the named fields `usableKeyIds`, `stateAvailable`, `pendingSuccessors`, `authorityLossIrreversible`, and `latentEvidenceComplete`; each pending carrier recognizes only `envelopeBytes` and `eventPayloadBytes`; every usable-key entry is a canonical `peer:` 32-byte identifier. Other option, carrier, array, and Symbol properties are outside the observation vocabulary: the implementation MUST neither enumerate nor read them, and they MUST NOT contribute evidence or change the result. An accessor or failed descriptor read for a recognized field or bounded array index, or an invalid usable-key representation, is observer ambiguity and MUST abort classification. The adapter that creates this record is trusted to make its recognized structure stable for acquisition, free of executable recognized reads or hidden mutation, and honest about evidence completeness. Contained evidence bytes remain untrusted. An implementation MUST NOT invoke a value getter while acquiring the observation record; if its host representation cannot establish an inert recognized-field view, it MUST abort without classifying mortality.
+
+The implementation first owns the bounded named-field record view and bounded indexed array entries, then takes bounded immutable copies of every declared evidence byte source. Failure to acquire a declared source, unstable, detached, oversized, or wrong-type bytes, malformed observed bytes, or an unexpected internal validation failure MUST abort the whole mortality operation as observer uncertainty; none may be converted into zero evidence or death. This conservative rule permits denial of service by a party able to insert a bad recognized byte source into the trusted inventory, but prevents selective omission from becoming false death. Before semantic work, the implementation MUST establish that its trusted execution basis is intact. The SHA-256 and RFC 8032 known-answer checks execute once per mortality call as constant trusted-basis work; they are separate from the candidate and signature work budgets below. The implementation then reads only owned snapshots while recursively collecting target-tuple bodies and exact tagged signature strings from parsed declared envelope/payload trees, indexing declared payload roots as content-addressed sidecars, and reconstructing evidence separately for each exact canonical body. The same usable-key snapshot drives both current authority count and body-specific completion analysis. It filters that snapshot by every authenticated same-tuple sign-once commitment—including commitments to semantically invalid bodies—and never trusts unsigned placement or labels as signer identity or evidence role. A committed usable key can contribute only to its already signed body; only usable keys with no observed same-tuple commitment count toward a fresh successor. A caller MUST NOT inject a head, accepted result, latent capability, or chosen per-body usability set. Strict valid siblings record a fork; canonical reconstructable siblings may expose the same fork conservatively, while noncanonical multi-body evidence returns unclassified equivocation without graph mutation. When the graph is forked there is no unique recognized head, so mortality MUST remain unclassified. The runtime/dependency checkpoint protects every mortality result, including this already-forked result. If bounded acquisition reaches a resource limit before the normal post-snapshot checkpoint, the implementation MUST run the checkpoint before returning `limit_exceeded`; detected drift aborts instead of producing a result. Captured collection and sorting operations are used only after that checkpoint passes.
+
+The reference JavaScript implementation maps the inert record to honest, Proxy-free ordinary own-data option and carrier objects plus dense current-realm own-data arrays. It reads only the five option descriptors, two carrier descriptors, array `length`, and each bounded index through captured operations; it never invokes `ownKeys` or an iterator on caller containers. Unrecognized fields and extra non-index array properties are ignored without descriptor access. Recognized accessors, sparse arrays, foreign prototypes, and noncanonical usable-key entries fail without invoking value getters. It then uses captured operations or operations whose descriptors and prototypes were exact-integrity-checked; private capability and error brands; frozen lineage, schema, and error surfaces; exact dependency-state baselines; and SHA-256 plus RFC 8032 known-answer checks. JavaScript cannot distinguish a transparent `Proxy` whose traps return an ordinary-looking descriptor view while causing hidden mutation. Such a Proxy at the observer-container boundary violates the trusted-adapter premise and is outside the v0 guarantee. Other implementations MAY use different mechanisms, but they MUST provide the same bounded named-field, inert-input, and uncertainty-not-absence guarantees.
+
+`authorityLossIrreversible` and `latentEvidenceComplete` are independent observer assertions captured from the single own-data observer snapshot before pending-record descriptor inspection. `dead_under_v0_assumptions` MUST require both to be exactly `true`, below-quorum usable authority, and zero reconstructed latent successors. Missing or false `latentEvidenceComplete` MUST return `authority_unavailable_not_proven_dead`, even when the local `pendingSuccessors` array is empty. Completeness means that the stated observation procedure has finished collecting all pending bodies, signatures, and matching payload sidecars within its declared domain; it is not inferred from network silence or array length.
+
+The pre-semantic checkpoint rule includes drift caused during the same bounded
+acquisition that reaches a limit; such drift MUST abort before the immediate
+`limit_exceeded` result can escape.
+
+The v0 reference observer applies these fixed whole-operation limits before it may
+classify mortality:
+
+| Stable `resource` identifier | Meaning | Maximum |
+|---|---|---:|
+| `candidate_bodies` | Discovered target-tuple body occurrences | 128 |
+| `candidate_canonical_bytes` | Aggregate UTF-8 bytes of target-tuple canonical forms | 4,194,304 |
+| `usable_key_ids` | Supplied usable-key IDs | 16 |
+| `usable_key_id_chars` | Supplied usable-key ID characters | 768 |
+| `pending_records` | Pending successor records | 128 |
+| `pending_bytes` | Cumulative successfully owned envelope and sidecar bytes | 4,194,304 |
+| `signature_verifications` | Conservative signature-verification work units | 1,152 |
+
+Observer precedence is fixed. The five named option descriptors are captured first.
+The usable-key array length preflight then precedes its bounded index acquisition and
+also precedes `stateAvailable`, irreversibility, and completeness type checks. Those
+three type checks precede the pending-record length preflight. An over-limit array
+therefore returns its applicable limit result without inspecting entries or unrelated
+properties; an earlier named-field or flag fault still wins according to this order.
+Within the count limit, every recognized index and carrier field must still satisfy
+the inert own-data rules.
+Usable-key character work is accumulated before canonical `peer:` decoding; a string
+that exceeds the character budget returns the character limit, while a within-budget
+noncanonical or wrong-type entry aborts as observer ambiguity. Each byte source must
+first be a stable non-shared `Uint8Array` within its individual envelope or sidecar
+limit; only valid individual sources count toward `pending_bytes`. A malformed,
+wrong-type, detached, shared, or individually oversized source aborts instead of
+becoming a work-limit result.
+
+Every explicit body/signature/eligible-key remapping attempt consumes one
+signature-verification unit. For an exact body, every distinct observed signature is
+checked against every eligible current approval key and every eligible newly added
+acceptance key under their separate domains; the observer preserves every verifying
+signer and MUST NOT stop at the first match. Canonical body grouping, exact signature
+string de-duplication, and reuse of the fully computed current-approval map prevent a
+duplicate carrier or a second processing phase from repeating the same remap. No
+verification result is shared across a different body, domain, or signer. Before
+calling an ordinary or conditional validator, the observer conservatively reserves
+one unit for every listed approval and acceptance that the validator could verify.
+Those validator reservations are per call, so duplicate direct carriers still consume
+their full listed-role reservation. The reservation may overestimate work but MUST NOT
+underestimate it. Limits apply to the complete observation, not independently per
+carrier or candidate body.
+
+The 1,152-unit ceiling is calibrated to the largest v0 custody transition. One body
+can carry 16 current approvals and 16 all-new custody acceptances, hence 32 distinct
+role signatures. Its worst-case valid path consumes at most 32 direct-validator units,
+`32 × 16 = 512` current-domain remaps, `32 × 16 = 512` new-acceptance remaps, and 32
+reconstruction-validator units: 1,088 total, leaving 64 units of headroom. Three
+identical complete direct carriers consume exactly `3 × 32 + 512 + 512 + 32 = 1,152`:
+the canonical body/signature remap occurs once, while each direct validator call is
+reserved independently. A fourth identical carrier consumes the remaining budget
+before reconstruction, so the reconstruction reservation returns the normalized
+1,153/1,152 limit result without graph mutation. This duplicate-carrier behavior is
+intentional and covered by a genuine Ed25519 regression.
+
+Every recursively discovered object with the exact current target tuple consumes one
+`candidate_bodies` occurrence before any JCS canonicalization, including nested and
+canonically duplicate occurrences. Immediately after that occurrence is canonicalized,
+its canonical UTF-8 length consumes `candidate_canonical_bytes` before lookup, group
+retention, hashing, message construction, or skeleton validation. These two limits
+bound recursive candidate amplification even when no signature is present.
+
+If a limit would be exceeded, the observer MUST stop without truncating evidence or
+mutating the graph and return a recursively inert, frozen result with this exact
+shape:
+
+```text
+{
+  status: "indeterminate",
+  reason: "limit_exceeded",
+  mortality_classified: false,
+  resource: <stable resource identifier>,
+  observed: <maximum + 1>,
+  maximum: <fixed maximum>
+}
+```
+
+The normalized `observed` value deliberately reveals only that the limit was crossed.
+This is an observer result, not a Pulse rejection or accepted-graph fact. Partial
+analysis MUST NOT yield alive, dead, payload-unavailable, equivocation, fork, or
+latent-successor classification. If a deployment retries a subset, it MUST set
+`latentEvidenceComplete: false`; a complete inventory that cannot fit these limits
+cannot support a v0 death result without a future versioned summary/proof mechanism.
 
 No endpoint type, network, UI, AI, or wall-clock input is part of protocol validity.
 
-This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Publication candidate `9eae8c34` produced byte-identical committed, Node 22, isolated browser-target, and actual Chromium results; every changed head must rerun that CI gate. A second independently written implementation remains future evidence. No implementation-specific transition callback is part of v0 validity.
+This specification fully determines all v0 lifecycle and envelope validity rules. The repository implements a portable reference transition verifier, latent-evidence verifier, and accepted-object graph. Every changed review head must reproduce the committed result byte-for-byte in Node 22, the isolated browser-target runtime, and actual Chromium; the latest successful exact-head Verify run is the publication evidence. R1 must additionally freeze one canonical versioned raw operation/result byte contract and replay it with an independently written non-JavaScript verifier. No implementation-specific transition callback is part of v0 validity.
 
 ## 9. Deterministic validation order
 
@@ -530,10 +626,12 @@ The following table prevents a UI from converting uncertainty into a false death
 | No recent Pulse; peer reachability unknown | `dormant` or `unknown` | `dead`. |
 | Known minority component | `partitioned / stalled` | Entire lineage is dead. |
 | Current candidate lacks quorum | `candidate rejected` | No other valid candidate can exist. |
-| Volatile keys intentionally destroyed below quorum under controlled test | `dead under v0 test assumptions` | Every possible copy was physically erased. |
+| Volatile keys intentionally destroyed below quorum and the declared pending-evidence inventory is explicitly complete under a controlled test | `dead under v0 test assumptions` | Every possible key or evidence copy was physically erased. |
+| Irreversible below-quorum key loss but evidence completeness is missing or false | `authority unavailable / not proven dead` | An empty local candidate array proves global absence. |
 | Below-quorum keys but same-body durable evidence plus explicitly usable signers can complete a child | `latent successor / not dead` | Only already quorum-complete envelopes may count. |
 | One current key authenticated multiple pending bodies | `evidence equivocation / mortality unclassified` | Alive, dead, or an automatically selected body. |
 | Authority loss is declared irreversible, fresh uncommitted authority is below quorum, no verified latent child exists, and a completion-capable membership body lacks a verified sidecar | `payload unavailable / mortality unclassified` | Dead, accepted, or an authenticated latent successor. |
+| Mortality evidence exceeds a fixed whole-operation limit | `indeterminate / limit exceeded` | Alive, dead, or the result of a truncated evidence subset. |
 | Two valid children of one parent | `forked` | Silently select a winner. |
 
 ## 11. Clone procedure
@@ -562,7 +660,7 @@ A v0 implementation is conforming only if it:
 - treats acceptance and public durable latent evidence as validator-produced capabilities, and reconstructs observer-conditional completion only by cryptographically matching independently observed bodies, signatures, and sidecars plus one sign-once-filtered usable-key snapshot;
 - proves next-quorum activation for every membership result;
 - uses an accepted-object graph to reject replay and expose forks;
-- evaluates mortality only from the graph-recognized current head; remaps pooled signatures by verification for each exact candidate body; runs ordinary acceptance before internal completion analysis; blocks reentrant mutation; treats authenticated multi-body signing as unclassified, lets completion-capable payload opacity block an otherwise unsupported death classification only after authority loss is declared irreversible, and leaves forks unclassified;
+- evaluates mortality only from the graph-recognized current head; acquires a bounded named-field view of an inert trusted Proxy-free own-data observation and aborts the whole operation on recognized-field acquisition, carrier, parse, runtime-basis, or internal uncertainty; enforces the seven fixed whole-operation limits without truncation or graph mutation; remaps pooled signatures by verification for each exact candidate body; runs ordinary acceptance before internal completion analysis; blocks reentrant mutation; enforces sign-once; treats authenticated multi-body signing as unclassified; lets completion-capable payload opacity block an otherwise unsupported death classification only after authority loss is declared irreversible; requires both `authorityLossIrreversible` and `latentEvidenceComplete` for death; and leaves forks unclassified;
 - never treats GPT, endpoint type, UI, transport, or signaling output as authority;
 - enters `FORKED` instead of silently resolving two valid siblings; and
 - states the mortality limitations from the threat model in user-facing documentation.

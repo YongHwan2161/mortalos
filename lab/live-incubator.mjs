@@ -315,7 +315,8 @@ export class BrowserIncubator {
         usableKeyIds: [],
         stateAvailable: true,
         pendingSuccessors: [],
-        authorityLossIrreversible: false
+        authorityLossIrreversible: false,
+        latentEvidenceComplete: false
       })
     };
   }

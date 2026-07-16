@@ -5,63 +5,76 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — H3A browser Lab
+### ACTIVE — Integrated mortality proof and bounded observation correction
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `9791074ffe8f091b8007e09f2b3edd4080d4212b`
-- Work branch: `agent/codex-protocol-kernel--h3-browser-lab`
-- Intended paths (exact):
-  - `.github/workflows/verify.yml`
-  - `README.md`
-  - `THIRD_PARTY_NOTICES.md`
-  - `agents/codex-protocol-kernel/HANDOFF.md`
-  - `agents/codex-protocol-kernel/MEMORY.md`
-  - `agents/codex-protocol-kernel/README.md`
-  - `agents/codex-protocol-kernel/WORKLOG.md`
-  - `docs/ACCESS_ARCHITECTURE.md`
-  - `docs/IMPLEMENTATION_PLAN.md`
-  - `docs/PROJECT_STATUS.md`
-  - `docs/SINGLE_BROWSER_INCUBATOR.md`
-  - `docs/SUBMISSION_CHECKLIST.md`
-  - `docs/TRACEABILITY.md`
-  - `lab/THIRD_PARTY_LICENSES.txt`
-  - `lab/app.mjs`
-  - `lab/corpus-summary.mjs`
-  - `lab/corpus-worker.mjs`
-  - `lab/custodian-worker.mjs`
-  - `lab/evidence-export.mjs`
-  - `lab/index.html`
-  - `lab/live-incubator.mjs`
-  - `lab/reference-engine.mjs`
-  - `lab/signing-policy.mjs`
-  - `lab/styles.css`
-  - `package.json`
-  - `scripts/build-lab.mjs`
-  - `scripts/serve-lab.mjs`
-  - `scripts/verify-lab.mjs`
-  - `scripts/verify-spec.mjs`
-  - `test/lab.test.mjs`
-- Contract affected: browser adapter, volatile Worker custody, trace export, Lab
-  verification, and delivery documentation; the portable validator remains the sole
-  validity authority
-- Required evidence: focused Lab tests, full Node suite, actual Chromium judge path,
-  portable corpus equality, SAB rejection under cross-origin isolation, coverage,
-  audit, package scan, trusted Agent PR Policy, Verify, and immutable-head review
-- Expected handoff: a focused H3A PR from current `main`; the reviewer must reject
-  any UI-side validation logic, exported private material, or ownerlessness overclaim
+- Base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Work branch: `agent/codex-protocol-kernel--mortality-proof-reconcile-main`
+- Sources to reconcile: prepared correction
+  `38458708c9df38214664953112edcf2c6a61e5ed` and the sound resource-bound
+  semantics and chronology historically reviewed at PR #9 head
+  `12cee117367dbe0afe0c0650c5bbdf24e8fbf53f`. PR #9 is a concurrent mutable
+  branch, so its exact head MUST be re-fetched before every comparison; the latest
+  observation on 2026-07-16 was blocked head
+  `13428fa6905508c0a97649ebf46b9e4826f98403` under review `4710440852`.
+  This candidate supersedes the known blockers rather than editing, closing,
+  force-pushing, or merging PR #9
+- Exact intended paths: `.github/workflows/verify.yml`; `README.md`; this author's
+  `HANDOFF.md`, `MEMORY.md`, and `WORKLOG.md`;
+  `docs/ACCESS_ARCHITECTURE.md`, `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/PROJECT_STATUS.md`, `docs/PROTOCOL.md`, `docs/REJECTION_CODES.md`,
+  `docs/SINGLE_BROWSER_INCUBATOR.md`, `docs/SUBMISSION_CHECKLIST.md`,
+  `docs/THREAT_MODEL.md`, and `docs/TRACEABILITY.md`; `lab/index.html`,
+  `lab/live-incubator.mjs`, and `lab/reference-engine.mjs`;
+  `package.json`; `scripts/demo-singleton.mjs`, `scripts/demo-trace.mjs`,
+  `scripts/verify-chromium.mjs`, `scripts/verify-lab.mjs`, `scripts/verify-portable.mjs`, and
+  `scripts/verify-spec.mjs`; `src/bytes.mjs`, `src/codec.mjs`, `src/crypto.mjs`,
+  `src/lineage.mjs`, `src/primordials.mjs`, `src/rejection-codes.mjs`,
+  `src/schema-validation.mjs`, and `src/validator.mjs`; `test/lineage.test.mjs`,
+  `test/lab.test.mjs`, `test/mortality.test.mjs`, `test/portable-corpus.mjs`,
+  `test/portable-scenario.mjs`, `test/schema-validation.test.mjs`,
+  `test/vectors/h2-trace.expected.json`, and
+  `test/vectors/portable-expected.json`
+- Contract affected: mortality inventory completeness, inert trusted-observer and
+  runtime/dependency integrity boundaries, bounded whole-observation work, frozen
+  private indeterminate results, a calibrated 1,152-unit all-key signature ceiling,
+  and one unified portable v4 corpus; H3A remains a local adapter over the corrected
+  kernel, and the critical next order is verifier registration → R1-A → R1-B → R1-C
+  → H3B → R2
+- Required evidence: clean locked install; focused precedence, graph-immutability,
+  and retry tests for every limit; full conformance/property/portable suites; actual
+  Chromium differential and Lab acceptance; trusted-core and governance coverage;
+  audit, package, license, spec, workflow, secret, syntax, stale-language, and diff
+  checks; exact-head trusted policy and Verify after publication
+- Expected handoff: one superseding ready PR for immutable-head review; the author
+  neither edits/closes PR #9 nor self-reviews or merges
 
 ## Completed handoffs
 
-### 2026-07-15 — Mortality-proof correction merged
+### 2026-07-16 — H3A local MortalOS Lab merged
+
+- PR: `#8`; merge commit:
+  `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Result: local one-page Lab, non-extractable/sign-once Workers, logical `2-of-3`
+  incubation, fixed falsification experiments, portable corpus replay, public-evidence
+  export/replay, and actual cross-origin-isolated Chromium acceptance are on `main`.
+- Qualification: the live page remains one physical failure domain. Its retirement
+  path keeps irreversibility and completeness false; only the closed reference fixture
+  may assert both for its explicitly bounded local evidence inventory.
+
+### 2026-07-16 — PR #7 merged, then post-merge false-death gap found
 
 - PR: `#7`; final reviewed head:
   `bc914d676b29a58efcd2ce6647ab04c727f10df3`
 - Squash merge on `main`:
   `9791074ffe8f091b8007e09f2b3edd4080d4212b`
 - Result: conservative sign-once-aware mortality, semantic-invalid sidecar handling,
-  explicit irreversibility precedence, and current-base records passed independent
-  review plus pre- and post-merge Verify
-- Handoff: H3A may now consume the portable kernel without reopening the death proof
+  and explicit irreversibility precedence landed, but subsequent review proved that
+  `authorityLossIrreversible: true` plus an empty local inventory could still classify
+  death without an independent completeness assertion. The prior PASS therefore does
+  not establish a safe death proof.
+- Handoff: the integrated P0 active above must supersede both that gap and blocked
+  PR #9 before `main` can be treated as a mortality-safe baseline.
 
 ### 2026-07-15 — YAML lone-CR workflow identity hardening
 
