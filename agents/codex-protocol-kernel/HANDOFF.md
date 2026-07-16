@@ -5,57 +5,29 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — R1 cross-runtime evidence contract
+### ACTIVE — Post-R1 submission and deployment reconciliation
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
-- Work branch: `agent/codex-protocol-kernel--r1-gpt-award`
-- Exact intended shared paths: `README.md`, `docs/SUBMISSION_CHECKLIST.md`,
-  `package.json`, `r1/**`, `scripts/generate-r1-corpus.mjs`,
-  `scripts/verify-r1.mjs`, `test/r1-wire.test.mjs`, and
-  `test/vectors/r1-operations.json`
-- Exact intended agent path: `agents/codex-protocol-kernel/HANDOFF.md`
-- Contract affected: bounded canonical R1 operation/result bytes for Genesis
-  validation, lineage replay, and qualified mortality; JavaScript/Python golden
-  differential; GPT remains outside the trusted validity boundary.
-- Required evidence: full `npm test`, exact/+1 byte limits, unknown version and
-  noncanonical rejection, eight byte-identical JavaScript/Python records,
-  immutable-head policy, independent review, and exact-head Verify.
-- Expected handoff: focused R1 PR for immutable-head review; the author neither
-  self-reviews nor merges.
-
-### ACTIVE — Build Week submission sprint and H3B public Lab
-
-- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `d50c8f41ec648c757cb26b170340c467f792b770`
-- Work branch: `agent/codex-protocol-kernel--submission-sprint`
+- Base: `6c5b85fd8e467feb4df63556864ea5f8949e7b61`
+- Work branch: `agent/codex-protocol-kernel--submission-reconcile`
 - Worktree:
-  `/workspace/mortalos-worktrees/pr2-integration-worktrees/codex-protocol-kernel--h3b-r2-worktrees/codex-protocol-kernel--submission-sprint`
-- Exact intended shared paths: `.github/workflows/deploy-lab.yml`,
-  `.github/workflows/verify.yml`, `README.md`, `THIRD_PARTY_NOTICES.md`,
-  `docs/IMPLEMENTATION_PLAN.md`,
-  `docs/ACCESS_ARCHITECTURE.md`, `docs/PROJECT_STATUS.md`,
-  `docs/SINGLE_BROWSER_INCUBATOR.md`, `docs/SUBMISSION_CHECKLIST.md`,
-  `docs/TRACEABILITY.md`, `lab/_headers`,
-  `package.json`, `package-lock.json`, `scripts/build-lab.mjs`,
-  `scripts/deploy-lab.mjs`, `scripts/lab-contract.mjs`,
-  `scripts/serve-lab.mjs`, `scripts/verify-deployed-lab.mjs`,
-  `scripts/verify-lab.mjs`, `scripts/verify-license.mjs`,
-  `scripts/verify-spec.mjs`, and `test/lab.test.mjs`
+  `/workspace/mortalos-worktrees/pr2-integration-worktrees/codex-protocol-kernel--h3b-r2-worktrees/codex-protocol-kernel--submission-sprint-worktrees/codex-protocol-kernel--post-merge-status-worktrees/codex-protocol-kernel--submission-reconcile`
+- Exact intended shared paths: `README.md`, `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/PROJECT_STATUS.md`, `docs/SUBMISSION_CHECKLIST.md`, and
+  `scripts/verify-spec.mjs`
 - Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
   `agents/codex-protocol-kernel/MEMORY.md`,
-  `agents/codex-protocol-kernel/README.md`, and
   `agents/codex-protocol-kernel/WORKLOG.md`
-- Contract affected: deployment and submission evidence only. The protocol wire,
-  lifecycle semantics, and trusted `src/` core are intentionally unchanged. H3B
-  publishes the honest H3A Lab as a time-bounded judge path; it does not claim R1,
-  participant networking, state-bearing execution, or ownerlessness.
-- Required evidence: locked install; full repository tests; actual Chromium Lab;
-  deterministic deployment manifest and exact-commit/security-header verifier;
-  audit, package, secret scan, and immutable-head GitHub checks. A real public URL
-  must pass the same verifier before it may be called deployed.
-- Expected handoff: one focused ready PR, followed by independent immutable-head
-  review by `reviewer-merge-gate`; the author neither self-reviews nor merges.
+- Contract affected: rolling current state and Build Week submission priorities only;
+  no runtime, protocol, workflow, schema, or generated artifact change. Reconcile
+  merged R1, the live Sites/GPT path, the unverified direct Pages target, PR #11's
+  review-provenance incident, and remaining source/video/form blockers.
+- Required evidence: current GitHub main/PR/CI state; live Devpost dates, requirements,
+  project state, and judging criteria; logged-out Sites/GPT/private-field smoke tests;
+  immutable Sites version metadata; full repository verification; exact-head policy
+  and independent review.
+- Expected handoff: one new focused reconciliation PR from current `main`. The stale
+  pre-R1 PR #13 must close unmerged; the author neither self-reviews nor merges.
 
 ## Completed handoffs
 

@@ -417,3 +417,56 @@ result, and reproducible verification.
 - Handoff: publish one ready PR from this branch, require immutable-head policy and
   Verify success, then let `reviewer-merge-gate` decide merge and observe the
   automatic Cloudflare run. Do not call H3B complete without the public verifier.
+
+## 2026-07-16 — Post-merge H3B and submission status correction
+
+- Base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
+- Branch: `agent/codex-protocol-kernel--post-merge-status`
+- GitHub evidence: PR #11 merged the H3B contract; push Verify
+  `29513454019/1` passed every Node, actual-Chromium, Lab, coverage, and audit step.
+  Deploy `29513454211/1` failed at credential preflight with empty
+  `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`; install, deployment, and all
+  remote verification steps were skipped.
+- Governance incident: review `4715507067` had unverifiable logical-agent provenance
+  and merge occurred nine seconds later before the assigned reviewer performed the
+  required immediate re-fetch and expected-head merge. Post-merge incident comment
+  `4994066948` supersedes that review for governance purposes. The assigned
+  reviewer's later independent full test/diff PASS is technical evidence only and
+  is not retroactive approval.
+- Devpost evidence: the project page is published with story/tagline/repository but
+  `submitted_at` and video remain empty. At `2026-07-16T16:10:06Z`, submissions were
+  open and the exact deadline remained `2026-07-22T00:00:00Z` (09:00 KST).
+- Result: current docs distinguish the merged contract from an undeployed public
+  Lab and make Cloudflare credentials, exact-SHA remote proof, video, `/feedback`,
+  custom fields, and final submission the deadline-critical chain.
+- Validation: clean locked install with an isolated writable npm cache; full
+  `npm test` PASS (governance 30/30, conformance 76/76, seeded properties 10,000,
+  Lab 8/8, portable 10,000/10,000, singleton, H2 v4); coverage 96.00% line,
+  92.56% branch, and 95.22% function; audit zero vulnerabilities; package dry-run
+  82 files; license/spec/link, JavaScript syntax, and diff checks PASS.
+
+## 2026-07-17 KST — Sites/R1 submission-path reconciliation
+
+- Base: `6c5b85fd8e467feb4df63556864ea5f8949e7b61`
+- Branch: `agent/codex-protocol-kernel--submission-reconcile`
+- Live Devpost state changed after the first status draft: the project now points to
+  `https://mortalos-evidence-lab.ant713800.chatgpt.site`, its story describes the R1
+  candidate and GPT witness, but `submitted_at` and `video_url` remain empty.
+- Public verification: logged-out root returned HTTP 200; the server-side witness
+  returned structured HTTP 200 for one public R1 result; adding an unknown
+  `private_key` field returned HTTP 422. Sites reports public version 2 with an
+  immutable source commit and archive digest.
+- Provenance gap: the Sites source commit is not a MortalOS repository commit. PR #12
+  subsequently merged its bounded R1 profile after exact-head CI and logical review,
+  but also landed stale H3B checklist claims. This current-main reconciliation removes
+  those claims and requires the public Sites results/source to bind to merged R1.
+- Priority decision: Sites satisfies the Developer Tools no-rebuild path while
+  healthy; direct Cloudflare Pages is optional exact-commit hardening, not a submit
+  blocker. The critical chain is truthful status → Sites provenance →
+  video → `/feedback`/custom fields → rehearsal → submit.
+- Validation on current main plus documentation reconciliation: clean isolated-cache
+  `npm ci`; full `npm test` PASS including governance 30/30, conformance, 10,000
+  seeded properties, Lab 8/8, R1 4/4, JavaScript/Python differential 8/8, portable
+  10,000/10,000 rejects, singleton, and H2 v4; coverage 96.00% line, 92.64% branch,
+  and 95.22% function; audit zero vulnerabilities; package dry-run and diff check
+  PASS. Public root/GPT/private-field smoke tests and exact R1 hash comparison PASS.
