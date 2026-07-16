@@ -2,81 +2,83 @@
 
 Last reconciled: 2026-07-16
 
-Branch: `agent/codex-protocol-kernel--mortality-proof-reconcile-main`
+Branch: `agent/codex-protocol-kernel--submission-sprint`
 
-Current base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+Current base: `d50c8f41ec648c757cb26b170340c467f792b770`
 
-## Verified project state
+## Verified merged state
 
-- MortalOS implements a portable lifecycle/evidence kernel, not yet a network OS,
-  distributed state machine, or ownerless model runtime.
-- H3A is implemented: one page can create a logical `2-of-3`
-  lineage with three non-extractable Worker keys, but that remains one physical
-  failure domain. Live Worker retirement reports local disappearance, not death;
-  every publishable head still requires exact-head Chromium/Lab evidence.
-- Base `3a1a4b6` permits a false-death classification because irreversible key loss
-  does not independently establish that the latent-evidence inventory is complete.
-  PR #9 is a concurrent mutable branch whose exact head must be re-fetched before
-  comparison. Its historical `12cee117367dbe0afe0c0650c5bbdf24e8fbf53f`
-  observation lacked the final bounded named-field/all-key correction; the latest
-  2026-07-16 observation, `13428fa6905508c0a97649ebf46b9e4826f98403`,
-  remained blocked under review `4710440852` because acquisition-triggered runtime
-  poison could escape as a normal pre-semantic limit result.
-- This P0 tree requires both irreversible authority loss and explicit
-  evidence completeness, owns recognized hostile bytes, checks runtime/dependency
-  integrity, and leaves forks, equivocation, missing completion payloads, and every
-  limit overflow unclassified. Publication still requires immutable-head review and
-  the exact SHA's Verify run.
-- The mortality adapter reads only five option fields, two carrier fields,
-  bounded lengths, and bounded own-data indices. It never enumerates caller keys or
-  invokes caller iterators. Other properties are inert and cannot supply evidence;
-  recognized accessors and malformed recognized sources abort.
-- Seven fixed whole-operation limits cover usable IDs/characters, pending
-  records/bytes, target-body occurrences/canonical bytes, and conservative signature
-  work. Candidate occurrences reserve before JCS and canonical bytes reserve before
-  retention. The signature maximum is 1,152: the maximum 16-current/16-new valid
-  transition uses 1,088 with 64 units of headroom. Overflow is privately branded,
-  frozen, graph-atomic, and retryable.
-- Target-body/signature discovery is recursive and exact-body scoped. Usable-key
-  projection obeys sign-once commitments. Authenticated multi-body signing is
-  `evidence_equivocation`; payload-opaque membership evidence blocks only an
-  otherwise unsupported death result after declared irreversibility.
-- JavaScript cannot prove that an observer container is not a transparent Proxy.
-  R1 must replace this call-entry object graph with canonical versioned raw
-  operation/result bytes and an independently written non-JavaScript verifier.
+- PR #10 is merged at current `main`; P0 mortality observation now requires explicit
+  irreversible authority loss and complete evidence, owns hostile bytes, checks
+  runtime/dependency integrity, and bounds every recognized observation resource.
+- MortalOS remains a portable lifecycle/evidence kernel plus H3A Lab, not an OS,
+  participant network, state-bearing entity, or ownerless model runtime.
+- H3A uses three non-extractable/sign-once Worker keys for a logical `2-of-3` quorum
+  in one physical failure domain. Browser closure is local authority loss, not global
+  death.
+- Every new review/deployment SHA needs its own Node/browser-target/actual-Chromium,
+  Lab, coverage, audit, package, and governance evidence.
+- JavaScript cannot prove a mortality observer container is not a transparent Proxy.
+  R1 must replace that operation boundary with bounded versioned bytes and an
+  independently authored non-JavaScript verifier.
+
+## Submission-sprint candidate
+
+- H3B adds a deterministic static asset manifest, exact source commit, Cloudflare
+  `_headers`, pinned GitHub Actions, Pages deployment, remote asset/header verifier,
+  and remote Chromium judge-path mode without changing trusted `src/` semantics.
+- A public URL is not complete until the reviewed main SHA deploys and passes the
+  exact remote verifier. Local Wrangler has no authenticated Cloudflare account or
+  token. The unauthenticated temporary-account path was not used because it requires
+  accepting Cloudflare terms and does not provide the durable submission URL needed.
+- The permanent GitHub deployment workflow is designed to run automatically after
+  merge using repository-scoped Cloudflare secrets if present.
+- Wrangler 4.111.0 `pages project list --json` exposes the project identifier as
+  `"Project Name"`, not `name`. Deployment discovery must validate that pinned
+  schema and remain idempotent for an already-existing project.
+- The older H3B/R2 local prototype at `29eb34f9def495f15a6e51e85a7556179b5b43ac`
+  is based on pre-P0 main. Its R2 code is research input only and must not be merged
+  ahead of current P0 or R1.
+
+## Build Week facts
+
+- Submissions close `2026-07-22T00:00:00Z`, equal to 2026-07-22 09:00 KST.
+- MortalOS now has a published Devpost project page with an honest description,
+  tagline, technology tags, and repository link, but it is not yet submitted to the
+  hackathon. It still lacks the video and verified public test URL.
+- Required deliverables include working project, category, description, public
+  narrated YouTube video under three minutes, code repository/README/license,
+  concrete Codex and GPT-5.6 usage, and `/feedback` Session ID.
+- A website is not globally required, but Developer Tools need a no-rebuild test
+  path. A public static Lab is the chosen path.
+- Runtime GPT integration is not required by the event wording; construction with
+  Codex/GPT-5.6 must be explained and evidenced. Model output never decides validity.
 
 ## Stable design decisions
 
 1. Creation is a protocol operation, not a browser privilege.
-2. Closing a process, tab, or endpoint is not by itself protocol death.
-3. `dead_under_v0_assumptions` requires separate true irreversibility and evidence-
-   completeness assertions; an empty local array never proves completeness.
-4. Resource exhaustion never truncates evidence into a life/death classification.
-5. Only named observer fields and bounded indices have meaning; unrelated caller
-   properties are ignored without enumeration.
-6. Logical key count and independent failure-domain count are different claims.
-7. All adapters must consume and emit one canonical evidence contract; transport,
-   storage, UI, and model output never decide validity.
-8. `reviewer-merge-gate`, not the author agent, decides whether a PR may merge.
-9. One shared GitHub account can preserve logical agent/worktree separation, but
-   account-level author/reviewer independence needs a separate GitHub App or bot.
+2. Silence, process exit, and browser closure are not protocol death.
+3. Logical key count and independent failure-domain count are different claims.
+4. UI, transport, storage, deployment, and model output may carry evidence but never
+   decide validity.
+5. Submission hosting may precede R1 only as a qualified exact-commit preview.
+6. Post-submission order is independent-verifier registration → R1-A JavaScript
+   wire/golden → R1-B Python differential → R1-C consumers → R2 deterministic state
+   → availability → network embodiment.
+7. `reviewer-merge-gate`, not the author, decides whether a PR may merge.
 
 ## Current priorities
 
-1. Publish this P0 implementation only after immutable-head review and Verify; do not
-   treat blocked PR #9 as mergeable evidence.
-2. Follow the critical order: P0 → independent-verifier registration → R1-A
-   JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption →
-   H3B public deployment → R2 deterministic state-bearing execution.
-3. Preserve logical verifier separation through its identity/task/workspace and
-   technical independence through non-JavaScript restrictions and golden
-   differential; use a separate GitHub App/bot for account-level independence.
-4. Stable CLI adapter work may proceed after R1-C but cannot reorder H3B → R2.
+1. Complete H3B tests, exact-head PR, independent review, CI, merge, and public run.
+2. Close README/platform/judge-path and Codex/GPT-5.6 evidence gaps.
+3. Finalize honest Devpost category, story, test instructions, video, and `/feedback`
+   field before the internal 2026-07-22 07:00 KST submit target.
+4. Resume R1 after submission; do not spend the sprint on R2 or networking.
 
 ## Memory maintenance
 
-- Store only facts supported by merged code, current candidate evidence, tests, or
-  explicit user decisions; label candidates as unmerged.
-- Replace stale current-state statements instead of accumulating contradictions.
-- Preserve completed-task evidence in `WORKLOG.md`.
-- Do not store secrets, access tokens, personal information, or hidden reasoning.
+- Store only verified merged facts or explicitly labeled candidate evidence.
+- Replace stale current-state statements; leave historical detail in `WORKLOG.md` and
+  Git history.
+- Never store credentials, personal data, generated dependencies, disposable logs,
+  or hidden reasoning.

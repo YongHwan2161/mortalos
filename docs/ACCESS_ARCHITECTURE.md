@@ -83,34 +83,36 @@ Portability is not sufficient, however. The current kernel validates who can aut
 
 ## 7. Ordered consequence
 
-The implementation order is:
+The Build Week submission lane is:
 
-`P0 → independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → H3B public deployment → R2`
+`P0 merged → H3B honest Lab preview → release evidence → video → submit`
 
-Established baseline, not an additional next gate: the portable life kernel and H3A
-Lab already have a byte-identity gate spanning Node 22, browser-target, and actual
-Chromium. The critical sequence is:
+This permits public static hosting before R1 only as an exact-commit, explicitly
+qualified view of the already implemented H3A behavior. Hosting does not change the
+protocol trust boundary.
 
-1. **P0 bounded mortality correction** — immutable-head review of complete-evidence and whole-observation resource safety;
-2. **independent-verifier registration** — reserve a logically isolated identity,
+The post-submission protocol order is:
+
+`independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
+
+1. **independent-verifier registration** — reserve a logically isolated identity,
    task, and workspace before golden records are authored; account-level independence
    still requires a separate GitHub App or bot;
-3. **R1-A JavaScript wire/golden** — freeze versioned canonical bounded
+2. **R1-A JavaScript wire/golden** — freeze versioned canonical bounded
    operation/result bytes and their golden corpus;
-4. **R1-B Python differential** — independently implement the same contract without
+3. **R1-B Python differential** — independently implement the same contract without
    importing or translating the JavaScript kernel;
-5. **R1-C Lab wire consumption** — make the local Lab a thin consumer of those
+4. **R1-C Lab wire consumption** — make the Lab and later CLI thin consumers of those
    operation/result records;
-6. **H3B public deployment** — publish the reviewed Lab without adding validity logic;
-7. **R2 deterministic state-bearing kernel** — the next foundational protocol milestone;
-8. **transport-neutral participant runtime** — adapter interface plus deterministic virtual transport before real networks;
-9. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
-10. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
+5. **R2 deterministic state-bearing kernel** — add canonical state transitions only
+   after the operation boundary is independently reproducible;
+6. **state availability and transport-neutral participant runtime** — define recovery,
+   then deterministic virtual transport before real networks;
+7. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
+8. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
 
-A stable CLI create/import/verify/replay/export contract may proceed after R1-C as
-non-blocking adapter work outside the critical arrow. It cannot reorder or substitute
-for H3B → R2. Browser and CLI adapters may share implementation effort, but neither
-may invent a second validator or become mandatory authority infrastructure.
+Browser and CLI adapters may share implementation effort, but neither may invent a
+second validator or become mandatory authority infrastructure.
 
 ## 8. Stop conditions
 

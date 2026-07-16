@@ -1,32 +1,13 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
-import { extname, resolve, sep } from "node:path";
+import { resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildLab } from "./build-lab.mjs";
+import { LAB_SECURITY_HEADERS, labContentType } from "./lab-contract.mjs";
 
 const root = fileURLToPath(new URL("../dist/lab", import.meta.url));
-const types = new Map([
-  [".css", "text/css; charset=utf-8"],
-  [".html", "text/html; charset=utf-8"],
-  [".js", "text/javascript; charset=utf-8"],
-  [".json", "application/json; charset=utf-8"],
-  [".txt", "text/plain; charset=utf-8"]
-]);
-
-export const LAB_CSP = [
-  "default-src 'none'",
-  "script-src 'self'",
-  "style-src 'self'",
-  "worker-src 'self'",
-  "connect-src 'none'",
-  "img-src 'none'",
-  "font-src 'none'",
-  "object-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-  "frame-ancestors 'none'"
-].join("; ");
+export { LAB_CSP, LAB_SECURITY_HEADERS } from "./lab-contract.mjs";
 
 export async function startLabServer({ host = "127.0.0.1", port = 0, directory = root } = {}) {
   const absoluteRoot = resolve(directory);
@@ -44,15 +25,8 @@ export async function startLabServer({ host = "127.0.0.1", port = 0, directory =
       const info = await stat(path);
       if (!info.isFile()) throw new Error("not a file");
       response.writeHead(200, {
-        "Cache-Control": "no-store",
-        "Content-Security-Policy": LAB_CSP,
-        "Content-Type": types.get(extname(path)) ?? "application/octet-stream",
-        "Cross-Origin-Embedder-Policy": "require-corp",
-        "Cross-Origin-Opener-Policy": "same-origin",
-        "Cross-Origin-Resource-Policy": "same-origin",
-        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
-        "Referrer-Policy": "no-referrer",
-        "X-Content-Type-Options": "nosniff"
+        ...LAB_SECURITY_HEADERS,
+        "Content-Type": labContentType(path)
       });
       createReadStream(path).pipe(response);
     } catch {
