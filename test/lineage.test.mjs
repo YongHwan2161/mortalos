@@ -202,6 +202,16 @@ test("lineage registry rejects replay, exposes quorum equivocation, and fails cl
   const fixture = buildForkFixture();
   const opened = createLineage(canonicalBytes(fixture.birth));
   assert.equal(opened.status, "accept");
+  assert.equal(Object.isFrozen(opened.lineage), true);
+  assert.equal(Object.isFrozen(opened.lineage.constructor), true);
+  assert.equal(Object.isFrozen(opened.lineage.constructor.prototype), true);
+  assert.throws(() => Object.defineProperty(opened.lineage, "evaluateMortality", {
+    value: () => ({ status: "dead_under_v0_assumptions" })
+  }), TypeError);
+  assert.throws(() => {
+    opened.lineage.evaluateMortality = () => ({ status: "dead_under_v0_assumptions" });
+  }, TypeError);
+  assert.throws(() => Object.setPrototypeOf(opened.lineage, null), TypeError);
   assert.equal(opened.lineage.snapshot().status, "linear");
 
   const left = opened.lineage.append(input(fixture.branches[0]));
@@ -356,7 +366,8 @@ test("mortality completion combines durable approvals with explicitly usable cur
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [input(thresholdRaise)],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   assert.equal(impossibleRaise.status, "dead_under_v0_assumptions");
 
@@ -408,7 +419,8 @@ test("mortality completion combines durable approvals with explicitly usable cur
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [input(belowCurrentQuorum)],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   assert.equal(impossibleQuorum.status, "dead_under_v0_assumptions");
 
@@ -595,7 +607,8 @@ test("mortality coalesces verified evidence only within the same candidate body"
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [input(distinctA), input(distinctB)],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   assert.equal(distinctBodies.status, "dead_under_v0_assumptions");
   assert.equal(distinctBodyLineage.isForked, false);

@@ -4,6 +4,8 @@ import {
   derivePeerId,
   encodeBase64Url,
   hexToBytes,
+  JSON_LIMITS,
+  MORTALITY_LIMITS,
   snapshotBytes,
   validateGenesis,
   validateLatentSuccessor,
@@ -12,7 +14,7 @@ import {
 } from "../src/index.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
-export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/3";
+export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/4";
 export const ADVERSARIAL_CASES = 10_000;
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
@@ -21,6 +23,47 @@ const zeroSignature = `ed25519:${encodeBase64Url(new Uint8Array(64))}`;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function portableTargetBody(lifecycle, extra = {}) {
+  const target = lifecycle.steps[0].envelope.body;
+  return {
+    organism_id: target.organism_id,
+    sequence: target.sequence,
+    parent_hash: target.parent_hash,
+    ...extra
+  };
+}
+
+function portableTargetOccurrences(lifecycle, count) {
+  return Array.from({ length: count }, () => portableTargetBody(lifecycle));
+}
+
+function portableNestedAmplification(lifecycle, totalCanonicalBytes) {
+  let root = null;
+  for (let layer = 63; layer >= 0; layer -= 1) {
+    root = portableTargetBody(lifecycle, {
+      layer,
+      padding: "",
+      ...(root === null ? {} : { nested: root })
+    });
+  }
+  const bodies = [];
+  for (let body = root; body; body = body.nested) bodies.push(body);
+  const aggregateBytes = () => bodies.reduce(
+    (total, body) => total + canonicalBytes(body).byteLength,
+    0
+  );
+  let remaining = totalCanonicalBytes - aggregateBytes();
+  if (remaining < 0) throw new Error("candidate amplification fixture exceeded its target");
+  const deepestIncrement = Math.floor(remaining / bodies.length);
+  bodies[bodies.length - 1].padding = "x".repeat(deepestIncrement);
+  remaining -= deepestIncrement * bodies.length;
+  bodies[0].padding = "x".repeat(remaining);
+  if (aggregateBytes() !== totalCanonicalBytes) {
+    throw new Error("candidate amplification fixture missed its target");
+  }
+  return root;
 }
 
 function generator(seed) {
@@ -192,34 +235,55 @@ function runCompletionCases(lifecycle) {
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [firstRaw, secondRaw],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   const usableCompletion = opened.lineage.evaluateMortality({
     usableKeyIds: [step.envelope.approvals[1].key_id],
     stateAvailable: true,
     pendingSuccessors: [firstRaw],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
-  const incomplete = opened.lineage.evaluateMortality({
+  const approvalIncompleteWithCompleteInventory = opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [firstRaw],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   const missingMembershipPayload = opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [{ envelopeBytes: canonicalBytes(step.envelope) }],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  const emptyIncompleteInventory = opened.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: false
+  });
+  const emptyCompleteInventory = opened.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   return {
     fragment_rejection: fragmentRejection.code,
     fragment_union: fragmentUnion.status,
     fragment_union_successors: fragmentUnion.latent_successors,
     usable_completion: usableCompletion.status,
-    incomplete: incomplete.status,
+    approval_incomplete_with_complete_inventory:
+      approvalIncompleteWithCompleteInventory.status,
     missing_membership_payload: missingMembershipPayload.status,
-    missing_membership_payload_classified: missingMembershipPayload.mortality_classified
+    missing_membership_payload_classified: missingMembershipPayload.mortality_classified,
+    empty_incomplete_inventory: emptyIncompleteInventory.status,
+    empty_complete_inventory: emptyCompleteInventory.status
   };
 }
 
@@ -243,7 +307,8 @@ function runForkCases(fork) {
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [prettyInput(fork.first), prettyInput(fork.sibling)],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   return {
     first: first.status,
@@ -289,6 +354,91 @@ function runBoundaryCases(lifecycle, rfc8032) {
     }
   }
 
+  const limited = createLineage(canonicalBytes(lifecycle.birth));
+  if (limited.status !== "accept") {
+    throw new Error(`limit-probe Genesis rejected: ${limited.code}`);
+  }
+  const mortalityPendingLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: Array.from(
+      { length: MORTALITY_LIMITS.pending_records + 1 },
+      () => null
+    ),
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  const mortalityUsableKeyCharsLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [`peer:${"a".repeat(MORTALITY_LIMITS.usable_key_id_chars)}`],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  const currentIds = limited.lineage.head.next_custody_descriptor.custodians.map(
+    (entry) => entry.key_id
+  );
+  const mortalityUsableKeyIdsLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: Array.from(
+      { length: MORTALITY_LIMITS.usable_key_ids + 1 },
+      (_, index) => currentIds[index % currentIds.length]
+    ),
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  const fullPayload = new Uint8Array(JSON_LIMITS.event_payload_bytes);
+  const mortalityPendingBytesLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: Array.from(
+      { length: MORTALITY_LIMITS.pending_bytes / JSON_LIMITS.event_payload_bytes + 1 },
+      () => ({ eventPayloadBytes: fullPayload })
+    ),
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  const signatureEnvelope = clone(lifecycle.steps[0].envelope);
+  signatureEnvelope.approvals = Array.from(
+    { length: MORTALITY_LIMITS.signature_verifications + 1 },
+    () => ({})
+  );
+  signatureEnvelope.acceptances = [];
+  const mortalitySignatureLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [{
+      envelopeBytes: canonicalBytes(signatureEnvelope),
+      eventPayloadBytes: canonicalBytes(lifecycle.steps[0].payload)
+    }],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  const mortalityCandidateBodiesLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [{
+      eventPayloadBytes: canonicalBytes(
+        portableTargetOccurrences(lifecycle, MORTALITY_LIMITS.candidate_bodies + 1)
+      )
+    }],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  const mortalityCandidateBytesLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [{
+      eventPayloadBytes: canonicalBytes(portableNestedAmplification(
+        lifecycle,
+        MORTALITY_LIMITS.candidate_canonical_bytes + 1
+      ))
+    }],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+
   return {
     low_order_peer_id_rejected:
       derivePeerId(`ed25519:${encodeBase64Url(identity)}`) === null,
@@ -305,7 +455,14 @@ function runBoundaryCases(lifecycle, rfc8032) {
     hostile_byte_metadata_ignored:
       validateGenesis(new HostileBytes(canonicalBytes(lifecycle.birth))).status === "accept",
     shared_bytes_rejected: sharedBytesRejected,
-    falsey_root_code: validateGenesis(canonicalBytes(0)).code
+    falsey_root_code: validateGenesis(canonicalBytes(0)).code,
+    mortality_candidate_bodies_limit: mortalityCandidateBodiesLimit,
+    mortality_candidate_canonical_bytes_limit: mortalityCandidateBytesLimit,
+    mortality_pending_limit: mortalityPendingLimit,
+    mortality_pending_bytes_limit: mortalityPendingBytesLimit,
+    mortality_signature_verifications_limit: mortalitySignatureLimit,
+    mortality_usable_key_chars_limit: mortalityUsableKeyCharsLimit,
+    mortality_usable_key_ids_limit: mortalityUsableKeyIdsLimit
   };
 }
 

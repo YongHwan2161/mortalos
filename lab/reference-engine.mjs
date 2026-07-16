@@ -49,7 +49,8 @@ export function runReferenceProof({ lifecycle, fork }) {
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
 
   const cloneLineage = open(lifecycle.clone);
@@ -100,7 +101,7 @@ export function runReferenceProof({ lifecycle, fork }) {
     resurrection: { status: resurrection.status, code: resurrection.code ?? null },
     mortality: {
       ...mortality,
-      qualification: "conditional on irreversible key loss and no known latent successor"
+      qualification: "closed fixture only: irreversible key loss and a complete local evidence inventory"
     },
     clone: {
       organism_id: cloneLineage.genesis.organism_id,

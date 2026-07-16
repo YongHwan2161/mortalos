@@ -2,6 +2,7 @@ import { access, readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import Ajv2020 from "ajv/dist/2020.js";
 import { canonicalize } from "../src/codec.mjs";
+import { MORTALITY_LIMITS } from "../src/lineage.mjs";
 import { REJECTION_CODES } from "../src/rejection-codes.mjs";
 
 const ROOT = new URL("../", import.meta.url);
@@ -33,13 +34,15 @@ const paths = {
   projectStatus: "docs/PROJECT_STATUS.md",
   incubator: "docs/SINGLE_BROWSER_INCUBATOR.md",
   accessArchitecture: "docs/ACCESS_ARCHITECTURE.md",
+  submissionChecklist: "docs/SUBMISSION_CHECKLIST.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
   genesisExample: "examples/schema/genesis.valid.json",
   pulseExample: "examples/schema/pulse.valid.json",
   heartbeatPayloadExample: "examples/schema/heartbeat-payload.valid.json",
-  h2Golden: "test/vectors/h2-trace.expected.json"
+  h2Golden: "test/vectors/h2-trace.expected.json",
+  portableGolden: "test/vectors/portable-expected.json"
 };
 
 const entries = await Promise.all(
@@ -53,6 +56,19 @@ const genesisExample = JSON.parse(text.genesisExample);
 const pulseExample = JSON.parse(text.pulseExample);
 const heartbeatPayloadExample = JSON.parse(text.heartbeatPayloadExample);
 const h2Golden = JSON.parse(text.h2Golden);
+const portableGolden = JSON.parse(text.portableGolden);
+const signatureVerificationLimit = MORTALITY_LIMITS.signature_verifications;
+assert(
+  signatureVerificationLimit === 1152,
+  "The calibrated v0 signature-verification limit must remain 1,152"
+);
+assert(
+  portableGolden.boundary_cases.mortality_signature_verifications_limit.maximum ===
+    signatureVerificationLimit &&
+    portableGolden.boundary_cases.mortality_signature_verifications_limit.observed ===
+      signatureVerificationLimit + 1,
+  "Portable signature-limit evidence differs from the implementation constant"
+);
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const validateGenesis = ajv.compile(genesisSchema);
@@ -224,7 +240,7 @@ for (const code of [
   assert(rejectionCodes.includes(code), `Missing event-payload rejection code: ${code}`);
 }
 
-for (let index = 1; index <= 17; index += 1) {
+for (let index = 1; index <= 18; index += 1) {
   const invariant = `INV-${index}`;
   const traceLine = text.traceability
     .split("\n")
@@ -257,7 +273,7 @@ for (const statement of requiredThreatStatements) {
 
 const portableGateStatements = [
   "Verified gate — C1 portable deterministic core",
-  "Committed, Node 22, isolated browser-target, and actual Chromium results are byte-identical on publication candidate `9eae8c34`.",
+  "The committed result, Node 22, isolated browser-target, and actual Chromium results are required to be byte-identical on every review head; the latest successful exact-head Verify run is the publication evidence.",
   "The PR workflow requires every changed head to rerun the Node/Chromium differential gate.",
   "Exactly 10,000 cases replay from seed `1297044052`",
   "any cross-runtime mismatch reopens C1"
@@ -267,17 +283,17 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "H3A local MortalOS Lab verified; H3B public HTTPS judge path next",
-  "| Node/Chromium equivalence | Verified on publication candidate |",
-  "publication-candidate Node 22 and actual Chromium CI: PASS;",
+  "P0 implemented in this tree; immutable-head publication evidence required; H3A local Lab implemented",
+  "| Node/Chromium equivalence | Required per review head |",
+  "a code change invalidates older run evidence",
   "The verified CLI singleton uses one key"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
 }
 
 for (const statement of [
-  "H3A local executable slice — verified",
-  "H3B public deployment — next delivery gate",
+  "H3A local executable slice — implemented; exact-head gate required",
+  "H3B public deployment — after R1-C",
   "Three dedicated Workers hold non-extractable WebCrypto keys"
 ]) {
   assert(
@@ -331,13 +347,53 @@ assert(
   text.protocol.includes(
     "Destroying current private keys does not invalidate signatures already produced"
   ) &&
-    text.protocol.includes("cryptographically remaps signatures") &&
+    text.protocol.includes("recursively discovers every exact canonical `ed25519:`") &&
+    text.protocol.includes("object property name") &&
+    text.protocol.includes("cryptographically remaps collected signatures") &&
     text.protocol.includes("evidence_equivocation") &&
     text.protocol.includes("evidence_payload_unavailable") &&
     text.protocol.includes(
       "captured from the single own-data observer snapshot before pending-record descriptor inspection"
     ),
   "Protocol omits sign-once-aware completion, evidence reconstruction, or payload uncertainty"
+);
+assert(
+  text.protocol.includes(
+    "recognizes only the named fields `usableKeyIds`, `stateAvailable`, `pendingSuccessors`, `authorityLossIrreversible`, and `latentEvidenceComplete`"
+  ) &&
+    text.protocol.includes(
+      "each pending carrier recognizes only `envelopeBytes` and `eventPayloadBytes`"
+    ) &&
+    text.protocol.includes("Symbol properties are outside the observation vocabulary") &&
+    text.protocol.includes("canonical `peer:` 32-byte identifier"),
+  "Protocol omits the exact mortality observer input contract"
+);
+for (const statement of [
+  "`candidate_bodies` | Discovered target-tuple body occurrences | 128",
+  "`candidate_canonical_bytes` | Aggregate UTF-8 bytes of target-tuple canonical forms | 4,194,304",
+  "reason: \"limit_exceeded\"",
+  "never invokes `ownKeys`",
+  "canonically duplicate occurrences",
+  "constant trusted-basis work",
+  "before returning `limit_exceeded`",
+  "`INV-18`"
+]) {
+  assert(text.protocol.includes(statement) || text.traceability.includes(statement),
+    `Mortality resource contract is missing: ${statement}`);
+}
+const signatureLimitStatement =
+  `\`signature_verifications\` | Conservative signature-verification work units | ${signatureVerificationLimit.toLocaleString("en-US")}`;
+assert(
+  text.protocol.includes(signatureLimitStatement),
+  "Protocol signature-verification table differs from the implementation constant"
+);
+assert(
+  text.rejectionCodes.includes(
+    `\`signature_verifications\` (${signatureVerificationLimit.toLocaleString("en-US")})`
+  ) && text.rejectionCodes.includes("1,088") &&
+    text.rejectionCodes.includes("64 units") &&
+    text.rejectionCodes.includes("headroom"),
+  "Rejection-code resource documentation differs from the calibrated signature limit"
 );
 for (const statement of [
   "prime-order subgroup",
@@ -353,11 +409,60 @@ delete h2WithoutDigest.trace_sha256;
 const h2Digest = createHash("sha256")
   .update(canonicalize(h2WithoutDigest))
   .digest("hex");
-assert(h2Golden.format === "mortalos-lifecycle-trace/3", "H2 golden trace format is stale");
+assert(h2Golden.format === "mortalos-lifecycle-trace/4", "H2 golden trace format is stale");
 assert(h2Golden.trace_sha256 === h2Digest, "H2 golden trace digest does not match its content");
+assert(
+  portableGolden.format === "mortalos-portable-corpus/4",
+  "Portable golden corpus format is stale"
+);
 for (const artifact of [text.readme, text.projectStatus, text.traceability]) {
   assert(artifact.includes(h2Digest), "Current documentation omits the committed H2 digest");
 }
+
+const stalePortableVersion = `v${3}`;
+const staleH2Prefix = ["b544", "3d17"].join("");
+const staleMortalityPhrase = ["no", "latent", "successor"].join(" ");
+for (const [name, artifact] of Object.entries({
+  readme: text.readme,
+  projectStatus: text.projectStatus,
+  traceability: text.traceability,
+  accessArchitecture: text.accessArchitecture,
+  incubator: text.incubator,
+  submissionChecklist: text.submissionChecklist,
+  implementationPlan: text.implementationPlan,
+  threatModel: text.threatModel
+})) {
+  assert(!artifact.includes(stalePortableVersion), `${name} contains a stale corpus version`);
+  assert(!artifact.includes(staleH2Prefix), `${name} contains the stale H2 digest`);
+  assert(!artifact.includes(staleMortalityPhrase), `${name} uses stale mortality wording`);
+}
+
+const orderedGateStatement =
+  "P0 → independent-verifier registration → R1-A JavaScript wire/golden → " +
+  "R1-B Python differential → R1-C Lab wire consumption → H3B public deployment → R2";
+for (const [name, artifact] of Object.entries({
+  readme: text.readme,
+  projectStatus: text.projectStatus,
+  implementationPlan: text.implementationPlan,
+  accessArchitecture: text.accessArchitecture
+})) {
+  assert(
+    artifact.includes(orderedGateStatement),
+    `${name} does not state the reviewed total gate order`
+  );
+}
+
+for (const statement of [
+  "Proxy-free ordinary own-data",
+  "abort the whole mortality operation as observer uncertainty",
+  "independently written non-JavaScript verifier"
+]) {
+  assert(text.protocol.includes(statement), `Protocol omits mortality/R1 boundary: ${statement}`);
+}
+assert(
+  text.submissionChecklist.includes("until independently evidenced distribution"),
+  "Submission claims omit the independent-distribution qualification"
+);
 
 const currentDocLinks = [
   "PROJECT_STATUS.md",
@@ -421,7 +526,7 @@ console.log(`- Operational lifecycle definitions checked: ${lifecycleSections.le
 console.log(`- Domain separators checked: ${domains.length}`);
 console.log(`- Message validation rows checked: ${genesisFields.length + pulseFields.length}`);
 console.log(`- Unique rejection codes checked: ${rejectionCodes.length}`);
-console.log(`- Invariant-to-test mappings checked: 17`);
+console.log(`- Invariant-to-test mappings checked: 18`);
 console.log(`- Threat-model boundary statements checked: ${requiredThreatStatements.length}`);
 console.log(`- H2 golden trace verified: ${h2Golden.format} sha256:${h2Digest}`);
 console.log(`- Relative Markdown links checked: ${relativeLinkCount}`);

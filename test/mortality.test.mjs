@@ -2,23 +2,39 @@ import assert from "node:assert/strict";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { SHA256_IV, SHA512_IV } from "@noble/hashes/_md.js";
+import { JsonInputError } from "../src/codec.mjs";
+import { checkPulseSchema } from "../src/schema-validation.mjs";
 import * as publicApi from "../src/index.mjs";
 import {
   canonicalBytes,
   createLineage,
+  custodyAcceptanceMessage,
   custodyCommitment,
   derivePeerId,
   encodeBase64Url,
   eventPayloadHash,
   genesisApprovalMessage,
+  JSON_LIMITS,
+  MORTALITY_LIMITS,
   pulseApprovalMessage,
-  validateLatentSuccessor
+  validateGenesis,
+  validateLatentSuccessor,
+  validatePulse
 } from "../src/index.mjs";
+import {
+  isValidatedAcceptance,
+  isValidatedLatentSuccessor
+} from "../src/validator.mjs";
 import { canonical, clone, vector } from "./helpers.mjs";
 
 const forkVector = JSON.parse(
   readFileSync(new URL("./vectors/fork.json", import.meta.url), "utf8")
 );
+const fullSignatureBudgetTestOptions =
+  process.env.MORTALOS_SKIP_FULL_SIGNATURE_BUDGET === "1"
+    ? { skip: "full genuine-signature boundary already runs in conformance" }
+    : {};
 
 function openThrough(stepCount) {
   const opened = createLineage(canonical(vector.birth));
@@ -57,6 +73,105 @@ function signature(actor, message) {
 
 function tagged(prefix, length, byte) {
   return `${prefix}${encodeBase64Url(new Uint8Array(length).fill(byte))}`;
+}
+
+function exactJsonObjectBytes(length) {
+  const prefix = '{"value":"';
+  const suffix = '"}';
+  assert.ok(length >= prefix.length + suffix.length);
+  return new TextEncoder().encode(
+    `${prefix}${"a".repeat(length - prefix.length - suffix.length)}${suffix}`
+  );
+}
+
+function minimalTargetBody(extra = {}) {
+  const target = vector.steps[0].envelope.body;
+  return {
+    organism_id: target.organism_id,
+    sequence: target.sequence,
+    parent_hash: target.parent_hash,
+    ...extra
+  };
+}
+
+function targetBodyOccurrences(count) {
+  return Array.from({ length: count }, () => minimalTargetBody());
+}
+
+function nestedCandidateAmplification(totalCanonicalBytes) {
+  let root = null;
+  for (let layer = 63; layer >= 0; layer -= 1) {
+    root = minimalTargetBody({
+      layer,
+      padding: "",
+      ...(root === null ? {} : { nested: root })
+    });
+  }
+  const bodies = [];
+  for (let body = root; body; body = body.nested) bodies.push(body);
+  assert.equal(bodies.length, 64);
+  const aggregateBytes = () => bodies.reduce(
+    (total, body) => total + canonicalBytes(body).byteLength,
+    0
+  );
+  let remaining = totalCanonicalBytes - aggregateBytes();
+  assert.ok(remaining >= 0);
+  const deepestIncrement = Math.floor(remaining / bodies.length);
+  bodies.at(-1).padding = "x".repeat(deepestIncrement);
+  remaining -= deepestIncrement * bodies.length;
+  bodies[0].padding = "x".repeat(remaining);
+  assert.equal(aggregateBytes(), totalCanonicalBytes);
+  assert.ok(canonicalBytes(root).byteLength <= JSON_LIMITS.event_payload_bytes);
+  return root;
+}
+
+function validForeignSignatureStrings(count, actor) {
+  return Array.from({ length: count }, (_, index) => signature(
+    actor,
+    canonicalBytes({ mortality_remap_probe: String(index) })
+  ));
+}
+
+function remapRecords(signatures, body) {
+  const records = [];
+  for (let index = 0; index < signatures.length; index += 64) {
+    records.push({
+      envelopeBytes: canonicalBytes({ evidence: signatures.slice(index, index + 64) })
+    });
+  }
+  records.push({ envelopeBytes: canonicalBytes({ body }) });
+  return records;
+}
+
+function expectedMortalityLimit(resource) {
+  const maximum = MORTALITY_LIMITS[resource];
+  return {
+    status: "indeterminate",
+    reason: "limit_exceeded",
+    mortality_classified: false,
+    resource,
+    observed: maximum + 1,
+    maximum
+  };
+}
+
+function assertLimitIsAtomicAndRetryable(lineage, options, resource) {
+  const before = structuredClone(lineage.snapshot());
+  const result = lineage.evaluateMortality(options);
+  assert.deepEqual(result, expectedMortalityLimit(resource));
+  assert.equal(Object.isFrozen(result), true);
+  assert.deepEqual(lineage.snapshot(), before);
+  const retry = lineage.evaluateMortality({
+    usableKeyIds: lineage.head.next_custody_descriptor.custodians.map(
+      (entry) => entry.key_id
+    ),
+    stateAvailable: true,
+    pendingSuccessors: [],
+    authorityLossIrreversible: false,
+    latentEvidenceComplete: false
+  });
+  assert.equal(retry.status, "operationally_alive");
+  assert.deepEqual(lineage.snapshot(), before);
 }
 
 function completionScenario() {
@@ -149,13 +264,15 @@ test("mortality combines durable approvals with a surviving signer before declar
     state_viable: true,
     usable_keys: 1,
     threshold: 2,
-    latent_successors: 1
+    latent_successors: 1,
+    latent_evidence_complete: false
   });
   assert.equal(lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [raw],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
 
   const mutableUsableKeyIds = [];
@@ -174,7 +291,7 @@ test("mortality combines durable approvals with a surviving signer before declar
     stateAvailable: true,
     pendingSuccessors: [accessorEvidence],
     authorityLossIrreversible: true
-  }), /envelopeBytes must be an own data property/);
+  }), /mortality carriers must expose only ordinary own data properties/);
   assert.equal(envelopeGetterCalled, false);
   assert.deepEqual(mutableUsableKeyIds, []);
 
@@ -189,7 +306,7 @@ test("mortality combines durable approvals with a surviving signer before declar
       return [raw];
     },
     authorityLossIrreversible: true
-  }), /options\.pendingSuccessors must be an own data property/);
+  }), /mortality options must expose only ordinary own data properties/);
   assert.equal(pendingGetterCalled, false);
   assert.deepEqual(usableBeforePendingGetter, [actors[2].key_id]);
 
@@ -307,20 +424,27 @@ test("mortality unions verified fragments only for the same body", () => {
     authorityLossIrreversible: true
   }).status, "latent_successor_not_dead");
   const completeHeartbeat = canonicalBytes(envelope(heartbeat, actors.slice(0, 2)));
-  for (const unusablePayload of [
-    Uint8Array.of(0xff),
-    canonicalBytes({ poison: true })
-  ]) {
-    assert.equal(lineage.evaluateMortality({
+  assert.throws(
+    () => lineage.evaluateMortality({
       usableKeyIds: [],
       stateAvailable: true,
       pendingSuccessors: [{
         envelopeBytes: completeHeartbeat,
-        eventPayloadBytes: unusablePayload
+        eventPayloadBytes: Uint8Array.of(0xff)
       }],
       authorityLossIrreversible: true
-    }).status, "latent_successor_not_dead");
-  }
+    }),
+    /mortality event-payload bytes could not be parsed/
+  );
+  assert.equal(lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [{
+      envelopeBytes: completeHeartbeat,
+      eventPayloadBytes: canonicalBytes({ poison: true })
+    }],
+    authorityLossIrreversible: true
+  }).status, "latent_successor_not_dead");
   assert.equal(lineage.verifyCandidate({
     envelopeBytes: completeHeartbeat,
     eventPayloadBytes: canonicalBytes({ poison: true })
@@ -378,19 +502,22 @@ test("mortality unions verified fragments only for the same body", () => {
     pendingSuccessors: [{
       envelopeBytes: canonicalBytes(envelope(thresholdRaise, [actors[1]]))
     }],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
   assert.equal(lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [first, differentBody],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
   assert.equal(lineage.evaluateMortality({
-    usableKeyIds: [actors[2].key_id, actors[2].key_id, "peer:unknown"],
+    usableKeyIds: [actors[2].key_id, actors[2].key_id, tagged("peer:", 32, 0)],
     stateAvailable: true,
     pendingSuccessors: [differentBody],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
 
   const corrupt = structuredClone(envelope(heartbeat, [actors[0]]));
@@ -402,11 +529,60 @@ test("mortality unions verified fragments only for the same body", () => {
       envelopeBytes: canonicalBytes(corrupt),
       eventPayloadBytes: canonicalBytes({})
     }],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
 });
 
-test("mortality projections obey sign-once and equivocation remains unclassified", () => {
+test("mortality discovers exact bodies and signatures throughout declared JSON trees", () => {
+  const step = clone(vector.steps[2]);
+  const signatures = [
+    ...step.envelope.approvals,
+    ...step.envelope.acceptances
+  ].map((entry) => entry.signature);
+  const hiddenEnvelope = {
+    artifacts: {
+      candidate_body: step.envelope.body,
+      nested_signature: signatures[1]
+    },
+    [signatures[0]]: "observed-signature-key"
+  };
+  const hiddenPayload = { orphan_signature: signatures[2] };
+  const pending = [
+    { envelopeBytes: canonicalBytes(hiddenEnvelope) },
+    { eventPayloadBytes: canonicalBytes(hiddenPayload) },
+    { eventPayloadBytes: canonicalBytes(step.payload) }
+  ];
+
+  const envelopeBodyLineage = openThrough(2);
+  assert.equal(envelopeBodyLineage.verifyCandidate(rawStep(step)).status, "accept");
+  assert.equal(envelopeBodyLineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: pending,
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }).status, "latent_successor_not_dead");
+
+  const payloadBodyLineage = openThrough(2);
+  assert.equal(payloadBodyLineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [
+      {
+        eventPayloadBytes: canonicalBytes({
+          candidate_body: step.envelope.body,
+          signature_values: signatures
+        })
+      },
+      { eventPayloadBytes: canonicalBytes(step.payload) }
+    ],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }).status, "latent_successor_not_dead");
+});
+
+test("mortality projections keep verification body-scoped, obey sign-once, and leave equivocation unclassified", () => {
   const { actors, envelope, lineage, makeBody } = completionScenario();
   const heartbeat = makeBody(2, { kind: "heartbeat", payload: {} });
   const membershipPayload = { mode: "conflict" };
@@ -427,7 +603,8 @@ test("mortality projections obey sign-once and equivocation remains unclassified
     usableKeyIds: [actors[2].key_id],
     stateAvailable: true,
     pendingSuccessors: [first, conflicting],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
 
   const equivocation = lineage.evaluateMortality({
@@ -462,13 +639,15 @@ test("mortality projections obey sign-once and equivocation remains unclassified
     usableKeyIds: [actors[1].key_id],
     stateAvailable: true,
     pendingSuccessors: [first, invalidCommitment],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
   assert.equal(lineage.evaluateMortality({
     usableKeyIds: [actors[0].key_id, actors[1].key_id],
     stateAvailable: true,
     pendingSuccessors: [invalidCommitment],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
 
   const wrongTupleBody = {
@@ -512,7 +691,8 @@ test("mortality projections obey sign-once and equivocation remains unclassified
       envelopeBytes: canonicalBytes(envelope(splitBody, [actors[1]])),
       eventPayloadBytes: canonicalBytes(splitBodyPayload)
     }],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
 });
 
@@ -522,11 +702,7 @@ test("payload opacity blocks death only after irreversible loss without a non-de
   const step = vector.steps[0];
   const envelopeBytes = canonical(step.envelope);
 
-  for (const eventPayloadBytes of [
-    undefined,
-    Uint8Array.of(0xff),
-    canonicalBytes({ wrong: true })
-  ]) {
+  for (const eventPayloadBytes of [undefined, canonicalBytes({ wrong: true })]) {
     const pending = { envelopeBytes };
     if (eventPayloadBytes !== undefined) pending.eventPayloadBytes = eventPayloadBytes;
     const assessment = opened.lineage.evaluateMortality({
@@ -539,6 +715,15 @@ test("payload opacity blocks death only after irreversible loss without a non-de
     assert.equal(assessment.mortality_classified, false);
     assert.equal(assessment.pending_body_hashes.length, 1);
   }
+  assert.throws(
+    () => opened.lineage.evaluateMortality({
+      usableKeyIds: [],
+      stateAvailable: true,
+      pendingSuccessors: [{ envelopeBytes, eventPayloadBytes: Uint8Array.of(0xff) }],
+      authorityLossIrreversible: true
+    }),
+    /mortality event-payload bytes could not be parsed/
+  );
   assert.equal(opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
@@ -579,11 +764,7 @@ test("payload opacity blocks death only after irreversible loss without a non-de
   const emptyPayloadEnvelope = canonicalBytes(
     emptyPayloadScenario.envelope(emptyPayloadBody, emptyPayloadScenario.actors)
   );
-  for (const eventPayloadBytes of [
-    undefined,
-    Uint8Array.of(0xff),
-    canonicalBytes({ wrong: true })
-  ]) {
+  for (const eventPayloadBytes of [undefined, canonicalBytes({ wrong: true })]) {
     const pending = { envelopeBytes: emptyPayloadEnvelope };
     if (eventPayloadBytes !== undefined) pending.eventPayloadBytes = eventPayloadBytes;
     assert.equal(emptyPayloadScenario.lineage.evaluateMortality({
@@ -593,6 +774,18 @@ test("payload opacity blocks death only after irreversible loss without a non-de
       authorityLossIrreversible: true
     }).status, "evidence_payload_unavailable");
   }
+  assert.throws(
+    () => emptyPayloadScenario.lineage.evaluateMortality({
+      usableKeyIds: [],
+      stateAvailable: true,
+      pendingSuccessors: [{
+        envelopeBytes: emptyPayloadEnvelope,
+        eventPayloadBytes: Uint8Array.of(0xff)
+      }],
+      authorityLossIrreversible: true
+    }),
+    /mortality event-payload bytes could not be parsed/
+  );
   assert.equal(emptyPayloadScenario.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
@@ -651,7 +844,8 @@ test("payload opacity blocks death only after irreversible loss without a non-de
       usableKeyIds: [],
       stateAvailable: true,
       pendingSuccessors: [invalidRootCandidate],
-      authorityLossIrreversible: true
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
     }).status, "dead_under_v0_assumptions");
   }
 
@@ -667,7 +861,8 @@ test("payload opacity blocks death only after irreversible loss without a non-de
     pendingSuccessors: [{
       envelopeBytes: canonicalBytes(generated.envelope(invalidBody, generated.actors.slice(0, 2)))
     }],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status, "dead_under_v0_assumptions");
 });
 
@@ -675,12 +870,12 @@ test("lineage mortality states use its private recognized head", () => {
   const lineage = openThrough(vector.steps.length);
   const all = lineage.head.next_custody_descriptor.custodians.map((entry) => entry.key_id);
 
-  const alive = lineage.evaluateMortality({
+  assert.equal(lineage.evaluateMortality({
     usableKeyIds: all,
     stateAvailable: true,
-    // This legacy-style field is deliberately ignored; callers cannot inject a head.
     head: lineage.genesis
-  });
+  }).status, "operationally_alive");
+  const alive = lineage.evaluateMortality({ usableKeyIds: all, stateAvailable: true });
   assert.equal(alive.status, "operationally_alive");
   assert.equal(Object.isFrozen(alive), true);
   assert.equal(
@@ -696,9 +891,10 @@ test("lineage mortality states use its private recognized head", () => {
   );
   assert.equal(
     lineage.evaluateMortality({
-      usableKeyIds: [vector.actors.F.key_id, "peer:not-declared"],
+      usableKeyIds: [vector.actors.F.key_id, tagged("peer:", 32, 0xff)],
       stateAvailable: false,
-      authorityLossIrreversible: true
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
     }).status,
     "dead_under_v0_assumptions"
   );
@@ -735,20 +931,24 @@ test("raw pending successors are revalidated as direct children of the current h
     ...rawPartial
   });
   assert.equal(capability.status, "latent");
-  const injectedCapability = lineage.evaluateMortality({
-    usableKeyIds: [],
-    stateAvailable: true,
-    pendingSuccessors: [capability],
-    authorityLossIrreversible: true
-  });
-  assert.equal(injectedCapability.status, "dead_under_v0_assumptions");
+  assert.throws(
+    () => lineage.evaluateMortality({
+      usableKeyIds: [],
+      stateAvailable: true,
+      pendingSuccessors: [capability],
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
+    }),
+    /mortality carrier must contain an envelope or event-payload source/
+  );
 
   const advanced = openThrough(vector.steps.length);
   const staleRaw = advanced.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [rawStep(step)],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   assert.equal(staleRaw.status, "dead_under_v0_assumptions");
   assert.equal(staleRaw.latent_successors, 0);
@@ -762,10 +962,17 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
   const headBefore = lineage.head.object_hash;
   let reentrantAppend;
 
+  let ownKeysCalls = 0;
   const reentrantInput = new Proxy(rawStep(partial), {
-    ownKeys(target) {
-      reentrantAppend = lineage.append(rawStep(step));
-      return Reflect.ownKeys(target);
+    ownKeys() {
+      ownKeysCalls += 1;
+      throw new Error("mortality acquisition must not enumerate caller keys");
+    },
+    getOwnPropertyDescriptor(target, property) {
+      if (property === "envelopeBytes" && reentrantAppend === undefined) {
+        reentrantAppend = lineage.append(rawStep(step));
+      }
+      return Reflect.getOwnPropertyDescriptor(target, property);
     }
   });
   const assessment = lineage.evaluateMortality({
@@ -777,33 +984,15 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
 
   assert.equal(reentrantAppend.code, "E_VALIDATOR_INTERNAL");
   assert.equal(reentrantAppend.deterministic_detail, "mortality-evaluation-active");
+  assert.equal(ownKeysCalls, 0);
   assert.equal(assessment.status, "latent_successor_not_dead");
   assert.equal(lineage.head.object_hash, headBefore);
 
-  for (const mutate of [
-    (pending) => pending.pop(),
-    (pending) => pending.splice(1, 1),
-    (pending) => pending.push({ envelopeBytes: Uint8Array.of(0) })
-  ]) {
-    const pending = [];
-    const mutationTrigger = new Proxy({ envelopeBytes: Uint8Array.of(0) }, {
-      ownKeys(target) {
-        mutate(pending);
-        return Reflect.ownKeys(target);
-      }
-    });
-    pending.push(mutationTrigger, rawStep(step));
-    assert.equal(lineage.evaluateMortality({
-      usableKeyIds: [],
-      stateAvailable: true,
-      pendingSuccessors: pending,
-      authorityLossIrreversible: true
-    }).status, "latent_successor_not_dead");
-  }
-
   const iteratorTrap = [rawStep(step)];
+  let iteratorCalls = 0;
   Object.defineProperty(iteratorTrap, Symbol.iterator, {
     value() {
+      iteratorCalls += 1;
       throw new Error("custom iterator must not execute");
     }
   });
@@ -813,6 +1002,7 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
     pendingSuccessors: iteratorTrap,
     authorityLossIrreversible: true
   }).status, "latent_successor_not_dead");
+  assert.equal(iteratorCalls, 0);
 
   const accessorArray = [];
   Object.defineProperty(accessorArray, "0", {
@@ -828,7 +1018,7 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
     stateAvailable: true,
     pendingSuccessors: accessorArray,
     authorityLossIrreversible: true
-  }), /pendingSuccessors must contain only own data entries/);
+  }), /pendingSuccessors must be a dense ordinary data array/);
 
   const laterValid = rawStep(step);
   const laterEnvelopeBefore = laterValid.envelopeBytes.slice();
@@ -847,7 +1037,7 @@ test("mortality snapshots pending records before analysis and blocks reentrant m
     stateAvailable: true,
     pendingSuccessors: [poisoningEntry, laterValid],
     authorityLossIrreversible: true
-  }), /envelopeBytes must be an own data property/);
+  }), /mortality carriers must expose only ordinary own data properties/);
   assert.equal(poisoningGetterCalled, false);
   assert.deepEqual(laterValid.envelopeBytes, laterEnvelopeBefore);
   assert.equal(lineage.evaluateMortality({
@@ -930,12 +1120,68 @@ test("distinct fully valid pending siblings record a fork and leave mortality un
   assert.equal(reconstructed.lineage.snapshot().accepted_objects, 3);
 });
 
+test("already-forked mortality checks integrity before collection or sorting operations", { concurrency: false }, () => {
+  const opened = createLineage(canonical(forkVector.genesis));
+  assert.equal(opened.status, "accept");
+  const parentHash = opened.lineage.head.object_hash;
+  assert.equal(opened.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: true,
+    pendingSuccessors: [rawStep(forkVector.first), rawStep(forkVector.sibling)]
+  }).status, "forked");
+  const expected = {
+    status: "forked",
+    mortality_classified: false,
+    fork_points: [parentHash]
+  };
+
+  const originalSetIterator = Set.prototype[Symbol.iterator];
+  const originalArraySort = Array.prototype.sort;
+  for (const [mutate, restore] of [
+    [
+      (observe) => {
+        Set.prototype[Symbol.iterator] = function poisonedSetIterator() {
+          observe();
+          throw new Error("poisoned Set iterator executed");
+        };
+      },
+      () => { Set.prototype[Symbol.iterator] = originalSetIterator; }
+    ],
+    [
+      (observe) => {
+        Array.prototype.sort = function poisonedArraySort() {
+          observe();
+          throw new Error("poisoned Array sort executed");
+        };
+      },
+      () => { Array.prototype.sort = originalArraySort; }
+    ]
+  ]) {
+    let poisonCalls = 0;
+    let error;
+    try {
+      mutate(() => { poisonCalls += 1; });
+      try {
+        opened.lineage.evaluateMortality();
+      } catch (caught) {
+        error = caught;
+      }
+    } finally {
+      restore();
+    }
+    assert.equal(poisonCalls, 0);
+    assert.match(error?.message ?? "", /mortality observation changed realm intrinsics/);
+  }
+
+  assert.deepEqual(opened.lineage.evaluateMortality(), expected);
+});
+
 test("mortality input contracts reject ambiguous observer assumptions", () => {
   const lineage = openThrough(0);
   const all = lineage.head.next_custody_descriptor.custodians.map((entry) => entry.key_id);
   assert.throws(
     () => lineage.evaluateMortality({ usableKeyIds: "not-an-array", stateAvailable: true }),
-    /usableKeyIds must be an array/
+    /usableKeyIds must be a dense ordinary data array/
   );
   assert.throws(
     () => lineage.evaluateMortality({ usableKeyIds: [], stateAvailable: "yes" }),
@@ -948,7 +1194,7 @@ test("mortality input contracts reject ambiguous observer assumptions", () => {
         stateAvailable: true,
         pendingSuccessors: "not-an-array"
       }),
-    /pendingSuccessors must be an array/
+    /pendingSuccessors must be a dense ordinary data array/
   );
   assert.throws(
     () =>
@@ -960,6 +1206,58 @@ test("mortality input contracts reject ambiguous observer assumptions", () => {
     /authorityLossIrreversible must be boolean/
   );
 
+  const ambiguousOptions = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true,
+    orphanSignature: vector.steps[0].envelope.approvals[0].signature
+  };
+  assert.equal(
+    lineage.evaluateMortality(ambiguousOptions).status,
+    "dead_under_v0_assumptions"
+  );
+
+  let optionOwnKeysCalls = 0;
+  const boundedOptions = new Proxy({
+    usableKeyIds: all,
+    stateAvailable: true,
+    ignored: "not part of the mortality observation"
+  }, {
+    ownKeys() {
+      optionOwnKeysCalls += 1;
+      throw new Error("mortality acquisition must not enumerate caller keys");
+    }
+  });
+  assert.equal(
+    lineage.evaluateMortality(boundedOptions).status,
+    "operationally_alive"
+  );
+  assert.equal(optionOwnKeysCalls, 0);
+  Object.defineProperty(ambiguousOptions, Symbol("hidden-evidence"), {
+    enumerable: true,
+    value: vector.steps[0].envelope.body
+  });
+  delete ambiguousOptions.orphanSignature;
+  assert.equal(
+    lineage.evaluateMortality(ambiguousOptions).status,
+    "dead_under_v0_assumptions"
+  );
+
+  const partial = clone(vector.steps[0]);
+  const orphanApproval = partial.envelope.approvals.pop();
+  assert.throws(
+    () => lineage.evaluateMortality({
+      usableKeyIds: [orphanApproval.signature],
+      stateAvailable: false,
+      pendingSuccessors: [rawStep(partial)],
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
+    }),
+    /usableKeyIds entries must be canonical peer IDs/
+  );
+
   assert.equal(lineage.evaluateMortality({
     usableKeyIds: all,
     stateAvailable: true
@@ -969,14 +1267,16 @@ test("mortality input contracts reject ambiguous observer assumptions", () => {
     "usableKeyIds",
     "stateAvailable",
     "pendingSuccessors",
-    "authorityLossIrreversible"
+    "authorityLossIrreversible",
+    "latentEvidenceComplete"
   ]) {
     let getterCalls = 0;
     const options = {
       usableKeyIds: [],
       stateAvailable: true,
       pendingSuccessors: [rawStep(vector.steps[0])],
-      authorityLossIrreversible: true
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
     };
     const value = options[name];
     Object.defineProperty(options, name, {
@@ -988,8 +1288,1238 @@ test("mortality input contracts reject ambiguous observer assumptions", () => {
     });
     assert.throws(
       () => lineage.evaluateMortality(options),
-      new RegExp(`options\\.${name} must be an own data property`)
+      /mortality options must expose only ordinary own data properties/
     );
     assert.equal(getterCalls, 0);
   }
+});
+
+test("death requires irreversible loss and an explicitly complete evidence inventory", () => {
+  const lineage = openThrough(2);
+  const incomplete = lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true
+  });
+  assert.equal(incomplete.status, "authority_unavailable_not_proven_dead");
+  assert.equal(incomplete.latent_evidence_complete, false);
+
+  const explicitIncomplete = lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: false
+  });
+  assert.equal(explicitIncomplete.status, "authority_unavailable_not_proven_dead");
+
+  const lateChild = lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [rawStep(vector.steps[2])],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  assert.equal(lateChild.status, "latent_successor_not_dead");
+  assert.equal(lateChild.latent_successors, 1);
+
+  const complete = lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  assert.equal(complete.status, "dead_under_v0_assumptions");
+  assert.equal(complete.latent_evidence_complete, true);
+});
+
+test("pre-call realm and dependency drift aborts before mortality classification", { concurrency: false }, () => {
+  const pending = rawStep(vector.steps[2]);
+
+  function assertDriftAborts(mutate, restore) {
+    const lineage = openThrough(2);
+    let result;
+    let error;
+    try {
+      mutate();
+      try {
+        result = lineage.evaluateMortality({
+          usableKeyIds: [],
+          stateAvailable: false,
+          pendingSuccessors: [pending],
+          authorityLossIrreversible: true,
+          latentEvidenceComplete: true
+        });
+      } catch (caught) {
+        error = caught;
+      }
+    } finally {
+      restore();
+    }
+    assert.notEqual(result?.status, "dead_under_v0_assumptions");
+    assert.match(
+      error?.message ?? "",
+      /mortality observation changed (realm intrinsics|trusted crypto state)/
+    );
+    assert.equal(lineage.evaluateMortality({
+      usableKeyIds: [],
+      stateAvailable: false,
+      pendingSuccessors: [pending],
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
+    }).status, "latent_successor_not_dead");
+  }
+
+  const dataViewGetUint32 = DataView.prototype.getUint32;
+  assertDriftAborts(
+    () => { DataView.prototype.getUint32 = () => 0; },
+    () => { DataView.prototype.getUint32 = dataViewGetUint32; }
+  );
+
+  const weakSetHas = WeakSet.prototype.has;
+  assertDriftAborts(
+    () => { WeakSet.prototype.has = () => true; },
+    () => { WeakSet.prototype.has = weakSetHas; }
+  );
+
+  const freeze = Object.freeze;
+  assertDriftAborts(
+    () => { Object.freeze = (value) => value; },
+    () => { Object.freeze = freeze; }
+  );
+
+  const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
+  const typedArraySet = typedArrayPrototype.set;
+  let poisonedSetCalls = 0;
+  assertDriftAborts(
+    () => {
+      typedArrayPrototype.set = () => {
+        poisonedSetCalls += 1;
+        throw new Error("poisoned typed-array set executed");
+      };
+    },
+    () => { typedArrayPrototype.set = typedArraySet; }
+  );
+  assert.equal(poisonedSetCalls, 0);
+
+  const sha256 = SHA256_IV[0];
+  assertDriftAborts(
+    () => { SHA256_IV[0] ^= 1; },
+    () => { SHA256_IV[0] = sha256; }
+  );
+
+  const sha512 = SHA512_IV[0];
+  assertDriftAborts(
+    () => { SHA512_IV[0] ^= 1; },
+    () => { SHA512_IV[0] = sha512; }
+  );
+
+  const arrayZero = Object.getOwnPropertyDescriptor(Array.prototype, "0");
+  const arrayLength = Object.getOwnPropertyDescriptor(Array.prototype, "length");
+  assertDriftAborts(
+    () => {
+      Object.defineProperty(Array.prototype, "0", {
+        configurable: true,
+        get() { return undefined; },
+        set() {}
+      });
+    },
+    () => {
+      if (arrayZero) Object.defineProperty(Array.prototype, "0", arrayZero);
+      else delete Array.prototype[0];
+      Object.defineProperty(Array.prototype, "length", arrayLength);
+    }
+  );
+});
+
+test("resource-limit results require intact runtime and dependency state", { concurrency: false }, () => {
+  const baseOptions = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+
+  function assertPoisonedLimitAborts({ options, resource, mutate, restore, message }) {
+    const lineage = openThrough(0);
+    const before = structuredClone(lineage.snapshot());
+    let result;
+    let error;
+    try {
+      mutate();
+      try {
+        result = lineage.evaluateMortality(options);
+      } catch (caught) {
+        error = caught;
+      }
+    } finally {
+      restore();
+    }
+    assert.equal(result, undefined);
+    assert.match(error?.message ?? "", message);
+    assert.deepEqual(lineage.snapshot(), before);
+    assert.deepEqual(lineage.evaluateMortality(options), expectedMortalityLimit(resource));
+    assert.deepEqual(lineage.snapshot(), before);
+    assert.equal(lineage.evaluateMortality({
+      usableKeyIds: lineage.head.next_custody_descriptor.custodians.map(
+        (entry) => entry.key_id
+      ),
+      stateAvailable: true,
+      pendingSuccessors: [],
+      authorityLossIrreversible: false,
+      latentEvidenceComplete: false
+    }).status, "operationally_alive");
+    assert.deepEqual(lineage.snapshot(), before);
+  }
+
+  const originalSort = Array.prototype.sort;
+  let sortCalls = 0;
+  const overCapUsable = [];
+  overCapUsable.length = MORTALITY_LIMITS.usable_key_ids + 1;
+  assertPoisonedLimitAborts({
+    options: { ...baseOptions, usableKeyIds: overCapUsable },
+    resource: "usable_key_ids",
+    mutate() {
+      Array.prototype.sort = () => {
+        sortCalls += 1;
+        throw new Error("poisoned sort executed");
+      };
+    },
+    restore() { Array.prototype.sort = originalSort; },
+    message: /mortality observation changed realm intrinsics/
+  });
+  assert.equal(sortCalls, 0);
+
+  const sha256 = SHA256_IV[0];
+  const overCapPending = [];
+  overCapPending.length = MORTALITY_LIMITS.pending_records + 1;
+  assertPoisonedLimitAborts({
+    options: { ...baseOptions, pendingSuccessors: overCapPending },
+    resource: "pending_records",
+    mutate() { SHA256_IV[0] ^= 1; },
+    restore() { SHA256_IV[0] = sha256; },
+    message: /mortality observation changed (realm intrinsics|trusted crypto state)/
+  });
+
+  const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
+  const originalSet = typedArrayPrototype.set;
+  let setCalls = 0;
+  const fullPayload = exactJsonObjectBytes(JSON_LIMITS.event_payload_bytes);
+  const overCapBytes = Array.from(
+    { length: MORTALITY_LIMITS.pending_bytes / JSON_LIMITS.event_payload_bytes + 1 },
+    () => ({ eventPayloadBytes: fullPayload })
+  );
+  assertPoisonedLimitAborts({
+    options: { ...baseOptions, pendingSuccessors: overCapBytes },
+    resource: "pending_bytes",
+    mutate() {
+      typedArrayPrototype.set = () => {
+        setCalls += 1;
+        throw new Error("poisoned typed-array set executed");
+      };
+    },
+    restore() { typedArrayPrototype.set = originalSet; },
+    message: /mortality observation changed realm intrinsics/
+  });
+  assert.equal(setCalls, 0);
+});
+
+test("pre-semantic limits recheck runtime poison caused during Proxy acquisition", { concurrency: false }, () => {
+  const lineage = openThrough(0);
+  const before = structuredClone(lineage.snapshot());
+  const overCapUsable = [];
+  overCapUsable.length = MORTALITY_LIMITS.usable_key_ids + 1;
+  const target = {
+    usableKeyIds: overCapUsable,
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+  const originalSort = Array.prototype.sort;
+  let prototypeReads = 0;
+  let poisonedSortCalls = 0;
+  let result;
+  let error;
+  const options = new Proxy(target, {
+    getPrototypeOf(value) {
+      prototypeReads += 1;
+      Array.prototype.sort = () => {
+        poisonedSortCalls += 1;
+        throw new Error("poisoned sort executed");
+      };
+      return Reflect.getPrototypeOf(value);
+    }
+  });
+
+  try {
+    try {
+      result = lineage.evaluateMortality(options);
+    } catch (caught) {
+      error = caught;
+    }
+  } finally {
+    Array.prototype.sort = originalSort;
+  }
+
+  assert.equal(prototypeReads, 1);
+  assert.equal(poisonedSortCalls, 0);
+  assert.equal(result, undefined);
+  assert.match(error?.message ?? "", /mortality observation changed realm intrinsics/);
+  assert.deepEqual(lineage.snapshot(), before);
+  assert.deepEqual(
+    lineage.evaluateMortality(target),
+    expectedMortalityLimit("usable_key_ids")
+  );
+  assert.deepEqual(lineage.snapshot(), before);
+});
+
+test("mortality option accessors cannot poison String.prototype.startsWith", { concurrency: false }, () => {
+  const lineage = openThrough(2);
+  const pending = rawStep(vector.steps[2]);
+  const originalStartsWith = String.prototype.startsWith;
+  let accessorCalls = 0;
+  let result;
+  try {
+    assert.throws(
+      () => {
+        result = lineage.evaluateMortality({
+          get usableKeyIds() {
+            accessorCalls += 1;
+            String.prototype.startsWith = () => false;
+            return [];
+          },
+          stateAvailable: false,
+          pendingSuccessors: [pending],
+          authorityLossIrreversible: true,
+          latentEvidenceComplete: true
+        });
+      },
+      /mortality options must expose only ordinary own data properties/
+    );
+  } finally {
+    String.prototype.startsWith = originalStartsWith;
+  }
+  assert.equal(accessorCalls, 0);
+  assert.notEqual(result?.status, "dead_under_v0_assumptions");
+  assert.equal(lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [pending],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }).status, "latent_successor_not_dead");
+});
+
+test("exact-shape acquisition resists self-restoring array iterators", { concurrency: false }, () => {
+  const lineage = openThrough(2);
+  const partial = clone(vector.steps[2]);
+  const orphanApproval = partial.envelope.approvals.pop();
+  const options = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [{
+      ...rawStep(partial),
+      orphanSignature: orphanApproval.signature
+    }],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true,
+    orphanSignature: orphanApproval.signature
+  };
+  const originalIterator = Array.prototype[Symbol.iterator];
+  let iteratorCalls = 0;
+  let result;
+  let error;
+  try {
+    Array.prototype[Symbol.iterator] = function hostileIterator() {
+      iteratorCalls += 1;
+      if (iteratorCalls === 2) Array.prototype[Symbol.iterator] = originalIterator;
+      return originalIterator.call([]);
+    };
+    try {
+      result = lineage.evaluateMortality(options);
+    } catch (caught) {
+      error = caught;
+    }
+  } finally {
+    Array.prototype[Symbol.iterator] = originalIterator;
+  }
+  assert.equal(iteratorCalls, 0);
+  assert.notEqual(result?.status, "dead_under_v0_assumptions");
+  assert.match(error?.message ?? "", /mortality observation changed realm intrinsics/);
+});
+
+test("byte acquisition resists self-restoring numeric intrinsics", { concurrency: false }, () => {
+  const lineage = openThrough(2);
+  const fullStep = clone(vector.steps[2]);
+  const strippedStep = clone(fullStep);
+  strippedStep.envelope.approvals = [];
+  const laterCarrier = rawStep(fullStep);
+  const strippedEnvelopeBytes = canonical(strippedStep.envelope);
+  const options = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [
+      { eventPayloadBytes: canonical({ acquisition_probe: true }) },
+      laterCarrier
+    ],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+  const originalIsSafeInteger = Number.isSafeInteger;
+  let intrinsicCalls = 0;
+  let result;
+  let error;
+  try {
+    Number.isSafeInteger = (value) => {
+      intrinsicCalls += 1;
+      laterCarrier.envelopeBytes = strippedEnvelopeBytes;
+      Number.isSafeInteger = originalIsSafeInteger;
+      return originalIsSafeInteger(value);
+    };
+    try {
+      result = lineage.evaluateMortality(options);
+    } catch (caught) {
+      error = caught;
+    }
+  } finally {
+    Number.isSafeInteger = originalIsSafeInteger;
+  }
+  assert.equal(intrinsicCalls, 0);
+  assert.notEqual(result?.status, "dead_under_v0_assumptions");
+  assert.match(error?.message ?? "", /mortality observation changed realm intrinsics/);
+  assert.equal(lineage.evaluateMortality(options).status, "latent_successor_not_dead");
+});
+
+test("usable key decoding resists self-restoring RegExp execution", { concurrency: false }, () => {
+  const lineage = openThrough(2);
+  const fullStep = clone(vector.steps[2]);
+  const strippedStep = clone(fullStep);
+  strippedStep.envelope.approvals = [];
+  const laterCarrier = rawStep(fullStep);
+  const strippedEnvelopeBytes = canonical(strippedStep.envelope);
+  const unknownPeerBytes = Uint8Array.from(
+    { length: 32 },
+    (_, index) => (index * 29 + 7) & 0xff
+  );
+  const unknownPeerId = `peer:${encodeBase64Url(unknownPeerBytes)}`;
+  const encodedPeerId = unknownPeerId.slice("peer:".length);
+  const options = {
+    usableKeyIds: [unknownPeerId],
+    stateAvailable: false,
+    pendingSuccessors: [laterCarrier],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+  const originalExec = RegExp.prototype.exec;
+  const sourceGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, "source").get;
+  const reflectApply = Reflect.apply;
+  let execCalls = 0;
+  let result;
+  let error;
+  try {
+    RegExp.prototype.exec = function hostileExec(value) {
+      if (
+        reflectApply(sourceGetter, this, []) === "^[A-Za-z0-9_-]*$" &&
+        value === encodedPeerId
+      ) {
+        execCalls += 1;
+        laterCarrier.envelopeBytes = strippedEnvelopeBytes;
+        RegExp.prototype.exec = originalExec;
+      }
+      return reflectApply(originalExec, this, [value]);
+    };
+    try {
+      result = lineage.evaluateMortality(options);
+    } catch (caught) {
+      error = caught;
+    }
+  } finally {
+    RegExp.prototype.exec = originalExec;
+  }
+  assert.equal(execCalls, 0);
+  assert.notEqual(result?.status, "dead_under_v0_assumptions");
+  assert.match(error?.message ?? "", /mortality observation changed realm intrinsics/);
+  assert.equal(lineage.evaluateMortality(options).status, "latent_successor_not_dead");
+});
+
+test("usable key decoding never consults typed-array length metadata", { concurrency: false }, () => {
+  const lengthDescriptor = Object.getOwnPropertyDescriptor(Uint8Array.prototype, "length");
+  const typedArrayLength = Object.getOwnPropertyDescriptor(
+    Object.getPrototypeOf(Uint8Array.prototype),
+    "length"
+  ).get;
+  const reflectApply = Reflect.apply;
+  const matchesBytes = (value, expected, expectedLength) => {
+    let actualLength;
+    try {
+      actualLength = reflectApply(typedArrayLength, value, []);
+    } catch {
+      return false;
+    }
+    if (actualLength !== expectedLength) return false;
+    for (let index = 0; index < expectedLength; index += 1) {
+      if (value[index] !== expected[index]) return false;
+    }
+    return true;
+  };
+  const restoreLength = () => {
+    if (lengthDescriptor) {
+      Object.defineProperty(Uint8Array.prototype, "length", lengthDescriptor);
+    } else {
+      delete Uint8Array.prototype.length;
+    }
+  };
+
+  const fullStep = clone(vector.steps[2]);
+  const strippedStep = clone(fullStep);
+  strippedStep.envelope.approvals = [];
+  const mutableCarrier = rawStep(fullStep);
+  const strippedEnvelopeBytes = canonical(strippedStep.envelope);
+  const mutationLineage = openThrough(2);
+  const unknownPeerBytes = Uint8Array.from(
+    { length: 32 },
+    (_, index) => (index * 17 + 3) & 0xff
+  );
+  const mutationOptions = {
+    usableKeyIds: [`peer:${encodeBase64Url(unknownPeerBytes)}`],
+    stateAvailable: false,
+    pendingSuccessors: [mutableCarrier],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+  let lengthCalls = 0;
+  let result;
+  let error;
+  try {
+    Object.defineProperty(Uint8Array.prototype, "length", {
+      configurable: true,
+      get() {
+        const actualLength = reflectApply(typedArrayLength, this, []);
+        if (!matchesBytes(this, unknownPeerBytes, 32)) return actualLength;
+        lengthCalls += 1;
+        mutableCarrier.envelopeBytes = strippedEnvelopeBytes;
+        if (lengthCalls === 13) delete Uint8Array.prototype.length;
+        return 32;
+      }
+    });
+    try {
+      result = mutationLineage.evaluateMortality(mutationOptions);
+    } catch (caught) {
+      error = caught;
+    }
+  } finally {
+    restoreLength();
+  }
+  assert.equal(lengthCalls, 0);
+  assert.notEqual(result?.status, "dead_under_v0_assumptions");
+  assert.match(error?.message ?? "", /mortality observation changed realm intrinsics/);
+  assert.equal(
+    mutationLineage.evaluateMortality(mutationOptions).status,
+    "latent_successor_not_dead"
+  );
+  assert.equal(openThrough(2).verifyCandidate(rawStep(fullStep)).status, "accept");
+
+  const partial = clone(fullStep);
+  const orphanApproval = partial.envelope.approvals.pop();
+  const disguisedSignature = `peer:${orphanApproval.signature.slice("ed25519:".length)}`;
+  const disguisedBytes = Buffer.from(
+    orphanApproval.signature.slice("ed25519:".length),
+    "base64url"
+  );
+  const disguisedByteLength = disguisedBytes.byteLength;
+  const spoofLineage = openThrough(2);
+  const spoofOptions = {
+    usableKeyIds: [disguisedSignature],
+    stateAvailable: false,
+    pendingSuccessors: [rawStep(partial)],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+  lengthCalls = 0;
+  result = undefined;
+  error = undefined;
+  try {
+    Object.defineProperty(Uint8Array.prototype, "length", {
+      configurable: true,
+      get() {
+        const actualLength = reflectApply(typedArrayLength, this, []);
+        if (!matchesBytes(this, disguisedBytes, disguisedByteLength)) return actualLength;
+        lengthCalls += 1;
+        if (lengthCalls === 24) {
+          delete Uint8Array.prototype.length;
+          return 32;
+        }
+        return actualLength;
+      }
+    });
+    try {
+      result = spoofLineage.evaluateMortality(spoofOptions);
+    } catch (caught) {
+      error = caught;
+    }
+  } finally {
+    restoreLength();
+  }
+  assert.equal(lengthCalls, 0);
+  assert.notEqual(result?.status, "dead_under_v0_assumptions");
+  assert.match(error?.message ?? "", /usableKeyIds entries must be canonical peer IDs/);
+});
+
+test("byte snapshots never consult self-restoring typed-array metadata", { concurrency: false }, () => {
+  const byteLengthDescriptor = Object.getOwnPropertyDescriptor(
+    Uint8Array.prototype,
+    "byteLength"
+  );
+  const lineage = openThrough(2);
+  const pending = rawStep(vector.steps[2]);
+  let accessorCalls = 0;
+  let error;
+  let result;
+  try {
+    Object.defineProperty(Uint8Array.prototype, "byteLength", {
+      configurable: true,
+      get() {
+        accessorCalls += 1;
+        if (accessorCalls === 2) delete Uint8Array.prototype.byteLength;
+        return 0;
+      }
+    });
+    try {
+      result = lineage.evaluateMortality({
+        usableKeyIds: [],
+        stateAvailable: false,
+        pendingSuccessors: [pending],
+        authorityLossIrreversible: true,
+        latentEvidenceComplete: true
+      });
+    } catch (caught) {
+      error = caught;
+    }
+  } finally {
+    if (byteLengthDescriptor) {
+      Object.defineProperty(Uint8Array.prototype, "byteLength", byteLengthDescriptor);
+    } else {
+      delete Uint8Array.prototype.byteLength;
+    }
+  }
+  assert.equal(accessorCalls, 0);
+  assert.notEqual(result?.status, "dead_under_v0_assumptions");
+  assert.match(error?.message ?? "", /mortality observation changed realm intrinsics/);
+  assert.equal(lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [pending],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }).status, "latent_successor_not_dead");
+});
+
+test("error brands, schema surfaces, and validation capabilities resist exported hooks", { concurrency: false }, () => {
+  assert.equal(Object.isFrozen(JsonInputError), true);
+  assert.equal(Object.isFrozen(JsonInputError.prototype), true);
+  assert.equal(Object.isFrozen(checkPulseSchema), true);
+  assert.throws(() => Object.defineProperty(JsonInputError, Symbol.hasInstance, {
+    configurable: true,
+    value() { DataView.prototype.getUint32 = () => 0; return true; }
+  }), TypeError);
+  assert.throws(() => Object.setPrototypeOf(JsonInputError, function EvilJsonInputError() {
+    DataView.prototype.getUint32 = () => 0;
+    return {};
+  }), TypeError);
+  assert.throws(() => Object.defineProperty(JsonInputError.prototype, "code", {
+    configurable: true,
+    set() { DataView.prototype.getUint32 = () => 0; }
+  }), TypeError);
+  assert.throws(() => Object.defineProperty(checkPulseSchema, "errors", {
+    configurable: true,
+    get() { DataView.prototype.getUint32 = () => 0; return []; }
+  }), TypeError);
+
+  const lineage = openThrough(2);
+  const forgedGenesis = structuredClone(lineage.genesis);
+  const forgedParent = structuredClone(lineage.head);
+  const partial = clone(vector.steps[2]);
+  partial.envelope.acceptances = [];
+  const completeStep = rawStep(vector.steps[2]);
+  const partialStep = rawStep(partial);
+  const birthBytes = canonical(vector.birth);
+  const originalFreeze = Object.freeze;
+  const originalWeakSetHas = WeakSet.prototype.has;
+  let accepted;
+  let latent;
+  try {
+    WeakSet.prototype.has = () => true;
+    assert.equal(isValidatedAcceptance(forgedGenesis), false);
+    assert.equal(isValidatedLatentSuccessor(forgedParent), false);
+    const forgedContext = validatePulse({
+      genesis: forgedGenesis,
+      parent: forgedParent,
+      ...completeStep
+    });
+    assert.notEqual(forgedContext.status, "accept");
+  } finally {
+    WeakSet.prototype.has = originalWeakSetHas;
+  }
+  try {
+    Object.freeze = (value) => value;
+    accepted = validateGenesis(birthBytes);
+    latent = validateLatentSuccessor({
+      genesis: lineage.genesis,
+      parent: lineage.head,
+      ...partialStep
+    });
+  } finally {
+    Object.freeze = originalFreeze;
+  }
+  assert.equal(accepted.status, "accept");
+  assert.equal(Object.isFrozen(accepted), true);
+  assert.equal(latent.status, "latent");
+  assert.equal(Object.isFrozen(latent), true);
+  assert.equal(isValidatedAcceptance(accepted), true);
+  assert.equal(isValidatedLatentSuccessor(latent), true);
+});
+
+test("mortality carriers fail closed on access, shape, snapshot, and parse uncertainty", () => {
+  const cases = [
+    {
+      carrier: { envelopeBytes: "not-bytes" },
+      message: /mortality envelope source could not be snapshotted/
+    },
+    {
+      carrier: { envelopeBytes: new Uint8Array(64 * 1024 + 1) },
+      message: /mortality envelope source could not be snapshotted/
+    },
+    {
+      carrier: { envelopeBytes: new Uint8Array([0x7b]) },
+      message: /mortality envelope bytes could not be parsed/
+    },
+    {
+      carrier: {
+        envelopeBytes: canonical(vector.steps[2].envelope),
+        eventPayloadBytes: new Uint8Array([0x7b])
+      },
+      message: /mortality event-payload bytes could not be parsed/
+    }
+  ];
+  for (const entry of cases) {
+    const lineage = openThrough(2);
+    assert.throws(() => lineage.evaluateMortality({
+      usableKeyIds: [],
+      stateAvailable: false,
+      pendingSuccessors: [entry.carrier, rawStep(vector.steps[2])],
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
+    }), entry.message);
+    assert.equal(lineage.evaluateMortality({
+      usableKeyIds: [],
+      stateAvailable: false,
+      pendingSuccessors: [rawStep(vector.steps[2])],
+      authorityLossIrreversible: true,
+      latentEvidenceComplete: true
+    }).status, "latent_successor_not_dead");
+  }
+
+  const partial = clone(vector.steps[2]);
+  const orphanApproval = partial.envelope.approvals.pop();
+  const ambiguousCarrier = {
+    ...rawStep(partial),
+    orphanSignature: orphanApproval.signature
+  };
+  const ignoredFieldBaseline = openThrough(2).evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [rawStep(partial)],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+  assert.deepEqual(openThrough(2).evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [ambiguousCarrier],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }), ignoredFieldBaseline);
+
+  const symbolCarrier = rawStep(partial);
+  Object.defineProperty(symbolCarrier, Symbol("hidden-body"), {
+    enumerable: true,
+    value: partial.envelope.body
+  });
+  assert.deepEqual(openThrough(2).evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [symbolCarrier],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }), ignoredFieldBaseline);
+
+  let unknownGetterCalls = 0;
+  const accessorCarrier = rawStep(partial);
+  Object.defineProperty(accessorCarrier, "orphanSignature", {
+    enumerable: true,
+    get() {
+      unknownGetterCalls += 1;
+      return orphanApproval.signature;
+    }
+  });
+  assert.deepEqual(openThrough(2).evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [accessorCarrier],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }), ignoredFieldBaseline);
+  assert.equal(unknownGetterCalls, 0);
+
+  assert.equal(openThrough(2).evaluateMortality({
+    usableKeyIds: Object.assign([], { extra: true }),
+    stateAvailable: false,
+    pendingSuccessors: [rawStep(vector.steps[2])],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }).status, "latent_successor_not_dead");
+  assert.throws(() => openThrough(2).evaluateMortality({
+    usableKeyIds: new Array(1),
+    stateAvailable: false,
+    pendingSuccessors: [rawStep(vector.steps[2])],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }), /usableKeyIds must be a dense ordinary data array/);
+
+  const pending = rawStep(vector.steps[2]);
+  const envelopeLength = pending.envelopeBytes.byteLength;
+  let getterCalls = 0;
+  assert.throws(() => openThrough(2).evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [pending, {
+      get envelopeBytes() {
+        getterCalls += 1;
+        structuredClone(pending.envelopeBytes.buffer, {
+          transfer: [pending.envelopeBytes.buffer]
+        });
+        return undefined;
+      }
+    }],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  }), /mortality carriers must expose only ordinary own data properties/);
+  assert.equal(getterCalls, 0);
+  assert.equal(pending.envelopeBytes.byteLength, envelopeLength);
+});
+
+test("mortality limits preserve invalid-input precedence at every exact boundary", () => {
+  assert.equal(Object.isFrozen(MORTALITY_LIMITS), true);
+  const lineage = openThrough(0);
+  const currentIds = lineage.head.next_custody_descriptor.custodians.map(
+    (entry) => entry.key_id
+  );
+  const assumptions = {
+    usableKeyIds: currentIds,
+    stateAvailable: true,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+
+  const overCapSparseIds = [];
+  overCapSparseIds.length = MORTALITY_LIMITS.usable_key_ids + 1;
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    usableKeyIds: overCapSparseIds,
+    stateAvailable: "invalid"
+  }), expectedMortalityLimit("usable_key_ids"));
+
+  const overCapSparsePending = [];
+  overCapSparsePending.length = MORTALITY_LIMITS.pending_records + 1;
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: overCapSparsePending
+  }), expectedMortalityLimit("pending_records"));
+  let accessorCalls = 0;
+  const overCapExtendedPending = Array.from(
+    { length: MORTALITY_LIMITS.pending_records + 1 },
+    () => null
+  );
+  Object.defineProperty(overCapExtendedPending, "untrusted", {
+    enumerable: true,
+    get() {
+      accessorCalls += 1;
+      return null;
+    }
+  });
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: overCapExtendedPending
+  }), expectedMortalityLimit("pending_records"));
+  assert.equal(accessorCalls, 0);
+  assert.throws(() => lineage.evaluateMortality({
+    ...assumptions,
+    stateAvailable: "invalid",
+    pendingSuccessors: overCapSparsePending
+  }), /stateAvailable must be boolean/);
+
+  const exactIds = Array.from(
+    { length: MORTALITY_LIMITS.usable_key_ids },
+    (_, index) => currentIds[index % currentIds.length]
+  );
+  assert.equal(exactIds.join("").length, MORTALITY_LIMITS.usable_key_id_chars);
+  assert.equal(lineage.evaluateMortality({
+    ...assumptions,
+    usableKeyIds: exactIds
+  }).status, "operationally_alive");
+  assert.throws(() => lineage.evaluateMortality({
+    ...assumptions,
+    usableKeyIds: ["x".repeat(MORTALITY_LIMITS.usable_key_id_chars)]
+  }), /usableKeyIds entries must be canonical peer IDs/);
+  assert.throws(() => lineage.evaluateMortality({
+    ...assumptions,
+    usableKeyIds: [currentIds[0], null]
+  }), /usableKeyIds entries must be canonical peer IDs/);
+
+  const tinyPayload = { eventPayloadBytes: canonicalBytes({}) };
+  const exactRecords = Array.from(
+    { length: MORTALITY_LIMITS.pending_records },
+    () => tinyPayload
+  );
+  assert.equal(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: exactRecords
+  }).status, "operationally_alive");
+  assert.throws(() => lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: [null]
+  }), /mortality carriers must expose only ordinary own data properties/);
+  assert.throws(() => lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: [{
+      eventPayloadBytes: new Uint8Array(JSON_LIMITS.event_payload_bytes + 1)
+    }]
+  }), /mortality event-payload source could not be snapshotted/);
+
+  const fullPayload = exactJsonObjectBytes(JSON_LIMITS.event_payload_bytes);
+  const exactByteRecords = Array.from(
+    { length: MORTALITY_LIMITS.pending_bytes / JSON_LIMITS.event_payload_bytes },
+    () => ({ eventPayloadBytes: fullPayload })
+  );
+  assert.equal(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: exactByteRecords
+  }).status, "operationally_alive");
+
+  assert.equal(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: [{
+      eventPayloadBytes: canonicalBytes(
+        targetBodyOccurrences(MORTALITY_LIMITS.candidate_bodies)
+      )
+    }]
+  }).status, "operationally_alive");
+
+  assert.equal(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: [{
+      eventPayloadBytes: canonicalBytes(
+        nestedCandidateAmplification(MORTALITY_LIMITS.candidate_canonical_bytes)
+      )
+    }]
+  }).status, "operationally_alive");
+
+  const exactReservation = clone(vector.steps[0].envelope);
+  exactReservation.approvals = Array.from(
+    { length: MORTALITY_LIMITS.signature_verifications },
+    () => ({})
+  );
+  exactReservation.acceptances = [];
+  assert.equal(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: [{
+      envelopeBytes: canonicalBytes(exactReservation),
+      eventPayloadBytes: canonicalBytes(vector.steps[0].payload)
+    }]
+  }).status, "operationally_alive");
+});
+
+test("signature verification budget performs genuine Ed25519 work at the exact boundary [full-signature-budget]", fullSignatureBudgetTestOptions, (t) => {
+  const lineage = openThrough(0);
+  const body = clone(vector.steps[0].envelope.body);
+  const currentIds = new Set(
+    lineage.head.next_custody_descriptor.custodians.map((entry) => entry.key_id)
+  );
+  const newIds = body.next_custodians.filter((entry) => !currentIds.has(entry.key_id));
+  const checksPerSignature = currentIds.size + newIds.length;
+  assert.equal(checksPerSignature, 4);
+  assert.equal(MORTALITY_LIMITS.signature_verifications % checksPerSignature, 0);
+  const exactCount = MORTALITY_LIMITS.signature_verifications / checksPerSignature;
+  assert.equal(exactCount, 288);
+
+  const foreignActor = makeActor();
+  const fixtureStarted = performance.now();
+  const signatures = validForeignSignatureStrings(exactCount + 1, foreignActor);
+  const fixtureMilliseconds = performance.now() - fixtureStarted;
+  assert.equal(new Set(signatures).size, signatures.length);
+
+  const assumptions = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: false
+  };
+  const before = structuredClone(lineage.snapshot());
+  const exactStarted = performance.now();
+  const exact = lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: remapRecords(signatures.slice(0, exactCount), body)
+  });
+  const exactMilliseconds = performance.now() - exactStarted;
+  assert.equal(exact.status, "authority_unavailable_not_proven_dead");
+  assert.deepEqual(lineage.snapshot(), before);
+
+  const overflowStarted = performance.now();
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    pendingSuccessors: remapRecords(signatures, body)
+  }, "signature_verifications");
+  const overflowMilliseconds = performance.now() - overflowStarted;
+
+  // The same 1,152 remapping units leave no room for the reconstructed
+  // envelope's one authenticated approval reservation.
+  const reconstructed = completionScenario();
+  const newActor = makeActor();
+  const payload = { probe: "reconstruction-reservation" };
+  const reconstructedBody = reconstructed.makeBody(2, {
+    kind: "membership-change",
+    payload
+  });
+  reconstructedBody.next_custodians = [
+    ...reconstructed.actors.slice(0, 2).map(publicActor),
+    publicActor(newActor)
+  ].sort((left, right) => left.key_id < right.key_id ? -1 : 1);
+  const validApproval = signature(
+    reconstructed.actors[0],
+    pulseApprovalMessage(reconstructedBody)
+  );
+  assertLimitIsAtomicAndRetryable(reconstructed.lineage, {
+    ...assumptions,
+    pendingSuccessors: remapRecords([
+      validApproval,
+      ...signatures.slice(0, exactCount - 1)
+    ], reconstructedBody)
+  }, "signature_verifications");
+
+  t.diagnostic(`foreign fixture signing: ${fixtureMilliseconds.toFixed(1)} ms`);
+  t.diagnostic(`exact 1,152-unit mortality evaluation: ${exactMilliseconds.toFixed(1)} ms`);
+  t.diagnostic(`1,153rd-unit mortality evaluation: ${overflowMilliseconds.toFixed(1)} ms`);
+});
+
+test("maximum 16-to-16 custody evidence fits the calibrated signature budget [full-signature-budget]", fullSignatureBudgetTestOptions, (t) => {
+  const current = Array.from({ length: 16 }, makeActor).sort((left, right) =>
+    left.key_id < right.key_id ? -1 : 1
+  );
+  const next = Array.from({ length: 16 }, makeActor).sort((left, right) =>
+    left.key_id < right.key_id ? -1 : 1
+  );
+  const quorum = { type: "threshold", threshold: 9 };
+  const genesisBody = {
+    protocol_version: "mortalos/0",
+    hash_algorithm: "sha-256",
+    signature_algorithm: "ed25519",
+    genome_hash: tagged("sha256:", 32, 1),
+    initial_state_root: tagged("sha256:", 32, 2),
+    initial_custodians: current.map(publicActor),
+    initial_quorum: quorum,
+    nonce: tagged("nonce:", 16, 3)
+  };
+  const birth = {
+    kind: "mortalos.genesis",
+    body: genesisBody,
+    approvals: current.map((actor) => ({
+      key_id: actor.key_id,
+      signature: signature(actor, genesisApprovalMessage(genesisBody))
+    }))
+  };
+  const opened = createLineage(canonicalBytes(birth));
+  assert.equal(opened.status, "accept");
+
+  const payload = { mode: "max-16-to-16" };
+  const head = opened.lineage.head;
+  const body = {
+    protocol_version: "mortalos/0",
+    organism_id: head.organism_id,
+    sequence: "1",
+    parent_hash: head.object_hash,
+    genome_hash: head.genome_hash,
+    current_custody_hash: custodyCommitment(head.next_custody_descriptor),
+    state_root: head.next_state_root,
+    event: {
+      kind: "membership-change",
+      payload_hash: eventPayloadHash(payload)
+    },
+    next_custodians: next.map(publicActor),
+    next_quorum: quorum
+  };
+  const envelope = {
+    kind: "mortalos.pulse",
+    body,
+    approvals: current.map((actor) => ({
+      key_id: actor.key_id,
+      signature: signature(actor, pulseApprovalMessage(body))
+    })),
+    acceptances: next.map((actor) => ({
+      key_id: actor.key_id,
+      signature: signature(actor, custodyAcceptanceMessage(body))
+    }))
+  };
+  const raw = {
+    envelopeBytes: canonicalBytes(envelope),
+    eventPayloadBytes: canonicalBytes(payload)
+  };
+  const roleEvidence = [...envelope.approvals, ...envelope.acceptances];
+  assert.equal(roleEvidence.length, 32);
+  assert.equal(new Set(roleEvidence.map((entry) => entry.signature)).size, 32);
+  const direct = opened.lineage.verifyCandidate(raw);
+  assert.equal(direct.status, "accept");
+
+  const roleSignatures = 32;
+  const directReservation = roleSignatures;
+  const currentRemaps = roleSignatures * current.length;
+  const newAcceptanceRemaps = roleSignatures * next.length;
+  const reconstructionReservation = roleSignatures;
+  const legitimateMaximum = directReservation + currentRemaps +
+    newAcceptanceRemaps + reconstructionReservation;
+  assert.equal(legitimateMaximum, 1088);
+  assert.equal(MORTALITY_LIMITS.signature_verifications - legitimateMaximum, 64);
+  assert.equal(
+    directReservation * 3 + currentRemaps + newAcceptanceRemaps +
+      reconstructionReservation,
+    MORTALITY_LIMITS.signature_verifications
+  );
+
+  const assumptions = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+  const before = structuredClone(opened.lineage.snapshot());
+  const exactStarted = performance.now();
+  const exact = opened.lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: [raw, raw, raw]
+  });
+  const exactMilliseconds = performance.now() - exactStarted;
+  assert.equal(exact.status, "latent_successor_not_dead");
+  assert.equal(exact.latent_successors, 1);
+  assert.deepEqual(opened.lineage.snapshot(), before);
+
+  const overflowStarted = performance.now();
+  assertLimitIsAtomicAndRetryable(opened.lineage, {
+    ...assumptions,
+    pendingSuccessors: [raw, raw, raw, raw]
+  }, "signature_verifications");
+  const overflowMilliseconds = performance.now() - overflowStarted;
+  assert.deepEqual(opened.lineage.snapshot(), before);
+  assert.equal(opened.lineage.evaluateMortality({
+    usableKeyIds: current.map((actor) => actor.key_id),
+    stateAvailable: true,
+    pendingSuccessors: [],
+    authorityLossIrreversible: false,
+    latentEvidenceComplete: false
+  }).status, "operationally_alive");
+  assert.deepEqual(opened.lineage.snapshot(), before);
+
+  t.diagnostic(`maximum-role exact-boundary evaluation: ${exactMilliseconds.toFixed(1)} ms`);
+  t.diagnostic(`duplicate-carrier overflow evaluation: ${overflowMilliseconds.toFixed(1)} ms`);
+});
+
+test("every mortality overflow is frozen, graph-atomic, and retryable", () => {
+  const lineage = openThrough(0);
+  const currentIds = lineage.head.next_custody_descriptor.custodians.map(
+    (entry) => entry.key_id
+  );
+  const assumptions = {
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  };
+
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    usableKeyIds: Array.from(
+      { length: MORTALITY_LIMITS.usable_key_ids + 1 },
+      (_, index) => currentIds[index % currentIds.length]
+    )
+  }, "usable_key_ids");
+
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    usableKeyIds: [`peer:${"a".repeat(MORTALITY_LIMITS.usable_key_id_chars)}`]
+  }, "usable_key_id_chars");
+
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    pendingSuccessors: Array.from(
+      { length: MORTALITY_LIMITS.pending_records + 1 },
+      () => null
+    )
+  }, "pending_records");
+
+  const fullPayload = exactJsonObjectBytes(JSON_LIMITS.event_payload_bytes);
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    pendingSuccessors: Array.from(
+      { length: MORTALITY_LIMITS.pending_bytes / JSON_LIMITS.event_payload_bytes + 1 },
+      () => ({ eventPayloadBytes: fullPayload })
+    )
+  }, "pending_bytes");
+
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    pendingSuccessors: [{
+      eventPayloadBytes: canonicalBytes(
+        targetBodyOccurrences(MORTALITY_LIMITS.candidate_bodies + 1)
+      )
+    }]
+  }, "candidate_bodies");
+
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    pendingSuccessors: [{
+      eventPayloadBytes: canonicalBytes(
+        nestedCandidateAmplification(MORTALITY_LIMITS.candidate_canonical_bytes + 1)
+      )
+    }]
+  }, "candidate_canonical_bytes");
+
+  const oversizedReservation = clone(vector.steps[0].envelope);
+  oversizedReservation.approvals = Array.from(
+    { length: MORTALITY_LIMITS.signature_verifications + 1 },
+    () => ({})
+  );
+  oversizedReservation.acceptances = [];
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    pendingSuccessors: [{
+      envelopeBytes: canonicalBytes(oversizedReservation),
+      eventPayloadBytes: canonicalBytes(vector.steps[0].payload)
+    }]
+  }, "signature_verifications");
+
+  assertLimitIsAtomicAndRetryable(lineage, {
+    ...assumptions,
+    pendingSuccessors: [
+      rawStep(vector.steps[0]),
+      {
+        eventPayloadBytes: canonicalBytes(
+          targetBodyOccurrences(MORTALITY_LIMITS.candidate_bodies)
+        )
+      }
+    ]
+  }, "candidate_bodies");
 });

@@ -72,14 +72,16 @@ test("portable structural validators agree with the normative JSON Schemas", asy
   ];
 
   for (const candidate of genesisCases) {
-    assert.equal(checkGenesisSchema(candidate), Boolean(ajvGenesis(candidate)));
+    assert.equal(checkGenesisSchema(candidate).valid, Boolean(ajvGenesis(candidate)));
   }
   for (const candidate of pulseCases) {
-    assert.equal(checkPulseSchema(candidate), Boolean(ajvPulse(candidate)));
+    assert.equal(checkPulseSchema(candidate).valid, Boolean(ajvPulse(candidate)));
   }
-  assert.equal(checkGenesisSchema(vector.birth), true);
-  assert.equal(checkGenesisSchema.errors.length, 0);
+  const validGenesis = checkGenesisSchema(vector.birth);
+  assert.equal(validGenesis.valid, true);
+  assert.equal(validGenesis.errors.length, 0);
   const unknown = genesisCases[4];
-  assert.equal(checkGenesisSchema(unknown), false);
-  assert.equal(checkGenesisSchema.errors[0].keyword, "additionalProperties");
+  const invalidGenesis = checkGenesisSchema(unknown);
+  assert.equal(invalidGenesis.valid, false);
+  assert.equal(invalidGenesis.errors[0].keyword, "additionalProperties");
 });

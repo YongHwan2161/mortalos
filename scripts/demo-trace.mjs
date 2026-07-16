@@ -127,7 +127,8 @@ const dead = lineage.evaluateMortality({
   usableKeyIds: [vector.actors.F.key_id],
   stateAvailable: true,
   pendingSuccessors: [],
-  authorityLossIrreversible: true
+  authorityLossIrreversible: true,
+  latentEvidenceComplete: true
 });
 invariant(dead.status === "dead_under_v0_assumptions", "irreversible below-quorum authority loss was not death");
 events.push({
@@ -137,7 +138,9 @@ events.push({
   organism_id: genesis.organism_id,
   usable_keys: dead.usable_keys,
   quorum: dead.threshold,
-  pending_authorized_successors: dead.latent_successors
+  pending_authorized_successors: dead.latent_successors,
+  authority_loss_irreversible: true,
+  latent_evidence_complete: dead.latent_evidence_complete
 });
 
 const resurrection = lineage.append({
@@ -170,7 +173,7 @@ events.push({
 });
 
 const trace = {
-  format: "mortalos-lifecycle-trace/3",
+  format: "mortalos-lifecycle-trace/4",
   protocol: "mortalos/0",
   scenario: "birth-succession-death-resurrection-rejection-clone",
   events,
@@ -181,7 +184,7 @@ const trace = {
     latent_successor_survived_key_loss: true,
     mortality_bound_to_lineage_recognized_head: true,
     state_loss_reported_as_stalled_not_dead: true,
-    authority_death_reported_only_after_pending_set_drained: true,
+    authority_death_requires_irreversible_loss_and_complete_evidence: true,
     public_snapshot_cannot_resurrect_lineage: true,
     clone_has_distinct_identity: true
   }

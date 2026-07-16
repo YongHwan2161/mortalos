@@ -1,5 +1,5 @@
 {
-  "format": "mortalos-portable-corpus/3",
+  "format": "mortalos-portable-corpus/4",
   "standards": {
     "rfc8032_vector_1": true,
     "rfc8032_mutation_rejected": true,
@@ -16,7 +16,10 @@
     "unsigned_code": "E_APPROVAL_INSUFFICIENT_QUORUM",
     "missing_heartbeat_payload_status": "latent_successor_not_dead",
     "alive_status": "operationally_alive",
-    "dead_status": "dead_under_v0_assumptions"
+    "incomplete_status": "authority_unavailable_not_proven_dead",
+    "incomplete_latent_evidence_complete": false,
+    "dead_status": "dead_under_v0_assumptions",
+    "dead_latent_evidence_complete": true
   },
   "lifecycle": {
     "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
@@ -48,7 +51,63 @@
     "low_order_signature_r_rejected": true,
     "hostile_byte_metadata_ignored": true,
     "shared_bytes_rejected": true,
-    "falsey_root_code": "E_SCHEMA_WRONG_KIND"
+    "falsey_root_code": "E_SCHEMA_WRONG_KIND",
+    "mortality_candidate_bodies_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "candidate_bodies",
+      "observed": 129,
+      "maximum": 128
+    },
+    "mortality_candidate_canonical_bytes_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "candidate_canonical_bytes",
+      "observed": 4194305,
+      "maximum": 4194304
+    },
+    "mortality_pending_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "pending_records",
+      "observed": 129,
+      "maximum": 128
+    },
+    "mortality_pending_bytes_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "pending_bytes",
+      "observed": 4194305,
+      "maximum": 4194304
+    },
+    "mortality_signature_verifications_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "signature_verifications",
+      "observed": 1153,
+      "maximum": 1152
+    },
+    "mortality_usable_key_chars_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "usable_key_id_chars",
+      "observed": 769,
+      "maximum": 768
+    },
+    "mortality_usable_key_ids_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "usable_key_ids",
+      "observed": 17,
+      "maximum": 16
+    }
   },
   "trust_cases": {
     "cloned_genesis": "E_LINEAGE_UNKNOWN",
@@ -61,9 +120,11 @@
     "fragment_union": "latent_successor_not_dead",
     "fragment_union_successors": 1,
     "usable_completion": "latent_successor_not_dead",
-    "incomplete": "dead_under_v0_assumptions",
+    "approval_incomplete_with_complete_inventory": "dead_under_v0_assumptions",
     "missing_membership_payload": "evidence_payload_unavailable",
-    "missing_membership_payload_classified": false
+    "missing_membership_payload_classified": false,
+    "empty_incomplete_inventory": "authority_unavailable_not_proven_dead",
+    "empty_complete_inventory": "dead_under_v0_assumptions"
   },
   "fork_cases": {
     "first": "accept",

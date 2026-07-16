@@ -26,7 +26,7 @@ Reject {
 | `E_PARSE_INVALID_UTF8` | Input is not an accepted stable `Uint8Array` snapshot source (including SharedArrayBuffer-backed views), or its bytes are not valid UTF-8. |
 | `E_PARSE_INVALID_JSON` | Input is not valid JSON. |
 | `E_PARSE_DUPLICATE_PROPERTY` | A raw JSON object contains a duplicate property name. |
-| `E_PARSE_NON_IJSON` | Input violates the I-JSON/JCS value model, including an out-of-range number or lone surrogate; for programmatic input this also includes a recognized intrinsic-slot/custom-prototype container, cycle, sparse/extended array, symbol/non-enumerable/accessor property, unsupported value, or failed structural snapshot. |
+| `E_PARSE_NON_IJSON` | Input violates the I-JSON/JCS value model, including an out-of-range number or lone surrogate; for programmatic input this also includes a custom record prototype, a recognizable intrinsic-slot object presented as an unbranded null-prototype record, cycle, sparse/extended array, symbol/non-enumerable/accessor property, unsupported value, or failed structural snapshot. Array prototypes are not inspected by programmatic canonicalization. |
 | `E_PARSE_LIMIT_EXCEEDED` | Raw input exceeds the normative byte or JSON nesting-depth limit. |
 | `E_SCHEMA_WRONG_KIND` | Top-level `kind` is absent or unsupported. |
 | `E_SCHEMA_INVALID` | Input fails its Draft 2020-12 structural schema. |
@@ -122,7 +122,24 @@ Signer equivocation in two accepted sibling appends is evidence attached to `E_F
 |---|---|
 | `E_VALIDATOR_INTERNAL` | An unknown internal rejection identifier, hostile public input that cannot be safely inspected, or invariant-breaking exception is mapped to the stable fail-closed result. Public validation operations do not throw. |
 
-## 10. Precedence examples
+## 10. Mortality observer resource result
+
+Mortality resource exhaustion is not a Pulse rejection and does not add an `E_*`
+code. The observer returns frozen `indeterminate / limit_exceeded` with
+`mortality_classified: false`, a stable resource identifier, normalized
+`observed = maximum + 1`, and the fixed maximum. The seven resources are
+`candidate_bodies` (128), `candidate_canonical_bytes` (4,194,304),
+`usable_key_ids` (16), `usable_key_id_chars` (768), `pending_records` (128),
+`pending_bytes` (4,194,304), and `signature_verifications` (1,152). The signature
+ceiling admits the maximum 16-current/16-new transition at 1,088 units with 64 units
+of headroom; three identical complete direct carriers consume exactly 1,152 because
+each direct validator call is reserved independently while exact-body remapping is
+de-duplicated. Partial work
+cannot produce a life, death, fork, opacity, equivocation, or latent-successor result,
+and cannot mutate the accepted graph. Exact precedence and the normative result shape
+are specified in [`PROTOCOL.md`](PROTOCOL.md#8-validation-context-and-dependency-rules).
+
+## 11. Precedence examples
 
 - Malformed JSON with forged signatures returns `E_PARSE_INVALID_JSON` before any cryptographic result.
 - An invalid-UTF-8 envelope with an oversized payload returns envelope `E_PARSE_INVALID_UTF8`; payload acquisition cannot overtake envelope parsing.

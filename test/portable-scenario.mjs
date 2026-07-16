@@ -13,7 +13,8 @@ export function runPortableScenario(singleton) {
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [{ envelopeBytes: canonicalBytes(singleton.heartbeat) }],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   const opened = createLineage(canonicalBytes(singleton.birth));
   if (opened.status !== "accept") throw new Error(`singleton Genesis rejected: ${opened.code}`);
@@ -33,10 +34,16 @@ export function runPortableScenario(singleton) {
     usableKeyIds: [singleton.actor.key_id],
     stateAvailable: true
   });
-  const dead = opened.lineage.evaluateMortality({
+  const incomplete = opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: false,
     authorityLossIrreversible: true
+  });
+  const dead = opened.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
 
   return {
@@ -48,6 +55,9 @@ export function runPortableScenario(singleton) {
     unsigned_code: unsignedResult.code,
     missing_heartbeat_payload_status: missingHeartbeatPayload.status,
     alive_status: alive.status,
-    dead_status: dead.status
+    incomplete_status: incomplete.status,
+    incomplete_latent_evidence_complete: incomplete.latent_evidence_complete,
+    dead_status: dead.status,
+    dead_latent_evidence_complete: dead.latent_evidence_complete
   };
 }

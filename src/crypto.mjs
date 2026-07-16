@@ -2,12 +2,39 @@ import { ed25519 } from "@noble/curves/ed25519.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 import {
   asciiBytes,
+  byteLengthOfBytes,
   concatBytes,
   decodeBase64Url,
   encodeBase64Url,
-  equalBytes
+  equalBytes,
+  hexToBytes
 } from "./bytes.mjs";
 import { canonicalBytes, snapshotBytes } from "./codec.mjs";
+import {
+  callFunction,
+  stringSlice,
+  stringStartsWith,
+  typedArraySubarray
+} from "./primordials.mjs";
+
+const Ed25519Point = ed25519.Point;
+const ed25519VerifyIntrinsic = ed25519.verify;
+const pointAssertValidityIntrinsic = Ed25519Point.prototype.assertValidity;
+const pointFromBytesIntrinsic = Ed25519Point.fromBytes;
+const pointIsSmallOrderIntrinsic = Ed25519Point.prototype.isSmallOrder;
+const pointIsTorsionFreeIntrinsic = Ed25519Point.prototype.isTorsionFree;
+const pointToBytesIntrinsic = Ed25519Point.prototype.toBytes;
+const EMPTY_BYTES = new Uint8Array(0);
+const SHA256_EMPTY = hexToBytes(
+  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+);
+const ED25519_KAT_PUBLIC_KEY = hexToBytes(
+  "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+);
+const ED25519_KAT_SIGNATURE = hexToBytes(
+  "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155" +
+    "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b"
+);
 
 export const DOMAINS = Object.freeze({
   GENESIS_ID: "MORTALOS/V0/GENESIS-ID\0",
@@ -24,8 +51,8 @@ const DOMAIN_BYTES = Object.freeze(
   Object.fromEntries(Object.entries(DOMAINS).map(([name, value]) => [name, asciiBytes(value)]))
 );
 
-function hash(...parts) {
-  return sha256(concatBytes(...parts));
+function hash(domain, message) {
+  return sha256(concatBytes(domain, message));
 }
 
 function tagged(prefix, raw) {
@@ -33,10 +60,10 @@ function tagged(prefix, raw) {
 }
 
 export function decodeTagged(value, prefix, length) {
-  if (typeof value !== "string" || !value.startsWith(prefix)) return null;
-  const encoded = value.slice(prefix.length);
+  if (typeof value !== "string" || !stringStartsWith(value, prefix)) return null;
+  const encoded = stringSlice(value, prefix.length);
   const raw = decodeBase64Url(encoded);
-  return raw?.length === length ? raw : null;
+  return raw !== null && byteLengthOfBytes(raw) === length ? raw : null;
 }
 
 export function derivePeerId(publicKey) {
@@ -87,8 +114,8 @@ export function eventPayloadHash(payload) {
 
 function copyBytes(value, expectedLength) {
   try {
-    const copy = snapshotBytes(value, expectedLength ?? Number.MAX_SAFE_INTEGER);
-    if (expectedLength !== undefined && copy.length !== expectedLength) return null;
+    const copy = snapshotBytes(value, expectedLength ?? 9_007_199_254_740_991);
+    if (expectedLength !== undefined && byteLengthOfBytes(copy) !== expectedLength) return null;
     return copy;
   } catch {
     return null;
@@ -99,10 +126,15 @@ function strictPointBytes(value) {
   const bytes = copyBytes(value, 32);
   if (!bytes) return null;
   try {
-    const point = ed25519.Point.fromBytes(bytes, false);
-    point.assertValidity();
-    if (point.isSmallOrder() || !point.isTorsionFree()) return null;
-    if (!equalBytes(point.toBytes(), bytes)) return null;
+    const point = callFunction(pointFromBytesIntrinsic, Ed25519Point, [bytes, false]);
+    callFunction(pointAssertValidityIntrinsic, point, []);
+    if (
+      callFunction(pointIsSmallOrderIntrinsic, point, []) ||
+      !callFunction(pointIsTorsionFreeIntrinsic, point, [])
+    ) {
+      return null;
+    }
+    if (!equalBytes(callFunction(pointToBytesIntrinsic, point, []), bytes)) return null;
     return bytes;
   } catch {
     return null;
@@ -127,10 +159,26 @@ export function verifyEd25519Raw(publicKeyRaw, message, signatureRaw) {
   const messageBytes = copyBytes(message);
   const signatureBytes = copyBytes(signatureRaw, 64);
   if (!publicBytes || !messageBytes || !signatureBytes) return false;
-  const signatureR = strictPointBytes(signatureBytes.subarray(0, 32));
+  const signatureR = strictPointBytes(typedArraySubarray(signatureBytes, 0, 32));
   if (!signatureR) return false;
   try {
-    return ed25519.verify(signatureBytes, messageBytes, publicBytes, { zip215: false });
+    return callFunction(ed25519VerifyIntrinsic, ed25519, [
+      signatureBytes,
+      messageBytes,
+      publicBytes,
+      { zip215: false }
+    ]);
+  } catch {
+    return false;
+  }
+}
+
+export function cryptoRuntimeIntact() {
+  try {
+    return (
+      equalBytes(sha256(EMPTY_BYTES), SHA256_EMPTY) &&
+      verifyEd25519Raw(ED25519_KAT_PUBLIC_KEY, EMPTY_BYTES, ED25519_KAT_SIGNATURE)
+    );
   } catch {
     return false;
   }

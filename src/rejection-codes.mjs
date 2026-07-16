@@ -1,4 +1,6 @@
-export const REJECTION_CODES = Object.freeze([
+import { createSet, freeze, setAdd, setHas } from "./primordials.mjs";
+
+export const REJECTION_CODES = freeze([
   "E_PARSE_INVALID_UTF8",
   "E_PARSE_INVALID_JSON",
   "E_PARSE_DUPLICATE_PROPERTY",
@@ -58,11 +60,14 @@ export const REJECTION_CODES = Object.freeze([
   "E_VALIDATOR_INTERNAL"
 ]);
 
-const rejectionCodeSet = new Set(REJECTION_CODES);
+const rejectionCodeSet = createSet();
+for (let index = 0; index < REJECTION_CODES.length; index += 1) {
+  setAdd(rejectionCodeSet, REJECTION_CODES[index]);
+}
 
 export function rejection(code, fieldPath = "", deterministicDetail = "") {
-  const safeCode = rejectionCodeSet.has(code) ? code : "E_VALIDATOR_INTERNAL";
-  return Object.freeze({
+  const safeCode = setHas(rejectionCodeSet, code) ? code : "E_VALIDATOR_INTERNAL";
+  return freeze({
     status: "reject",
     code: safeCode,
     field_path: fieldPath,

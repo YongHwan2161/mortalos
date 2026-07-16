@@ -1,19 +1,46 @@
 import {
   canonicalBytes,
   canonicalize,
-  JsonInputError,
+  isJsonInputError,
   JSON_LIMITS,
   parseJsonBytes,
   snapshotBytes
 } from "./codec.mjs";
-import { equalBytes } from "./bytes.mjs";
+import { asBytes, byteLengthOfBytes, equalBytes, utf8Bytes } from "./bytes.mjs";
 import {
+  cryptoRuntimeIntact,
   custodyAcceptanceMessage,
+  decodeTagged,
   derivePulseHash,
   eventPayloadHash,
   pulseApprovalMessage,
   verifyEd25519
 } from "./crypto.mjs";
+import {
+  bigInt,
+  bigIntToString,
+  arrayLength,
+  arraySort,
+  copyBoundedOwnDataArray,
+  createArray,
+  createWeakSet,
+  defineArrayIndex,
+  defineOwnDataProperty,
+  freeze,
+  isArray,
+  numberIsSafeInteger,
+  objectKeys,
+  objectValues,
+  ownDataArrayLength,
+  ownDataRecordEntry,
+  realmIntrinsicsIntact,
+  snapshotNamedOwnDataValues,
+  snapshotOwnDataRecord,
+  setValues,
+  typeError,
+  weakSetAdd,
+  weakSetHas
+} from "./primordials.mjs";
 import { rejection as reject } from "./rejection-codes.mjs";
 import {
   isValidatedAcceptance,
@@ -25,132 +52,266 @@ import {
   validatePulse
 } from "./validator.mjs";
 
-const arrayIsArray = Array.isArray;
-const objectGetOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
-const reflectOwnKeys = Reflect.ownKeys;
+export const MORTALITY_LIMITS = freeze({
+  candidate_bodies: 128,
+  candidate_canonical_bytes: 4 * 1024 * 1024,
+  pending_records: 128,
+  pending_bytes: 4 * 1024 * 1024,
+  signature_verifications: 1152,
+  usable_key_id_chars: 16 * 48,
+  usable_key_ids: 16
+});
 
-function snapshotDataArray(value, label) {
-  let descriptors;
+const mortalityLimitErrorBrands = createWeakSet();
+
+function throwMortalityLimit(resource, maximum) {
+  const error = typeError(`mortality ${resource} limit exceeded`);
+  defineOwnDataProperty(error, "name", "MortalityLimitExceeded");
+  defineOwnDataProperty(error, "resource", resource);
+  defineOwnDataProperty(error, "observed", maximum + 1);
+  defineOwnDataProperty(error, "maximum", maximum);
+  weakSetAdd(mortalityLimitErrorBrands, error);
+  throw freeze(error);
+}
+
+function isMortalityLimitError(value) {
+  return weakSetHas(mortalityLimitErrorBrands, value);
+}
+
+function assertMortalityRuntimeIntact() {
+  if (!realmIntrinsicsIntact()) {
+    throw typeError("mortality observation changed realm intrinsics");
+  }
+  if (!cryptoRuntimeIntact()) {
+    throw typeError("mortality observation changed trusted crypto state");
+  }
+}
+
+function snapshotDataArray(value, label, limit = null) {
+  let length;
   try {
-    if (!arrayIsArray(value)) throw new TypeError();
-    descriptors = objectGetOwnPropertyDescriptors(value);
+    length = ownDataArrayLength(value, label);
   } catch {
-    throw new TypeError(`${label} must be an array`);
+    throw typeError(`${label} must be a dense ordinary data array`);
   }
-  const lengthDescriptor = descriptors.length;
-  const length = lengthDescriptor?.value;
-  if (
-    !lengthDescriptor ||
-    !("value" in lengthDescriptor) ||
-    !Number.isSafeInteger(length) ||
-    length < 0
-  ) {
-    throw new TypeError(`${label} must have a stable length`);
+  if (limit !== null && length > limit.maximum) {
+    throwMortalityLimit(limit.resource, limit.maximum);
   }
-
-  const snapshot = [];
-  let entryCount = 0;
-  for (const key of reflectOwnKeys(descriptors)) {
-    if (typeof key !== "string" || key === "length" || !/^(0|[1-9][0-9]*)$/.test(key)) {
-      continue;
-    }
-    const index = Number(key);
-    if (!Number.isSafeInteger(index) || index >= length) continue;
-    const descriptor = descriptors[key];
-    if (!("value" in descriptor)) {
-      throw new TypeError(`${label} must contain only own data entries`);
-    }
-    snapshot[index] = descriptor.value;
-    entryCount += 1;
+  try {
+    return copyBoundedOwnDataArray(value, length, label);
+  } catch {
+    throw typeError(`${label} must be a dense ordinary data array`);
   }
-  if (entryCount !== length) {
-    throw new TypeError(`${label} must be a dense data-only array`);
-  }
-  return snapshot;
 }
 
 function snapshotObserverOptions(value) {
-  if (value === null || (typeof value !== "object" && typeof value !== "function")) {
-    throw new TypeError("mortality options must be an object");
-  }
-  let descriptors;
+  let fields;
   try {
-    descriptors = objectGetOwnPropertyDescriptors(value);
+    fields = snapshotNamedOwnDataValues(value, [
+      "authorityLossIrreversible",
+      "latentEvidenceComplete",
+      "pendingSuccessors",
+      "stateAvailable",
+      "usableKeyIds"
+    ], "mortality options");
   } catch {
-    throw new TypeError("mortality options must be an inspectable record");
+    throw typeError("mortality options must expose only ordinary own data properties");
   }
-  const dataField = (name) => {
-    const descriptor = descriptors[name];
-    if (descriptor === undefined) return undefined;
-    if (!("value" in descriptor)) {
-      throw new TypeError(`mortality options.${name} must be an own data property`);
-    }
-    return descriptor.value;
-  };
-  return Object.freeze({
-    authorityLossIrreversible: dataField("authorityLossIrreversible"),
-    pendingSuccessors: dataField("pendingSuccessors"),
-    stateAvailable: dataField("stateAvailable"),
-    usableKeyIds: dataField("usableKeyIds")
+  return freeze({
+    authorityLossIrreversible: fields[0],
+    latentEvidenceComplete: fields[1],
+    pendingSuccessors: fields[2],
+    stateAvailable: fields[3],
+    usableKeyIds: fields[4]
   });
+}
+
+function snapshotUsableKeyIds(value) {
+  const references = snapshotDataArray(value, "usableKeyIds", {
+    resource: "usable_key_ids",
+    maximum: MORTALITY_LIMITS.usable_key_ids
+  });
+  let observedChars = 0;
+  for (let index = 0; index < references.length; index += 1) {
+    const keyId = references[index];
+    if (typeof keyId !== "string") {
+      throw typeError("usableKeyIds entries must be canonical peer IDs");
+    }
+    const nextObservedChars = observedChars + keyId.length;
+    if (nextObservedChars > MORTALITY_LIMITS.usable_key_id_chars) {
+      throwMortalityLimit(
+        "usable_key_id_chars",
+        MORTALITY_LIMITS.usable_key_id_chars
+      );
+    }
+    observedChars = nextObservedChars;
+    if (decodeTagged(keyId, "peer:", 32) === null) {
+      throw typeError("usableKeyIds entries must be canonical peer IDs");
+    }
+  }
+  return references;
 }
 
 function snapshotPendingRecords(value) {
-  const references = snapshotDataArray(value, "pendingSuccessors");
-  return references.map((input, index) => {
-    if (input === null || (typeof input !== "object" && typeof input !== "function")) {
-      return Object.freeze({});
-    }
-
-    let descriptors;
+  const references = snapshotDataArray(value, "pendingSuccessors", {
+    resource: "pending_records",
+    maximum: MORTALITY_LIMITS.pending_records
+  });
+  let observedBytes = 0;
+  const snapshots = createArray(references.length);
+  for (let index = 0; index < references.length; index += 1) {
+    const input = references[index];
+    let fields;
     try {
-      descriptors = objectGetOwnPropertyDescriptors(input);
+      fields = snapshotNamedOwnDataValues(input, [
+        "envelopeBytes",
+        "eventPayloadBytes"
+      ], `pendingSuccessors[${index}]`);
     } catch {
-      throw new TypeError(`pendingSuccessors[${index}] must be an inspectable record`);
+      throw typeError("mortality carriers must expose only ordinary own data properties");
     }
-
-    const dataField = (name) => {
-      const descriptor = descriptors[name];
-      if (descriptor === undefined) return undefined;
-      if (!("value" in descriptor)) {
-        throw new TypeError(
-          `pendingSuccessors[${index}].${name} must be an own data property`
-        );
+    const envelopeSource = fields[0];
+    const payloadSource = fields[1];
+    if (
+      (envelopeSource === undefined || envelopeSource === null) &&
+      (payloadSource === undefined || payloadSource === null)
+    ) {
+      throw typeError("mortality carrier must contain an envelope or event-payload source");
+    }
+    const ownBytes = (source, maxBytes, label) => {
+      if (source === undefined || source === null) return null;
+      const view = asBytes(source);
+      const sourceLength = view === null ? null : byteLengthOfBytes(view);
+      if (sourceLength === null || sourceLength > maxBytes) {
+        throw typeError(`mortality ${label} source could not be snapshotted`);
       }
-      return descriptor.value;
-    };
-    const ownBytes = (source, maxBytes) => {
-      if (source === undefined || source === null) return undefined;
+      if (observedBytes + sourceLength > MORTALITY_LIMITS.pending_bytes) {
+        throwMortalityLimit("pending_bytes", MORTALITY_LIMITS.pending_bytes);
+      }
+      let owned;
       try {
-        return snapshotBytes(source, maxBytes);
+        owned = snapshotBytes(source, maxBytes);
       } catch {
-        // Malformed byte fields are retained only as absence of usable evidence.
-        // No caller-owned reference crosses into the mortality analysis.
-        return undefined;
+        throw typeError(`mortality ${label} source could not be snapshotted`);
       }
+      const ownedLength = byteLengthOfBytes(owned);
+      if (ownedLength === null || ownedLength !== sourceLength) {
+        throw typeError(`mortality ${label} source changed during snapshot`);
+      }
+      if (observedBytes + ownedLength > MORTALITY_LIMITS.pending_bytes) {
+        throwMortalityLimit("pending_bytes", MORTALITY_LIMITS.pending_bytes);
+      }
+      observedBytes += ownedLength;
+      return owned;
     };
 
     const envelopeBytes = ownBytes(
-      dataField("envelopeBytes"),
-      JSON_LIMITS.envelope_bytes
+      envelopeSource,
+      JSON_LIMITS.envelope_bytes,
+      "envelope"
     );
     const eventPayloadBytes = ownBytes(
-      dataField("eventPayloadBytes"),
-      JSON_LIMITS.event_payload_bytes
+      payloadSource,
+      JSON_LIMITS.event_payload_bytes,
+      "event-payload"
     );
-    return Object.freeze({ envelopeBytes, eventPayloadBytes });
-  });
+    defineArrayIndex(snapshots, index, freeze({ envelopeBytes, eventPayloadBytes }));
+  }
+  return snapshots;
 }
 
 function freezeResult(value) {
-  for (const entry of Object.values(value)) {
-    if (Array.isArray(entry)) Object.freeze(entry);
+  const entries = objectValues(value);
+  for (let index = 0; index < entries.length; index += 1) {
+    if (isArray(entries[index])) freeze(entries[index]);
   }
-  return Object.freeze(value);
+  return freeze(value);
+}
+
+function limitExceededResult(error) {
+  return freezeResult({
+    status: "indeterminate",
+    reason: "limit_exceeded",
+    mortality_classified: false,
+    resource: error.resource,
+    observed: error.observed,
+    maximum: error.maximum
+  });
+}
+
+function createVerificationBudget() {
+  let used = 0;
+  const reserve = (count = 1) => {
+    if (!numberIsSafeInteger(count) || count < 0) {
+      throw typeError("mortality signature budget received an invalid reservation");
+    }
+    if (
+      count > MORTALITY_LIMITS.signature_verifications - used
+    ) {
+      throwMortalityLimit(
+        "signature_verifications",
+        MORTALITY_LIMITS.signature_verifications
+      );
+    }
+    used += count;
+  };
+  return freeze({
+    reserve,
+    reserveEnvelope(envelope) {
+      const approvals = isArray(envelope?.approvals)
+        ? arrayLength(envelope.approvals)
+        : 0;
+      const acceptances = isArray(envelope?.acceptances)
+        ? arrayLength(envelope.acceptances)
+        : 0;
+      reserve(approvals + acceptances);
+    },
+    verify(publicKey, message, signature) {
+      reserve();
+      return verifyEd25519(publicKey, message, signature);
+    }
+  });
+}
+
+function createCandidateBudget() {
+  let observedBodies = 0;
+  let observedCanonicalBytes = 0;
+  return freeze({
+    reserveBody() {
+      if (observedBodies >= MORTALITY_LIMITS.candidate_bodies) {
+        throwMortalityLimit(
+          "candidate_bodies",
+          MORTALITY_LIMITS.candidate_bodies
+        );
+      }
+      observedBodies += 1;
+    },
+    reserveCanonicalBytes(count) {
+      if (!numberIsSafeInteger(count) || count < 0) {
+        throw typeError("mortality candidate byte budget received an invalid reservation");
+      }
+      if (
+        count > MORTALITY_LIMITS.candidate_canonical_bytes - observedCanonicalBytes
+      ) {
+        throwMortalityLimit(
+          "candidate_canonical_bytes",
+          MORTALITY_LIMITS.candidate_canonical_bytes
+        );
+      }
+      observedCanonicalBytes += count;
+    }
+  });
 }
 
 function requireCondition(condition, message) {
-  if (!condition) throw new TypeError(message);
+  if (!condition) throw typeError(message);
+}
+
+function requireObservationResult(result) {
+  if (result.status === "reject" && result.code === "E_VALIDATOR_INTERNAL") {
+    throw typeError("mortality observation could not complete validation");
+  }
+  return result;
 }
 
 const lineageConstructionToken = Symbol("MortalOS Lineage construction");
@@ -160,7 +321,8 @@ function evaluateMortalityState({
   usableKeyIds,
   stateAvailable,
   latentSuccessors = [],
-  authorityLossIrreversible = false
+  authorityLossIrreversible = false,
+  latentEvidenceComplete = false
 }) {
   requireCondition(isValidatedAcceptance(head), "head must be a validated acceptance");
   requireCondition(Array.isArray(usableKeyIds), "usableKeyIds must be an array");
@@ -169,6 +331,10 @@ function evaluateMortalityState({
   requireCondition(
     typeof authorityLossIrreversible === "boolean",
     "authorityLossIrreversible must be boolean"
+  );
+  requireCondition(
+    typeof latentEvidenceComplete === "boolean",
+    "latentEvidenceComplete must be boolean"
   );
 
   const latentHashes = new Set();
@@ -192,54 +358,50 @@ function evaluateMortalityState({
   const threshold = custodyDescriptor.quorum.threshold;
   const authorityViable = usable.size >= threshold;
   const latentSuccessorCount = latentHashes.size;
+  const common = {
+    usable_keys: usable.size,
+    threshold,
+    latent_successors: latentSuccessorCount,
+    latent_evidence_complete: latentEvidenceComplete
+  };
 
   if (authorityViable && stateAvailable) {
-    return Object.freeze({
+    return freeze({
       status: "operationally_alive",
       authority_viable: true,
       state_viable: true,
-      usable_keys: usable.size,
-      threshold,
-      latent_successors: latentSuccessorCount
+      ...common
     });
   }
   if (authorityViable) {
-    return Object.freeze({
+    return freeze({
       status: "state_stalled",
       authority_viable: true,
       state_viable: false,
-      usable_keys: usable.size,
-      threshold,
-      latent_successors: latentSuccessorCount
+      ...common
     });
   }
   if (latentSuccessorCount > 0) {
-    return Object.freeze({
+    return freeze({
       status: "latent_successor_not_dead",
       authority_viable: false,
       state_viable: Boolean(stateAvailable),
-      usable_keys: usable.size,
-      threshold,
-      latent_successors: latentSuccessorCount
+      ...common
     });
   }
-  if (authorityLossIrreversible) {
-    return Object.freeze({
+  if (authorityLossIrreversible && latentEvidenceComplete) {
+    return freeze({
       status: "dead_under_v0_assumptions",
       authority_viable: false,
       state_viable: Boolean(stateAvailable),
-      usable_keys: usable.size,
-      threshold,
-      latent_successors: 0
+      ...common
     });
   }
-  return Object.freeze({
+  return freeze({
     status: "authority_unavailable_not_proven_dead",
     authority_viable: false,
     state_viable: Boolean(stateAvailable),
-    usable_keys: usable.size,
-    threshold,
-    latent_successors: 0
+    ...common
   });
 }
 
@@ -288,7 +450,7 @@ class Lineage {
         })
       };
     } catch (error) {
-      if (error instanceof JsonInputError) return { ok: false };
+      if (isJsonInputError(error)) return { ok: false };
       throw error;
     }
   }
@@ -307,7 +469,7 @@ class Lineage {
     } catch (error) {
       return {
         failure:
-          error instanceof JsonInputError
+          isJsonInputError(error)
             ? reject(error.code, "", error.detail)
             : reject("E_VALIDATOR_INTERNAL")
       };
@@ -333,7 +495,7 @@ class Lineage {
     } catch (error) {
       return {
         failure:
-          error instanceof JsonInputError
+          isJsonInputError(error)
             ? reject("E_EVENT_PAYLOAD_INVALID", "/event_payload", error.code)
             : reject("E_VALIDATOR_INTERNAL")
       };
@@ -390,11 +552,17 @@ class Lineage {
 
   evaluateMortality(options = {}) {
     if (this.#evaluatingMortality) {
-      throw new TypeError("mortality evaluation is already active");
+      throw typeError("mortality evaluation is already active");
     }
     this.#evaluatingMortality = true;
     try {
       return this.#evaluateMortalityUnsafe(options);
+    } catch (error) {
+      if (isMortalityLimitError(error)) {
+        assertMortalityRuntimeIntact();
+        return limitExceededResult(error);
+      }
+      throw error;
     } finally {
       this.#evaluatingMortality = false;
     }
@@ -402,35 +570,108 @@ class Lineage {
 
   #evaluateMortalityUnsafe(options = {}) {
     if (this.#forked) {
+      assertMortalityRuntimeIntact();
       return freezeResult({
         status: "forked",
         mortality_classified: false,
-        fork_points: [...this.#forkPoints].sort()
+        fork_points: arraySort(setValues(this.#forkPoints))
       });
     }
     const observerOptions = snapshotObserverOptions(options);
     const usableKeyIdsInput = observerOptions.usableKeyIds;
-    const usableKeyIdsSnapshot = snapshotDataArray(usableKeyIdsInput, "usableKeyIds");
+    const usableKeyIdsSnapshot = snapshotUsableKeyIds(usableKeyIdsInput);
     const stateAvailable = observerOptions.stateAvailable;
     if (typeof stateAvailable !== "boolean") {
-      throw new TypeError("stateAvailable must be boolean");
+      throw typeError("stateAvailable must be boolean");
     }
     const authorityLossInput = observerOptions.authorityLossIrreversible;
     const authorityLossIrreversible = authorityLossInput === undefined
       ? false
       : authorityLossInput;
     if (typeof authorityLossIrreversible !== "boolean") {
-      throw new TypeError("authorityLossIrreversible must be boolean");
+      throw typeError("authorityLossIrreversible must be boolean");
+    }
+    const completenessInput = observerOptions.latentEvidenceComplete;
+    const latentEvidenceComplete = completenessInput === undefined
+      ? false
+      : completenessInput;
+    if (typeof latentEvidenceComplete !== "boolean") {
+      throw typeError("latentEvidenceComplete must be boolean");
     }
     const pendingInputValue = observerOptions.pendingSuccessors;
     const pendingInput = pendingInputValue === undefined ? [] : pendingInputValue;
     const pendingSnapshot = snapshotPendingRecords(pendingInput);
+    assertMortalityRuntimeIntact();
     const groups = new Map();
+    const candidateGroupsByObject = new Map();
     const payloadsByHash = new Map();
     const observedSignatures = new Set();
     const directlyAcceptedSuccessors = new Map();
+    const candidateBudget = createCandidateBudget();
+    const verificationBudget = createVerificationBudget();
+    const expectedSequence = bigIntToString(bigInt(this.#head.sequence) + 1n);
+
+    const rememberCandidateBody = (value, hasCanonicalCarrier = false) => {
+      if (value === null || typeof value !== "object" || isArray(value)) return;
+      const descriptors = snapshotOwnDataRecord(value, "parsed mortality candidate");
+      const organismId = ownDataRecordEntry(descriptors, "organism_id");
+      const sequence = ownDataRecordEntry(descriptors, "sequence");
+      const parentHash = ownDataRecordEntry(descriptors, "parent_hash");
+      if (
+        !organismId.present ||
+        organismId.value !== this.#head.organism_id ||
+        !sequence.present ||
+        sequence.value !== expectedSequence ||
+        !parentHash.present ||
+        parentHash.value !== this.#head.object_hash
+      ) {
+        return;
+      }
+      candidateBudget.reserveBody();
+      const groupKey = canonicalize(value);
+      const groupByteLength = byteLengthOfBytes(utf8Bytes(groupKey));
+      if (groupByteLength === null) {
+        throw typeError("mortality candidate canonical bytes could not be measured");
+      }
+      candidateBudget.reserveCanonicalBytes(groupByteLength);
+      let group = groups.get(groupKey);
+      if (!group) {
+        group = {
+          body: value,
+          hasCanonicalCarrier: false
+        };
+        groups.set(groupKey, group);
+      }
+      group.hasCanonicalCarrier ||= hasCanonicalCarrier;
+      candidateGroupsByObject.set(value, group);
+    };
+
+    const rememberArtifacts = (value) => {
+      if (typeof value === "string") {
+        if (decodeTagged(value, "ed25519:", 64) !== null) {
+          observedSignatures.add(value);
+        }
+        return;
+      }
+      if (value === null || typeof value !== "object") return;
+      if (!isArray(value)) {
+        rememberCandidateBody(value);
+        const keys = objectKeys(value);
+        for (let index = 0; index < keys.length; index += 1) {
+          const key = keys[index];
+          if (decodeTagged(key, "ed25519:", 64) !== null) {
+            observedSignatures.add(key);
+          }
+        }
+      }
+      const entries = objectValues(value);
+      for (let index = 0; index < entries.length; index += 1) {
+        rememberArtifacts(entries[index]);
+      }
+    };
 
     const rememberPayload = (payload) => {
+      rememberArtifacts(payload);
       const payloadKey = canonicalize(payload);
       const payloadHash = eventPayloadHash(payload);
       let payloads = payloadsByHash.get(payloadHash);
@@ -441,31 +682,33 @@ class Lineage {
       payloads.set(payloadKey, payload);
     };
     for (const input of pendingSnapshot) {
-      const envelopeSnapshot = this.#snapshotEnvelope(input);
-      const payloadSnapshot = this.#snapshotPayload(input);
-      if (!payloadSnapshot.failure) {
+      if (input.eventPayloadBytes !== null) {
         try {
           rememberPayload(
-            parseJsonBytes(payloadSnapshot.eventPayloadBytes, {
+            parseJsonBytes(input.eventPayloadBytes, {
               maxBytes: JSON_LIMITS.event_payload_bytes,
               maxDepth: JSON_LIMITS.max_depth
             })
           );
         } catch (error) {
-          if (!(error instanceof JsonInputError)) throw error;
+          if (!isJsonInputError(error)) throw error;
+          throw typeError("mortality event-payload bytes could not be parsed");
         }
       }
 
-      if (envelopeSnapshot.failure) continue;
-      const inspection = this.#inspect(envelopeSnapshot.envelopeBytes);
-      if (!inspection.ok) continue;
+      if (input.envelopeBytes === null) continue;
+      const inspection = this.#inspect(input.envelopeBytes);
+      if (!inspection.ok) {
+        throw typeError("mortality envelope bytes could not be parsed");
+      }
       const envelope = inspection.envelope;
+      rememberArtifacts(envelope);
       if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) continue;
 
       let canonicalCarrier = false;
       try {
         canonicalCarrier = equalBytes(
-          envelopeSnapshot.envelopeBytes,
+          input.envelopeBytes,
           canonicalBytes(envelope)
         );
       } catch {
@@ -473,13 +716,14 @@ class Lineage {
         // untrusted carrier rather than letting it affect mortality.
       }
 
-      if (!payloadSnapshot.failure) {
-        const direct = validatePulse({
+      if (input.eventPayloadBytes !== null) {
+        verificationBudget.reserveEnvelope(envelope);
+        const direct = requireObservationResult(validatePulse({
           genesis: this.#genesis,
           parent: this.#head,
-          envelopeBytes: envelopeSnapshot.envelopeBytes,
-          eventPayloadBytes: payloadSnapshot.eventPayloadBytes
-        });
+          envelopeBytes: input.envelopeBytes,
+          eventPayloadBytes: input.eventPayloadBytes
+        }));
         if (direct.status === "accept") {
           directlyAcceptedSuccessors.set(direct.object_hash, {
             candidate: direct,
@@ -488,30 +732,12 @@ class Lineage {
         }
       }
 
-      for (const entries of [envelope.approvals, envelope.acceptances]) {
-        if (!Array.isArray(entries)) continue;
-        for (const evidence of entries) {
-          if (typeof evidence?.signature === "string") {
-            observedSignatures.add(evidence.signature);
-          }
-        }
-      }
-      if (
-        envelope.body &&
-        typeof envelope.body === "object" &&
-        !Array.isArray(envelope.body)
-      ) {
-        const groupKey = canonicalize(envelope.body);
-        let group = groups.get(groupKey);
-        if (!group) {
-          group = { body: envelope.body, hasCanonicalCarrier: false };
-          groups.set(groupKey, group);
-        }
-        group.hasCanonicalCarrier ||= canonicalCarrier;
-      }
+      const carrierGroup = candidateGroupsByObject.get(envelope.body);
+      if (carrierGroup) carrierGroup.hasCanonicalCarrier ||= canonicalCarrier;
     }
 
     const currentDescriptor = this.#head.next_custody_descriptor;
+    const sortedObservedSignatures = [...observedSignatures].sort();
     const allCurrentKeyIds = currentDescriptor.custodians.map((entry) => entry.key_id);
     const currentById = new Map(
       currentDescriptor.custodians.map((entry) => [entry.key_id, entry])
@@ -527,7 +753,6 @@ class Lineage {
       }
     };
 
-    const expectedSequence = (BigInt(this.#head.sequence) + 1n).toString();
     for (const group of groups.values()) {
       const body = group.body;
       if (
@@ -539,13 +764,22 @@ class Lineage {
       }
       const approvalMessage = pulseApprovalMessage(body);
       const bodyHash = derivePulseHash(body);
-      for (const signer of currentDescriptor.custodians) {
-        if ([...observedSignatures].some((signature) =>
-          verifyEd25519(signer.public_key, approvalMessage, signature)
-        )) {
-          recordSignerBodies([signer.key_id], bodyHash);
+      const currentApprovals = new Map();
+      for (const signature of sortedObservedSignatures) {
+        for (const signer of currentDescriptor.custodians) {
+          if (!verificationBudget.verify(signer.public_key, approvalMessage, signature)) {
+            continue;
+          }
+          const normalized = { key_id: signer.key_id, signature };
+          const existing = currentApprovals.get(signer.key_id);
+          if (!existing || signature < existing.signature) {
+            currentApprovals.set(signer.key_id, normalized);
+          }
         }
       }
+      group.bodyHash = bodyHash;
+      group.currentApprovals = currentApprovals;
+      recordSignerBodies(currentApprovals.keys(), bodyHash);
     }
 
     for (const group of groups.values()) {
@@ -566,7 +800,7 @@ class Lineage {
       }
       for (const payloadKey of [...payloads.keys()].sort()) {
         const payload = payloads.get(payloadKey);
-        const skeleton = validateMortalitySuccessor(
+        const skeleton = requireObservationResult(validateMortalitySuccessor(
           {
             genesis: this.#genesis,
             parent: this.#head,
@@ -574,7 +808,7 @@ class Lineage {
             eventPayloadBytes: canonicalBytes(payload)
           },
           allCurrentKeyIds
-        );
+        ));
         if (skeleton.status !== "reject") {
           validatedPayload = payload;
           structuralCapability = skeleton;
@@ -586,14 +820,14 @@ class Lineage {
         payloads.size === 0 &&
         group.body?.event?.kind === "membership-change"
       ) {
-        const opaque = validateOpaqueMortalitySuccessor(
+        const opaque = requireObservationResult(validateOpaqueMortalitySuccessor(
           {
             genesis: this.#genesis,
             parent: this.#head,
             envelopeBytes: canonicalBytes(skeletonEnvelope)
           },
           allCurrentKeyIds
-        );
+        ));
         if (opaque.status !== "reject") structuralCapability = opaque;
       }
       if (structuralCapability === null) continue;
@@ -604,23 +838,16 @@ class Lineage {
       const newIds = new Set(
         [...nextById.keys()].filter((keyId) => !currentById.has(keyId))
       );
-      const approvals = new Map();
+      const approvals = new Map(group.currentApprovals);
       const acceptances = new Map();
-      const approvalMessage = pulseApprovalMessage(group.body);
       const acceptanceMessage = custodyAcceptanceMessage(group.body);
 
-      for (const signature of [...observedSignatures].sort()) {
-        for (const signer of currentDescriptor.custodians) {
-          if (!verifyEd25519(signer.public_key, approvalMessage, signature)) continue;
-          const normalized = { key_id: signer.key_id, signature };
-          const existing = approvals.get(signer.key_id);
-          if (!existing || signature < existing.signature) {
-            approvals.set(signer.key_id, normalized);
-          }
-        }
+      for (const signature of sortedObservedSignatures) {
         for (const keyId of [...newIds].sort()) {
           const signer = nextById.get(keyId);
-          if (!verifyEd25519(signer.public_key, acceptanceMessage, signature)) continue;
+          if (!verificationBudget.verify(signer.public_key, acceptanceMessage, signature)) {
+            continue;
+          }
           const normalized = { key_id: keyId, signature };
           const existing = acceptances.get(keyId);
           if (!existing || signature < existing.signature) {
@@ -639,13 +866,12 @@ class Lineage {
         body: group.body,
         kind: "mortalos.pulse"
       };
-      recordSignerBodies(approvals.keys(), structuralCapability.object_hash);
       preparedGroups.push({
         acceptances,
         approvals,
         combinedEnvelope,
         hasCanonicalCarrier: group.hasCanonicalCarrier,
-        objectHash: structuralCapability.object_hash,
+        objectHash: group.bodyHash,
         payload: validatedPayload,
         payloadAvailable: validatedPayload !== null
       });
@@ -666,7 +892,7 @@ class Lineage {
       return freezeResult({
         status: "forked",
         mortality_classified: false,
-        fork_points: [...this.#forkPoints].sort()
+        fork_points: arraySort(setValues(this.#forkPoints))
       });
     };
 
@@ -677,12 +903,13 @@ class Lineage {
     const reconstructedAcceptances = new Map();
     for (const group of preparedGroups) {
       if (!group.payloadAvailable) continue;
-      const candidate = validatePulse({
+      verificationBudget.reserveEnvelope(group.combinedEnvelope);
+      const candidate = requireObservationResult(validatePulse({
         genesis: this.#genesis,
         parent: this.#head,
         envelopeBytes: canonicalBytes(group.combinedEnvelope),
         eventPayloadBytes: canonicalBytes(group.payload)
-      });
+      }));
       if (candidate.status === "accept") {
         reconstructedAcceptances.set(group.objectHash, {
           candidate,
@@ -738,10 +965,11 @@ class Lineage {
       };
 
       if (!group.payloadAvailable) {
-        const candidate = validateOpaqueMortalitySuccessor(
+        verificationBudget.reserveEnvelope(group.combinedEnvelope);
+        const candidate = requireObservationResult(validateOpaqueMortalitySuccessor(
           combinedInput,
           usableForBody
-        );
+        ));
         if (candidate.status !== "reject") {
           payloadUnavailableHashes.add(group.objectHash);
         }
@@ -750,8 +978,13 @@ class Lineage {
 
       combinedInput.eventPayloadBytes = canonicalBytes(group.payload);
       const completeCandidate = reconstructedAcceptances.get(group.objectHash)?.candidate;
+      if (completeCandidate === undefined) {
+        verificationBudget.reserveEnvelope(group.combinedEnvelope);
+      }
       const candidate =
-        completeCandidate ?? validateMortalitySuccessor(combinedInput, usableForBody);
+        completeCandidate ?? requireObservationResult(
+          validateMortalitySuccessor(combinedInput, usableForBody)
+        );
       if (candidate.status === "accept" || candidate.status === "latent") {
         latentSuccessors.push(candidate);
       }
@@ -775,7 +1008,8 @@ class Lineage {
       usableKeyIds: [...freshUsable],
       stateAvailable,
       latentSuccessors,
-      authorityLossIrreversible
+      authorityLossIrreversible,
+      latentEvidenceComplete
     });
   }
 
@@ -840,16 +1074,19 @@ class Lineage {
       genesis_hash: this.#genesis.object_hash,
       head_hash: this.#forked ? null : this.#head.object_hash,
       accepted_objects: this.#nodes.size,
-      fork_points: Object.freeze(forkPoints)
+      fork_points: freeze(forkPoints)
     });
   }
 }
 
+freeze(Lineage.prototype);
+freeze(Lineage);
+
 export function createLineage(genesisEnvelopeBytes) {
   const genesis = validateGenesis(genesisEnvelopeBytes);
   if (genesis.status !== "accept") return genesis;
-  return Object.freeze({
+  return freeze({
     status: "accept",
-    lineage: new Lineage(lineageConstructionToken, genesis)
+    lineage: freeze(new Lineage(lineageConstructionToken, genesis))
   });
 }

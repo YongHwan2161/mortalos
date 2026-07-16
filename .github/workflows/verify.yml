@@ -31,7 +31,7 @@ jobs:
       - name: Install Chromium for differential verification
         run: npx playwright install --with-deps chromium
 
-      - name: Run Node and Chromium differential verification
+      - name: Compare Chromium with the committed portable corpus
         run: npm run test:chromium
 
       - name: Run MortalOS Lab browser acceptance gate

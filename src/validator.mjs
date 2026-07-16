@@ -1,7 +1,7 @@
 import { equalBytes } from "./bytes.mjs";
 import {
   canonicalBytes,
-  JsonInputError,
+  isJsonInputError,
   JSON_LIMITS,
   parseJsonDocument,
   snapshotBytes
@@ -20,47 +20,78 @@ import {
   pulseApprovalMessage,
   verifyEd25519
 } from "./crypto.mjs";
+import {
+  arrayFilter,
+  arrayMap,
+  arrayPush,
+  arraySlice,
+  arraySort,
+  bigInt,
+  bigIntToString,
+  copyArrayByIndex,
+  createMap,
+  createSet,
+  createWeakSet,
+  freeze,
+  isArray,
+  mapGet,
+  mapHas,
+  mapKeys,
+  mapSet,
+  objectValues,
+  regexpTest,
+  setAdd,
+  setHas,
+  setSize,
+  setValues,
+  stringReplaceAll,
+  weakSetAdd,
+  weakSetHas
+} from "./primordials.mjs";
 import { rejection as reject } from "./rejection-codes.mjs";
 import { checkGenesisSchema, checkPulseSchema } from "./schema-validation.mjs";
-const acceptedContexts = new WeakSet();
-const latentContexts = new WeakSet();
-const mortalitySuccessorContexts = new WeakSet();
+const acceptedContexts = createWeakSet();
+const latentContexts = createWeakSet();
+const mortalitySuccessorContexts = createWeakSet();
 
-function deepFreeze(value, seen = new WeakSet()) {
-  if (!value || typeof value !== "object" || seen.has(value)) return value;
-  seen.add(value);
-  for (const entry of Object.values(value)) deepFreeze(entry, seen);
-  return Object.freeze(value);
+function deepFreeze(value, seen = createWeakSet()) {
+  if (!value || typeof value !== "object" || weakSetHas(seen, value)) return value;
+  weakSetAdd(seen, value);
+  const entries = objectValues(value);
+  for (let index = 0; index < entries.length; index += 1) {
+    deepFreeze(entries[index], seen);
+  }
+  return freeze(value);
 }
 
 function accept(context) {
   deepFreeze(context);
-  acceptedContexts.add(context);
+  weakSetAdd(acceptedContexts, context);
   return context;
 }
 
 function acceptLatent(context) {
   deepFreeze(context);
-  latentContexts.add(context);
+  weakSetAdd(latentContexts, context);
   return context;
 }
 
 function acceptMortalitySuccessor(context) {
   deepFreeze(context);
-  mortalitySuccessorContexts.add(context);
+  weakSetAdd(mortalitySuccessorContexts, context);
   return context;
 }
 
 export function isValidatedAcceptance(value) {
-  return Boolean(value && acceptedContexts.has(value));
+  return Boolean(value && weakSetHas(acceptedContexts, value));
 }
 
 export function isValidatedLatentSuccessor(value) {
-  return Boolean(value && latentContexts.has(value));
+  return Boolean(value && weakSetHas(latentContexts, value));
 }
 
 export function isValidatedMortalitySuccessor(value) {
-  return Boolean(value && mortalitySuccessorContexts.has(value));
+  return Boolean(value && weakSetHas(mortalitySuccessorContexts, value));
 }
 
 function total(operation) {
@@ -76,16 +107,16 @@ function safeDetail(value, missing = "missing") {
   if (value === null) return "null";
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return "array";
+  if (isArray(value)) return "array";
   return typeof value === "object" ? "object" : typeof value;
 }
 
 function pointerToken(value) {
-  return String(value).replaceAll("~", "~0").replaceAll("/", "~1");
+  return stringReplaceAll(stringReplaceAll(`${value}`, "~", "~0"), "/", "~1");
 }
 
 function fromInputError(error, payload = false) {
-  if (!(error instanceof JsonInputError)) return reject("E_VALIDATOR_INTERNAL");
+  if (!isJsonInputError(error)) return reject("E_VALIDATOR_INTERNAL");
   if (payload) {
     return reject("E_EVENT_PAYLOAD_INVALID", "/event_payload", error.code);
   }
@@ -103,7 +134,7 @@ function schemaPath(error) {
 }
 
 function stableSchemaErrors(errors) {
-  return [...errors].sort((left, right) => {
+  return arraySort(copyArrayByIndex(errors), (left, right) => {
     const leftPath = schemaPath(left);
     const rightPath = schemaPath(right);
     if (leftPath !== rightPath) return leftPath < rightPath ? -1 : 1;
@@ -112,9 +143,16 @@ function stableSchemaErrors(errors) {
 }
 
 function schemaRejection(value, validate, expectedKind) {
-  if (validate(value)) return null;
-  const errors = stableSchemaErrors(validate.errors ?? []);
-  const unknown = errors.find((entry) => entry.keyword === "additionalProperties");
+  const validation = validate(value);
+  if (validation.valid) return null;
+  const errors = stableSchemaErrors(validation.errors);
+  let unknown;
+  for (let index = 0; index < errors.length; index += 1) {
+    if (errors[index].keyword === "additionalProperties") {
+      unknown = errors[index];
+      break;
+    }
+  }
   if (unknown) {
     const property = unknown.params.additionalProperty;
     return reject(
@@ -195,7 +233,7 @@ function validateCustody(custodians, quorum, custodianPath, quorumPath) {
   if (custodians.length < 1 || custodians.length > 16) {
     return reject("E_CUSTODIAN_COUNT_RANGE", custodianPath, String(custodians.length));
   }
-  const publicKeys = new Set();
+  const publicKeys = createSet();
   for (let index = 0; index < custodians.length; index += 1) {
     const entry = custodians[index];
     const keyPath = `${custodianPath}/${index}/public_key`;
@@ -211,10 +249,10 @@ function validateCustody(custodians, quorum, custodianPath, quorumPath) {
     if (!isStrictEd25519PublicKey(entry.public_key)) {
       return reject("E_PUBLIC_KEY_INVALID_POINT", keyPath, entry.key_id);
     }
-    if (publicKeys.has(entry.public_key)) {
+    if (setHas(publicKeys, entry.public_key)) {
       return reject("E_CUSTODIAN_DUPLICATE_KEY", keyPath, entry.public_key);
     }
-    publicKeys.add(entry.public_key);
+    setAdd(publicKeys, entry.public_key);
     if (derivePeerId(entry.public_key) !== entry.key_id) {
       return reject(
         "E_PEER_ID_MISMATCH",
@@ -315,20 +353,23 @@ function validateGenesisDetailed(envelopeBytes) {
     "/body/initial_quorum"
   );
   if (custodyFailure) return custodyFailure;
-  for (const [field, prefix, length] of [
+  const encodedFields = [
     ["genome_hash", "sha256:", 32],
     ["initial_state_root", "sha256:", 32],
     ["nonce", "nonce:", 16]
-  ]) {
+  ];
+  for (let index = 0; index < encodedFields.length; index += 1) {
+    const [field, prefix, length] = encodedFields[index];
     const failure = validateBinary(body[field], prefix, length, `/body/${field}`);
     if (failure) return failure;
   }
 
-  const expectedIds = body.initial_custodians.map((entry) => entry.key_id);
-  if (
-    approvals.length !== expectedIds.length ||
-    approvals.some((entry, index) => entry.key_id !== expectedIds[index])
-  ) {
+  const expectedIds = arrayMap(body.initial_custodians, (entry) => entry.key_id);
+  let approvalSetMatches = approvals.length === expectedIds.length;
+  for (let index = 0; approvalSetMatches && index < approvals.length; index += 1) {
+    approvalSetMatches = approvals[index].key_id === expectedIds[index];
+  }
+  if (!approvalSetMatches) {
     return reject("E_GENESIS_APPROVAL_SET", "/approvals", `${approvals.length}/${expectedIds.length}`);
   }
   const message = genesisApprovalMessage(body);
@@ -389,7 +430,7 @@ function validatePulseDetailed(
   if (schemaFailure) return schemaFailure;
   if (
     !opaquePayload &&
-    (!payloadValue || Array.isArray(payloadValue) || typeof payloadValue !== "object")
+    (!payloadValue || isArray(payloadValue) || typeof payloadValue !== "object")
   ) {
     return reject("E_EVENT_PAYLOAD_INVALID", "/event_payload", "object-required");
   }
@@ -401,11 +442,13 @@ function validatePulseDetailed(
   }
 
   const { body, approvals, acceptances } = envelope;
-  for (const [entries, fieldPath, duplicateCode] of [
+  const orderedFields = [
     [body.next_custodians, "/body/next_custodians", "E_ARRAY_DUPLICATE_KEY_ID"],
     [approvals, "/approvals", "E_APPROVAL_DUPLICATE"],
     [acceptances, "/acceptances", "E_ACCEPTANCE_DUPLICATE"]
-  ]) {
+  ];
+  for (let index = 0; index < orderedFields.length; index += 1) {
+    const [entries, fieldPath, duplicateCode] = orderedFields[index];
     const failure = checkSortedUnique(entries, fieldPath, duplicateCode);
     if (failure) return failure;
   }
@@ -425,13 +468,15 @@ function validatePulseDetailed(
     "/body/next_quorum"
   );
   if (nextCustodyFailure) return nextCustodyFailure;
-  for (const [field, code] of [
+  const binaryFields = [
     ["organism_id", "E_BINARY_ENCODING"],
     ["parent_hash", "E_BINARY_ENCODING"],
     ["genome_hash", "E_BINARY_ENCODING"],
     ["current_custody_hash", "E_BINARY_ENCODING"],
     ["state_root", "E_STATE_ROOT_ENCODING"]
-  ]) {
+  ];
+  for (let index = 0; index < binaryFields.length; index += 1) {
+    const [field, code] = binaryFields[index];
     const prefix = field === "organism_id" ? "mortalos:" : "sha256:";
     const failure = validateBinary(body[field], prefix, 32, `/body/${field}`, code);
     if (failure) return failure;
@@ -464,10 +509,16 @@ function validatePulseDetailed(
     return reject("E_LINEAGE_UNKNOWN", "", "parent-organism-context");
   }
 
-  if (typeof body.sequence !== "string" || !/^(0|[1-9][0-9]*)$/.test(body.sequence)) {
+  if (
+    typeof body.sequence !== "string" ||
+    !regexpTest(/^(0|[1-9][0-9]*)$/, body.sequence)
+  ) {
     return reject("E_SEQUENCE_INVALID_FORMAT", "/body/sequence", safeDetail(body.sequence));
   }
-  if (typeof body.event.kind !== "string" || !["heartbeat", "membership-change"].includes(body.event.kind)) {
+  if (
+    typeof body.event.kind !== "string" ||
+    (body.event.kind !== "heartbeat" && body.event.kind !== "membership-change")
+  ) {
     return reject("E_EVENT_KIND_UNSUPPORTED", "/body/event/kind", safeDetail(body.event.kind));
   }
   if (opaquePayload && body.event.kind !== "membership-change") {
@@ -476,7 +527,7 @@ function validatePulseDetailed(
   if (body.organism_id !== genesis.organism_id) {
     return reject("E_ORGANISM_ID_MISMATCH", "/body/organism_id", body.organism_id);
   }
-  const expectedSequence = (BigInt(parent.sequence) + 1n).toString();
+  const expectedSequence = bigIntToString(bigInt(parent.sequence) + 1n);
   if (body.sequence !== expectedSequence) {
     return reject("E_SEQUENCE_NOT_NEXT", "/body/sequence", `${body.sequence}/${expectedSequence}`);
   }
@@ -520,14 +571,19 @@ function validatePulseDetailed(
     return reject("E_MEMBERSHIP_CUSTODY_UNCHANGED", "/body/next_custodians", "unchanged");
   }
 
-  const currentById = new Map(
-    currentDescriptor.custodians.map((entry) => [entry.key_id, entry])
-  );
-  const suppliedApprovalIds = new Set(approvals.map((entry) => entry.key_id));
+  const currentById = createMap();
+  for (let index = 0; index < currentDescriptor.custodians.length; index += 1) {
+    const entry = currentDescriptor.custodians[index];
+    mapSet(currentById, entry.key_id, entry);
+  }
+  const suppliedApprovalIds = createSet();
+  for (let index = 0; index < approvals.length; index += 1) {
+    setAdd(suppliedApprovalIds, approvals[index].key_id);
+  }
   const approvalMessage = pulseApprovalMessage(body);
   for (let index = 0; index < approvals.length; index += 1) {
     const approval = approvals[index];
-    const signer = currentById.get(approval.key_id);
+    const signer = mapGet(currentById, approval.key_id);
     if (!signer) {
       return reject("E_APPROVAL_SIGNER_INELIGIBLE", `/approvals/${index}/key_id`, approval.key_id);
     }
@@ -538,20 +594,23 @@ function validatePulseDetailed(
   let potentialApprovalSnapshot = [];
   if (mortalityMode) {
     try {
-      if (!Array.isArray(potentialCurrentApprovalKeyIds)) {
+      if (!isArray(potentialCurrentApprovalKeyIds)) {
         return reject("E_VALIDATOR_INTERNAL");
       }
-      potentialApprovalSnapshot = [...potentialCurrentApprovalKeyIds];
+      potentialApprovalSnapshot = copyArrayByIndex(potentialCurrentApprovalKeyIds);
     } catch {
       return reject("E_VALIDATOR_INTERNAL");
     }
   }
-  const potentialApprovalIds = new Set(
-    potentialApprovalSnapshot.filter(
-      (keyId) => currentById.has(keyId) && !suppliedApprovalIds.has(keyId)
-    )
+  const potentialApprovalIds = createSet();
+  const eligiblePotentialIds = arrayFilter(
+    potentialApprovalSnapshot,
+    (keyId) => mapHas(currentById, keyId) && !setHas(suppliedApprovalIds, keyId)
   );
-  const possibleApprovalCount = approvals.length + potentialApprovalIds.size;
+  for (let index = 0; index < eligiblePotentialIds.length; index += 1) {
+    setAdd(potentialApprovalIds, eligiblePotentialIds[index]);
+  }
+  const possibleApprovalCount = approvals.length + setSize(potentialApprovalIds);
   if (
     (!mortalityMode && approvals.length < currentDescriptor.quorum.threshold) ||
     (mortalityMode && possibleApprovalCount < currentDescriptor.quorum.threshold)
@@ -563,15 +622,24 @@ function validatePulseDetailed(
     );
   }
 
-  const nextById = new Map(body.next_custodians.map((entry) => [entry.key_id, entry]));
-  const newIds = [...nextById.keys()].filter((keyId) => !currentById.has(keyId)).sort();
-  const newIdSet = new Set(newIds);
-  const suppliedAcceptanceIds = new Set();
+  const nextById = createMap();
+  for (let index = 0; index < body.next_custodians.length; index += 1) {
+    const entry = body.next_custodians[index];
+    mapSet(nextById, entry.key_id, entry);
+  }
+  const newIds = arraySort(
+    arrayFilter(mapKeys(nextById), (keyId) => !mapHas(currentById, keyId))
+  );
+  const newIdSet = createSet();
+  for (let index = 0; index < newIds.length; index += 1) {
+    setAdd(newIdSet, newIds[index]);
+  }
+  const suppliedAcceptanceIds = createSet();
   const acceptanceMessage = custodyAcceptanceMessage(body);
   for (let index = 0; index < acceptances.length; index += 1) {
     const acceptance = acceptances[index];
-    if (!newIdSet.has(acceptance.key_id)) {
-      if (currentById.has(acceptance.key_id) && nextById.has(acceptance.key_id)) {
+    if (!setHas(newIdSet, acceptance.key_id)) {
+      if (mapHas(currentById, acceptance.key_id) && mapHas(nextById, acceptance.key_id)) {
         return reject(
           "E_ACCEPTANCE_SIGNER_NOT_NEW",
           `/acceptances/${index}/key_id`,
@@ -580,7 +648,7 @@ function validatePulseDetailed(
       }
       return reject("E_ACCEPTANCE_UNEXPECTED", `/acceptances/${index}/key_id`, acceptance.key_id);
     }
-    const signer = nextById.get(acceptance.key_id);
+    const signer = mapGet(nextById, acceptance.key_id);
     if (!verifyEd25519(signer.public_key, acceptanceMessage, acceptance.signature)) {
       return reject(
         "E_ACCEPTANCE_SIGNATURE_INVALID",
@@ -588,55 +656,78 @@ function validatePulseDetailed(
         acceptance.key_id
       );
     }
-    suppliedAcceptanceIds.add(acceptance.key_id);
+    setAdd(suppliedAcceptanceIds, acceptance.key_id);
   }
 
-  const missingAcceptanceIds = newIds.filter((keyId) => !suppliedAcceptanceIds.has(keyId));
+  const missingAcceptanceIds = arrayFilter(
+    newIds,
+    (keyId) => !setHas(suppliedAcceptanceIds, keyId)
+  );
   if (mode === "complete" && missingAcceptanceIds.length > 0) {
     return reject("E_ACCEPTANCE_MISSING", "/acceptances", missingAcceptanceIds[0]);
   }
 
-  const activationIds = new Set(
-    approvals.map((entry) => entry.key_id).filter((keyId) => nextById.has(keyId))
+  const activationIds = createSet();
+  const retainedApprovalIds = arrayFilter(
+    arrayMap(approvals, (entry) => entry.key_id),
+    (keyId) => mapHas(nextById, keyId)
   );
-  for (const keyId of suppliedAcceptanceIds) activationIds.add(keyId);
-  if (mode !== "complete") {
-    for (const keyId of missingAcceptanceIds) activationIds.add(keyId);
+  for (let index = 0; index < retainedApprovalIds.length; index += 1) {
+    setAdd(activationIds, retainedApprovalIds[index]);
   }
-  const retainedPotentialApprovalIds = [...potentialApprovalIds]
-    .filter((keyId) => nextById.has(keyId))
-    .sort();
-  const possibleActivationIds = new Set(activationIds);
-  for (const keyId of retainedPotentialApprovalIds) possibleActivationIds.add(keyId);
-  if (possibleActivationIds.size < body.next_quorum.threshold) {
+  const suppliedAcceptanceValues = setValues(suppliedAcceptanceIds);
+  for (let index = 0; index < suppliedAcceptanceValues.length; index += 1) {
+    setAdd(activationIds, suppliedAcceptanceValues[index]);
+  }
+  if (mode !== "complete") {
+    for (let index = 0; index < missingAcceptanceIds.length; index += 1) {
+      setAdd(activationIds, missingAcceptanceIds[index]);
+    }
+  }
+  const retainedPotentialApprovalIds = arraySort(
+    arrayFilter(setValues(potentialApprovalIds), (keyId) => mapHas(nextById, keyId))
+  );
+  const possibleActivationIds = createSet();
+  const existingActivationIds = setValues(activationIds);
+  for (let index = 0; index < existingActivationIds.length; index += 1) {
+    setAdd(possibleActivationIds, existingActivationIds[index]);
+  }
+  for (let index = 0; index < retainedPotentialApprovalIds.length; index += 1) {
+    setAdd(possibleActivationIds, retainedPotentialApprovalIds[index]);
+  }
+  if (setSize(possibleActivationIds) < body.next_quorum.threshold) {
     return reject(
       "E_NEXT_QUORUM_ACTIVATION_INSUFFICIENT",
       "/body/next_quorum/threshold",
-      `${possibleActivationIds.size}/${body.next_quorum.threshold}`
+      `${setSize(possibleActivationIds)}/${body.next_quorum.threshold}`
     );
   }
 
   const missingCurrentApprovalIds = [];
   if (mortalityMode) {
-    const selected = new Set();
-    const activationNeeded = Math.max(0, body.next_quorum.threshold - activationIds.size);
-    for (const keyId of retainedPotentialApprovalIds.slice(0, activationNeeded)) {
-      selected.add(keyId);
-      missingCurrentApprovalIds.push(keyId);
+    const selected = createSet();
+    const activationDeficit = body.next_quorum.threshold - setSize(activationIds);
+    const activationNeeded = activationDeficit > 0 ? activationDeficit : 0;
+    const activationSelection = arraySlice(retainedPotentialApprovalIds, 0, activationNeeded);
+    for (let index = 0; index < activationSelection.length; index += 1) {
+      const keyId = activationSelection[index];
+      setAdd(selected, keyId);
+      arrayPush(missingCurrentApprovalIds, keyId);
     }
 
-    let approvalNeeded = Math.max(
-      0,
-      currentDescriptor.quorum.threshold - approvals.length - selected.size
-    );
-    for (const keyId of [...potentialApprovalIds].sort()) {
+    const approvalDeficit =
+      currentDescriptor.quorum.threshold - approvals.length - setSize(selected);
+    let approvalNeeded = approvalDeficit > 0 ? approvalDeficit : 0;
+    const sortedPotentialApprovalIds = arraySort(setValues(potentialApprovalIds));
+    for (let index = 0; index < sortedPotentialApprovalIds.length; index += 1) {
+      const keyId = sortedPotentialApprovalIds[index];
       if (approvalNeeded === 0) break;
-      if (selected.has(keyId)) continue;
-      selected.add(keyId);
-      missingCurrentApprovalIds.push(keyId);
+      if (setHas(selected, keyId)) continue;
+      setAdd(selected, keyId);
+      arrayPush(missingCurrentApprovalIds, keyId);
       approvalNeeded -= 1;
     }
-    missingCurrentApprovalIds.sort();
+    arraySort(missingCurrentApprovalIds);
   }
 
   const capability = {
