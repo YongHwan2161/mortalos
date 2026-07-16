@@ -444,14 +444,23 @@ const orderedGateStatement =
 for (const [name, artifact] of Object.entries({
   readme: text.readme,
   projectStatus: text.projectStatus,
-  implementationPlan: text.implementationPlan,
-  accessArchitecture: text.accessArchitecture
+  implementationPlan: text.implementationPlan
 })) {
   assert(
     artifact.includes(orderedGateStatement),
     `${name} does not state the reviewed total gate order`
   );
 }
+
+const remainingGateStatement =
+  "R1-C Lab wire consumption → R2 deterministic state → R3 availability → " +
+  "R4 network embodiment";
+assert(
+  text.accessArchitecture.includes(remainingGateStatement) &&
+    text.accessArchitecture.includes("R1-A has frozen") &&
+    text.accessArchitecture.includes("R1-B independently reproduces"),
+  "accessArchitecture does not distinguish merged R1-A/R1-B from the remaining gate order"
+);
 
 for (const statement of [
   "Proxy-free ordinary own-data",
