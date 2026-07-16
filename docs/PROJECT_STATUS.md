@@ -2,9 +2,9 @@
 
 As of: **2026-07-16**
 
-Stage: **P0 resource-bounded mortality locally verified; exact-head Chromium CI pending**
+Stage: **P0 mortality-proof reconciliation locally verified; exact-head publication gates pending**
 
-Security baseline: **portable trust boundaries hardened; mortality work exhaustion fails indeterminate**
+Security baseline: **incomplete evidence, runtime drift, and work exhaustion cannot classify death**
 
 This is the rolling status and audit document. Update it when evidence changes; use Git history for dated narratives.
 
@@ -12,7 +12,7 @@ This is the rolling status and audit document. Update it when evidence changes; 
 
 MortalOS now has a portable authority-lineage kernel. Genesis, signed Pulses, singleton creation, `2-of-3` handoffs, complete original-custodian turnover, replay/fork handling, latent succession, conditional mortality, and clone separation are executable. Byte acquisition, Ed25519 points, validation order, handoff activation, and mortality authority have explicit fail-closed boundaries rather than relying on caller discipline.
 
-The trusted implementation no longer depends on Node.js or the browser. H3A uses that kernel in a local one-page Lab rather than creating a second validator. The current P0 candidate also caps whole-observation mortality work: excessive usable-ID count or characters, pending records, owned evidence bytes, or signature-verification work returns `indeterminate / limit_exceeded` without truncation or graph mutation. Every changed head must rerun both the differential gate and the Lab acceptance gate before publication.
+The trusted implementation no longer depends on Node.js or the browser. H3A uses that kernel in a local one-page Lab rather than creating a second validator. The current P0 candidate requires explicit irreversible authority loss **and** an explicitly complete latent-evidence inventory before death; malformed declared carriers and validator uncertainty abort; captured realm/crypto integrity is checked before analysis; and excessive usable-ID count/code units, pending records, owned evidence bytes, or signature-verification work returns `indeterminate / limit_exceeded` without truncation or graph mutation. Every changed head must rerun both the differential gate and the Lab acceptance gate before publication.
 
 The project still does not transition mutable logical state or connect participants. It supports claims about deterministic identity and authority lineage, not yet an OS, independent-host deployment, or state-bearing digital life.
 
@@ -22,17 +22,18 @@ The project still does not transition mutable logical state or connect participa
 |---|---|---|
 | Apache-2.0 licensing | Verified | Root license digest, package metadata, and contribution terms agree. |
 | Canonical input and limits | Verified | Intrinsic-backed snapshots ignore hostile view metadata and reject shared/detached storage. Programmatic canonicalization uses captured internal-slot probes plus one data-descriptor snapshot, rejects accessors without invoking their value getters, and documents the transparent-Proxy limit. Duplicate, UTF-8, I-JSON, JCS, byte, and exact root-depth rules remain enforced. |
-| Portable Genesis/Pulse cryptography | Verified across runtimes | RFC 8032 plus canonical, non-small-order, torsion-free prime-subgroup point checks and signed lifecycle vectors pass in Node 22, the isolated browser-target realm, and actual Chromium CI on publication candidate `9eae8c34`. |
+| Portable Genesis/Pulse cryptography | Verified baseline; rerun required | RFC 8032 plus canonical, non-small-order, torsion-free prime-subgroup point checks and signed lifecycle vectors passed prior Node 22/browser-target/actual-Chromium publication gates. The current changed head must rerun the same evidence. |
 | Deterministic validation | Verified | Public validators are total, preserve stable envelope-before-payload first-error precedence, and keep public durable-latent validation supplied-evidence-only. |
 | `1-of-1` bootstrap | Verified | Public signed birth/heartbeat and an ephemeral CLI proof adapter. Creator-controlled, not ownerless. |
 | `1-of-1` → logical `2-of-3` expansion | Verified | One-process generated-key proof: original sole key becomes insufficient and two eligible signers advance; physical distribution is not established. |
 | `2-of-3` continuation | Verified | Current quorum, acceptance signatures, and sufficiency of the supplied next-quorum activation set are enforced. |
 | Stateful lineage | Verified | Replay, fork, equivocator, unknown-parent, and post-fork halt tests pass. |
-| Mortality observer | Verified conditionally; P0 limit candidate | The lineage supplies its recognized head through a private constructor capability, blocks reentrant mutation, snapshots usability once, pools candidate bodies/signatures/sidecars independently, cryptographically reconstructs evidence per exact body, and filters projected usable signers through sign-once commitments. Authenticated multi-body evidence, payload uncertainty, forks, and any fixed work-limit overflow remain unclassified. Overflow never truncates into death. Global usability and irreversibility remain observer assumptions; internal conditional helpers are not re-exported by `src/index.mjs`. |
-| Portable adversarial corpus | v4 candidate | Corpus v4 adds deterministic mortality-limit overflow to the existing strict points, trust boundaries, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, 15/15 named negatives, and 10,000 fixed-seed rejects. Node/browser-target/actual-Chromium equality is required on the exact publication head. H3A additionally verifies actual-browser SAB rejection under cross-origin isolation. |
-| Node/Chromium equivalence | Verified on publication candidate | The then-current committed expected result, Node 22, browser-target realm, and actual Chromium were byte-identical on `9eae8c34`. This integration working tree passes committed/Node/browser-target equality; local actual Chromium could not launch because the browser download was unavailable, so the exact head must pass the remote CI gate. |
-| Single-browser incubator | Verified locally | Three dedicated Workers hold non-extractable WebCrypto keys; 3/3 birth, one-key rejection, every 2-key heartbeat pair, controlled termination, and the one-physical-domain warning pass actual Chromium. |
-| MortalOS Lab | Verified locally | Reference turnover, mutation, replay, fork, qualified mortality, resurrection rejection, clone separation, 10,000-case corpus, canonical public-evidence export/replay, and browser boundary probes pass. Public HTTPS hosting remains H3B. |
+| Mortality observer | P0 reconciliation locally verified | The lineage supplies its recognized head through a private constructor capability, blocks reentrant mutation, owns every declared carrier, recursively discovers target-tuple bodies and exact tagged signatures, reconstructs evidence per exact body, and filters projected usable signers through sign-once commitments. Authenticated multi-body evidence, payload uncertainty, incomplete inventory, forks, and fixed work-limit overflow remain unclassified. Runtime/crypto drift and malformed declared carriers abort. Death requires exact irreversibility plus explicit completeness. The honest Proxy-free producer, carrier placement, completeness, global usability, and hidden-copy assumptions remain outside cryptographic proof. |
+| Portable adversarial corpus | v5 candidate | Corpus v5 adds explicit incomplete-versus-complete mortality evidence to deterministic mortality-limit overflow, strict points, trust boundaries, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, 15/15 named negatives, eight boundary outcomes, and 10,000 fixed-seed rejects. Node/browser-target/actual-Chromium equality is required on the exact publication head. H3A additionally verifies actual-browser SAB rejection under cross-origin isolation. |
+| Node/Chromium equivalence | Node/browser-target local PASS; actual browser pending | The committed v5 result, direct Node 24, and isolated browser-target realm are byte-identical on this candidate. Local Playwright Chromium installation returned a zero-byte/truncated CDN archive even after a workspace-cache and elevated retry, so the final immutable remote head must supply actual-Chromium evidence; any code change invalidates the prior run. |
+| Single-browser incubator | Prior actual-browser proof; current unit proof | Three dedicated Workers hold non-extractable WebCrypto keys; 3/3 birth, one-key rejection, every 2-key heartbeat pair, controlled termination, and the one-physical-domain warning passed the earlier actual-Chromium gate. The current head must rerun it. Live retirement asserts incomplete evidence and cannot claim death. |
+| MortalOS Lab | Candidate locally verified | Reference turnover, mutation, replay, fork, explicitly complete closed-fixture mortality, runtime-drift aborts, resurrection rejection, clone separation, 10,000-case corpus, canonical public-evidence export/replay, and unit/static gates pass. Exact-head actual-browser verification and public HTTPS H3B remain open. |
+| Independent verifier | Not implemented | R1 must define canonical bounded operation/result bytes and reproduce them with an independently written non-JavaScript verifier before adapter surfaces become the long-term contract. |
 | Stable CLI | Proof only | Creation works in memory; import, persistence, replay, export, and compatibility contract are absent. |
 | Independent-participant survival | Not implemented | Requires adapters, signing lifecycle, handoff, and transport. |
 | Mutable state/genome execution | Deferred | v0 deliberately preserves the Genesis state root. |
@@ -58,20 +59,21 @@ npm pack --dry-run
 Current results:
 
 - license and specification gates: PASS;
-- conformance tests: 59/59 PASS on this candidate;
+- conformance tests: 70/70 PASS locally on this candidate;
 - fixed-seed Node property cases: 10,000 mixed valid/invalid continuations (1,008 accepts and 8,992 rejects) with exact expected outcomes and invariant preservation;
 - portable named negatives: 15/15 expected codes;
 - portable boundary probes: 8/8 expected outcomes in Node and the isolated browser-target, including deterministic pending-count and usable-ID-character mortality overflow;
 - portable fixed-seed cases: 10,000/10,000 expected rejects from seed `1297044052`;
-- committed result, Node 24, and browser-target realm: byte-identical on this candidate; actual Chromium must pass on the exact remote head;
-- trusted-core coverage on this candidate: 98.02% line, at least 93.69% branch across repeated Node 24 runs, and 100% function coverage;
+- committed portable v5 result, direct Node 24, and isolated browser-target realm: byte-identical; 10,000/10,000 adversarial rejects; actual Chromium remains part of the exact-head remote gate;
+- trusted-core coverage: 96.14% line, 93.01% branch, and 95.18% function across 69 tests, including `src/primordials.mjs`; the aggregate branch floor is 90%;
 - fresh-process deterministic trace comparison: PASS;
-- H2 trace format: `mortalos-lifecycle-trace/3`;
-- H2 trace digest: `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
-- clean locked installation and full local suite: PASS; exact-head Node 22 and actual Chromium CI remain required for publication;
-- H3A actual-Chromium acceptance: PASS in three clean contexts, including all `2-of-3` pairs, full reference experiments, 10,000 adversarial cases, cross-origin-isolated SAB rejection, canonical export/replay, and clean storage/network/console boundaries;
+- H2 trace format: `mortalos-lifecycle-trace/4`;
+- H2 trace digest: `19fa3080831cb94f29bfda2e7e1f04f86927057f0823834a6bcbc7d746e25399`;
+- clean locked installation and full `npm test`: PASS; conformance 70/70, governance 30/30, mortality 22/22, Lab 5/5, static Lab build, portable v5, singleton, and H2 v4 all pass;
+- actual Chromium differential: locally blocked before launch because every Playwright CDN attempt returned a zero-byte/truncated archive; exact-head remote Verify remains mandatory;
+- H3A actual-Chromium acceptance: historical PASS in three clean contexts; the exact reconciled head must rerun all `2-of-3` pairs, full reference experiments, 10,000 adversarial cases, runtime-drift probes, cross-origin-isolated SAB rejection, canonical export/replay, and clean storage/network/console boundaries;
 - dependency audit: zero known vulnerabilities at the moderate threshold;
-- package dry-run: PASS with 76 files, including the static Lab source and build/verification scripts; and
+- package dry-run: PASS with 77 files, including the static Lab source, `src/primordials.mjs`, and build/verification scripts; and
 - link and repository secret scans: PASS within their declared patterns.
 
 Cross-runtime agreement, coverage, and mutation corpora are strong regression evidence, not a second independent implementation or a security proof.
@@ -86,9 +88,17 @@ Trusted `src/` modules now use portable bytes, structural validation, SHA-256, a
 
 The kernel now snapshots byte inputs through captured intrinsics, rejects `SharedArrayBuffer`, validates Ed25519 public/signature points under one strict subgroup profile, and makes validation APIs total. Programmatic canonicalization rejects accessors and the explicitly probed, detectable internal-slot objects from one descriptor snapshot; canonical bytes remain the stronger side-effect-free boundary, and the Proxy/exotic limits are explicit in the protocol. Stable first-error precedence is explicit and next-custody transitions cannot be accepted without an activatable supplied quorum. Mortality cannot trust a caller-selected head, leaked constructor, unsigned evidence labels, carrier placement, or fabricated latent result: it reconstructs exact-body evidence cryptographically, applies sign-once to projected usable keys, tries strict acceptance first, leaves authenticated equivocation unclassified, and—only after authority loss is declared irreversible—lets a completion-capable payload-opaque membership body block a death conclusion that lacks independent fresh-quorum or verified-latent evidence. Internal conditional helpers are not re-exported by `src/index.mjs`.
 
+### Closed in P0 candidate — absence and runtime drift could manufacture death
+
+Earlier mortality logic treated an empty pending list as if it proved that no latent successor existed. Independent review reproduced a contradiction: the same irreversible-loss observation reported death with an empty list, then reported `latent_successor_not_dead` when one already valid direct child was added. A separate mutation of trusted runtime dispatch or crypto state could also collapse valid evidence into false absence. The candidate now requires an explicit complete-inventory assertion, owns and parses every declared carrier or aborts, discovers target bodies/signatures recursively, and verifies captured realm/crypto integrity before analysis. Missing completeness, late evidence, malformed carriers, and runtime drift cannot become death.
+
 ### Closed in P0 candidate — mortality work was unbounded
 
-The observer now fixes limits of 16 supplied usable IDs, 768 total usable-ID characters, 128 pending records, 4 MiB of owned pending bytes, and 4,096 conservative signature-verification work units. Non-48-character entries are discarded before keyed lookup, so an oversized identifier cannot move unbounded string hashing outside the count budget. Any overflow returns a structured unclassified result and leaves the graph unchanged. This trades an availability false-negative under evidence flooding for the safety property that resource pressure cannot manufacture a death conclusion.
+The observer now fixes limits of 16 supplied usable IDs, 768 total usable-ID UTF-16 code units, 128 pending records, 4 MiB of owned pending bytes, and 4,096 conservative attacker-proportional signature-verification work units. Every usable ID must be one canonical `peer:` identifier. Fixed crypto known-answer tests are constant integrity overhead outside that budget. Any overflow returns a structured unclassified result and leaves the graph unchanged. This trades an availability false-negative under evidence flooding for the safety property that resource pressure cannot manufacture a death conclusion.
+
+### Residual — JavaScript observer containers are not an independent evidence format
+
+The bounded observer intentionally reads only documented names and indices and never enumerates caller-owned containers. That closes the unbounded `ownKeys` path, but unknown fields are ignored and a transparent Proxy can lie through targeted descriptor traps. Correctness therefore still trusts an honest Proxy-free producer, documented carrier placement, and a truthful completeness assertion. R1 must replace this boundary with canonical bounded bytes and an independent non-JavaScript verifier; hidden copies and global completeness will remain explicit policy assumptions.
 
 ### High — two bootstrap profiles serve different purposes
 
@@ -112,11 +122,13 @@ The property corpus mixes 1,008 baseline-valid continuations with 8,992 signed-f
 
 ## 5. Decision
 
-Publish the P0 candidate only after its exact-head Node/browser-target/actual-Chromium and full CI gates pass. Then proceed with **H3B public MortalOS Lab deployment** as the next delivery gate. H3A already imports the verified portable kernel and exposes local browser creation, lifecycle inspection, mutation, replay, fork, and qualified mortality without adding validity logic. H3B must publish that exact artifact over HTTPS with the required isolation/security headers and prove the logged-out judge path from the deployed commit.
+Publish the P0 candidate only after its exact-head Node/browser-target/actual-Chromium, Lab, coverage, audit, package, policy, and independent-review gates pass, followed by the same post-merge `main` verification.
 
-Develop **C2 stable CLI** as the next non-browser access milestone using the same evidence-record and trace formats. The next fundamental research gate remains **R2 deterministic state-bearing kernel**.
+Then implement **R1 canonical authority-observation records and an independent non-JavaScript verifier**. This is the next architectural gate because the false-death defect exposed an implementation-bound object-graph assumption. H3B should follow as the next delivery gate and consume R1 as a thin adapter; it must publish the reviewed artifact over HTTPS with the required isolation/security headers and prove the logged-out judge path from the deployed commit.
 
-North Star: authenticated evidence plus participating resources—not a browser, server, CLI, transport, model, or administrator—must determine one entity's identity, executable state, succession authority, and qualified death while every original host can be replaced. H3 explains and falsifies today's authority kernel; R2 is the next change that materially advances that North Star.
+Develop **C2 stable CLI** as the next non-browser access milestone using the same R1 operation/result and trace formats. The next fundamental state research gate remains **R2 deterministic state-bearing kernel**.
+
+North Star: authenticated evidence plus participating resources—not a browser, server, CLI, transport, model, or administrator—must determine one entity's identity, executable state, succession authority, and qualified death while every original host can be replaced. R1 makes today's authority/death decisions independently reproducible; H3 explains and falsifies them; R2 then adds the missing deterministic state-bearing life kernel.
 
 ## 6. Documentation policy
 

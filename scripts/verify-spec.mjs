@@ -33,13 +33,15 @@ const paths = {
   projectStatus: "docs/PROJECT_STATUS.md",
   incubator: "docs/SINGLE_BROWSER_INCUBATOR.md",
   accessArchitecture: "docs/ACCESS_ARCHITECTURE.md",
+  submissionChecklist: "docs/SUBMISSION_CHECKLIST.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
   genesisExample: "examples/schema/genesis.valid.json",
   pulseExample: "examples/schema/pulse.valid.json",
   heartbeatPayloadExample: "examples/schema/heartbeat-payload.valid.json",
-  h2Golden: "test/vectors/h2-trace.expected.json"
+  h2Golden: "test/vectors/h2-trace.expected.json",
+  portableGolden: "test/vectors/portable-expected.json"
 };
 
 const entries = await Promise.all(
@@ -53,6 +55,7 @@ const genesisExample = JSON.parse(text.genesisExample);
 const pulseExample = JSON.parse(text.pulseExample);
 const heartbeatPayloadExample = JSON.parse(text.heartbeatPayloadExample);
 const h2Golden = JSON.parse(text.h2Golden);
+const portableGolden = JSON.parse(text.portableGolden);
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const validateGenesis = ajv.compile(genesisSchema);
@@ -257,7 +260,7 @@ for (const statement of requiredThreatStatements) {
 
 const portableGateStatements = [
   "Verified gate — C1 portable deterministic core",
-  "Committed, Node 22, isolated browser-target, and actual Chromium results are byte-identical on publication candidate `9eae8c34`.",
+  "The committed result, Node 22, isolated browser-target, and actual Chromium results are required to be byte-identical on every review head; the latest successful exact-head Verify run is the publication evidence.",
   "The PR workflow requires every changed head to rerun the Node/Chromium differential gate.",
   "Exactly 10,000 cases replay from seed `1297044052`",
   "any cross-runtime mismatch reopens C1"
@@ -267,16 +270,16 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "P0 resource-bounded mortality locally verified; exact-head Chromium CI pending",
-  "| Node/Chromium equivalence | Verified on publication candidate |",
-  "exact-head Node 22 and actual Chromium CI remain required for publication;",
+  "P0 mortality-proof reconciliation locally verified; exact-head publication gates pending",
+  "| Node/Chromium equivalence | Node/browser-target local PASS; actual browser pending |",
+  "any code change invalidates the prior run",
   "The verified CLI singleton uses one key"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
 }
 
 for (const statement of [
-  "`usable_key_id_chars` | Supplied usable-key ID characters | 768",
+  "`usable_key_id_chars` | Supplied usable-key ID UTF-16 code units | 768",
   "`pending_records` | Pending successor records | 128",
   "`signature_verifications` | Signature-verification work units | 4,096",
   "reason: \"limit_exceeded\"",
@@ -291,7 +294,7 @@ for (const statement of [
 
 for (const statement of [
   "H3A local executable slice — verified",
-  "H3B public deployment — next delivery gate",
+  "H3B public deployment — next delivery gate after R1",
   "Three dedicated Workers hold non-extractable WebCrypto keys"
 ]) {
   assert(
@@ -345,7 +348,9 @@ assert(
   text.protocol.includes(
     "Destroying current private keys does not invalidate signatures already produced"
   ) &&
-    text.protocol.includes("cryptographically remaps signatures") &&
+    text.protocol.includes("every exact canonical `ed25519:`") &&
+    text.protocol.includes("object property name") &&
+    text.protocol.includes("cryptographically remaps collected signatures") &&
     text.protocol.includes("evidence_equivocation") &&
     text.protocol.includes("evidence_payload_unavailable") &&
     text.protocol.includes(
@@ -353,6 +358,17 @@ assert(
     ),
   "Protocol omits sign-once-aware completion, evidence reconstruction, or payload uncertainty"
 );
+for (const statement of [
+  "only the five named observer fields",
+  "The observer never enumerates caller-owned option, array, or carrier containers",
+  "Unknown string or Symbol fields are ignored and are not evidence",
+  "abort the whole mortality operation as observer uncertainty",
+  "SHA-256 and RFC 8032 known-answer tests",
+  "latentEvidenceComplete: true",
+  "independently written non-JavaScript verifier"
+]) {
+  assert(text.protocol.includes(statement), `Protocol omits mortality/R1 boundary: ${statement}`);
+}
 for (const statement of [
   "prime-order subgroup",
   "owned immutable snapshot",
@@ -367,10 +383,44 @@ delete h2WithoutDigest.trace_sha256;
 const h2Digest = createHash("sha256")
   .update(canonicalize(h2WithoutDigest))
   .digest("hex");
-assert(h2Golden.format === "mortalos-lifecycle-trace/3", "H2 golden trace format is stale");
+assert(h2Golden.format === "mortalos-lifecycle-trace/4", "H2 golden trace format is stale");
 assert(h2Golden.trace_sha256 === h2Digest, "H2 golden trace digest does not match its content");
+assert(
+  portableGolden.format === "mortalos-portable-corpus/5",
+  "Portable golden corpus format is stale"
+);
 for (const artifact of [text.readme, text.projectStatus, text.traceability]) {
   assert(artifact.includes(h2Digest), "Current documentation omits the committed H2 digest");
+}
+
+const currentArtifacts = {
+  readme: text.readme,
+  projectStatus: text.projectStatus,
+  traceability: text.traceability,
+  accessArchitecture: text.accessArchitecture,
+  incubator: text.incubator,
+  submissionChecklist: text.submissionChecklist,
+  implementationPlan: text.implementationPlan,
+  threatModel: text.threatModel
+};
+for (const [name, artifact] of Object.entries(currentArtifacts)) {
+  assert(!artifact.includes("corpus v4"), `${name} contains a stale portable corpus version`);
+  assert(
+    !artifact.includes("b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36"),
+    `${name} contains the stale H2 digest`
+  );
+  assert(!artifact.includes("trace format v3"), `${name} contains a stale H2 format`);
+}
+assert(
+  text.submissionChecklist.includes("after distribution is independently evidenced"),
+  "Submission claims omit the independent-distribution qualification"
+);
+for (const statement of [
+  "R1 canonical authority-observation records",
+  "independent non-JavaScript verifier",
+  "R2 then adds the missing deterministic state-bearing life kernel"
+]) {
+  assert(text.projectStatus.includes(statement), `Project status omits North-Star sequence: ${statement}`);
 }
 
 const currentDocLinks = [

@@ -1,6 +1,6 @@
 # MortalOS Implementation Plan
 
-Status: **P0 resource-bounded mortality locally verified; exact-head Chromium CI pending**
+Status: **P0 mortality-proof reconciliation locally verified; exact-head publication gates pending**
 
 Last reviewed: **2026-07-16**
 
@@ -11,12 +11,13 @@ This is a rolling, gate-based plan. Current evidence belongs in [`PROJECT_STATUS
 1. deterministic protocol meaning;
 2. authority lineage and recognized-head safety;
 3. cross-runtime portability;
-4. one-page browser incubation and MortalOS Lab;
-5. GPT-assisted adversarial scenarios;
-6. release evidence;
-7. stable non-browser adapters;
-8. deterministic mutable state and availability; and
-9. transport/resource organs.
+4. fail-closed mortality proof under incomplete evidence, runtime drift, and resource pressure;
+5. canonical operation/result bytes plus an independent verifier;
+6. one-page browser incubation and MortalOS Lab;
+7. GPT-assisted adversarial scenarios and release evidence;
+8. stable non-browser adapters;
+9. deterministic mutable state and availability; and
+10. transport/resource organs.
 
 Browser is first for zero-install visual demonstration, not because the protocol lives in a browser. UI, endpoint type, transport, storage, model output, and hosted infrastructure may propose or carry bytes but may never become validity authority.
 
@@ -32,11 +33,12 @@ The reference core verifies:
 - replay rejection, fork evidence, intersecting signer evidence, and post-fork halt;
 - complete A/B/C → D/E/F custodian turnover with stable identity;
 - single-read public validation of complete and durable acceptance-incomplete successors, plus lineage-internal completion from independently collected body/signature/sidecar evidence, one early usable-key snapshot filtered per body by sign-once commitments, unclassified authenticated equivocation, and conditional payload-unavailability after irreversible authority loss when an opaque membership body is the sole obstacle to a death conclusion;
-- conditional authority/state mortality states scoped to the graph-recognized head;
+- conditional authority/state mortality states scoped to the graph-recognized head, with death requiring exact irreversibility and an explicitly complete latent-evidence inventory;
+- bounded named-field acquisition, owned declared carriers, recursive target-body/signature discovery, and pre-analysis realm/crypto integrity checks;
 - fixed whole-observation mortality limits that return indeterminate rather than
   classifying a truncated evidence set;
 - 10,000 deterministic mixed valid/invalid continuation cases; and
-- byte-identical H2 v3 traces in fresh processes.
+- byte-identical H2 v4 traces in fresh processes.
 
 ## 3. Verified gate — C1 portable deterministic core
 
@@ -60,7 +62,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 ### Pass record
 
 - [x] Portable modules contain no forbidden platform dependency.
-- [x] Committed, Node 22, isolated browser-target, and actual Chromium results are byte-identical on publication candidate `9eae8c34`.
+- [x] The committed result, Node 22, isolated browser-target, and actual Chromium results are required to be byte-identical on every review head; the latest successful exact-head Verify run is the publication evidence.
 - [x] The PR workflow requires every changed head to rerun the Node/Chromium differential gate.
 - [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
 - [x] Forged context, leaked constructor, replay, fork, no-op membership, durable latent succession, conditional-current-approval completion, evidence poisoning, sign-once/equivocation, and payload-unavailability cases pass in Node and the isolated browser-target runtime.
@@ -69,18 +71,43 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
 - [x] Clean locked installation and the full local suite pass.
-- [x] Actual Chromium execution passes on publication candidate `9eae8c34`; later heads remain subject to the same required CI gate.
+- [x] The actual-Chromium runner is part of the required Verify workflow; a code change invalidates older run evidence.
 - [x] An adapter cannot alter canonical bytes, validation order, rejection codes, or lineage decisions.
 
 Failure rule: any cross-runtime mismatch reopens C1 and blocks endpoint product work. Do not copy the validator into UI or CLI code as a workaround.
 
-The resource-limit candidate must still pass the exact-head actual-Chromium and remote CI gates before its evidence can be described as published. Limit values are versioned observer semantics; adapters may submit a smaller complete set but may not truncate, silently raise the limits, or reinterpret overflow as missing evidence.
+The reconciled mortality candidate must still pass the exact-head actual-Chromium and remote CI gates before its evidence can be described as published. Limit values are versioned observer semantics; adapters may submit a smaller explicitly complete set but may not truncate, silently raise the limits, reinterpret overflow as missing evidence, or infer completeness from an empty list.
 
-## 4. H3 — single-browser incubator and MortalOS Lab
+## 4. P0 — mortality-proof reconciliation ◐ CURRENT PUBLICATION GATE
 
-### Why this is next
+### Objective
 
-The kernel is now portable, but judges and developers cannot yet see or manipulate the world without rebuilding. A browser Lab turns verified evidence into a comprehensible product before the Build Week deadline. This is a delivery milestone, not the deepest research milestone.
+Prevent incomplete evidence, malformed declared carriers, runtime/dependency drift, and bounded-work exhaustion from collapsing into a false death classification.
+
+### Implemented candidate
+
+- [x] Death requires exact `authorityLossIrreversible: true` and `latentEvidenceComplete: true`; missing or false completeness remains `authority_unavailable_not_proven_dead`.
+- [x] Every declared byte source must be ownable and parseable; ambiguity aborts the entire observation rather than becoming evidence absence.
+- [x] Target-tuple body objects and exact tagged signatures, including property names, are recursively discovered throughout all parsed declared trees.
+- [x] Captured realm/dependency descriptors plus SHA-256 and RFC 8032 known-answer checks abort before classification when trusted runtime state drifts.
+- [x] Five whole-observation resource limits return structured `indeterminate / limit_exceeded` without truncation or graph mutation.
+- [x] Portable corpus v5 and H2 trace v4 encode incomplete and complete evidence as distinct outcomes.
+- [x] H3A's closed reference fixture asserts completeness; live Worker retirement explicitly does not.
+
+### Publication exit
+
+- [x] Clean locked install, full suite, coverage, audit, package, secret, syntax, spec, and diff gates pass locally; actual Chromium is separately blocked by a zero-byte CDN archive.
+- [ ] The exact immutable remote head passes trusted policy, Node 22, browser-target, actual Chromium, and Lab Chromium verification.
+- [ ] Independent review explicitly replays the empty-inventory/late-valid-child regression and runtime-drift probes and posts a superseding verdict on that immutable head.
+- [ ] Post-merge `main` reruns the full Verify workflow.
+
+Residual boundary: v0 deliberately reads only bounded documented names and never enumerates caller-owned containers. Unknown fields are ignored and are not evidence. A transparent Proxy can lie through descriptor traps, and evidence completeness remains a policy assertion. R1 is required before treating the observer as independently specified across implementations.
+
+## 5. H3 — single-browser incubator and MortalOS Lab
+
+### Why this follows R1
+
+The kernel is portable, but judges and developers cannot yet see or manipulate the world without rebuilding. A browser Lab turns verified evidence into a comprehensible product. The public H3B artifact should consume R1's canonical operation/result contract rather than cementing the current JavaScript object-graph observer boundary. This is a delivery milestone, not the deepest research milestone.
 
 ### Incubator path
 
@@ -118,7 +145,7 @@ run reference lifecycle
 
 The reference handoff trace proves stable identity through complete custody turnover. Moving live Worker slots to genuinely independent endpoints remains a network-adapter milestone, because a browser-only simulation cannot prove physical distribution.
 
-### H3B public deployment — next delivery gate
+### H3B public deployment — next delivery gate after R1
 
 - [ ] A public HTTPS URL works without credentials, install, or rebuilding.
 - [ ] The deployed commit equals the reviewed repository commit.
@@ -126,8 +153,9 @@ The reference handoff trace proves stable identity through complete custody turn
 - [ ] `npm run verify:lab` passes against the deployed URL in three clean contexts.
 - [ ] A logged-out judge can complete birth, heartbeat, falsification, corpus, and export paths.
 - [ ] No analytics, external requests, storage, Service Worker, private material, or console errors appear.
+- [ ] Mortality inputs and displayed results round-trip through the R1 canonical operation/result record and agree with the independent verifier.
 
-## 5. H4 — GPT-5.6 adversarial scenario designer
+## 6. H4 — GPT-5.6 adversarial scenario designer
 
 Flow:
 
@@ -149,7 +177,7 @@ Pass criteria:
 - [ ] The compiled scenario produces the same result with GPT disabled.
 - [ ] No API key appears in browser code, logs, artifacts, screenshots, or history.
 
-## 6. H5 — release evidence
+## 7. H5 — release evidence
 
 - accurate repository and submission descriptions;
 - Apache-2.0, third-party inventory, setup, platform, sample, and no-rebuild testing information;
@@ -160,7 +188,7 @@ Pass criteria:
 
 Do not claim an OS, independent-host resilience, globally provable death, mutable digital life, or ownerless computation unless the corresponding executable gate is complete.
 
-## 7. C2 — stable CLI adapter
+## 8. C2 — stable CLI adapter
 
 The existing singleton script proves that a CLI endpoint can create a valid world. It is not yet a supported interface.
 
@@ -185,13 +213,24 @@ Pass criteria:
 - [ ] `1-of-1` creation warns that it is creator-controlled and exposes a handoff path to distributed custody.
 - [ ] Partial writes, concurrent writers, corrupt input, and interrupted key creation fail closed.
 
-H3 remains ahead of C2 for the hackathon because visual explanation and a hosted judge path are submission blockers. C2 is nevertheless the required proof that browser-first does not become browser-only.
+R1 remains ahead of both public H3B and C2 because otherwise both adapters would freeze an implementation-specific mortality input boundary. H3B remains ahead of C2 for the visual judge path; C2 is still the required proof that browser-first does not become browser-only.
 
-## 8. Research path
+## 9. Research path
 
-### R1 — ownerless authority lineage ◐
+### R1 — canonical authority-observation contract ⏭ NEXT ARCHITECTURAL GATE
 
-Node/browser-target/actual-Chromium reference agreement passed on publication candidate `9eae8c34`, and every changed head must rerun that CI gate. Further exit criteria are a second independently written implementation, persistent evidence replay, and broader correctly re-signed valid-history generation. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; the externally evidenced deployment distribution of keys in the accepted descriptor must prevent unilateral continuation.
+Define a versioned bounded wire operation containing the recognized-head reference, usable-key observation, state-availability assertion, irreversibility assertion, completeness assertion, and declared envelope/payload byte carriers. Lengths and budgets are canonical byte counts, not JavaScript UTF-16 or object-shape behavior. Define a canonical result record for accept/reject/lineage/mortality outcomes.
+
+Exit criteria:
+
+- [ ] A normative schema and canonical bytes cover every current operation and result, including the five mortality limit resources and observer-abort outcomes.
+- [ ] The JavaScript reference consumes the same decoded record used by adapters; browser and CLI objects cannot add evidence semantics.
+- [ ] An independently written non-JavaScript verifier imports no reference source or runtime dependency and reproduces every committed result byte-for-byte.
+- [ ] Differential generation includes incomplete/late evidence, nested artifact placement, runtime-independent malformed inputs, exact budget edges, correctly re-signed histories, restart/replay, and fork cases.
+- [ ] Completeness and hidden-copy assumptions remain explicit policy fields; the wire format does not overclaim that they became cryptographically provable.
+- [ ] Persistent evidence replay reconstructs the same graph and result after process restart.
+
+A live `1-of-1` or single-browser `2-of-3` state is still not ownerless; independently evidenced deployment distribution must ensure no one failure domain can satisfy the active threshold.
 
 ### R2 — deterministic state-bearing kernel ⏭ FUNDAMENTAL
 
@@ -217,7 +256,7 @@ Add deterministic virtual transport, a process-neutral adapter contract, browser
 
 Only after state transition, recovery, and participant turnover work should the project add sandboxed compute, storage markets, WebGPU, distributed weights, or ownerless model claims.
 
-## 9. Stop conditions
+## 10. Stop conditions
 
 Reopen the earliest responsible gate if:
 
@@ -230,6 +269,10 @@ Reopen the earliest responsible gate if:
 - mortality trusts a caller-selected head or prevalidated pending capability;
 - mortality projects a usable signer onto a body after that signer authenticated another body, treats authenticated equivocation as life/death, or ignores a completion-capable membership body solely because its committed sidecar is unavailable;
 - mortality truncates over-limit evidence or converts resource exhaustion into an alive/dead classification;
+- mortality reports death without exact irreversibility and explicit complete-evidence assertions;
+- a declared mortality carrier cannot be snapshotted or parsed yet is treated as absent;
+- realm, dependency, schema, or crypto-state drift changes a mortality result instead of aborting;
+- an adapter treats unknown object fields as evidence or omits documented carriers while claiming completeness;
 - UI, GPT, endpoint, transport, or storage bypasses validation;
 - `1-of-1` or one-browser logical quorum is misrepresented as ownerless physical distribution;
 - death is inferred only from silence, process exit, or an unverified deletion claim; or

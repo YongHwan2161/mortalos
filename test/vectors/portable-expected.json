@@ -1,5 +1,5 @@
 {
-  "format": "mortalos-portable-corpus/4",
+  "format": "mortalos-portable-corpus/5",
   "standards": {
     "rfc8032_vector_1": true,
     "rfc8032_mutation_rejected": true,
@@ -16,7 +16,10 @@
     "unsigned_code": "E_APPROVAL_INSUFFICIENT_QUORUM",
     "missing_heartbeat_payload_status": "latent_successor_not_dead",
     "alive_status": "operationally_alive",
-    "dead_status": "dead_under_v0_assumptions"
+    "incomplete_status": "authority_unavailable_not_proven_dead",
+    "incomplete_latent_evidence_complete": false,
+    "dead_status": "dead_under_v0_assumptions",
+    "dead_latent_evidence_complete": true
   },
   "lifecycle": {
     "organism_id": "mortalos:4kWFalWRv6QYXut4FhLeWQDpX_qpRtYNEcTsxoK2bsw",
@@ -25,21 +28,96 @@
     "clone_is_distinct": true
   },
   "negative_cases": [
-    { "id": "identity", "expected": "E_ORGANISM_ID_MISMATCH", "actual": "E_ORGANISM_ID_MISMATCH", "pass": true },
-    { "id": "sequence", "expected": "E_SEQUENCE_NOT_NEXT", "actual": "E_SEQUENCE_NOT_NEXT", "pass": true },
-    { "id": "parent", "expected": "E_PARENT_HASH_MISMATCH", "actual": "E_PARENT_HASH_MISMATCH", "pass": true },
-    { "id": "genome", "expected": "E_GENOME_HASH_MISMATCH", "actual": "E_GENOME_HASH_MISMATCH", "pass": true },
-    { "id": "custody", "expected": "E_CURRENT_CUSTODY_HASH_MISMATCH", "actual": "E_CURRENT_CUSTODY_HASH_MISMATCH", "pass": true },
-    { "id": "state", "expected": "E_MEMBERSHIP_STATE_CHANGED", "actual": "E_MEMBERSHIP_STATE_CHANGED", "pass": true },
-    { "id": "payload", "expected": "E_EVENT_PAYLOAD_MISMATCH", "actual": "E_EVENT_PAYLOAD_MISMATCH", "pass": true },
-    { "id": "signature", "expected": "E_APPROVAL_SIGNATURE_INVALID", "actual": "E_APPROVAL_SIGNATURE_INVALID", "pass": true },
-    { "id": "quorum", "expected": "E_APPROVAL_INSUFFICIENT_QUORUM", "actual": "E_APPROVAL_INSUFFICIENT_QUORUM", "pass": true },
-    { "id": "acceptance", "expected": "E_ACCEPTANCE_MISSING", "actual": "E_ACCEPTANCE_MISSING", "pass": true },
-    { "id": "custodian-empty", "expected": "E_CUSTODIAN_COUNT_RANGE", "actual": "E_CUSTODIAN_COUNT_RANGE", "pass": true },
-    { "id": "threshold-zero", "expected": "E_QUORUM_THRESHOLD_RANGE", "actual": "E_QUORUM_THRESHOLD_RANGE", "pass": true },
-    { "id": "event-kind", "expected": "E_EVENT_KIND_UNSUPPORTED", "actual": "E_EVENT_KIND_UNSUPPORTED", "pass": true },
-    { "id": "sequence-format", "expected": "E_SEQUENCE_INVALID_FORMAT", "actual": "E_SEQUENCE_INVALID_FORMAT", "pass": true },
-    { "id": "no-op-membership", "expected": "E_MEMBERSHIP_CUSTODY_UNCHANGED", "actual": "E_MEMBERSHIP_CUSTODY_UNCHANGED", "pass": true }
+    {
+      "id": "identity",
+      "expected": "E_ORGANISM_ID_MISMATCH",
+      "actual": "E_ORGANISM_ID_MISMATCH",
+      "pass": true
+    },
+    {
+      "id": "sequence",
+      "expected": "E_SEQUENCE_NOT_NEXT",
+      "actual": "E_SEQUENCE_NOT_NEXT",
+      "pass": true
+    },
+    {
+      "id": "parent",
+      "expected": "E_PARENT_HASH_MISMATCH",
+      "actual": "E_PARENT_HASH_MISMATCH",
+      "pass": true
+    },
+    {
+      "id": "genome",
+      "expected": "E_GENOME_HASH_MISMATCH",
+      "actual": "E_GENOME_HASH_MISMATCH",
+      "pass": true
+    },
+    {
+      "id": "custody",
+      "expected": "E_CURRENT_CUSTODY_HASH_MISMATCH",
+      "actual": "E_CURRENT_CUSTODY_HASH_MISMATCH",
+      "pass": true
+    },
+    {
+      "id": "state",
+      "expected": "E_MEMBERSHIP_STATE_CHANGED",
+      "actual": "E_MEMBERSHIP_STATE_CHANGED",
+      "pass": true
+    },
+    {
+      "id": "payload",
+      "expected": "E_EVENT_PAYLOAD_MISMATCH",
+      "actual": "E_EVENT_PAYLOAD_MISMATCH",
+      "pass": true
+    },
+    {
+      "id": "signature",
+      "expected": "E_APPROVAL_SIGNATURE_INVALID",
+      "actual": "E_APPROVAL_SIGNATURE_INVALID",
+      "pass": true
+    },
+    {
+      "id": "quorum",
+      "expected": "E_APPROVAL_INSUFFICIENT_QUORUM",
+      "actual": "E_APPROVAL_INSUFFICIENT_QUORUM",
+      "pass": true
+    },
+    {
+      "id": "acceptance",
+      "expected": "E_ACCEPTANCE_MISSING",
+      "actual": "E_ACCEPTANCE_MISSING",
+      "pass": true
+    },
+    {
+      "id": "custodian-empty",
+      "expected": "E_CUSTODIAN_COUNT_RANGE",
+      "actual": "E_CUSTODIAN_COUNT_RANGE",
+      "pass": true
+    },
+    {
+      "id": "threshold-zero",
+      "expected": "E_QUORUM_THRESHOLD_RANGE",
+      "actual": "E_QUORUM_THRESHOLD_RANGE",
+      "pass": true
+    },
+    {
+      "id": "event-kind",
+      "expected": "E_EVENT_KIND_UNSUPPORTED",
+      "actual": "E_EVENT_KIND_UNSUPPORTED",
+      "pass": true
+    },
+    {
+      "id": "sequence-format",
+      "expected": "E_SEQUENCE_INVALID_FORMAT",
+      "actual": "E_SEQUENCE_INVALID_FORMAT",
+      "pass": true
+    },
+    {
+      "id": "no-op-membership",
+      "expected": "E_MEMBERSHIP_CUSTODY_UNCHANGED",
+      "actual": "E_MEMBERSHIP_CUSTODY_UNCHANGED",
+      "pass": true
+    }
   ],
   "all_negative_cases_pass": true,
   "boundary_cases": {
@@ -77,7 +155,7 @@
     "fragment_union": "latent_successor_not_dead",
     "fragment_union_successors": 1,
     "usable_completion": "latent_successor_not_dead",
-    "incomplete": "dead_under_v0_assumptions",
+    "approval_incomplete_with_complete_inventory": "dead_under_v0_assumptions",
     "missing_membership_payload": "evidence_payload_unavailable",
     "missing_membership_payload_classified": false
   },

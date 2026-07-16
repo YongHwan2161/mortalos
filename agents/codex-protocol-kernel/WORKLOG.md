@@ -343,6 +343,40 @@ result, and reproducible verification.
   Verify workflow including actual Chromium, then obtain a fresh immutable-snapshot
   review from `reviewer-merge-gate`; author does not merge or self-approve
 
+## 2026-07-16 — Mortality false-death and runtime-integrity reconciliation
+
+- Base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Branch: `agent/codex-protocol-kernel--north-star-foundation`
+- Trigger: independent review correctly BLOCKED PR #9's earlier head because an
+  irreversible-loss call with empty pending evidence reported death, while adding an
+  already valid direct child changed the same observation to not-dead; trusted
+  runtime/crypto mutation could also collapse valid evidence into false absence
+- Result: death now requires exact irreversibility plus explicit
+  `latentEvidenceComplete: true`; missing/false completeness remains unclassified;
+  declared carriers must snapshot and parse or abort; target-tuple bodies and exact
+  tagged signatures are recursively discovered throughout parsed declared trees;
+  captured realm/dependency descriptors and SHA-256/RFC 8032 known-answer tests run
+  before semantic analysis; private brands and frozen capabilities resist exported
+  mutation; the five resource limits remain fail-indeterminate without truncation.
+  The bounded adapter reads only documented names and indices, never enumerates
+  caller containers, and explicitly treats unknown fields as non-evidence. Portable
+  corpus is v5, H2 is v4, the closed Lab fixture asserts completeness, and live
+  Worker retirement explicitly does not. Current docs prioritize R1 canonical
+  operation/result bytes plus an independent non-JavaScript verifier before H3B.
+- Verification: clean locked install; full `npm test`; governance 30/30;
+  conformance 70/70; focused mortality 22/22; seeded 10,000-case properties; Lab
+  5/5 and static build; committed/direct-Node-24/browser-target portable v5 byte
+  identity with 10,000/10,000 rejects; singleton PASS; H2 v4 digest
+  `19fa3080831cb94f29bfda2e7e1f04f86927057f0823834a6bcbc7d746e25399`;
+  trusted-core coverage 96.14% line, 93.01% branch, 95.18% function; governance
+  coverage 92.68%/84.39%/93.75%; audit 0; 77-file package dry-run; license/spec/
+  syntax/diff/link/secret-pattern gates pass. Actual Chromium remains locally
+  blocked because Playwright's CDN returned a zero-byte/truncated archive in both
+  ordinary and elevated workspace-cache retries.
+- Handoff: update PR #9 to one corrected immutable head, require trusted Agent PR
+  Policy and full Verify including actual Chromium/Lab, then obtain a superseding
+  independent review bound to that head before merge; rerun Verify on merged `main`.
+
 ### YYYY-MM-DD — Task
 
 - Base: `<commit>`

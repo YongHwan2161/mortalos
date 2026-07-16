@@ -79,7 +79,9 @@ const trace = {
   after_declared_irreversible_process_loss: opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: false,
-    authorityLossIrreversible: true
+    pendingSuccessors: [],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   }).status
 };
 

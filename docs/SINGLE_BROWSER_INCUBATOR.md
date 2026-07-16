@@ -66,7 +66,7 @@ three volatile keys in one page
   -> authority lost under controlled ephemeral-key assumptions
 ```
 
-This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. The UI must use qualified wording and ask `Lineage#evaluateMortality` to reconstruct raw pending components against the recognized head with one explicit usable-key observation; it must never supply its own head or cached latent verdict.
+This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. Browser close demonstrates local disappearance only. The UI must use qualified wording and ask `Lineage#evaluateMortality` to reconstruct raw pending components against the recognized head with one explicit usable-key observation; it must never supply its own head or cached latent verdict. It may pass `latentEvidenceComplete: true` only for a closed, explicitly enumerated fixture whose entire declared inventory it controls. Live endpoint observation remains incomplete and therefore must pass false or omit the field, yielding `authority_unavailable_not_proven_dead` rather than death.
 
 After enough valid handoffs move authority to other failure domains, the original page may close while the same lineage continues.
 

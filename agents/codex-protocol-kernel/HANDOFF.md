@@ -5,7 +5,7 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — Resource-bounded mortality observation
+### ACTIVE — P0 mortality-proof reconciliation
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
@@ -20,24 +20,49 @@ shared project files and must not be used as a lock that blocks the project inde
   - `docs/PROJECT_STATUS.md`
   - `docs/PROTOCOL.md`
   - `docs/REJECTION_CODES.md`
+  - `docs/SINGLE_BROWSER_INCUBATOR.md`
+  - `docs/SUBMISSION_CHECKLIST.md`
   - `docs/THREAT_MODEL.md`
   - `docs/TRACEABILITY.md`
+  - `lab/app.mjs`
   - `lab/index.html`
-  - `scripts/verify-portable.mjs`
+  - `lab/live-incubator.mjs`
+  - `lab/reference-engine.mjs`
+  - `package.json`
+  - `scripts/demo-singleton.mjs`
+  - `scripts/demo-trace.mjs`
   - `scripts/verify-lab.mjs`
   - `scripts/verify-spec.mjs`
+  - `src/bytes.mjs`
+  - `src/codec.mjs`
+  - `src/crypto.mjs`
   - `src/lineage.mjs`
+  - `src/primordials.mjs`
+  - `src/rejection-codes.mjs`
+  - `src/schema-validation.mjs`
+  - `src/validator.mjs`
+  - `test/lab.test.mjs`
+  - `test/lineage.test.mjs`
   - `test/mortality.test.mjs`
   - `test/portable-corpus.mjs`
+  - `test/portable-scenario.mjs`
+  - `test/schema-validation.test.mjs`
+  - `test/vectors/h2-trace.expected.json`
   - `test/vectors/portable-expected.json`
-- Contract affected: fixed mortality-observer resource limits, actual-browser
-  corpus-count coupling, and the portable
-  `indeterminate` / `limit_exceeded` result; no accepted-object or wire-format change
-- Required evidence: focused mortality limits, complete conformance/property/portable
-  suites, actual Chromium differential, trusted-core coverage, audit, package scan,
-  trusted Agent PR Policy, Verify, and immutable-head review
-- Expected handoff: a focused P0 safety PR; the reviewer must reject truncation that
-  could turn excessive pending evidence into a death or life classification
+- Contract affected: death now requires exact irreversibility plus explicit complete
+  latent evidence; declared carrier uncertainty and runtime/dependency drift abort;
+  target bodies and exact signatures are discovered recursively; the existing five
+  resource limits remain fail-indeterminate; portable corpus becomes v5 and H2 v4
+- Required evidence: focused false-death/late-evidence/runtime/resource regressions;
+  complete conformance/property/portable/Lab suites; actual Chromium differential;
+  trusted-core coverage, audit, package/secret/spec scans, trusted Agent PR Policy,
+  Verify, and immutable-head independent review
+- Current review state: PR #9's earlier head is correctly BLOCKED because an empty
+  inventory and runtime drift could manufacture death. The replacement head must
+  retain that review as history and receive an explicit superseding verdict.
+- Expected handoff: publish one corrected immutable head; reviewer must replay the
+  empty-versus-late-valid-child contradiction, both runtime-drift probes, and every
+  resource edge before deciding. Do not merge or self-approve.
 
 ## Completed handoffs
 

@@ -13,7 +13,7 @@ import {
 } from "../src/index.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
-export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/4";
+export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/5";
 export const ADVERSARIAL_CASES = 10_000;
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
@@ -193,32 +193,37 @@ function runCompletionCases(lifecycle) {
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [firstRaw, secondRaw],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   const usableCompletion = opened.lineage.evaluateMortality({
     usableKeyIds: [step.envelope.approvals[1].key_id],
     stateAvailable: true,
     pendingSuccessors: [firstRaw],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
-  const incomplete = opened.lineage.evaluateMortality({
+  const approvalIncompleteWithCompleteInventory = opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [firstRaw],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   const missingMembershipPayload = opened.lineage.evaluateMortality({
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [{ envelopeBytes: canonicalBytes(step.envelope) }],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   return {
     fragment_rejection: fragmentRejection.code,
     fragment_union: fragmentUnion.status,
     fragment_union_successors: fragmentUnion.latent_successors,
     usable_completion: usableCompletion.status,
-    incomplete: incomplete.status,
+    approval_incomplete_with_complete_inventory:
+      approvalIncompleteWithCompleteInventory.status,
     missing_membership_payload: missingMembershipPayload.status,
     missing_membership_payload_classified: missingMembershipPayload.mortality_classified
   };
@@ -244,7 +249,8 @@ function runForkCases(fork) {
     usableKeyIds: [],
     stateAvailable: true,
     pendingSuccessors: [prettyInput(fork.first), prettyInput(fork.sibling)],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   return {
     first: first.status,
@@ -301,13 +307,15 @@ function runBoundaryCases(lifecycle, rfc8032) {
       { length: MORTALITY_LIMITS.pending_records + 1 },
       () => ({})
     ),
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
   const mortalityUsableKeyCharsLimit = limited.lineage.evaluateMortality({
     usableKeyIds: ["x".repeat(MORTALITY_LIMITS.usable_key_id_chars + 100)],
     stateAvailable: false,
     pendingSuccessors: [],
-    authorityLossIrreversible: true
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
   });
 
   return {

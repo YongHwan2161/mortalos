@@ -132,6 +132,7 @@ test("experimental Lab evidence contains canonical public bytes and replays from
 test("reference Lab derives lifecycle, mutation, fork, mortality, resurrection, and clone outcomes from the kernel", async () => {
   const [lifecycle, fork] = await Promise.all([fixture("lifecycle.json"), fixture("fork.json")]);
   const result = runReferenceProof({ lifecycle, fork });
+  assert.equal(result.format, "mortalos-reference-proof/2");
   assert.equal(result.steps.length, 3);
   assert.ok(result.steps.every((entry) => entry.status === "accept"));
   assert.equal(result.complete_initial_turnover, true);
@@ -152,6 +153,18 @@ test("reference Lab derives lifecycle, mutation, fork, mortality, resurrection, 
   assert.equal(result.fork.head_after_fork, null);
   assert.equal(result.resurrection.code, "E_APPROVAL_INSUFFICIENT_QUORUM");
   assert.equal(result.mortality.status, "dead_under_v0_assumptions");
+  assert.equal(result.mortality.latent_evidence_complete, true);
+  assert.match(result.mortality.qualification, /complete closed-fixture evidence inventory/);
+  assert.equal(result.runtime_integrity.data_view_dispatch.aborted, true);
+  assert.equal(
+    result.runtime_integrity.data_view_dispatch.recovered,
+    "latent_successor_not_dead"
+  );
+  assert.equal(result.runtime_integrity.sha256_state.aborted, true);
+  assert.equal(
+    result.runtime_integrity.sha256_state.recovered,
+    "latent_successor_not_dead"
+  );
   assert.equal(result.clone.same_genome, true);
   assert.equal(result.clone.identity_separate, true);
 });
@@ -200,6 +213,16 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(custodianSource, /deriveSigningRequest\(request\.operation, request\.body\)/);
   assert.match(combined, /generateKey\([\s\S]*?false,[\s\S]*?\["sign", "verify"\]/);
   assert.match(combined, /exportKey\("pkcs8", generated\.privateKey\)/);
+  const referenceSource = await readFile(
+    new URL("../lab/reference-engine.mjs", import.meta.url),
+    "utf8"
+  );
+  const incubatorSource = await readFile(
+    new URL("../lab/live-incubator.mjs", import.meta.url),
+    "utf8"
+  );
+  assert.match(referenceSource, /latentEvidenceComplete: true/);
+  assert.match(incubatorSource, /latentEvidenceComplete: false/);
 
   const serverSource = await readFile(new URL("../scripts/serve-lab.mjs", import.meta.url), "utf8");
   assert.match(serverSource, /"Cross-Origin-Embedder-Policy": "require-corp"/);

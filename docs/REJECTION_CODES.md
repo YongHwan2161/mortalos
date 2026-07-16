@@ -118,7 +118,7 @@ Signer equivocation in two accepted sibling appends is evidence attached to `E_F
 
 ## 9. Mortality observer limits
 
-Mortality work-budget exhaustion returns observer state `indeterminate` with reason `limit_exceeded`, `mortality_classified: false`, and stable `resource`, `observed`, and `maximum` fields. The v0 resource identifiers are `usable_key_ids`, `usable_key_id_chars`, `pending_records`, `pending_bytes`, and `signature_verifications`; their normative maxima are defined in [`PROTOCOL.md`](PROTOCOL.md#8-validation-context). It is not a rejection code because it says nothing about whether any candidate Pulse is valid. Implementations must not truncate pending evidence and continue to a life or death classification.
+Mortality work-budget exhaustion returns observer state `indeterminate` with reason `limit_exceeded`, `mortality_classified: false`, and stable `resource`, `observed`, and `maximum` fields. The v0 resource identifiers are `usable_key_ids`, `usable_key_id_chars`, `pending_records`, `pending_bytes`, and `signature_verifications`; their normative maxima are defined in [`PROTOCOL.md`](PROTOCOL.md#8-validation-context). It is not a rejection code because it says nothing about whether any candidate Pulse is valid. Implementations must not truncate pending evidence and continue to a life or death classification. Invalid observer contracts, unsnapshotable or malformed declared carriers, runtime/dependency drift, and internal mortality uncertainty abort the observer operation rather than becoming a protocol `Reject` or an empty-evidence classification.
 
 ## 10. Internal fail-closed code
 

@@ -202,6 +202,16 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
     assert.equal(reference.fork.post_fork, "E_LINEAGE_ALREADY_FORKED");
     assert.equal(reference.resurrection.code, "E_APPROVAL_INSUFFICIENT_QUORUM");
     assert.equal(reference.clone.identity_separate, true);
+    assert.equal(reference.runtime_integrity.data_view_dispatch.aborted, true);
+    assert.equal(
+      reference.runtime_integrity.data_view_dispatch.recovered,
+      "latent_successor_not_dead"
+    );
+    assert.equal(reference.runtime_integrity.sha256_state.aborted, true);
+    assert.equal(
+      reference.runtime_integrity.sha256_state.recovered,
+      "latent_successor_not_dead"
+    );
 
     let corpus = null;
     if (contextIndex === 0) {

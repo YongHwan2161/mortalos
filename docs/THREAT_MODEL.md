@@ -37,6 +37,7 @@ The following are trusted for the v0 claim:
 - the accepted-object graph and its non-forgeable validation-capability boundary;
 - standards-conforming SHA-256 and Ed25519 implementations;
 - correct RFC 8785 canonicalization;
+- an honest, Proxy-free mortality-observer adapter that places every relevant artifact in a documented carrier and asserts inventory completeness truthfully;
 - the creating endpoint's cryptographically secure random-number generator;
 - the assumption that honest custodians obey sign-once, retain no hidden pending approvals, and delete volatile keys when the controlled test requires it.
 
@@ -102,6 +103,8 @@ The implementation and tests MUST cover:
 - invalid, duplicate, ineligible, or insufficient signatures;
 - invalid, duplicated, reordered, misplaced, or mislabeled outer evidence around an otherwise authentic body-bound signature;
 - missing or substituted heartbeat and membership sidecars during conservative mortality analysis;
+- incomplete local evidence, malformed declared carriers, late valid evidence, and hostile placement of exact target bodies or signatures in nested parsed JSON;
+- pre-call realm/dependency drift and self-restoring prototype, typed-array metadata, schema, or crypto-state mutation during mortality observation;
 - one current signer authenticating multiple candidate bodies;
 - membership descriptors whose supplied authorization cannot activate the next threshold; and
 - attempted action by a peer removed from custody.
@@ -178,7 +181,9 @@ Validation reads caller byte inputs through trusted typed-array intrinsics into 
 
 ### S-12 — Recognized-head mortality scope
 
-Only a lineage created through its module-private capability may evaluate mortality. It supplies the current graph-recognized head, acquires only the named observer and evidence fields through captured own-property descriptor lookups, snapshots one global usable-current-key observation, and copies every usable evidence byte field before analysis. Arrays are acquired through bounded indexed descriptor lookups; caller containers are not enumerated and accessors are rejected without invoking their value getters. Targeted transparent-Proxy descriptor traps can still execute and mutate aliases before copying, so Proxy-backed observer structures are explicitly outside the v0 mortality-proof input profile; a future canonical aggregate record must close that platform boundary. Reentrant graph mutation remains blocked. The analyzer reconstructs possible direct children from raw pending components and pools parseable candidate bodies, body-bound signatures, and content-addressed sidecars independently. Each signature is reverified against each body's approval and acceptance domains, so unsigned carrier `kind`, array placement, and `key_id` labels cannot hide or poison authentic evidence. Projection filters the global usable set by each signer's observed body commitment. Authenticated multi-body signing leaves mortality unclassified. A completion-capable membership body whose committed sidecar is unavailable blocks only an otherwise unsupported death classification; a fresh quorum or verified latent child still establishes non-death. A recorded fork has no unique head and also remains unclassified. Fixed whole-observation limits cap usable-ID count and characters, pending records, owned evidence bytes, and conservative signature-verification work; non-48-character values are filtered before keyed lookup. Overflow returns `indeterminate / limit_exceeded`; evidence is never truncated into a life or death result and the graph is not mutated.
+Only a lineage created through its module-private capability may evaluate mortality. It supplies the current graph-recognized head, acquires only five named observer fields and two named carrier fields through captured own-property descriptor lookups, snapshots one global usable-current-key observation, and copies every declared evidence byte field before analysis. Arrays are count-bounded before indexed acquisition; caller containers are not enumerated, unknown fields are ignored and therefore are not evidence, and known accessors or sparse indices abort without invoking value getters. Any declared byte source that is wrong-type, detached, oversized, unsnapshotable, or malformed JSON aborts the whole operation as observer uncertainty rather than disappearing as zero evidence. Reentrant graph mutation remains blocked. Captured realm/dependency descriptors plus SHA-256 and RFC 8032 known-answer tests must pass before semantic analysis. Phase two recursively discovers target-tuple bodies and exact tagged signature values or property names throughout every parsed declared tree, indexes sidecars independently, and re-verifies each signature against each body's approval and acceptance domains. Projection filters the global usable set by each signer's observed body commitment. Authenticated multi-body signing leaves mortality unclassified. A completion-capable membership body whose committed sidecar is unavailable blocks only an otherwise unsupported death classification; a fresh quorum or verified latent child still establishes non-death. Death additionally requires exact `authorityLossIrreversible: true` and `latentEvidenceComplete: true`; an empty or incomplete inventory is never inferred complete. A recorded fork has no unique head and also remains unclassified. Fixed whole-observation limits cap usable-ID count and UTF-16 code units, pending records, owned evidence bytes, and conservative signature-verification work; invalid usable IDs fail the observer contract before keyed lookup. Overflow returns `indeterminate / limit_exceeded`; evidence is never truncated into a life or death result and the graph is not mutated.
+
+Targeted transparent-Proxy descriptor traps can still execute and lie consistently before copying, so Proxy-backed observer structures are explicitly outside the v0 mortality-proof input profile. The bounded named-field design also means an unknown field is outside the evidence domain even if it contains protocol-looking bytes. R1 must close this platform boundary with a canonical bounded operation/result byte record and an independently written non-JavaScript verifier. It cannot eliminate the policy assumptions that inventory completeness is asserted honestly and no hidden private-key copy exists.
 
 ## 8. Conditional liveness properties
 
@@ -200,14 +205,14 @@ If these conditions do not hold, stalling is correct behavior. Safety takes prec
 
 ### 9.1 What death means
 
-Protocol death in v0 is the irreversible loss of quorum-held authority to create any valid successor in the same lineage under the accepted current custody rule, with no pre-authorized latent successor remaining.
+Protocol death in v0 is the irreversible loss of quorum-held authority to create any valid successor in the same lineage under the accepted current custody rule, with no pre-authorized latent successor remaining in an explicitly complete declared evidence inventory.
 
 Examples under the v0 controlled-test assumptions:
 
 - a `1-of-1` lineage irreversibly loses its sole current private key; or
 - a `2-of-3` lineage loses two current private keys and those keys were never persisted.
 
-The controlled test must also establish that no observed candidate body can become valid without a new signature from a current key assumed lost. Key destruction does not revoke signatures already created. `Lineage#evaluateMortality` supplies its own recognized head, snapshots usable IDs, acquires dense pending references, and copies own-data evidence byte fields before analysis. It independently pools parseable bodies, signatures, and sidecars, recovers signer role and identity by domain-separated verification, and groups only same-body evidence. It excludes a key from projection onto a body after that key authenticated another same-tuple body, even when that committed body later fails a semantic rule. A committed key counts only for its signed body; only uncommitted usable keys count toward fresh authority, so split commitments cannot be mistaken for a live quorum. The result's `usable_keys` count means this uncommitted set, not the raw observer-supplied inventory. Both the possible current-approval set and the resulting next-activation set must reach their thresholds. A heartbeat may use synthesized canonical `{}` only for non-appendable completion analysis. A membership sidecar cannot be synthesized. Only when authority loss is declared irreversible, fresh uncommitted authority is below quorum, and no verified latent child already establishes non-death does a completion-capable signed body with no observed hash-matching parseable sidecar return `evidence_payload_unavailable` rather than a death classification. A hash-matching parseable but semantically invalid sidecar makes that exact body impossible and cannot create opacity. Without declared irreversibility the result remains `authority_unavailable_not_proven_dead`; if a fresh quorum remains, the independent result is `operationally_alive` or `state_stalled`. Authenticated multi-body signing returns `evidence_equivocation`. Callers cannot inject a head, conditional capability, per-body usability set, leaked constructor, authoritative key-ID label, accessor-backed pending list or evidence field, or mutable array iterator.
+The controlled test must also establish that no observed candidate body can become valid without a new signature from a current key assumed lost and must explicitly assert that its declared evidence inventory is complete. Key destruction does not revoke signatures already created. `Lineage#evaluateMortality` supplies its own recognized head, snapshots usable IDs, acquires dense pending references, and owns every declared evidence byte field before analysis. It recursively discovers target-tuple bodies and exact tagged signatures throughout parsed declared trees, recovers signer role and identity by domain-separated verification, and groups only same-body evidence. It excludes a key from projection onto a body after that key authenticated another same-tuple body, even when that committed body later fails a semantic rule. A committed key counts only for its signed body; only uncommitted usable keys count toward fresh authority, so split commitments cannot be mistaken for a live quorum. The result's `usable_keys` count means this uncommitted set, not the raw observer-supplied inventory. Both the possible current-approval set and the resulting next-activation set must reach their thresholds. A heartbeat may use synthesized canonical `{}` only for non-appendable completion analysis. A membership sidecar cannot be synthesized. Only when authority loss is declared irreversible, fresh uncommitted authority is below quorum, and no verified latent child already establishes non-death does a completion-capable signed body with no observed hash-matching parseable sidecar return `evidence_payload_unavailable` rather than a death classification. A hash-matching parseable but semantically invalid sidecar makes that exact body impossible and cannot create opacity. Without exact irreversibility and completeness assertions the result remains `authority_unavailable_not_proven_dead`; if a fresh quorum remains, the independent result is `operationally_alive` or `state_stalled`. Authenticated multi-body signing returns `evidence_equivocation`. Callers cannot inject a head, conditional capability, per-body usability set, leaked constructor, authoritative key-ID label, executable known observer field, or mutable array iterator.
 
 If two distinct raw pending successors are both fully valid children of the recognized head, mortality evaluation records the fork. If the lineage is forked, mortality is not classified. Fork resolution is outside v0, and selecting either sibling merely to obtain a life/death label would make an observer policy authoritative.
 
@@ -228,10 +233,10 @@ Death does not mean:
 Silence is ambiguous. A peer may be dead, disconnected, paused, slow, or hidden behind a partition. Therefore:
 
 - no absence-of-message timer may create a consensus death fact;
-- no key-loss observation may claim death while a latent successor could still be delivered or completed;
+- no key-loss observation may claim death while its latent-evidence inventory is incomplete or a successor could still be delivered or completed;
 - a UI may report `dormant`, `unreachable`, or `presumed dead under policy`;
 - only candidate validity is cryptographically decidable from available inputs; and
-- the controlled P4 death experiment must state its key-erasure assumption.
+- the controlled P4 death experiment must state both its key-erasure and evidence-completeness assumptions.
 
 ### 9.4 Malicious persistence limitation
 
@@ -302,7 +307,7 @@ MortalOS v0 provides integrity and lineage semantics, not confidentiality. Publi
 
 Resource contribution must be explicit and revocable in later participant-runtime phases. v0 does not include background execution, hidden mining, incentives, or unrestricted arbitrary code.
 
-Mortality evidence recomposition is intentionally fail-closed under resource pressure. The fixed reference limits are 16 usable-key IDs, 768 total usable-ID characters, 128 pending records, 4 MiB of successfully snapshotted pending bytes, and 4,096 signature-verification work units. An attacker can force an indeterminate observation by exceeding a limit, but cannot turn omitted evidence into a false death classification. Availability policy may retry bounded batches only if it preserves the complete evidence set semantics.
+Mortality evidence recomposition is intentionally fail-closed under resource pressure. The fixed reference limits are 16 usable-key IDs, 768 total usable-ID UTF-16 code units, 128 pending records, 4 MiB of successfully snapshotted pending bytes, and 4,096 attacker-proportional signature-verification work units; fixed integrity known-answer tests sit outside that last budget. An attacker can force an indeterminate observation by exceeding a limit, but cannot turn omitted evidence into a false death classification. Availability policy may retry bounded batches only if it preserves the complete evidence set semantics.
 
 ## 14. Security claims matrix
 
@@ -313,7 +318,7 @@ Mortality evidence recomposition is intentionally fail-closed under resource pre
 | A transition can install an evidenced-but-inactive next quorum | Rejected | Retained valid approvers plus valid new acceptors must cover the next threshold. |
 | One endpoint holding two of three keys cannot advance alone | Not claimed | It can satisfy logical quorum; failure-domain distribution is separate. |
 | One key controls a 1-of-1 lineage | Explicit bootstrap property | Do not describe this custody state as ownerless authority. |
-| Bootstrap close loses continuation authority | Conditional | Requires ephemeral keys, no hidden copy, irreversibility, and no latent successor. |
+| Bootstrap close proves protocol death | Conditional observer claim only | Requires ephemeral keys, no hidden copy, exact irreversibility, an explicitly complete declared evidence inventory, and no latent successor. |
 | Identity survives complete safe host turnover | Guaranteed by protocol | Requires every handoff to be valid and accepted. |
 | Minority partition cannot advance | Guaranteed | Under current threshold rule. |
 | Public snapshot cannot sign a successor | Guaranteed | Snapshot excludes private keys. |
@@ -321,6 +326,8 @@ Mortality evidence recomposition is intentionally fail-closed under resource pre
 | Caller-selected candidate can be treated as the mortality head | Rejected | The lineage supplies its unique recognized head and reconstructs possible direct children from independently observed bodies, signatures, and sidecars. |
 | Forked lineage has a v0 death classification | Not claimed | Without a unique recognized head, mortality remains unclassified. |
 | Excess pending evidence can be truncated and still classify death | Rejected | Fixed whole-evaluation limits return `indeterminate / limit_exceeded` without graph mutation. |
+| Empty pending evidence proves that no latent successor exists | Rejected | Missing or false `latentEvidenceComplete` remains `authority_unavailable_not_proven_dead`. |
+| Runtime/dependency drift may silently change mortality | Rejected within the captured realm profile | Descriptor checks and SHA-256/RFC 8032 known-answer tests abort before classification. |
 | Missing state alone kills the v0 lineage | Not claimed | v0 preserves an authenticated declared root, not content binding or retrievability; report `state-stalled`. |
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |
 | Byzantine quorum cannot fork | Not guaranteed | Future work. |

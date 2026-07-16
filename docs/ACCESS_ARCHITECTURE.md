@@ -23,7 +23,7 @@ human, agent, or program intent
   file | stdin | IPC | WebRTC | WebSocket | libp2p | other
               |
               v
-  canonical evidence bytes + explicit observations
+  canonical evidence bytes + bounded versioned observations
               |
               v
   portable life kernel
@@ -59,7 +59,8 @@ Endpoint neutrality does not mean accepting arbitrary semantics. Every access me
 4. keep private keys outside messages and logs;
 5. reconstruct accepted capabilities by replay after restart;
 6. treat clocks, connectivity, and resource claims as observations, not validity facts; and
-7. expose whether a result is cryptographic validity, local lineage recognition, or an observer-relative life/death classification.
+7. expose whether a result is cryptographic validity, local lineage recognition, or an observer-relative life/death classification; and
+8. treat `latentEvidenceComplete` as an explicit policy assertion, never as a consequence of an empty local list.
 
 Transport envelopes may add routing, compression, encryption, chunking, or retry metadata. Those fields remain outside the signed MortalOS object unless a future protocol version explicitly commits to them.
 
@@ -71,7 +72,7 @@ The trusted `src/` kernel now contains no `node:*`, `Buffer`, filesystem, proces
 - an isolated browser-target bundle; and
 - the committed expected-result document.
 
-The actual headless-Chromium runner is implemented, and every changed head must rerun the Node/browser-target/actual-browser differential gate. Portable corpus v4 covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, same-body conditional completion, sign-once-aware equivocation, missing-membership-payload uncertainty, resource-bounded recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, eight reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise every current portable case. H3A also verifies SAB rejection in an actual cross-origin-isolated Chromium context where `SharedArrayBuffer` is available.
+The actual headless-Chromium runner is implemented, and every changed head must rerun the Node/browser-target/actual-browser differential gate. Portable corpus v5 covers RFC 8785 examples, strict RFC 8032 verification and mutation rejection, hostile byte metadata, invalid Ed25519 points, deterministic falsey-root rejection, `1-of-1` birth, `2-of-3` lineage turnover with valid activation evidence, clone separation, forged acceptance contexts, durable latent succession, explicit incomplete-versus-complete mortality evidence, recursive body/signature discovery, runtime-integrity aborts, same-body conditional completion, sign-once-aware equivocation, missing-membership-payload uncertainty, resource-bounded recognized-head mortality, replay, signed sibling fork evidence, post-fork halt, 15 named negative transitions, eight reported boundary outcomes, and 10,000 fixed-seed adversarial cases. Node and the isolated browser-target VM exercise every current portable case. H3A also verifies SAB rejection in an actual cross-origin-isolated Chromium context where `SharedArrayBuffer` is available.
 
 The current CLI adapter creates a fresh singleton and heartbeat entirely in memory. It does not yet persist a lineage, listen on a socket, discover peers, or provide a stable end-user command contract.
 
@@ -79,19 +80,20 @@ The current CLI adapter creates a fresh singleton and heartbeat entirely in memo
 
 The north star is a network-embodied entity whose identity, executable state, and continuation authority survive host replacement without becoming the property of one host or service. Endpoint neutrality is necessary because tying life to a browser would merely replace “server-owned” with “browser-runtime-owned.”
 
-Portability is not sufficient, however. The current kernel validates who can authorize a successor and conditionally classifies reported authority availability under explicit observer assumptions. The entity still lacks a deterministic genome, mutable content-addressed state, verifiable state availability, and participant-to-participant embodiment. Those are the next research layers.
+Portability is not sufficient, however. The current JavaScript kernel validates who can authorize a successor and conditionally classifies reported authority availability under explicit observer assumptions. Its object-graph mortality adapter still trusts a Proxy-free producer, documented carrier placement, and a truthful completeness assertion. The entity also lacks a deterministic genome, mutable content-addressed state, verifiable state availability, and participant-to-participant embodiment. Those are the next research layers.
 
 ## 7. Ordered consequence
 
 The implementation order is:
 
-1. **portable life kernel** — verified across Node, browser-target, and actual Chromium, with the same gate required for every changed head and mortality overflow now explicitly indeterminate;
-2. **browser Lab adapter** — H3A is locally executable; H3B must publish the reviewed artifact with the same isolation headers and logged-out judge verification;
-3. **deterministic state-bearing kernel** — next foundational North-Star milestone;
-4. **CLI contract** — stable create/import/verify/replay/export commands using the same evidence and trace contracts;
-5. **transport-neutral participant runtime** — adapter interface plus deterministic virtual transport before real networks;
-6. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
-7. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
+1. **reconciled portable life kernel** — publish only after the exact review head reproduces committed, Node, browser-target, actual-Chromium, coverage, Lab, and independent-review gates;
+2. **R1 canonical observation/result contract** — replace the JavaScript observer object graph with bounded versioned bytes and make an independently written non-JavaScript verifier reproduce every result;
+3. **browser Lab adapter** — H3A is locally executable; H3B must become a thin R1 consumer and publish the reviewed artifact with the same isolation headers and logged-out judge verification;
+4. **deterministic state-bearing kernel** — next foundational North-Star milestone after independent authority verification;
+5. **CLI contract** — stable create/import/verify/replay/export commands using the same R1 evidence and trace contracts;
+6. **transport-neutral participant runtime** — adapter interface plus deterministic virtual transport before real networks;
+7. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
+8. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
 
 Browser and CLI work may proceed in parallel at the adapter layer, but neither may invent a second validator or become mandatory authority infrastructure.
 

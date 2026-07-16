@@ -223,6 +223,12 @@ byId("run-reference").addEventListener("click", () => {
       resultRow("Post-fork candidate", referenceProof.fork.post_fork, "reference-post-fork"),
       resultRow("Resurrection attempt", referenceProof.resurrection.code, "reference-resurrection"),
       resultRow("Conditional mortality", referenceProof.mortality.status, "reference-mortality"),
+      resultRow(
+        "Runtime drift aborts",
+        referenceProof.runtime_integrity.data_view_dispatch.aborted &&
+          referenceProof.runtime_integrity.sha256_state.aborted,
+        "reference-runtime-integrity"
+      ),
       resultRow("Clone identity separate", referenceProof.clone.identity_separate, "reference-clone")
     );
     setStatus(byId("reference-status"), "Kernel proof complete", "accept");
