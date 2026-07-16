@@ -470,3 +470,10 @@ result, and reproducible verification.
   10,000/10,000 rejects, singleton, and H2 v4; coverage 96.00% line, 92.64% branch,
   and 95.22% function; audit zero vulnerabilities; package dry-run and diff check
   PASS. Public root/GPT/private-field smoke tests and exact R1 hash comparison PASS.
+- Immutable review correction: reviewer BLOCK on initial PR #14 head
+  `5a6cd517b185dbfa408c0af0cf42d104a52dcf55` found two shared documents outside
+  the first declared scope that still described H3B and R1 as future work. The
+  replacement scope includes `docs/ACCESS_ARCHITECTURE.md` and
+  `docs/SINGLE_BROWSER_INCUBATOR.md`, distinguishes merged R1-A/R1-B from remaining
+  R1-C, removes the duplicated incubator statement, and requires fresh exact-head CI
+  plus a full new immutable review.
