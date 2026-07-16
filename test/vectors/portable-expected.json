@@ -1,5 +1,5 @@
 {
-  "format": "mortalos-portable-corpus/5",
+  "format": "mortalos-portable-corpus/6",
   "standards": {
     "rfc8032_vector_1": true,
     "rfc8032_mutation_rejected": true,
@@ -142,7 +142,32 @@
       "resource": "usable_key_id_chars",
       "observed": 769,
       "maximum": 768
+    },
+    "mortality_candidate_count_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "candidate_bodies",
+      "observed": 129,
+      "maximum": 128
+    },
+    "mortality_candidate_bytes_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "candidate_canonical_bytes",
+      "observed": 4194305,
+      "maximum": 4194304
     }
+  },
+  "mortality_limits": {
+    "candidate_bodies": 128,
+    "candidate_canonical_bytes": 4194304,
+    "pending_records": 128,
+    "pending_bytes": 4194304,
+    "signature_verifications": 1152,
+    "usable_key_id_chars": 768,
+    "usable_key_ids": 16
   },
   "trust_cases": {
     "cloned_genesis": "E_LINEAGE_UNKNOWN",
@@ -166,6 +191,7 @@
     "equivocation_count": 1,
     "post_fork": "E_LINEAGE_ALREADY_FORKED",
     "head_after_fork": null,
+    "fork_runtime_drift_aborted": true,
     "pretty_pending_status": "evidence_equivocation",
     "pretty_pending_classified": false,
     "pretty_pending_equivocation_count": 1

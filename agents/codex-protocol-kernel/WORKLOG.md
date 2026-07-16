@@ -377,6 +377,37 @@ result, and reproducible verification.
   Policy and full Verify including actual Chromium/Lab, then obtain a superseding
   independent review bound to that head before merge; rerun Verify on merged `main`.
 
+## 2026-07-16 — Candidate-work, signature-order, and fork-integrity reconciliation
+
+- Base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
+- Branch: `agent/codex-protocol-kernel--north-star-foundation`
+- Trigger: immutable-head review of PR #9 reproduced three additional blockers: 129
+  target occurrences in a 19,738-byte sidecar and 4,194,305 aggregate canonical
+  bytes amplified from a 71,441-byte nested sidecar both reached death; the same
+  signature multiset changed between non-death and work overflow when the first
+  valid signature moved; and a recorded fork bypassed the runtime KAT gate
+- Result: whole-observation budgets now cap target occurrences at 128 and aggregate
+  candidate canonical UTF-8 bytes at 4 MiB before retention. Signature remapping is
+  exhaustive in stable order, caches only the exact body/domain/signer/signature
+  result, and uses a documented 1,152-unit ceiling that admits one maximum 16-to-16
+  membership body plus validator reservations. Runtime/dependency checks now precede
+  every result, including a fork, and repeat after caller acquisition. Transparent
+  Proxy targeted descriptor traps remain an explicit v0 trusted-adapter exclusion;
+  focused probes confirm caller `ownKeys` and unknown getters are never invoked.
+  Portable corpus v6 adds candidate count/byte overflow, exports all seven limits,
+  and records post-fork runtime drift.
+- Local verification: full `npm test` PASS; governance 30/30; conformance 74/74
+  including mortality 26/26; 10,000 seeded properties; Lab 5/5 and static build;
+  portable v6 committed/direct-Node/browser-target byte identity with 10,000/10,000
+  rejects; singleton and H2 v4 PASS. Trusted-core coverage is 96.17% line, 92.98%
+  branch, and 95.20% function across 73 tests; lineage branch coverage is 93.05%;
+  governance coverage remains 92.68%/84.39%/93.75%. Exact/+1 candidate and genuine
+  signature-work probes prove frozen indeterminate results, graph atomicity, and
+  successful retry.
+- Handoff: publish a distinct immutable PR head, rerun policy/full Verify including
+  actual Chromium and Lab, and require a fresh independent review that supersedes
+  both historical BLOCKs. Do not merge without that exact-head attestation.
+
 ### YYYY-MM-DD — Task
 
 - Base: `<commit>`

@@ -281,7 +281,9 @@ for (const statement of [
 for (const statement of [
   "`usable_key_id_chars` | Supplied usable-key ID UTF-16 code units | 768",
   "`pending_records` | Pending successor records | 128",
-  "`signature_verifications` | Signature-verification work units | 4,096",
+  "`candidate_bodies` | Discovered target-tuple body occurrences, including duplicates | 128",
+  "`candidate_canonical_bytes` | Aggregate canonical UTF-8 bytes across those occurrences | 4,194,304",
+  "`signature_verifications` | Signature-verification work units | 1,152",
   "reason: \"limit_exceeded\"",
   "MUST NOT yield alive, dead",
   "INV-18"
@@ -386,7 +388,7 @@ const h2Digest = createHash("sha256")
 assert(h2Golden.format === "mortalos-lifecycle-trace/4", "H2 golden trace format is stale");
 assert(h2Golden.trace_sha256 === h2Digest, "H2 golden trace digest does not match its content");
 assert(
-  portableGolden.format === "mortalos-portable-corpus/5",
+  portableGolden.format === "mortalos-portable-corpus/6",
   "Portable golden corpus format is stale"
 );
 for (const artifact of [text.readme, text.projectStatus, text.traceability]) {
@@ -405,6 +407,7 @@ const currentArtifacts = {
 };
 for (const [name, artifact] of Object.entries(currentArtifacts)) {
   assert(!artifact.includes("corpus v4"), `${name} contains a stale portable corpus version`);
+  assert(!artifact.includes("corpus v5"), `${name} contains a stale portable corpus version`);
   assert(
     !artifact.includes("b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36"),
     `${name} contains the stale H2 digest`

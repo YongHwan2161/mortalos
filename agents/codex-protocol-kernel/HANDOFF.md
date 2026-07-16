@@ -51,18 +51,23 @@ shared project files and must not be used as a lock that blocks the project inde
   - `test/vectors/portable-expected.json`
 - Contract affected: death now requires exact irreversibility plus explicit complete
   latent evidence; declared carrier uncertainty and runtime/dependency drift abort;
-  target bodies and exact signatures are discovered recursively; the existing five
-  resource limits remain fail-indeterminate; portable corpus becomes v5 and H2 v4
+  target bodies and exact signatures are discovered recursively; seven resource
+  limits bound input plus candidate work, signature remapping is order-invariant and
+  exact-cached, fork results pass the same runtime gate, and portable corpus becomes
+  v6 while H2 remains v4
 - Required evidence: focused false-death/late-evidence/runtime/resource regressions;
   complete conformance/property/portable/Lab suites; actual Chromium differential;
   trusted-core coverage, audit, package/secret/spec scans, trusted Agent PR Policy,
   Verify, and immutable-head independent review
-- Current review state: PR #9's earlier head is correctly BLOCKED because an empty
-  inventory and runtime drift could manufacture death. The replacement head must
-  retain that review as history and receive an explicit superseding verdict.
+- Current review state: PR #9 retains two historical BLOCKs. The first found the
+  empty-inventory false-death/runtime defect; the second exact-head review reproduced
+  candidate-work amplification, signature-order-dependent overflow, and a fork KAT
+  bypass. The next immutable head must retain both as history and receive an explicit
+  superseding verdict.
 - Expected handoff: publish one corrected immutable head; reviewer must replay the
-  empty-versus-late-valid-child contradiction, both runtime-drift probes, and every
-  resource edge before deciding. Do not merge or self-approve.
+  empty-versus-late-valid-child contradiction, ordinary and forked runtime-drift
+  probes, signature order invariance, and every exact/+1 resource edge before
+  deciding. Do not merge or self-approve.
 
 ## Completed handoffs
 

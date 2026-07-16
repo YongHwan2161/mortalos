@@ -75,6 +75,12 @@ Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
 12. JavaScript object graphs are not the long-term evidence contract. R1 must use
     canonical bytes; transparent Proxy honesty and hidden-copy absence cannot be
     inferred by the v0 verifier.
+13. Bounded carrier bytes do not bound recursive canonical work. Candidate
+    occurrences and aggregate canonical bytes need independent whole-observation
+    limits before retention.
+14. Signature work must be exhaustive and order-invariant. Cache only an exact
+    body/domain/signer/signature result, and keep fork results behind the same
+    runtime/dependency integrity gate.
 
 ## Current priorities
 

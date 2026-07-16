@@ -4,6 +4,7 @@ import {
   derivePeerId,
   encodeBase64Url,
   hexToBytes,
+  JSON_LIMITS,
   MORTALITY_LIMITS,
   snapshotBytes,
   validateGenesis,
@@ -13,7 +14,7 @@ import {
 } from "../src/index.mjs";
 import { runPortableScenario } from "./portable-scenario.mjs";
 
-export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/5";
+export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/6";
 export const ADVERSARIAL_CASES = 10_000;
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
@@ -240,6 +241,18 @@ function runForkCases(fork) {
   const replay = opened.lineage.append(input(fork.first));
   const sibling = opened.lineage.append(input(fork.sibling));
   const postFork = opened.lineage.append(input(fork.post_fork));
+  const dataViewGetUint32 = DataView.prototype.getUint32;
+  let forkRuntimeDriftAborted = false;
+  try {
+    DataView.prototype.getUint32 = () => 0;
+    try {
+      opened.lineage.evaluateMortality();
+    } catch {
+      forkRuntimeDriftAborted = true;
+    }
+  } finally {
+    DataView.prototype.getUint32 = dataViewGetUint32;
+  }
   const reparable = createLineage(canonicalBytes(fork.genesis));
   const prettyInput = (entry) => ({
     envelopeBytes: new TextEncoder().encode(JSON.stringify(entry.envelope, null, 2)),
@@ -259,6 +272,7 @@ function runForkCases(fork) {
     equivocation_count: sibling.equivocating_key_ids?.length ?? 0,
     post_fork: postFork.code,
     head_after_fork: opened.lineage.head,
+    fork_runtime_drift_aborted: forkRuntimeDriftAborted,
     pretty_pending_status: prettyPending.status,
     pretty_pending_classified: prettyPending.mortality_classified,
     pretty_pending_equivocation_count: prettyPending.equivocating_key_ids?.length ?? 0
@@ -317,6 +331,64 @@ function runBoundaryCases(lifecycle, rfc8032) {
     authorityLossIrreversible: true,
     latentEvidenceComplete: true
   });
+  const minimalTarget = (extra = {}) => ({
+    organism_id: limited.lineage.head.organism_id,
+    sequence: String(BigInt(limited.lineage.head.sequence) + 1n),
+    parent_hash: limited.lineage.head.object_hash,
+    ...extra
+  });
+  const repeatedTarget = minimalTarget({ marker: "duplicate" });
+  const mortalityCandidateCountLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [{
+      eventPayloadBytes: canonicalBytes({
+        candidates: Array.from(
+          { length: MORTALITY_LIMITS.candidate_bodies + 1 },
+          () => repeatedTarget
+        )
+      })
+    }],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
+
+  const depth = JSON_LIMITS.max_depth;
+  const makeChain = (paddings) => {
+    let nested;
+    for (let layer = depth - 1; layer >= 0; layer -= 1) {
+      const extra = { layer, padding: "x".repeat(paddings[layer]) };
+      if (nested !== undefined) extra.nested = nested;
+      nested = minimalTarget(extra);
+    }
+    return nested;
+  };
+  const aggregateCanonicalBytes = (root) => {
+    let total = 0;
+    let candidate = root;
+    while (candidate !== undefined) {
+      total += canonicalBytes(candidate).byteLength;
+      candidate = candidate.nested;
+    }
+    return total;
+  };
+  const paddings = Array(depth).fill(0);
+  let amplifiedTarget = makeChain(paddings);
+  const remaining =
+    MORTALITY_LIMITS.candidate_canonical_bytes -
+    aggregateCanonicalBytes(amplifiedTarget);
+  paddings[depth - 1] = Math.floor(remaining / depth);
+  const remainder = remaining % depth;
+  if (remainder > 0) paddings[remainder - 1] += 1;
+  amplifiedTarget = makeChain(paddings);
+  amplifiedTarget.padding += "x";
+  const mortalityCandidateBytesLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: [],
+    stateAvailable: false,
+    pendingSuccessors: [{ eventPayloadBytes: canonicalBytes(amplifiedTarget) }],
+    authorityLossIrreversible: true,
+    latentEvidenceComplete: true
+  });
 
   return {
     low_order_peer_id_rejected:
@@ -336,7 +408,9 @@ function runBoundaryCases(lifecycle, rfc8032) {
     shared_bytes_rejected: sharedBytesRejected,
     falsey_root_code: validateGenesis(canonicalBytes(0)).code,
     mortality_pending_limit: mortalityPendingLimit,
-    mortality_usable_key_chars_limit: mortalityUsableKeyCharsLimit
+    mortality_usable_key_chars_limit: mortalityUsableKeyCharsLimit,
+    mortality_candidate_count_limit: mortalityCandidateCountLimit,
+    mortality_candidate_bytes_limit: mortalityCandidateBytesLimit
   };
 }
 
@@ -390,6 +464,15 @@ export function runPortableCorpus({ lifecycle, singleton, fork, rfc8032 }) {
     negative_cases: negativeCases,
     all_negative_cases_pass: negativeCases.every((entry) => entry.pass),
     boundary_cases: runBoundaryCases(lifecycle, rfc8032),
+    mortality_limits: {
+      candidate_bodies: MORTALITY_LIMITS.candidate_bodies,
+      candidate_canonical_bytes: MORTALITY_LIMITS.candidate_canonical_bytes,
+      pending_records: MORTALITY_LIMITS.pending_records,
+      pending_bytes: MORTALITY_LIMITS.pending_bytes,
+      signature_verifications: MORTALITY_LIMITS.signature_verifications,
+      usable_key_id_chars: MORTALITY_LIMITS.usable_key_id_chars,
+      usable_key_ids: MORTALITY_LIMITS.usable_key_ids
+    },
     trust_cases: runTrustCases(lifecycle, accepted),
     completion_cases: runCompletionCases(lifecycle),
     fork_cases: runForkCases(fork),

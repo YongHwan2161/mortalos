@@ -17,7 +17,7 @@ Official event rules and the submission form remain authoritative. This file tra
 | Requirement | State | Evidence or blocker |
 |---|---|---|
 | Public source and Apache-2.0 | Complete | Repository, root license, package metadata, contribution terms |
-| Reproducible portable core | Candidate locally verified | Locked install, trust-boundary/conformance/property tests, portable corpus v5, deterministic H2 v4 trace; exact-head remote gates remain required |
+| Reproducible portable core | Candidate locally verified | Locked install, trust-boundary/conformance/property tests, portable corpus v6, deterministic H2 v4 trace; exact-head remote gates remain required |
 | Node/Chromium differential | Required per review head | Committed result, Node 22, browser-target realm, and actual Chromium must be byte-identical; a code change invalidates older run evidence |
 | Mortality proof basis | Candidate locally verified | Death requires exact irreversibility plus explicit complete evidence; malformed carriers, runtime drift, and resource overflow cannot collapse into death |
 | Independent verifier | Blocked | R1 canonical observation/result bytes and an independently written non-JavaScript verifier are not implemented |

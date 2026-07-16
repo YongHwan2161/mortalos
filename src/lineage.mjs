@@ -21,6 +21,7 @@ import {
   bigInt,
   bigIntToString,
   createArray,
+  createTextEncoder,
   createWeakSet,
   defineArrayIndex,
   defineOwnDataProperty,
@@ -33,6 +34,7 @@ import {
   ownDataRecordEntry,
   realmIntrinsicsIntact,
   snapshotOwnDataRecord,
+  textEncoderEncode,
   typeError,
   weakSetAdd,
   weakSetHas
@@ -49,9 +51,11 @@ import {
 } from "./validator.mjs";
 
 export const MORTALITY_LIMITS = freeze({
+  candidate_bodies: 128,
+  candidate_canonical_bytes: 4 * 1024 * 1024,
   pending_records: 128,
   pending_bytes: 4 * 1024 * 1024,
-  signature_verifications: 4096,
+  signature_verifications: 1152,
   usable_key_id_chars: 16 * 48,
   usable_key_ids: 16
 });
@@ -250,6 +254,15 @@ function requireObservationResult(result) {
     throw typeError("mortality observation could not complete validation");
   }
   return result;
+}
+
+function assertMortalityRuntimeIntact() {
+  if (!realmIntrinsicsIntact()) {
+    throw typeError("mortality observation changed realm intrinsics");
+  }
+  if (!cryptoRuntimeIntact()) {
+    throw typeError("mortality observation changed trusted crypto state");
+  }
 }
 
 function createVerificationBudget() {
@@ -534,6 +547,9 @@ class Lineage {
   }
 
   #evaluateMortalityUnsafe(options = {}) {
+    // A fork is still a security-relevant observer result. Check the same realm
+    // and dependency boundary before consulting or serializing graph state.
+    assertMortalityRuntimeIntact();
     if (this.#forked) {
       return freezeResult({
         status: "forked",
@@ -565,18 +581,18 @@ class Lineage {
     const pendingInputValue = observerOptions.pendingSuccessors;
     const pendingInput = pendingInputValue === undefined ? [] : pendingInputValue;
     const pendingSnapshot = snapshotPendingRecords(pendingInput);
-    if (!realmIntrinsicsIntact()) {
-      throw typeError("mortality observation changed realm intrinsics");
-    }
-    if (!cryptoRuntimeIntact()) {
-      throw typeError("mortality observation changed trusted crypto state");
-    }
+    // Descriptor traps on the explicitly out-of-profile Proxy boundary can run
+    // during acquisition. Recheck after every caller-owned value has been copied.
+    assertMortalityRuntimeIntact();
     const verificationBudget = createVerificationBudget();
+    const canonicalTextEncoder = createTextEncoder();
     const groups = new Map();
     const payloadsByHash = new Map();
     const observedSignatures = new Set();
     const directlyAcceptedSuccessors = new Map();
     const expectedSequence = bigIntToString(bigInt(this.#head.sequence) + 1n);
+    let observedCandidateBodies = 0;
+    let observedCandidateCanonicalBytes = 0;
 
     const rememberCandidateBody = (value, hasCanonicalCarrier = false) => {
       if (value === null || typeof value !== "object" || isArray(value)) return;
@@ -594,7 +610,28 @@ class Lineage {
       ) {
         return;
       }
+      observedCandidateBodies += 1;
+      if (observedCandidateBodies > MORTALITY_LIMITS.candidate_bodies) {
+        throw new MortalityLimitExceeded(
+          "candidate_bodies",
+          MORTALITY_LIMITS.candidate_bodies
+        );
+      }
       const groupKey = canonicalize(value);
+      const canonicalLength = byteLengthOfBytes(
+        textEncoderEncode(canonicalTextEncoder, groupKey)
+      );
+      if (canonicalLength === null) {
+        throw typeError("mortality candidate body could not be measured");
+      }
+      const nextCanonicalBytes = observedCandidateCanonicalBytes + canonicalLength;
+      if (nextCanonicalBytes > MORTALITY_LIMITS.candidate_canonical_bytes) {
+        throw new MortalityLimitExceeded(
+          "candidate_canonical_bytes",
+          MORTALITY_LIMITS.candidate_canonical_bytes
+        );
+      }
+      observedCandidateCanonicalBytes = nextCanonicalBytes;
       let group = groups.get(groupKey);
       if (!group) {
         group = { body: value, hasCanonicalCarrier: false };
@@ -603,7 +640,7 @@ class Lineage {
       group.hasCanonicalCarrier ||= hasCanonicalCarrier;
     };
 
-    const rememberArtifacts = (value) => {
+    const rememberArtifacts = (value, canonicalCarrierBody = null) => {
       if (typeof value === "string") {
         if (decodeTagged(value, "ed25519:", 64) !== null) {
           observedSignatures.add(value);
@@ -612,7 +649,7 @@ class Lineage {
       }
       if (value === null || typeof value !== "object") return;
       if (!isArray(value)) {
-        rememberCandidateBody(value);
+        rememberCandidateBody(value, value === canonicalCarrierBody);
         const keys = objectKeys(value);
         for (let index = 0; index < keys.length; index += 1) {
           const key = keys[index];
@@ -623,7 +660,7 @@ class Lineage {
       }
       const entries = objectValues(value);
       for (let index = 0; index < entries.length; index += 1) {
-        rememberArtifacts(entries[index]);
+        rememberArtifacts(entries[index], canonicalCarrierBody);
       }
     };
 
@@ -659,9 +696,6 @@ class Lineage {
         throw typeError("mortality envelope bytes could not be parsed");
       }
       const envelope = inspection.envelope;
-      rememberArtifacts(envelope);
-      if (!envelope || typeof envelope !== "object" || isArray(envelope)) continue;
-
       let canonicalCarrier = false;
       try {
         canonicalCarrier = equalBytes(
@@ -672,6 +706,8 @@ class Lineage {
         // Parsed JSON is expected to be canonicalizable. Treat any failure as an
         // untrusted carrier rather than letting it affect mortality.
       }
+      rememberArtifacts(envelope, canonicalCarrier ? envelope?.body : null);
+      if (!envelope || typeof envelope !== "object" || isArray(envelope)) continue;
 
       if (input.eventPayloadBytes !== null) {
         verificationBudget.reserveEnvelope(envelope);
@@ -688,8 +724,6 @@ class Lineage {
           });
         }
       }
-
-      rememberCandidateBody(envelope.body, canonicalCarrier);
     }
 
     const currentDescriptor = this.#head.next_custody_descriptor;
@@ -699,6 +733,40 @@ class Lineage {
     );
     const preparedGroups = [];
     const signerBodies = new Map();
+    const verificationCache = new Map();
+    const orderedObservedSignatures = [...observedSignatures].sort();
+
+    const verifyObservedSignature = (
+      group,
+      domain,
+      signer,
+      message,
+      signature
+    ) => {
+      let groupCache = verificationCache.get(group);
+      if (!groupCache) {
+        groupCache = new Map();
+        verificationCache.set(group, groupCache);
+      }
+      let domainCache = groupCache.get(domain);
+      if (!domainCache) {
+        domainCache = new Map();
+        groupCache.set(domain, domainCache);
+      }
+      let signerCache = domainCache.get(signer);
+      if (!signerCache) {
+        signerCache = new Map();
+        domainCache.set(signer, signerCache);
+      }
+      if (signerCache.has(signature)) return signerCache.get(signature);
+      const verified = verificationBudget.verify(
+        signer.public_key,
+        message,
+        signature
+      );
+      signerCache.set(signature, verified);
+      return verified;
+    };
 
     const recordSignerBodies = (keyIds, bodyHash) => {
       for (const keyId of keyIds) {
@@ -720,9 +788,19 @@ class Lineage {
       const approvalMessage = pulseApprovalMessage(body);
       const bodyHash = derivePulseHash(body);
       for (const signer of currentDescriptor.custodians) {
-        if ([...observedSignatures].some((signature) =>
-          verificationBudget.verify(signer.public_key, approvalMessage, signature)
-        )) {
+        let verifiedForBody = false;
+        for (const signature of orderedObservedSignatures) {
+          if (verifyObservedSignature(
+            group,
+            "approval",
+            signer,
+            approvalMessage,
+            signature
+          )) {
+            verifiedForBody = true;
+          }
+        }
+        if (verifiedForBody) {
           recordSignerBodies([signer.key_id], bodyHash);
         }
       }
@@ -791,10 +869,12 @@ class Lineage {
       const approvalMessage = pulseApprovalMessage(group.body);
       const acceptanceMessage = custodyAcceptanceMessage(group.body);
 
-      for (const signature of [...observedSignatures].sort()) {
+      for (const signature of orderedObservedSignatures) {
         for (const signer of currentDescriptor.custodians) {
-          if (!verificationBudget.verify(
-            signer.public_key,
+          if (!verifyObservedSignature(
+            group,
+            "approval",
+            signer,
             approvalMessage,
             signature
           )) continue;
@@ -806,8 +886,10 @@ class Lineage {
         }
         for (const keyId of [...newIds].sort()) {
           const signer = nextById.get(keyId);
-          if (!verificationBudget.verify(
-            signer.public_key,
+          if (!verifyObservedSignature(
+            group,
+            "acceptance",
+            signer,
             acceptanceMessage,
             signature
           )) continue;

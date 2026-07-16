@@ -67,7 +67,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
 - [x] Forged context, leaked constructor, replay, fork, no-op membership, durable latent succession, conditional-current-approval completion, evidence poisoning, sign-once/equivocation, and payload-unavailability cases pass in Node and the isolated browser-target runtime.
 - [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
-- [x] Pending-record, owned-byte, usable-ID count/character, and signature-work overflow returns portable `indeterminate / limit_exceeded` without graph mutation or a death decision.
+- [x] Pending-record, owned-byte, usable-ID count/character, candidate occurrence/canonical-byte, and signature-work overflow returns portable `indeterminate / limit_exceeded` without graph mutation or a death decision.
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
 - [x] Clean locked installation and the full local suite pass.
@@ -90,8 +90,9 @@ Prevent incomplete evidence, malformed declared carriers, runtime/dependency dri
 - [x] Every declared byte source must be ownable and parseable; ambiguity aborts the entire observation rather than becoming evidence absence.
 - [x] Target-tuple body objects and exact tagged signatures, including property names, are recursively discovered throughout all parsed declared trees.
 - [x] Captured realm/dependency descriptors plus SHA-256 and RFC 8032 known-answer checks abort before classification when trusted runtime state drifts.
-- [x] Five whole-observation resource limits return structured `indeterminate / limit_exceeded` without truncation or graph mutation.
-- [x] Portable corpus v5 and H2 trace v4 encode incomplete and complete evidence as distinct outcomes.
+- [x] Seven whole-observation resource limits return structured `indeterminate / limit_exceeded` without truncation or graph mutation; candidate work is reserved before retention and signature remapping is exhaustive, stable, and exact-cached.
+- [x] The runtime/KAT gate also precedes an already-forked result and is repeated after caller acquisition.
+- [x] Portable corpus v6 and H2 trace v4 encode incomplete/complete evidence, candidate overflow, and post-fork runtime integrity as distinct outcomes.
 - [x] H3A's closed reference fixture asserts completeness; live Worker retirement explicitly does not.
 
 ### Publication exit
