@@ -61,20 +61,21 @@ Live Devpost state observed on 2026-07-16:
 
 - event phase: submissions open;
 - hard deadline: `2026-07-22T00:00:00Z` = **2026-07-22 09:00 KST**;
-- project: `MortalOS`, state `submission_draft`;
-- project description: empty;
+- project: `MortalOS`; its public project page is published, but it has not been
+  submitted to the hackathon (`submitted_at` is empty);
+- project description, honest tagline, construction story, technology tags, and
+  repository link: saved;
 - video URL: missing; and
 - website/test URL: missing.
 
 Submission-critical blockers, in order:
 
 1. merge and verify the exact H3B candidate, then observe the public Cloudflare run;
-2. document installation, platforms, shortest judge path, and concrete Codex/GPT-5.6
-   construction evidence;
-3. replace the overbroad draft tagline/story with the demonstrated Lab scope;
-4. record and upload the public sub-three-minute narrated video;
-5. add the `/feedback` Codex Session ID and all required custom fields; and
-6. perform a logged-out final run and move the Devpost project out of draft.
+2. add the verified Cloudflare URL and exact judge path to the repository and Devpost;
+3. record and upload the public sub-three-minute narrated video;
+4. add the `/feedback` Codex Session ID and all required custom fields; and
+5. perform a logged-out final run and submit the already-published project page to
+   the hackathon.
 
 Cloudflare hosting is not a universal Devpost deliverable: the form reports
 `website_required: false`. For a Developer Tool, however, the rules require a way to

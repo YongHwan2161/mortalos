@@ -33,6 +33,9 @@ Current base: `d50c8f41ec648c757cb26b170340c467f792b770`
   accepting Cloudflare terms and does not provide the durable submission URL needed.
 - The permanent GitHub deployment workflow is designed to run automatically after
   merge using repository-scoped Cloudflare secrets if present.
+- Wrangler 4.111.0 `pages project list --json` exposes the project identifier as
+  `"Project Name"`, not `name`. Deployment discovery must validate that pinned
+  schema and remain idempotent for an already-existing project.
 - The older H3B/R2 local prototype at `29eb34f9def495f15a6e51e85a7556179b5b43ac`
   is based on pre-P0 main. Its R2 code is research input only and must not be merged
   ahead of current P0 or R1.
@@ -40,8 +43,9 @@ Current base: `d50c8f41ec648c757cb26b170340c467f792b770`
 ## Build Week facts
 
 - Submissions close `2026-07-22T00:00:00Z`, equal to 2026-07-22 09:00 KST.
-- MortalOS is currently a Devpost submission draft with no description, video, or
-  public test URL.
+- MortalOS now has a published Devpost project page with an honest description,
+  tagline, technology tags, and repository link, but it is not yet submitted to the
+  hackathon. It still lacks the video and verified public test URL.
 - Required deliverables include working project, category, description, public
   narrated YouTube video under three minutes, code repository/README/license,
   concrete Codex and GPT-5.6 usage, and `/feedback` Session ID.

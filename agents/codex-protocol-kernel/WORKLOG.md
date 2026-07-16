@@ -392,7 +392,7 @@ result, and reproducible verification.
   submission lane from post-submission R1/R2 research. Runtime GPT is not treated as
   a requirement; concrete construction use of Codex/GPT-5.6 must be evidenced.
 - Verification: `npm test` PASS with governance 30/30, conformance 76/76, seeded
-  10,000-case properties, Lab 7/7, static build, committed/Node/browser-target
+  10,000-case properties, Lab 8/8, static build, committed/Node/browser-target
   portability with 10,000/10,000 adversarial rejects, singleton, and H2 v4 digest
   `19fa3080831cb94f29bfda2e7e1f04f86927057f0823834a6bcbc7d746e25399`.
   Trusted-core coverage passed at 96.00% line, 92.56% branch, and 95.22% function;
@@ -406,6 +406,14 @@ result, and reproducible verification.
   it requires accepting Cloudflare terms and is not a durable submission URL. The
   automatic post-merge GitHub workflow will use repository-scoped deployment secrets
   if present and then verify the public artifact.
+- Reviewer correction: PR #11 head
+  `c50b6c8e9384f18019acdfd8fdb4bc70f370ad71` passed Verify run
+  `29511017380`, but immutable review correctly blocked merge because Wrangler
+  4.111.0 emits `"Project Name"` while the deployment code read `entry.name`. The
+  author correction validates the complete pinned list-entry schema, reads the real
+  key, skips creation for an existing project, creates only when absent, and fails
+  closed on malformed or drifted JSON. Focused Lab replay passed 8/8 and the full
+  repository suite passed before the replacement head was published.
 - Handoff: publish one ready PR from this branch, require immutable-head policy and
   Verify success, then let `reviewer-merge-gate` decide merge and observe the
   automatic Cloudflare run. Do not call H3B complete without the public verifier.

@@ -1,6 +1,6 @@
 # Build Week Submission Checklist
 
-Status: **active; project remains a Devpost draft**
+Status: **active; project page published, hackathon submission not yet submitted**
 
 Last synchronized with Devpost: **2026-07-16**
 
@@ -20,13 +20,13 @@ Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 | --- | --- | --- |
 | Working project | H3A implemented; H3B candidate | exact-head CI and logged-out public Chromium run |
 | Category | Selected in plan | Devpost field `Developer Tools` |
-| Project description | Draft required | final story matches deployed behavior |
+| Project description | Saved; final URL pending | final story matches deployed behavior |
 | Demo video | Missing | public YouTube, under three minutes, narrated |
 | Code repository | Available | public repo, Apache-2.0, final README |
-| README/setup/sample/run guidance | In progress | clean-room instructions and judge path |
-| Codex and GPT-5.6 usage | Evidence draft required | concrete README/story/video examples |
+| README/setup/sample/run guidance | Implemented in H3B candidate | clean-room instructions and judge path |
+| Codex and GPT-5.6 usage | Repository/story saved; video pending | concrete README/story/video examples |
 | `/feedback` Session ID | Missing | required Devpost custom field |
-| Dev-tool installation/platform/testing path | In progress | browser URL plus local Node 22.5+ fallback |
+| Dev-tool installation/platform/testing path | Documented; public URL pending | browser URL plus local Node 22.5+ fallback |
 
 The Devpost form does not globally require a website, but the Developer Tools rules
 require a no-rebuild test path. For this project, the public Cloudflare Lab is the
@@ -64,13 +64,13 @@ definition of done.
 Runtime GPT is not required. The repository and video must instead show how Codex
 with GPT-5.6 materially accelerated construction:
 
-- [ ] operational definitions of birth, identity, succession, qualified death, and
+- [x] operational definitions of birth, identity, succession, qualified death, and
   resurrection rejection;
-- [ ] adversarial P0 review of evidence completeness, hostile observation, equivocation,
+- [x] adversarial P0 review of evidence completeness, hostile observation, equivocation,
   and resource ceilings;
-- [ ] deterministic conformance/property/browser test generation and interpretation;
-- [ ] Cloudflare exact-artifact and security-header deployment contract; and
-- [ ] deadline-driven separation of submission surface from R1/R2 research.
+- [x] deterministic conformance/property/browser test generation and interpretation;
+- [x] Cloudflare exact-artifact and security-header deployment contract; and
+- [x] deadline-driven separation of submission surface from R1/R2 research.
 
 Human decisions must remain visible: North Star, scope, threat assumptions, claim
 limits, Apache-2.0, product category, and final submission wording.
@@ -92,14 +92,15 @@ The CLI singleton is supporting evidence only. It does not replace the visual pa
 - [ ] Submitter type completed.
 - [ ] Country of residence completed.
 - [ ] Category set to `Developer Tools`.
-- [ ] Repository URL entered.
+- [x] Repository URL entered.
 - [ ] Public Lab URL and judge instructions entered.
 - [ ] `/feedback` Session ID entered.
 - [ ] Dev-tool installation, supported platforms, and test instructions entered.
-- [ ] Project story and accurate tagline saved.
+- [x] Project story and accurate tagline saved.
 - [ ] Public narrated YouTube video attached.
 - [ ] Team membership is correct.
-- [ ] Final state is submitted, not `submission_draft`.
+- [ ] Final state is submitted to the hackathon; a merely published project page is
+  not sufficient.
 
 ## Video gate
 

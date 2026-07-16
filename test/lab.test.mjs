@@ -26,6 +26,7 @@ import {
 import { summarizePortableCorpus } from "../lab/corpus-summary.mjs";
 import { runReferenceProof } from "../lab/reference-engine.mjs";
 import { buildLab } from "../scripts/build-lab.mjs";
+import { pagesProjectExists } from "../scripts/deploy-lab.mjs";
 import { LAB_SECURITY_HEADERS, labContentType, labMediaType } from "../scripts/lab-contract.mjs";
 import { startLabServer } from "../scripts/serve-lab.mjs";
 import { verifyDeployedLab } from "../scripts/verify-deployed-lab.mjs";
@@ -359,4 +360,36 @@ test("H3B remote verifier rejects any deployed byte or contract substitution", a
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("H3B Cloudflare project discovery is idempotent and fails closed on schema drift", () => {
+  const project = (name) => ({
+    "Project Name": name,
+    "Project Domains": `${name}.pages.dev`,
+    "Git Provider": "No",
+    "Last Modified": "a minute ago"
+  });
+  assert.equal(
+    pagesProjectExists(JSON.stringify([
+      project("another-pages-project"),
+      project("mortalos-lab-yonghwan2161")
+    ]), "mortalos-lab-yonghwan2161"),
+    true
+  );
+  assert.equal(
+    pagesProjectExists(JSON.stringify([
+      project("another-pages-project")
+    ]), "mortalos-lab-yonghwan2161"),
+    false
+  );
+  assert.throws(
+    () => pagesProjectExists(JSON.stringify([
+      { name: "mortalos-lab-yonghwan2161" }
+    ]), "mortalos-lab-yonghwan2161"),
+    /unexpected schema/
+  );
+  assert.throws(
+    () => pagesProjectExists("{", "mortalos-lab-yonghwan2161"),
+    /did not return valid JSON/
+  );
 });
