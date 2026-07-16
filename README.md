@@ -34,7 +34,8 @@ Implemented:
   Pages, and verifies the public bytes and Chromium judge path after deployment;
 - an R1 canonical operation/result contract for Genesis validation, lineage replay,
   and qualified mortality, with exact byte ceilings, stable rejection results, eight
-  committed goldens, and byte-identical JavaScript/Python differential verification;
+  committed goldens, and byte-identical JavaScript/Python corpus-profile differential
+  verification;
   and
 - a public [MortalOS Evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site)
   that contrasts incomplete and complete mortality evidence and uses GPT-5.6 only as
@@ -181,7 +182,8 @@ Current documentation contains only normative rules, rolling status/plan, deploy
 ## Project direction
 
 R1-A now exposes bounded versioned raw operations and results plus a JavaScript golden
-corpus, and R1-B replays it in an independently written Python verifier. The public
+corpus, and R1-B replays that eight-record, empty-pending profile in an independently
+written Python verifier. The public
 evidence Lab consumes representative R1 outcomes; moving the full H3A experiment onto
 the wire contract remains R1-C. R2 then adds deterministic state. CLI and network
 adapters remain thin consumers of the same contract.
