@@ -1,6 +1,6 @@
 # Single-Browser Incubator Profile
 
-Status: **H3A implemented; H3B exact-commit Cloudflare deployment candidate in review; every publishable SHA requires actual-Chromium evidence**
+Status: **H3A/H3B/R1 merged; public Sites judge path live; direct H3B Pages release unverified; every publishable SHA requires actual-Chromium evidence**
 
 Protocol: `mortalos/0`
 
@@ -75,9 +75,7 @@ three volatile keys in one page
   -> authority lost under controlled ephemeral-key assumptions
 ```
 
-This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. The UI must describe the immediate result as local authority loss or local disappearance. Until R1 supplies canonical operation bytes, a trusted adapter must build honest Proxy-free own-data options and carriers plus dense arrays and canonical usable-key IDs for `Lineage#evaluateMortality`; raw evidence bytes remain hostile. Only the documented named fields and bounded indices are read; unrelated properties are ignored and cannot contribute evidence. Recognized accessors, invalid key representations, or any malformed, oversized, wrong-type, detached, or otherwise unsnapshotable declared byte source abort the whole observation as uncertainty and must be shown as such. The seven whole-observation limits return frozen unclassified overflow rather than analyze a truncated inventory. The adapter must never supply its own head or cached latent verdict. The controlled reference fixture may set both `authorityLossIrreversible: true` and `latentEvidenceComplete: true` because its local evidence inventory is closed and explicitly enumerated. Live-incubator Worker retirement sets both to false: closing the page demonstrates local disappearance but is not a complete death basis. An omitted or false completeness flag, or an empty array alone, remains `authority_unavailable_not_proven_dead`.
-
-After enough valid handoffs move authority to other failure domains, the original page may close while the same lineage continues.
+This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. The UI must describe the immediate result as local authority loss or local disappearance. R1 now supplies bounded canonical operation/result bytes for its committed corpus profile, but the full H3A experiment still uses a trusted Proxy-free own-data adapter until R1-C consumes that wire contract end to end; raw evidence remains hostile. Only the documented named fields and bounded indices are read; unrelated properties are ignored and cannot contribute evidence. Recognized accessors, invalid key representations, or any malformed, oversized, wrong-type, detached, or otherwise unsnapshotable declared byte source abort the whole observation as uncertainty and must be shown as such. The seven whole-observation limits return frozen unclassified overflow rather than analyze a truncated inventory. The adapter must never supply its own head or cached latent verdict. The controlled reference fixture may set both `authorityLossIrreversible: true` and `latentEvidenceComplete: true` because its local evidence inventory is closed and explicitly enumerated. Live-incubator Worker retirement sets both to false: closing the page demonstrates local disappearance but is not a complete death basis. An omitted or false completeness flag, or an empty array alone, remains `authority_unavailable_not_proven_dead`.
 
 ## 6. Browser constraints
 
