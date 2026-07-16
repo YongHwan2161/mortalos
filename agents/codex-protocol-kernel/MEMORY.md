@@ -49,16 +49,19 @@ Current base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
 ## Build Week facts
 
 - Submissions close `2026-07-22T00:00:00Z`, equal to 2026-07-22 09:00 KST.
-- MortalOS now has a published Devpost project page with an honest description,
-  tagline, technology tags, and repository link, but it is not yet submitted to the
-  hackathon. It still lacks the video and verified public test URL.
+- MortalOS has a published Devpost project page with its repository and public Sites
+  URL, but it is not submitted to the hackathon and still lacks the video.
 - Required deliverables include working project, category, description, public
   narrated YouTube video under three minutes, code repository/README/license,
   concrete Codex and GPT-5.6 usage, and `/feedback` Session ID.
 - A website is not globally required, but Developer Tools need a no-rebuild test
-  path. A public static Lab is the chosen path.
-- Runtime GPT integration is not required by the event wording; construction with
-  Codex/GPT-5.6 must be explained and evidenced. Model output never decides validity.
+  path. The public Sites Lab is live and returned HTTP 200; its GPT witness returned
+  200 on a public R1 result and private-field injection returned 422.
+- Sites version 2 has immutable source/archive metadata, but that source commit is not
+  in the MortalOS repository. The final repository must contain or reproducibly link
+  deployed source and bind displayed results to reviewed R1.
+- Runtime GPT integration is not required by the event wording. The deployed witness
+  exists but never decides validity.
 
 ## Stable design decisions
 
@@ -67,19 +70,23 @@ Current base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
 3. Logical key count and independent failure-domain count are different claims.
 4. UI, transport, storage, deployment, and model output may carry evidence but never
    decide validity.
-5. Submission hosting may precede R1 only as a qualified exact-commit preview.
-6. Post-submission order is independent-verifier registration → R1-A JavaScript
+5. Sites may carry a submission preview, but its source and results must bind to a
+   reviewed repository snapshot before freeze.
+6. Protocol order is independent-verifier registration → R1-A JavaScript
    wire/golden → R1-B Python differential → R1-C consumers → R2 deterministic state
    → availability → network embodiment.
 7. `reviewer-merge-gate`, not the author, decides whether a PR may merge.
 
 ## Current priorities
 
-1. Add the two Cloudflare repository secrets through the authenticated account
-   boundary, rerun the production workflow, and freeze only an exact-SHA verified URL.
-2. Finalize Devpost category/test instructions, video, and `/feedback`
-   field before the internal 2026-07-22 07:00 KST submit target.
-3. Resume R1 after submission; do not spend the sprint on R2 or networking.
+1. Merge the truthful status correction, then rebase and independently review PR #12
+   without restoring stale H3B governance/deployment claims.
+2. Bind the public Sites version/source and two displayed results to the reviewed R1
+   repository SHA, then finalize judge instructions.
+3. Complete the video, `/feedback`, custom fields, final rehearsal, and submission by
+   the internal 2026-07-22 07:00 KST target.
+4. Treat direct Cloudflare Pages as optional hardening; do not let credentials displace
+   the submission-critical path. Do not start R2 or networking before submission.
 
 ## Memory maintenance
 

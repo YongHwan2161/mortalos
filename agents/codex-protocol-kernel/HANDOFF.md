@@ -22,12 +22,15 @@ shared project files and must not be used as a lock that blocks the project inde
 - Contract affected: rolling status and submission planning only; no runtime,
   deployment workflow, protocol, schema, or generated artifact changes. Record that
   PR #11 merged, post-merge Verify passed, Cloudflare credential preflight failed,
-  and the public H3B URL remains unverified. Record the review-provenance/TOCTOU
+  and the direct H3B URL remains unverified. Record the review-provenance/TOCTOU
   incident without treating the later independent review as retroactive approval.
+  Reconcile the later public Sites judge path, tested GPT witness, open R1 PR, and
+  deployed-source provenance gap; direct Pages is no longer a submit blocker.
 - Required evidence: live GitHub PR/main/workflow/log observations; live Devpost
   project, announcement, requirement, and key-date observations; documentation/spec
-  verification; diff and secret checks; exact-head policy and Verify on the focused
-  status PR.
+  verification; public Sites HTTP/GPT/private-field tests; immutable Sites version
+  metadata; diff and secret checks; exact-head policy and Verify on the focused status
+  PR.
 - Expected handoff: one focused status-correction PR. `reviewer-merge-gate` must
   review its immutable head normally; the author neither self-reviews nor merges.
 

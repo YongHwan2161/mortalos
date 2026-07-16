@@ -444,3 +444,21 @@ result, and reproducible verification.
   Lab 8/8, portable 10,000/10,000, singleton, H2 v4); coverage 96.00% line,
   92.56% branch, and 95.22% function; audit zero vulnerabilities; package dry-run
   82 files; license/spec/link, JavaScript syntax, and diff checks PASS.
+
+## 2026-07-17 KST — Sites/R1 submission-path reconciliation
+
+- Live Devpost state changed after the first status draft: the project now points to
+  `https://mortalos-evidence-lab.ant713800.chatgpt.site`, its story describes the R1
+  candidate and GPT witness, but `submitted_at` and `video_url` remain empty.
+- Public verification: logged-out root returned HTTP 200; the server-side witness
+  returned structured HTTP 200 for one public R1 result; adding an unknown
+  `private_key` field returned HTTP 422. Sites reports public version 2 with an
+  immutable source commit and archive digest.
+- Provenance gap: the Sites source commit is not a MortalOS repository commit, while
+  PR #12 contains the R1 candidate on the old pre-correction base and includes stale
+  H3B review/deployment checklist claims. It must rebase after this correction, bind
+  public results/source to reviewed code, and receive a fresh independent review.
+- Priority decision: Sites satisfies the Developer Tools no-rebuild path while
+  healthy; direct Cloudflare Pages is optional exact-commit hardening, not a submit
+  blocker. The critical chain is truthful status → R1 merge → Sites provenance →
+  video → `/feedback`/custom fields → rehearsal → submit.

@@ -35,22 +35,29 @@ Implemented:
 
 Not implemented:
 
-- a verified public HTTPS URL for the one-page MortalOS Lab;
+- a direct, exact-commit-verified Cloudflare Pages release of the full H3A Lab;
+- the open R1 candidate or deployed Sites source in this `main` tree;
 - a stable CLI create/import/replay/export contract;
 - participant-to-participant transport or replicated state;
-- a deterministic executable genome or mutable logical state; and
-- GPT-5.6 runtime integration, which is not required for the current deterministic
-  judge path.
+- a deterministic executable genome or mutable logical state.
+
+Submission status outside this `main` snapshot: the public
+[MortalOS Evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site)
+provides a zero-install A/B view of two R1 mortality outcomes and an explicitly
+non-authoritative GPT-5.6 explanation. Logged-out HTTP, GPT response, and private-field
+rejection smoke tests pass. Its R1 implementation is open in PR #12 and its Sites
+source/version provenance must be reconciled with the final reviewed repository SHA
+before submission freeze.
 
 This tree implements the **P0 mortality-proof and bounded-observation correction**.
 Any SHA is publishable only after immutable-head review and its own successful Verify
-run. The Build Week submission lane publishes the existing Lab as an explicitly
-qualified exact-commit preview:
+run. The Build Week submission lane now follows:
 
-`P0 merged → H3B honest Lab preview → release evidence → video → submit`
+`truthful status → R1 merge → Sites provenance → video → fields → submit`
 
 That deadline exception improves judge access without claiming that hosting closes
-the JavaScript observer boundary. The post-submission protocol lane remains:
+the JavaScript observer boundary. R1 is now deadline-critical because the public Lab
+and Devpost story already describe it; R2 and networking remain post-submission:
 
 `independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
@@ -90,9 +97,10 @@ equivalent local maintainer command and requires Cloudflare credentials; judges 
 not need those credentials.
 
 Current release status: the H3B contract is merged and the post-merge Verify run
-passes, but the first production workflow stopped at credential preflight because
+passes, but the first direct Pages workflow stopped at credential preflight because
 the repository has neither `CLOUDFLARE_ACCOUNT_ID` nor `CLOUDFLARE_API_TOKEN`.
-Therefore the `pages.dev` URL above is a target URL, not a verified public demo.
+Therefore the `pages.dev` URL above is only a target. The separate Sites URL is the
+current public judge path; it does not satisfy H3B's exact-asset contract.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed

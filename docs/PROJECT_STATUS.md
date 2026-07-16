@@ -1,8 +1,8 @@
 # MortalOS Project Status
 
-As of: **2026-07-16**
+As of: **2026-07-17 KST**
 
-Stage: **P0 and H3B contract merged on `main`; public H3B deployment blocked at credential preflight**
+Stage: **P0/H3A/H3B contract merged; public Sites judge path live; direct H3B deployment credential-blocked; R1 PR open**
 
 Security baseline: **every published or deployed SHA requires immutable-head review and its own successful verification**
 
@@ -38,11 +38,12 @@ post-merge technical Verify result.
 | CLI bootstrap proof | Verified proof only | Ephemeral `1-of-1` birth/heartbeat and handoff proof. No stable import/persistence/replay/export CLI contract. |
 | H3A MortalOS Lab | Implemented | Three non-extractable Worker keys, logical `2-of-3`, reference turnover, replay/fork, qualified mortality, resurrection rejection, clone, full corpus, and public evidence export/replay. One browser remains one physical failure domain. |
 | H3B deployment contract | Merged on `main`; post-merge Verify passed | Deterministic asset manifest, exact source SHA, Cloudflare headers, pinned Actions, idempotent Pages project discovery, remote asset verifier, and remote Chromium path. |
-| Public HTTPS Lab | Blocked; not deployed or verified | Deploy `29513454211/1` found both Cloudflare secrets empty. It becomes complete only after `main` is deployed and the public verifier plus logged-out Chromium gate pass. |
-| Language-neutral wire and independent verifier | Not implemented | R1 remains the most fundamental post-submission trust-boundary improvement. |
+| Public Sites judge path | Live; provenance reconciliation pending | Logged-out HTTP 200, public-result GPT witness HTTP 200, and injected private field HTTP 422. Sites version 2 has an immutable source commit/archive digest, but its source commit is not in this repository and must be bound to reviewed R1 before freeze. |
+| Direct H3B Cloudflare Pages release | Credential-blocked; not deployed | Deploy `29513454211/1` found both Cloudflare secrets empty. The exact asset/header/Chromium path remains optional submission hardening while Sites stays healthy. |
+| Language-neutral wire and independent verifier | Open PR #12; not merged/reviewed | Candidate has eight bounded Genesis/replay/mortality operations with JS/Python byte equality. Python covers the committed corpus profile, not arbitrary pending/fork/resource-limit inputs. |
 | Mutable logical state/genome | Not implemented on `main` | An older local R2 prototype is not merge evidence because it predates current P0 and R1. |
 | Participant network/replication | Not implemented | No WebRTC/libp2p transport, distributed custody evidence, state availability protocol, or independent-host survival. |
-| Runtime GPT feature | Not implemented and not required for the current judge path | Build Week evidence concerns construction with Codex/GPT-5.6; model output is not validity authority. |
+| Runtime GPT witness | Live on Sites; repository source/provenance pending | Tested structured explanation of a public R1 result; private-field injection rejected before inference. GPT cannot sign, validate, choose a head, or classify death. |
 
 ## 3. H3B merged contract and release state
 
@@ -66,33 +67,35 @@ The first run did not reach the deploy command at all.
 
 ## 4. Build Week status
 
-Live Devpost state observed on 2026-07-16:
+Live Devpost state observed at `2026-07-16T16:25:23Z`:
 
 - event phase: submissions open;
 - hard deadline: `2026-07-22T00:00:00Z` = **2026-07-22 09:00 KST**;
 - project: `MortalOS`; its public project page is published, but it has not been
   submitted to the hackathon (`submitted_at` is empty);
-- project description, honest tagline, construction story, technology tags, and
-  repository link: saved;
+- project description, R1/GPT-5.6 story, repository link, and public Sites test URL:
+  saved;
 - video URL: missing; and
-- website/test URL: missing.
+- hackathon submission timestamp: missing.
 
-At the latest synchronization (`2026-07-16T16:10:06Z`), no announcement changed the
-deadline or deliverables. Submission-critical blockers, in order:
+The exact deadline remains unchanged. Submission-critical blockers, in order:
 
-1. provision an account-scoped Cloudflare Pages token and account ID as the two
-   repository secrets, rerun `Deploy MortalOS Lab`, and require exact-SHA remote
-   asset/header plus Chromium success;
-2. add the verified URL and exact judge path to the repository and Devpost;
-3. record and upload the public sub-three-minute narrated video;
-4. add the `/feedback` Codex Session ID and required custom fields; and
-5. perform a logged-out final run and submit the already-published project page to
-   the hackathon.
+1. merge the truthful status correction, then rebase PR #12 so its stale H3B review
+   claims cannot overwrite the recorded governance/deployment facts;
+2. independently review and merge the bounded R1 candidate, then bind the public
+   Sites outcomes/source version to that final repository SHA;
+3. commit or reproducibly link the deployed Sites source and publish exact judge
+   instructions covering the A/B result, GPT non-authority, and local verifier;
+4. record and upload the public sub-three-minute narrated video;
+5. add the `/feedback` Codex Session ID plus submitter, country, category, repository,
+   test, and dev-tool instruction fields; and
+6. perform a logged-out final run and submit the already-published project page.
 
-Cloudflare hosting is not a universal Devpost deliverable: the form reports
-`website_required: false`. For a Developer Tool, however, the rules require a way to
-test without rebuilding. MortalOS Lab is browser-first, so a public static deployment
-is the simplest and strongest compliant path.
+Cloudflare Pages is not a Devpost deliverable: the form reports
+`website_required: false`. Developer Tools still need a no-rebuild test path, and the
+live public Sites Lab now supplies it. Direct Pages deployment remains valuable
+exact-commit evidence, but missing Cloudflare account credentials no longer blocks
+submission while the Sites path and its provenance gates pass.
 
 ## 5. Claim boundaries
 
@@ -104,7 +107,8 @@ Supported descriptions:
 - signed succession and complete original-custodian turnover;
 - deterministic replay/fork/resurrection rejection;
 - death only under explicit irreversible-loss and complete-evidence assumptions; and
-- a browser Lab for inspecting and falsifying those claims.
+- a public Sites Lab for contrasting incomplete and complete mortality evidence; and
+- GPT-5.6 as an untrusted explanatory witness over public deterministic output.
 
 Unsupported descriptions:
 
@@ -113,18 +117,20 @@ Unsupported descriptions:
 - independent-host resilience from one browser;
 - Byzantine/Sybil resistance, mutable state, state availability, shared computation,
   or ownerless LLM inference; and
-- runtime GPT-5.6 behavior.
+- GPT-5.6 as a validator, signer, lineage judge, death oracle, or protocol authority.
 
 ## 6. Fundamental next work
 
-The submission lane publishes and explains what exists. The protocol lane remains:
+The submission lane now needs the bounded R1 candidate because Devpost and the public
+Sites Lab already describe it. The protocol lane remains:
 
 `independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
 R1 is more fundamental than R2 because current JavaScript mortality observation
-still trusts an honest Proxy-free adapter container. R1 replaces that boundary with
-canonical versioned bytes and an independently written verifier. R2 can then make
-state transitions reproducible without inheriting an ambiguous operation boundary.
+still trusts an honest Proxy-free adapter container. PR #12 begins replacing that
+boundary with canonical versioned bytes and a narrow independent verifier, but R1-C
+and general adversarial coverage remain before the boundary is fully replaced. R2
+can then make state transitions reproducible without inheriting ambiguity.
 
 North Star: authenticated evidence plus participating resources—not a browser,
 server, CLI, transport, model, host, or administrator—must determine identity,

@@ -1,8 +1,8 @@
 # MortalOS Implementation Plan
 
-Status: **P0 merged; H3A implemented; H3B contract merged; production deploy credential-blocked; submission sprint active**
+Status: **P0/H3A/H3B contract merged; public Sites judge path live; R1 PR pending; submission sprint active**
 
-Last reviewed: **2026-07-16**
+Last reviewed: **2026-07-17 KST**
 
 This is the only rolling implementation plan. Current evidence belongs in
 [`PROJECT_STATUS.md`](PROJECT_STATUS.md); historical plans remain in Git history.
@@ -29,21 +29,24 @@ a network OS in five days.
 
 ### Submission lane — now
 
-`P0 merged → H3B honest Lab preview → release evidence → video → submit`
+`truthful status → R1 merge → public Sites provenance → video → fields → submit`
 
-H3B may publish H3A before R1 solely as a static, explicitly qualified preview. It
-does not upgrade the JavaScript observer boundary, add network participants, prove
-ownerlessness, or implement mutable state. The deployment must be byte-bound to one
-reviewed commit and may expose only claims already enforced by the portable kernel.
+The public Sites Lab is the zero-install submission surface. It shows two committed
+R1 mortality outcomes and calls GPT-5.6 only as a server-side, non-authoritative
+witness. It does not add network participants, prove ownerlessness, or implement
+mutable state. Its source/version provenance and the R1 implementation it cites must
+be reconciled with a reviewed repository commit before final freeze.
 
-### Protocol lane — after submission
+### Protocol lane — R1 now; R2 after submission
 
 `independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
-This remains the North Star path. H3B is a delivery surface, not a substitute for
-R1 or R2. The previously prepared R2 prototype was based on a pre-P0 branch and is
-research input only; it must not be merged ahead of the current mortality-safe main
-or the language-neutral R1 contract.
+Open PR #12 implements a bounded R1-A/R1-B candidate for Genesis validation, lineage
+replay, and mortality across eight golden operations. It is not merged or independently
+reviewed yet, and its Python verifier intentionally covers only that frozen corpus
+profile. R1-C and broader adversarial/differential coverage remain. H3B and Sites are
+delivery surfaces, not substitutes for R1 or R2. The older R2 prototype is research
+input only and must not merge ahead of the current mortality-safe main and reviewed R1.
 
 ## 3. Submission critical path
 
@@ -52,7 +55,21 @@ or the language-neutral R1 contract.
 Goal: a logged-out judge opens one HTTPS URL and completes the working Lab without
 credentials, installation, or a local build.
 
-Strict pass criteria:
+Minimum Devpost pass criteria:
+
+- the Sites URL opens logged out over HTTPS and exposes the two deterministic R1
+  scenarios without installation, a build, credentials, or a test account;
+- the displayed operation hashes and outcomes match committed R1 corpus entries on
+  the final reviewed repository SHA;
+- GPT-5.6 receives only the public deterministic result, returns a bounded structured
+  explanation, and never changes the R1 verdict;
+- unknown or private fields are rejected before the model call, and model failure
+  leaves the deterministic result usable;
+- the repository contains or links reproducibly to the deployed Sites source, saved
+  version, and judge instructions; and
+- the public page, repository, video, and Devpost prose use the same claim boundaries.
+
+Additional H3B exact-deployment criteria:
 
 - the deployed `source_commit` is an exact 40-character SHA on reviewed `main`;
 - the canonical asset manifest matches a clean local build byte-for-byte;
@@ -67,14 +84,17 @@ Strict pass criteria:
   Service Worker, analytics, or embedded secret; and
 - `npm run verify:lab` passes against the public URL and exact deployed SHA.
 
-Implementation: Cloudflare Pages is the chosen host. A GitHub workflow builds,
-tests, deploys, and then re-verifies the exact reviewed commit. Cloudflare is not a
-global Devpost website requirement; it is the lowest-friction way to satisfy the
-Developer Tools no-rebuild test-path requirement for this browser-first project.
+Implementation: OpenAI Sites is now the primary judge URL and is served publicly
+through Cloudflare infrastructure. Direct Cloudflare Pages remains the deeper H3B
+path: its GitHub workflow builds, deploys, and re-verifies the exact reviewed commit.
+Devpost reports `website_required: false`; the Developer Tools rule requires a
+no-rebuild path, which the verified Sites URL can satisfy without a separate Pages
+deployment.
 
 Failure rule: an unverified, stale, preview-only, or credentialed URL is not a pass.
-If Cloudflare credentials are unavailable, local H3A remains verified but S0 remains
-blocked; no document may call it publicly deployed.
+Missing Cloudflare account credentials blocks only the direct H3B Pages proof while
+the Sites minimum path remains healthy and traceable. No document may call the
+`pages.dev` target deployed until its exact verifier passes.
 
 Current evidence and closure sequence:
 
@@ -83,15 +103,20 @@ Current evidence and closure sequence:
 2. Deploy `29513454211/1` failed at credential preflight; both
    `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` were empty, so deployment and
    all remote checks were skipped.
-3. Create a Cloudflare custom API token restricted to the intended account with
-   `Account → Cloudflare Pages → Edit`, obtain the account ID, and store them as the
-   two same-named GitHub Actions repository secrets. Do not put either value in code,
-   logs, PR text, or Devpost.
-4. Rerun `Deploy MortalOS Lab` with `workflow_dispatch`; require project discovery,
-   exact clean build, deployment, propagation retries, remote byte/MIME/header/source
-   verification, and the full logged-out Chromium path to pass in one run.
-5. Only then add `https://mortalos-lab-yonghwan2161.pages.dev` to Devpost and freeze
-   the deployed source SHA for the video.
+3. `https://mortalos-evidence-lab.ant713800.chatgpt.site` returned logged-out HTTP
+   200; its GPT witness returned HTTP 200 for a public R1 result and rejected an
+   injected `private_key` with HTTP 422 before inference. Devpost now uses this URL.
+4. Sites version 2 is public and has its own immutable source commit/archive digest,
+   but that source commit is not a commit in the MortalOS repository. Import or
+   reproducibly link the deployed source and bind its two displayed results to the
+   final reviewed R1 corpus before freeze.
+5. PR #12 is the current R1 candidate. It shares the pre-correction base and contains
+   stale H3B review/deployment statements; it must rebase after the status correction,
+   preserve the governance incident, and pass a fresh immutable-head review and CI.
+6. A direct Cloudflare Pages deployment is a parallel hardening task, not a submit
+   blocker. If an authenticated account becomes available within the time box, use a
+   Pages-Edit-only token, store the account ID/token as the two GitHub secrets, rerun
+   `Deploy MortalOS Lab`, and accept it only after exact asset/header/Chromium proof.
 
 ### S1 — repository and judge instructions
 
@@ -113,11 +138,11 @@ Strict pass criteria:
 
 Goal: show genuine use of Codex with GPT-5.6 during construction.
 
-The event requirement concerns how the project was built; it does not require an
-OpenAI API call in the product runtime. Therefore a rushed model endpoint is not a
-submission gate. The evidence package must instead identify concrete work accelerated
-by Codex/GPT-5.6: operational lifecycle definitions, P0 adversarial review, conformance
-vectors, browser boundary tests, deployment invariants, and deadline replanning.
+The event requirement concerns how the project was built and does not require runtime
+inference, but a real Sites GPT-5.6 witness now exists. It remains outside validity:
+the server route receives only one public R1 result, uses structured output, and may
+fail without affecting the deterministic verdict. The repository still needs the
+deployed route/source provenance and reproducible validation evidence.
 
 Strict pass criteria:
 
@@ -148,11 +173,14 @@ Goal: one clear public YouTube video, shorter than three minutes.
 Required sequence:
 
 1. 0:00–0:20 — the problem and honest scope;
-2. 0:20–1:20 — live logical `2-of-3` birth, one-key failure, two-key heartbeat;
-3. 1:20–2:10 — turnover, replay/fork, qualified death, resurrection rejection;
-4. 2:10–2:35 — exact evidence/corpus and endpoint neutrality;
-5. 2:35–2:55 — how Codex and GPT-5.6 accelerated the implementation; and
-6. final seconds — repository, public Lab, and next R1/R2 step.
+2. 0:20–1:05 — switch between incomplete and complete evidence and compare the two
+   deterministic mortality outcomes;
+3. 1:05–1:35 — ask GPT-5.6 to explain the public result and point out that it has no
+   signing, validation, head-selection, or death authority;
+4. 1:35–2:10 — show the exact R1 corpus and JavaScript/Python byte equality;
+5. 2:10–2:40 — explain how Codex/GPT-5.6 accelerated adversarial definitions, tests,
+   deployment, and review while the human retained scope and threat assumptions; and
+6. 2:40–2:55 — repository, claim boundaries, and next R1-C/R2 step.
 
 Strict pass criteria: public YouTube URL, duration under three minutes, audible
 voiceover, no secret/private key in frame, and behavior identical to the deployed SHA.
@@ -172,17 +200,19 @@ Strict pass criteria:
 
 | KST deadline | Deliverable | Exit gate |
 | --- | --- | --- |
-| Jul 17, 12:00 | Cloudflare account ID and least-privilege Pages token stored as repository secrets | credential preflight passes without exposing either value |
-| Jul 17, 18:00 | production H3B workflow rerun and public URL frozen | exact-SHA assets/headers plus logged-out Chromium pass |
-| Jul 18, 18:00 | Devpost category/custom fields and public judge instructions staged | only video and `/feedback` may remain open |
-| Jul 19, 18:00 | final video script and clean recording rehearsal | every statement mapped to deployed behavior; duration below three minutes |
-| Jul 20, 18:00 | public video uploaded and submission rehearsal completed | public YouTube voiceover covers project, Codex, and GPT-5.6 |
+| Jul 17, 12:00 | status correction merged; PR #12 rebased with truthful H3B/Sites state | no stale reviewer/deployment claim survives |
+| Jul 17, 20:00 | R1 candidate independently reviewed, CI-green, and merged | exact-head review plus 8/8 JS/Python goldens; limitations explicit |
+| Jul 18, 12:00 | Sites source/version provenance and final public judge instructions frozen | logged-out 200, GPT 200, private-field 422, displayed outcomes match reviewed R1 |
+| Jul 18, 18:00 | Devpost custom-field draft and video script/rehearsal complete | only public video and `/feedback` may remain open; duration below three minutes |
+| Jul 19, 18:00 | public video uploaded and submission rehearsal completed | public YouTube voiceover covers project, Codex, and GPT-5.6 |
+| Jul 20, 12:00 | `/feedback`, category, country, submitter type, URLs, and test instructions staged | every required field has a final value |
 | Jul 21, 18:00 | final code/content freeze | all checks green; exact URLs and SHA frozen |
 | Jul 22, 07:00 | Devpost submitted | non-draft submission confirmed; two-hour buffer remains |
 
-Do not spend the submission lane on R2, distributed inference, WebRTC/libp2p,
-token economics, durable key custody, or a polished CLI unless every S0–S5 blocker
-is already closed.
+Cloudflare direct deployment may use spare capacity only through Jul 18 12:00 KST;
+after that it cannot displace R1 provenance, video, fields, rehearsal, or submission.
+Do not spend the submission lane on R2, distributed inference, WebRTC/libp2p, token
+economics, durable key custody, or a polished CLI unless every S0–S5 blocker is closed.
 
 ## 5. Verified foundation
 
@@ -225,10 +255,13 @@ operation/result bytes and independent verification.
 
 - **Registration gate:** register an independent verifier identity, task, workspace,
   non-JavaScript restriction, and separate reviewer before golden fixtures are frozen.
-- **R1-A:** JavaScript emits canonical positive/negative operation/result goldens for
-  Genesis, Pulse, replay, append, snapshot, fork, and qualified mortality.
-- **R1-B:** independently authored Python consumes those unchanged bytes without
-  importing or translating the JavaScript implementation.
+- **R1-A candidate in PR #12:** JavaScript emits bounded canonical operations/results
+  for Genesis validation, linear lineage replay, replay rejection, two qualified
+  mortality cases, version rejection, and noncanonical input.
+- **R1-B candidate in PR #12:** independently authored Python consumes those eight
+  unchanged goldens without importing or executing the JavaScript implementation.
+  This is a frozen-corpus differential, not yet a general Python implementation of
+  arbitrary pending evidence, every fork, or all resource ceilings.
 - **R1-C:** Lab and later CLI consume the same wire records; process-local accepted
   capabilities never cross a persistence or network boundary.
 

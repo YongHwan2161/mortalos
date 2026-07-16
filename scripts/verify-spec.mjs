@@ -283,7 +283,7 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "P0 and H3B contract merged on `main`; public H3B deployment blocked at credential preflight",
+  "P0/H3A/H3B contract merged; public Sites judge path live; direct H3B deployment credential-blocked; R1 PR open",
   "| Node/browser agreement | Required per review head |",
   "an old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"
@@ -292,8 +292,8 @@ for (const statement of [
 }
 
 for (const statement of [
-  "H3A implemented",
-  "H3B honest Lab preview",
+  "H3A MortalOS Lab",
+  "Additional H3B exact-deployment criteria",
   "Three non-extractable Worker keys"
 ]) {
   assert(
