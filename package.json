@@ -9,7 +9,7 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run test:governance && npm run test:conformance && npm run test:properties && npm run test:lab && npm run build:lab && npm run verify:portable && npm run verify:singleton && npm run verify:h2",
+    "test": "npm run verify:license && npm run verify:spec && npm run test:governance && npm run test:conformance && npm run test:properties && npm run test:lab && npm run test:r1 && npm run build:lab && npm run verify:portable && npm run verify:r1 && npm run verify:singleton && npm run verify:h2",
     "verify:license": "node scripts/verify-license.mjs",
     "verify:spec": "node scripts/verify-spec.mjs",
     "test:governance": "node --test test/agent-governance.test.mjs",
@@ -19,8 +19,10 @@
     "test:conformance": "node --test test/bytes.test.mjs test/codec.test.mjs test/crypto.test.mjs test/schema-validation.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/singleton.test.mjs test/process-determinism.test.mjs",
     "test:properties": "node --test test/properties.test.mjs",
     "test:lab": "node --test test/lab.test.mjs",
+    "test:r1": "node --test test/r1-wire.test.mjs",
     "test:coverage": "MORTALOS_SKIP_FULL_SIGNATURE_BUDGET=1 node --test --experimental-test-coverage --test-coverage-include=src/bytes.mjs --test-coverage-include=src/codec.mjs --test-coverage-include=src/crypto.mjs --test-coverage-include=src/primordials.mjs --test-coverage-include=src/schema-validation.mjs --test-coverage-include=src/rejection-codes.mjs --test-coverage-include=src/validator.mjs --test-coverage-include=src/lineage.mjs --test-coverage-branches=90 test/bytes.test.mjs test/codec.test.mjs test/crypto.test.mjs test/schema-validation.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/singleton.test.mjs",
     "verify:portable": "node scripts/verify-portable.mjs",
+    "verify:r1": "node scripts/verify-r1.mjs",
     "test:chromium": "node scripts/verify-chromium.mjs",
     "build:lab": "node scripts/build-lab.mjs",
     "deploy:lab": "node scripts/deploy-lab.mjs",

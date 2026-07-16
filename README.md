@@ -31,16 +31,22 @@ Implemented:
   canonical public-evidence export, and cross-origin-isolated browser boundary checks.
 - an H3B deployment candidate that binds a clean static build to one source commit,
   hashes every served asset, mirrors the local security-header contract on Cloudflare
-  Pages, and verifies the public bytes and Chromium judge path after deployment.
+  Pages, and verifies the public bytes and Chromium judge path after deployment;
+- an R1 canonical operation/result contract for Genesis validation, lineage replay,
+  and qualified mortality, with exact byte ceilings, stable rejection results, eight
+  committed goldens, and byte-identical JavaScript/Python differential verification;
+  and
+- a public [MortalOS Evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site)
+  that contrasts incomplete and complete mortality evidence and uses GPT-5.6 only as
+  a server-side, schema-constrained, non-authoritative witness.
 
 Not implemented:
 
-- a verified public HTTPS URL for the one-page MortalOS Lab;
 - a stable CLI create/import/replay/export contract;
 - participant-to-participant transport or replicated state;
 - a deterministic executable genome or mutable logical state; and
-- GPT-5.6 runtime integration, which is not required for the current deterministic
-  judge path.
+- R1 consumption inside the full H3A experiment surface (the public evidence Lab
+  consumes committed R1 outcomes, while H3A remains the deeper local experiment).
 
 This tree implements the **P0 mortality-proof and bounded-observation correction**.
 Any SHA is publishable only after immutable-head review and its own successful Verify
@@ -70,7 +76,9 @@ npm run test:coverage
 npx playwright install chromium
 npm run test:chromium
 npm run test:lab
+npm run test:r1
 npm run build:lab
+npm run verify:r1
 npm run verify:lab
 npm run dev:lab
 npm run demo:singleton
@@ -121,7 +129,7 @@ Closing a browser or CLI process can remove every locally usable key and make th
 
 ## Why browser first, but not browser only
 
-The Build Week product is **MortalOS Lab**, a browser-based Developer Tools experience for inspecting and falsifying lifecycle traces. The browser is first because it offers a zero-install judge path and makes identity, custody, turnover, fork, and mortality visible.
+The Build Week product is **MortalOS Lab**, a browser-based Developer Tools experience for inspecting and falsifying lifecycle traces. The [public evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site) is the zero-install judge entry point; the deeper local H3A experiment remains available from this repository.
 
 The browser is not a protocol boundary. Browser, CLI, native, service, embedded, and future network participants must carry the same canonical evidence to the same portable kernel. UI, transport, storage, signaling, and model output cannot define validity.
 
@@ -172,11 +180,11 @@ Current documentation contains only normative rules, rolling status/plan, deploy
 
 ## Project direction
 
-H3B first gives judges an honest zero-install view of H3A. After submission, R1-A
-exposes bounded versioned raw operations and results plus a JavaScript golden corpus;
-R1-B replays that corpus in an independently written Python verifier; and R1-C moves
-the Lab onto those records. R2 then adds deterministic state. CLI and network adapters
-remain thin consumers of the same contract.
+R1-A now exposes bounded versioned raw operations and results plus a JavaScript golden
+corpus, and R1-B replays it in an independently written Python verifier. The public
+evidence Lab consumes representative R1 outcomes; moving the full H3A experiment onto
+the wire contract remains R1-C. R2 then adds deterministic state. CLI and network
+adapters remain thin consumers of the same contract.
 
 ## How Codex and GPT-5.6 were used
 
@@ -190,8 +198,9 @@ reviewable instead of treating model prose as evidence.
 
 The human retained the consequential decisions: North Star, threat assumptions,
 scope, browser-first product strategy, claim limits, Apache-2.0 license, and final
-submission wording. GPT-5.6 output is never a validity authority, and the current Lab
-does not claim a runtime OpenAI API integration.
+submission wording. The public evidence Lab calls GPT-5.6 through a server-only
+Responses API route with `store: false` and strict structured output. GPT receives
+only the public R1 result and cannot sign, validate, choose a head, or declare death.
 
 ## License
 
