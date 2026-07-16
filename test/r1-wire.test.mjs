@@ -43,9 +43,12 @@ test("R1 operation byte ceiling is exact and +1 fails closed", () => {
   exact.fill(0x20);
   assert.equal(parseJsonBytes(executeR1Operation(exact)).outcome.code, "R1_PARSE");
   const over = new Uint8Array(R1_LIMITS.operation_bytes + 1);
-  assert.equal(parseJsonBytes(executeR1Operation(over)).outcome.code, "R1_LIMIT");
+  const overResult = parseJsonBytes(executeR1Operation(over));
+  assert.equal(overResult.outcome.code, "R1_LIMIT");
+  assert.equal(overResult.operation_hash, null);
+  const muchLarger = new Uint8Array(R1_LIMITS.operation_bytes * 16);
+  assert.deepEqual(executeR1Operation(muchLarger), executeR1Operation(over));
 });
-
 test("R1 mortality distinguishes incomplete evidence from qualified death", () => {
   const entries = new Map(buildR1Corpus().entries.map((entry) => [entry.id, entry]));
   const incomplete = parseJsonBytes(decodeBase64Url(entries.get("mortality-incomplete-not-dead").result));
@@ -53,4 +56,3 @@ test("R1 mortality distinguishes incomplete evidence from qualified death", () =
   assert.equal(incomplete.outcome.mortality.status, "authority_unavailable_not_proven_dead");
   assert.equal(dead.outcome.mortality.status, "dead_under_v0_assumptions");
 });
-
