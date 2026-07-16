@@ -374,3 +374,38 @@ result, and reproducible verification.
 - Handoff: publish one ready superseding PR and bind review to its immutable base,
   head, body, changed-file digest, trusted policy run, and Verify run. The author does
   not self-review or merge.
+
+## 2026-07-16 — Build Week submission sprint and H3B deployment contract
+
+- Base: `d50c8f41ec648c757cb26b170340c467f792b770`
+- Branch: `agent/codex-protocol-kernel--submission-sprint`
+- Result: added a deterministic `mortalos.lab-assets/1` manifest with exact source
+  commit, per-asset SHA-256 and media types; one shared local/Cloudflare security
+  header contract; clean-tree exact-head Pages deployment; remote byte/header/source
+  verification; and a remote mode for the full Chromium Lab judge path. GitHub
+  Actions are pinned and persisted checkout credentials are disabled. Trusted `src/`
+  protocol code is unchanged.
+- Submission review: live Devpost data fixed the deadline at
+  `2026-07-22T00:00:00Z` (09:00 KST), confirmed the project remains a draft, and
+  identified the public video, `/feedback` Session ID, honest story, and no-rebuild
+  Developer Tools path as mandatory blockers. The rolling plan now separates the
+  submission lane from post-submission R1/R2 research. Runtime GPT is not treated as
+  a requirement; concrete construction use of Codex/GPT-5.6 must be evidenced.
+- Verification: `npm test` PASS with governance 30/30, conformance 76/76, seeded
+  10,000-case properties, Lab 7/7, static build, committed/Node/browser-target
+  portability with 10,000/10,000 adversarial rejects, singleton, and H2 v4 digest
+  `19fa3080831cb94f29bfda2e7e1f04f86927057f0823834a6bcbc7d746e25399`.
+  Trusted-core coverage passed at 96.00% line, 92.56% branch, and 95.22% function;
+  audit found zero vulnerabilities; package dry-run contained 82 files; license,
+  direct-dependency notice, spec, workflow/governance, syntax, and diff checks passed.
+  Actual Chromium could not run locally because no executable exists and the
+  Playwright CDN returned empty invalid archives; exact-head GitHub CI remains the
+  required browser evidence.
+- Deployment state: local Wrangler is 4.111.0 but has no authenticated Cloudflare
+  account or token. The unauthenticated temporary-account path was not used because
+  it requires accepting Cloudflare terms and is not a durable submission URL. The
+  automatic post-merge GitHub workflow will use repository-scoped deployment secrets
+  if present and then verify the public artifact.
+- Handoff: publish one ready PR from this branch, require immutable-head policy and
+  Verify success, then let `reviewer-merge-gate` decide merge and observe the
+  automatic Cloudflare run. Do not call H3B complete without the public verifier.

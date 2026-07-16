@@ -1,0 +1,65 @@
+name: Deploy MortalOS Lab
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mortalos-lab-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy reviewed Lab
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MORTALOS_EXPECTED_COMMIT: ${{ github.sha }}
+      MORTALOS_LAB_URL: https://mortalos-lab-yonghwan2161.pages.dev
+      MORTALOS_DEPLOY_VERIFY_ATTEMPTS: 12
+      MORTALOS_DEPLOY_VERIFY_DELAY_MS: 5000
+      MORTALOS_SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Check out reviewed main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Require exact main revision
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Require deployment credentials
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify exact source before deployment
+        run: npm test
+
+      - name: Deploy exact static artifact
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy:lab
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify public artifact and judge path
+        run: npm run verify:lab

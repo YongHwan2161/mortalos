@@ -23,8 +23,10 @@
     "verify:portable": "node scripts/verify-portable.mjs",
     "test:chromium": "node scripts/verify-chromium.mjs",
     "build:lab": "node scripts/build-lab.mjs",
+    "deploy:lab": "node scripts/deploy-lab.mjs",
     "dev:lab": "node scripts/serve-lab.mjs",
     "verify:lab": "node scripts/verify-lab.mjs",
+    "verify:deployed-lab": "node scripts/verify-deployed-lab.mjs",
     "verify:singleton": "node scripts/demo-singleton.mjs --verify",
     "demo:singleton": "node scripts/demo-singleton.mjs",
     "demo:trace": "node scripts/demo-trace.mjs",
@@ -33,7 +35,8 @@
   "devDependencies": {
     "ajv": "8.20.0",
     "esbuild": "0.28.1",
-    "playwright": "1.61.1"
+    "playwright": "1.61.1",
+    "wrangler": "4.111.0"
   },
   "dependencies": {
     "@noble/curves": "2.2.0",

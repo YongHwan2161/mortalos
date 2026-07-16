@@ -5,49 +5,38 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — Integrated mortality proof and bounded observation correction
+### ACTIVE — Build Week submission sprint and H3B public Lab
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `3a1a4b6f93857d216cac4e4a3c0b2f71007911af`
-- Work branch: `agent/codex-protocol-kernel--mortality-proof-reconcile-main`
-- Sources to reconcile: prepared correction
-  `38458708c9df38214664953112edcf2c6a61e5ed` and the sound resource-bound
-  semantics and chronology historically reviewed at PR #9 head
-  `12cee117367dbe0afe0c0650c5bbdf24e8fbf53f`. PR #9 is a concurrent mutable
-  branch, so its exact head MUST be re-fetched before every comparison; the latest
-  observation on 2026-07-16 was blocked head
-  `13428fa6905508c0a97649ebf46b9e4826f98403` under review `4710440852`.
-  This candidate supersedes the known blockers rather than editing, closing,
-  force-pushing, or merging PR #9
-- Exact intended paths: `.github/workflows/verify.yml`; `README.md`; this author's
-  `HANDOFF.md`, `MEMORY.md`, and `WORKLOG.md`;
-  `docs/ACCESS_ARCHITECTURE.md`, `docs/IMPLEMENTATION_PLAN.md`,
-  `docs/PROJECT_STATUS.md`, `docs/PROTOCOL.md`, `docs/REJECTION_CODES.md`,
+- Base: `d50c8f41ec648c757cb26b170340c467f792b770`
+- Work branch: `agent/codex-protocol-kernel--submission-sprint`
+- Worktree:
+  `/workspace/mortalos-worktrees/pr2-integration-worktrees/codex-protocol-kernel--h3b-r2-worktrees/codex-protocol-kernel--submission-sprint`
+- Exact intended shared paths: `.github/workflows/deploy-lab.yml`,
+  `.github/workflows/verify.yml`, `README.md`, `THIRD_PARTY_NOTICES.md`,
+  `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/ACCESS_ARCHITECTURE.md`, `docs/PROJECT_STATUS.md`,
   `docs/SINGLE_BROWSER_INCUBATOR.md`, `docs/SUBMISSION_CHECKLIST.md`,
-  `docs/THREAT_MODEL.md`, and `docs/TRACEABILITY.md`; `lab/index.html`,
-  `lab/live-incubator.mjs`, and `lab/reference-engine.mjs`;
-  `package.json`; `scripts/demo-singleton.mjs`, `scripts/demo-trace.mjs`,
-  `scripts/verify-chromium.mjs`, `scripts/verify-lab.mjs`, `scripts/verify-portable.mjs`, and
-  `scripts/verify-spec.mjs`; `src/bytes.mjs`, `src/codec.mjs`, `src/crypto.mjs`,
-  `src/lineage.mjs`, `src/primordials.mjs`, `src/rejection-codes.mjs`,
-  `src/schema-validation.mjs`, and `src/validator.mjs`; `test/lineage.test.mjs`,
-  `test/lab.test.mjs`, `test/mortality.test.mjs`, `test/portable-corpus.mjs`,
-  `test/portable-scenario.mjs`, `test/schema-validation.test.mjs`,
-  `test/vectors/h2-trace.expected.json`, and
-  `test/vectors/portable-expected.json`
-- Contract affected: mortality inventory completeness, inert trusted-observer and
-  runtime/dependency integrity boundaries, bounded whole-observation work, frozen
-  private indeterminate results, a calibrated 1,152-unit all-key signature ceiling,
-  and one unified portable v4 corpus; H3A remains a local adapter over the corrected
-  kernel, and the critical next order is verifier registration → R1-A → R1-B → R1-C
-  → H3B → R2
-- Required evidence: clean locked install; focused precedence, graph-immutability,
-  and retry tests for every limit; full conformance/property/portable suites; actual
-  Chromium differential and Lab acceptance; trusted-core and governance coverage;
-  audit, package, license, spec, workflow, secret, syntax, stale-language, and diff
-  checks; exact-head trusted policy and Verify after publication
-- Expected handoff: one superseding ready PR for immutable-head review; the author
-  neither edits/closes PR #9 nor self-reviews or merges
+  `docs/TRACEABILITY.md`, `lab/_headers`,
+  `package.json`, `package-lock.json`, `scripts/build-lab.mjs`,
+  `scripts/deploy-lab.mjs`, `scripts/lab-contract.mjs`,
+  `scripts/serve-lab.mjs`, `scripts/verify-deployed-lab.mjs`,
+  `scripts/verify-lab.mjs`, `scripts/verify-license.mjs`,
+  `scripts/verify-spec.mjs`, and `test/lab.test.mjs`
+- Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/MEMORY.md`,
+  `agents/codex-protocol-kernel/README.md`, and
+  `agents/codex-protocol-kernel/WORKLOG.md`
+- Contract affected: deployment and submission evidence only. The protocol wire,
+  lifecycle semantics, and trusted `src/` core are intentionally unchanged. H3B
+  publishes the honest H3A Lab as a time-bounded judge path; it does not claim R1,
+  participant networking, state-bearing execution, or ownerlessness.
+- Required evidence: locked install; full repository tests; actual Chromium Lab;
+  deterministic deployment manifest and exact-commit/security-header verifier;
+  audit, package, secret scan, and immutable-head GitHub checks. A real public URL
+  must pass the same verifier before it may be called deployed.
+- Expected handoff: one focused ready PR, followed by independent immutable-head
+  review by `reviewer-merge-gate`; the author neither self-reviews nor merges.
 
 ## Completed handoffs
 

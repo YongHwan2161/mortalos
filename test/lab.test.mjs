@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash, generateKeyPairSync, sign } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 import test from "node:test";
 import {
   canonicalBytes,
@@ -23,6 +25,10 @@ import {
 } from "../lab/live-incubator.mjs";
 import { summarizePortableCorpus } from "../lab/corpus-summary.mjs";
 import { runReferenceProof } from "../lab/reference-engine.mjs";
+import { buildLab } from "../scripts/build-lab.mjs";
+import { LAB_SECURITY_HEADERS, labContentType, labMediaType } from "../scripts/lab-contract.mjs";
+import { startLabServer } from "../scripts/serve-lab.mjs";
+import { verifyDeployedLab } from "../scripts/verify-deployed-lab.mjs";
 
 async function fixture(name) {
   return JSON.parse(await readFile(new URL(`./vectors/${name}`, import.meta.url), "utf8"));
@@ -204,9 +210,39 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(combined, /exportKey\("pkcs8", generated\.privateKey\)/);
 
   const serverSource = await readFile(new URL("../scripts/serve-lab.mjs", import.meta.url), "utf8");
-  assert.match(serverSource, /"Cross-Origin-Embedder-Policy": "require-corp"/);
-  assert.match(serverSource, /"Cross-Origin-Opener-Policy": "same-origin"/);
-  assert.match(serverSource, /"Cross-Origin-Resource-Policy": "same-origin"/);
+  assert.match(serverSource, /LAB_SECURITY_HEADERS, labContentType.*lab-contract\.mjs/);
+  assert.equal(LAB_SECURITY_HEADERS["cross-origin-embedder-policy"], "require-corp");
+  assert.equal(LAB_SECURITY_HEADERS["cross-origin-opener-policy"], "same-origin");
+  assert.equal(LAB_SECURITY_HEADERS["cross-origin-resource-policy"], "same-origin");
+
+  const deploymentHeaders = await readFile(new URL("../lab/_headers", import.meta.url), "utf8");
+  assert.match(deploymentHeaders, /Cross-Origin-Embedder-Policy: require-corp/);
+  assert.match(deploymentHeaders, /Cross-Origin-Opener-Policy: same-origin/);
+  assert.match(deploymentHeaders, /Content-Security-Policy: default-src 'none'/);
+
+  const deploymentSource = await readFile(new URL("../scripts/deploy-lab.mjs", import.meta.url), "utf8");
+  assert.match(deploymentSource, /\["rev-parse", "HEAD"\]/);
+  assert.match(deploymentSource, /\["status", "--porcelain=v1", "--untracked-files=all"\]/);
+  assert.match(deploymentSource, /const branch = "main"/);
+
+  const deploymentWorkflow = await readFile(new URL("../.github/workflows/deploy-lab.yml", import.meta.url), "utf8");
+  assert.match(deploymentWorkflow, /test "\$GITHUB_REF" = "refs\/heads\/main"/);
+  assert.match(deploymentWorkflow, /test "\$\(git rev-parse HEAD\)" = "\$GITHUB_SHA"/);
+  assert.doesNotMatch(deploymentWorkflow, /^      CLOUDFLARE_(?:ACCOUNT_ID|API_TOKEN):/m);
+  assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_ACCOUNT_ID:/gm) ?? []).length, 2);
+  assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_API_TOKEN:/gm) ?? []).length, 2);
+  for (const workflow of [
+    deploymentWorkflow,
+    await readFile(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8")
+  ]) {
+    const actions = [...workflow.matchAll(/^\s+uses:\s+(actions\/(?:checkout|setup-node)@[0-9a-f]+)(?:\s+#.*)?$/gm)]
+      .map((match) => match[1]);
+    assert.deepEqual(actions, [
+      "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+      "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
+    ]);
+    assert.match(workflow, /uses: actions\/checkout@[0-9a-f]+ # v4\.3\.1\n        with:\n          persist-credentials: false/);
+  }
 
   const html = await readFile(new URL("../lab/index.html", import.meta.url), "utf8");
   assert.match(html, /connect-src 'none'/);
@@ -224,4 +260,103 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(bundledLicenses, /@noble\/curves 2\.2\.0/);
   assert.match(bundledLicenses, /@noble\/hashes 2\.2\.0/);
   assert.match(bundledLicenses, /Permission is hereby granted, free of charge/);
+});
+
+test("H3B build binds every served asset, MIME type, security header, and source commit", async (context) => {
+  const directory = await mkdtemp(resolve(tmpdir(), "mortalos-lab-contract-"));
+  context.after(() => rm(directory, { force: true, recursive: true }));
+  const sourceCommit = "a".repeat(40);
+  const { manifest } = await buildLab({ outdir: directory, sourceCommit });
+  const manifestBytes = new Uint8Array(await readFile(resolve(directory, "asset-manifest.json")));
+  assert.deepEqual(manifestBytes, canonicalBytes(manifest));
+  assert.equal(manifest.source_commit, sourceCommit);
+  assert.deepEqual(
+    manifest.files.map((entry) => entry.path),
+    [...manifest.files.map((entry) => entry.path)].sort()
+  );
+  assert.ok(manifest.files.length >= 6);
+  assert.ok(!manifest.files.some((entry) => ["_headers", "asset-manifest.json"].includes(entry.path)));
+  for (const asset of manifest.files) {
+    const bytes = await readFile(resolve(directory, asset.path));
+    assert.equal(asset.media_type, labMediaType(asset.path));
+    assert.equal(
+      asset.sha256,
+      `sha256:${encodeBase64Url(createHash("sha256").update(bytes).digest())}`
+    );
+  }
+  const assets = { format: manifest.format, files: manifest.files };
+  assert.equal(
+    manifest.asset_digest,
+    `sha256:${encodeBase64Url(createHash("sha256").update(canonicalBytes(assets)).digest())}`
+  );
+
+  const headerSource = await readFile(resolve(directory, "_headers"), "utf8");
+  for (const [name, value] of Object.entries(LAB_SECURITY_HEADERS)) {
+    const headerName = name.split("-")
+      .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+      .join("-");
+    const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(headerSource, new RegExp(`^  ${headerName}: ${escaped}$`, "m"));
+  }
+
+  const server = await startLabServer({ directory });
+  try {
+    for (const asset of manifest.files) {
+      const response = await fetch(new URL(asset.path, `${server.url}/`));
+      assert.equal(response.status, 200, asset.path);
+      const escapedMediaType = asset.media_type.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      assert.match(
+        response.headers.get("content-type") ?? "",
+        new RegExp(`^${escapedMediaType}(?:;|$)`)
+      );
+      for (const [name, value] of Object.entries(LAB_SECURITY_HEADERS)) {
+        assert.equal(response.headers.get(name), value, `${asset.path} ${name}`);
+      }
+    }
+  } finally {
+    await server.close();
+  }
+  await assert.rejects(
+    buildLab({ outdir: directory, sourceCommit: "not-a-commit" }),
+    /lowercase 40-character commit SHA/
+  );
+});
+
+test("H3B remote verifier rejects any deployed byte or contract substitution", async (context) => {
+  const directory = await mkdtemp(resolve(tmpdir(), "mortalos-lab-remote-contract-"));
+  context.after(() => rm(directory, { force: true, recursive: true }));
+  const sourceCommit = "b".repeat(40);
+  const { manifest } = await buildLab({ outdir: directory, sourceCommit });
+  const originalFetch = globalThis.fetch;
+  let tamperedPath = null;
+  globalThis.fetch = async (url) => {
+    const path = new URL(url).pathname.slice(1) || "index.html";
+    const bytes = new Uint8Array(await readFile(resolve(directory, path)));
+    if (path === tamperedPath) bytes[0] ^= 1;
+    return new Response(bytes, {
+      status: 200,
+      headers: {
+        ...LAB_SECURITY_HEADERS,
+        "content-type": labContentType(path)
+      }
+    });
+  };
+  try {
+    const result = await verifyDeployedLab({
+      url: "https://mortalos.example/",
+      expectedCommit: sourceCommit
+    });
+    assert.deepEqual(result, {
+      asset_digest: manifest.asset_digest,
+      assets: manifest.files.length,
+      source_commit: sourceCommit
+    });
+    tamperedPath = manifest.files[0].path;
+    await assert.rejects(verifyDeployedLab({
+      url: "https://mortalos.example/",
+      expectedCommit: sourceCommit
+    }));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

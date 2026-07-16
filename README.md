@@ -29,32 +29,39 @@ Implemented:
 - a local H3A MortalOS Lab with three non-extractable Worker keys, live `2-of-3`
   birth/heartbeat experiments, reference lifecycle falsification, full corpus replay,
   canonical public-evidence export, and cross-origin-isolated browser boundary checks.
+- an H3B deployment candidate that binds a clean static build to one source commit,
+  hashes every served asset, mirrors the local security-header contract on Cloudflare
+  Pages, and verifies the public bytes and Chromium judge path after deployment.
 
 Not implemented:
 
-- a public HTTPS deployment of the one-page MortalOS Lab;
+- a verified public HTTPS URL for the one-page MortalOS Lab;
 - a stable CLI create/import/replay/export contract;
 - participant-to-participant transport or replicated state;
 - a deterministic executable genome or mutable logical state; and
-- GPT-5.6 runtime integration.
+- GPT-5.6 runtime integration, which is not required for the current deterministic
+  judge path.
 
 This tree implements the **P0 mortality-proof and bounded-observation correction**.
 Any SHA is publishable only after immutable-head review and its own successful Verify
-run. The reviewed sequence after P0 is total, not parallel:
+run. The Build Week submission lane publishes the existing Lab as an explicitly
+qualified exact-commit preview:
 
-`P0 → independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → H3B public deployment → R2`
+`P0 merged → H3B honest Lab preview → release evidence → video → submit`
 
-The verifier identity, task, and workspace are registered before R1 fixtures are
-authored to preserve logical separation. Technical independence is established only
-by the non-JavaScript implementation restrictions and cross-language golden gate;
-account-level independence additionally requires a separate GitHub App or bot. Public
-hosting waits until the Lab consumes the bounded canonical wire instead of the
-JavaScript object-graph observer API. See [Project status](docs/PROJECT_STATUS.md) and
-the [implementation plan](docs/IMPLEMENTATION_PLAN.md).
+That deadline exception improves judge access without claiming that hosting closes
+the JavaScript observer boundary. The post-submission protocol lane remains:
+
+`independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
+
+See [Project status](docs/PROJECT_STATUS.md) and the [implementation
+plan](docs/IMPLEMENTATION_PLAN.md).
 
 ## Run
 
-Requirements: Node.js 22.5 or later and npm.
+Supported platforms: Node.js 22.5 or later on macOS, Linux, or Windows for local
+verification; a current Chromium-class browser for MortalOS Lab. The public Lab is
+static and needs no account or extension.
 
 ```bash
 npm ci
@@ -69,6 +76,18 @@ npm run dev:lab
 npm run demo:singleton
 npm run demo:trace
 ```
+
+To verify a reviewed Cloudflare deployment against its exact commit:
+
+```bash
+MORTALOS_LAB_URL=https://mortalos-lab-yonghwan2161.pages.dev \
+MORTALOS_EXPECTED_COMMIT=<exact-main-sha> \
+npm run verify:deployed-lab
+```
+
+Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is the
+equivalent local maintainer command and requires Cloudflare credentials; judges do
+not need those credentials.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed
@@ -153,15 +172,26 @@ Current documentation contains only normative rules, rolling status/plan, deploy
 
 ## Project direction
 
-After registering the independent verifier identity, R1-A should expose bounded
-versioned raw operations and results plus a JavaScript golden corpus; R1-B should
-replay that corpus in an independently written Python verifier; and R1-C should move
-MortalOS Lab onto those wire records before H3B publishes it. CLI and future network
-adapters should be thin consumers of the same contract. GPT-5.6 may propose
-schema-constrained adversarial scenarios, but deterministic validation remains the
-only validity authority.
+H3B first gives judges an honest zero-install view of H3A. After submission, R1-A
+exposes bounded versioned raw operations and results plus a JavaScript golden corpus;
+R1-B replays that corpus in an independently written Python verifier; and R1-C moves
+the Lab onto those records. R2 then adds deterministic state. CLI and network adapters
+remain thin consumers of the same contract.
 
-Codex has assisted with protocol decomposition, red-team review, implementation, tests, portability, and documentation. Scope, assumptions, bootstrap profiles, public claims, and licensing remain human decisions.
+## How Codex and GPT-5.6 were used
+
+Codex with GPT-5.6 accelerated the conversion of the original “network life” idea
+into falsifiable protocol claims: birth, identity, succession, qualified death, and
+resurrection rejection. It was used to red-team evidence completeness and hostile
+observer inputs, implement deterministic conformance/property/browser tests, compare
+the project against Devpost requirements, and design the exact-asset Cloudflare
+deployment verifier. Git history and committed vectors make those contributions
+reviewable instead of treating model prose as evidence.
+
+The human retained the consequential decisions: North Star, threat assumptions,
+scope, browser-first product strategy, claim limits, Apache-2.0 license, and final
+submission wording. GPT-5.6 output is never a validity authority, and the current Lab
+does not claim a runtime OpenAI API integration.
 
 ## License
 

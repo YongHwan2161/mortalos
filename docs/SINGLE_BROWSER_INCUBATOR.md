@@ -1,6 +1,6 @@
 # Single-Browser Incubator Profile
 
-Status: **H3A implemented; every publishable SHA requires exact-head actual-Chromium evidence; public HTTPS deployment waits for R1-C/H3B**
+Status: **H3A implemented; H3B exact-commit Cloudflare deployment candidate in review; every publishable SHA requires actual-Chromium evidence**
 
 Protocol: `mortalos/0`
 

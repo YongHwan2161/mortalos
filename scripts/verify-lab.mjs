@@ -6,6 +6,7 @@ import { canonicalBytes, encodeBase64Url } from "../src/index.mjs";
 import { replayEvidenceBundle } from "../lab/evidence-export.mjs";
 import { buildLab } from "./build-lab.mjs";
 import { LAB_CSP, startLabServer } from "./serve-lab.mjs";
+import { verifyDeployedLab } from "./verify-deployed-lab.mjs";
 
 const portableExpected = JSON.parse(
   await readFile(new URL("../test/vectors/portable-expected.json", import.meta.url), "utf8")
@@ -109,9 +110,11 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
     viewport: contextIndex === 2 ? { width: 360, height: 800 } : { width: 1280, height: 900 }
   });
   const errors = [];
+  const requests = [];
   const page = await context.newPage();
   if (contextIndex === 2) await page.emulateMedia({ reducedMotion: "reduce" });
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+  page.on("request", (request) => requests.push(request.url()));
   page.on("console", (message) => {
     if (message.type() === "error" || message.type() === "warning") {
       errors.push(`console ${message.type()}: ${message.text()}`);
@@ -303,6 +306,13 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
     assert.notEqual(rebornId, born.live.organism_id);
 
     assert.deepEqual(errors, []);
+    const expectedOrigin = new URL(serverUrl).origin;
+    assert.ok(requests.length > 0);
+    for (const requestUrl of requests) {
+      const parsed = new URL(requestUrl);
+      if (parsed.protocol === "blob:" || parsed.protocol === "data:") continue;
+      assert.equal(parsed.origin, expectedOrigin, `external browser request: ${requestUrl}`);
+    }
     return {
       organismId: born.live.organism_id,
       rebornId,
@@ -316,8 +326,26 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
   }
 }
 
-await buildLab();
-const server = await startLabServer();
+const remoteUrl = process.env.MORTALOS_LAB_URL;
+let deployment = null;
+const server = remoteUrl
+  ? {
+      url: new URL("/", remoteUrl).href,
+      requests: null,
+      close: async () => {}
+    }
+  : await (async () => {
+      await buildLab();
+      return startLabServer();
+    })();
+if (remoteUrl) {
+  deployment = await verifyDeployedLab({
+    url: server.url,
+    expectedCommit: process.env.MORTALOS_EXPECTED_COMMIT,
+    attempts: Number(process.env.MORTALOS_DEPLOY_VERIFY_ATTEMPTS ?? "12"),
+    retryDelayMs: Number(process.env.MORTALOS_DEPLOY_VERIFY_DELAY_MS ?? "5000")
+  });
+}
 const licenseResponse = await fetch(`${server.url}/THIRD_PARTY_LICENSES.txt`);
 assert.equal(licenseResponse.status, 200);
 assert.match(licenseResponse.headers.get("content-type") ?? "", /^text\/plain/);
@@ -343,17 +371,19 @@ try {
   assert.equal(new Set(runs.map((entry) => entry.referenceHead)).size, 1);
   assert.equal(runs.filter((entry) => entry.corpus?.exact).length, 1);
 
-  const allowedPaths = new Set([
-    "/", "/THIRD_PARTY_LICENSES.txt", "/app.js", "/corpus-worker.js",
-    "/custodian-worker.js", "/styles.css"
-  ]);
-  assert.ok(server.requests.length > 0);
-  for (const request of server.requests) {
-    assert.equal(request.method, "GET");
-    assert.ok(allowedPaths.has(request.pathname), `unexpected request: ${request.pathname}`);
+  if (server.requests) {
+    const allowedPaths = new Set([
+      "/", "/THIRD_PARTY_LICENSES.txt", "/app.js", "/corpus-worker.js",
+      "/custodian-worker.js", "/styles.css"
+    ]);
+    assert.ok(server.requests.length > 0);
+    for (const request of server.requests) {
+      assert.equal(request.method, "GET");
+      assert.ok(allowedPaths.has(request.pathname), `unexpected request: ${request.pathname}`);
+    }
   }
 
-  console.log("MortalOS Lab H3A Chromium acceptance: PASS");
+  console.log(`MortalOS Lab ${remoteUrl ? "H3B public" : "H3A local"} Chromium acceptance: PASS`);
   console.log("- 3 clean contexts / all 3 two-key quorum combinations: accepted");
   console.log("- Worker keys: non-extractable, private export rejected, message derived internally, sign-once per Pulse tuple");
   console.log("- one-key/replay/fork/post-fork/resurrection outcomes: exact kernel codes");
@@ -361,6 +391,7 @@ try {
   console.log("- cross-origin-isolated page/Worker: SharedArrayBuffer available and rejected as unstable input");
   console.log("- public evidence: canonical, independently digested, replayed to identical head");
   console.log("- storage/service-worker/external-request/console-error checks: clean");
+  if (deployment) console.log(`- deployed assets: ${deployment.assets} exact / ${deployment.asset_digest}`);
 } finally {
   await browser.close();
   await server.close();

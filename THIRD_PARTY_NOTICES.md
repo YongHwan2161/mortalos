@@ -9,6 +9,7 @@ MortalOS source code is licensed under Apache-2.0. The locked npm dependency gra
 | `ajv` | 8.20.0 | Development-only differential JSON Schema checks | MIT |
 | `esbuild` | 0.28.1 | Development-only browser bundling for portability verification and the static Lab build | MIT |
 | `playwright` / `playwright-core` | 1.61.1 | Development-only Chromium differential and Lab acceptance verification | Apache-2.0 |
+| `wrangler` | 4.111.0 | Development-only Cloudflare Pages deployment | MIT OR Apache-2.0 |
 
 This table records the direct runtime dependencies and material development/transitive dependencies used by the current locked build. It is not a replacement for the license files and metadata shipped by those packages. Run `npm ci` against `package-lock.json` to reconstruct the reviewed graph; review this notice again whenever the lockfile changes.
 

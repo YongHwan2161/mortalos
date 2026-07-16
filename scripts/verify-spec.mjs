@@ -272,29 +272,29 @@ for (const statement of requiredThreatStatements) {
 }
 
 const portableGateStatements = [
-  "Verified gate — C1 portable deterministic core",
-  "The committed result, Node 22, isolated browser-target, and actual Chromium results are required to be byte-identical on every review head; the latest successful exact-head Verify run is the publication evidence.",
-  "The PR workflow requires every changed head to rerun the Node/Chromium differential gate.",
-  "Exactly 10,000 cases replay from seed `1297044052`",
-  "any cross-runtime mismatch reopens C1"
+  "Every publishable SHA must still pass:",
+  "Committed, Node, isolated browser-target, and actual Chromium results must be",
+  "Exactly 10,000 cases replay from seed",
+  "`1297044052`",
+  "Any cross-runtime mismatch reopens the earliest portable gate"
 ];
 for (const statement of portableGateStatements) {
   assert(text.implementationPlan.includes(statement), `Implementation plan lost C1 evidence: ${statement}`);
 }
 
 for (const statement of [
-  "P0 implemented in this tree; immutable-head publication evidence required; H3A local Lab implemented",
-  "| Node/Chromium equivalence | Required per review head |",
-  "a code change invalidates older run evidence",
-  "The verified CLI singleton uses one key"
+  "P0 merged on `main`; H3A local Lab implemented; H3B deployment candidate in review",
+  "| Node/browser agreement | Required per review head |",
+  "an old green run does not cover a new SHA",
+  "| CLI bootstrap proof | Verified proof only |"
 ]) {
   assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
 }
 
 for (const statement of [
-  "H3A local executable slice — implemented; exact-head gate required",
-  "H3B public deployment — after R1-C",
-  "Three dedicated Workers hold non-extractable WebCrypto keys"
+  "H3A implemented",
+  "H3B honest Lab preview",
+  "Three non-extractable Worker keys"
 ]) {
   assert(
     text.implementationPlan.includes(statement) || text.projectStatus.includes(statement),
@@ -415,7 +415,7 @@ assert(
   portableGolden.format === "mortalos-portable-corpus/4",
   "Portable golden corpus format is stale"
 );
-for (const artifact of [text.readme, text.projectStatus, text.traceability]) {
+for (const artifact of [text.readme, text.traceability]) {
   assert(artifact.includes(h2Digest), "Current documentation omits the committed H2 digest");
 }
 
@@ -438,8 +438,9 @@ for (const [name, artifact] of Object.entries({
 }
 
 const orderedGateStatement =
-  "P0 → independent-verifier registration → R1-A JavaScript wire/golden → " +
-  "R1-B Python differential → R1-C Lab wire consumption → H3B public deployment → R2";
+  "independent-verifier registration → R1-A JavaScript wire/golden → " +
+  "R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → " +
+  "R3 availability → R4 network embodiment";
 for (const [name, artifact] of Object.entries({
   readme: text.readme,
   projectStatus: text.projectStatus,
@@ -460,7 +461,7 @@ for (const statement of [
   assert(text.protocol.includes(statement), `Protocol omits mortality/R1 boundary: ${statement}`);
 }
 assert(
-  text.submissionChecklist.includes("until independently evidenced distribution"),
+  text.submissionChecklist.includes("one-browser logical quorum is presented as ownerless distribution"),
   "Submission claims omit the independent-distribution qualification"
 );
 

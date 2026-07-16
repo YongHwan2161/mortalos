@@ -6,8 +6,9 @@ This document maps every foundational invariant to protocol requirements, reject
 codes, and automated or planned tests. Transition, lineage, mortality, singleton,
 Node/browser-target portability, actual Chromium, H2 evidence, and the H3A local
 visual Lab are executable. Every changed review head must rerun the gate, and the
-latest successful Verify run is the exact-head publication evidence. State-runtime,
-participant-network, H3B deployment, and AI IDs remain reserved.
+latest successful Verify run is the exact-head publication evidence. The H3B static
+deployment contract is executable in the submission-sprint candidate, while an actual
+verified public URL, state runtime, participant network, and AI IDs remain open.
 
 ## 1. Test ID convention
 

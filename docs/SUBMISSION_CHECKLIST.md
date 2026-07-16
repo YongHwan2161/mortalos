@@ -1,73 +1,134 @@
 # Build Week Submission Checklist
 
-Status: **active pre-submission product checklist; the repository is not yet submission-ready**
+Status: **active; project remains a Devpost draft**
 
-Last repository review: **2026-07-16**
+Last synchronized with Devpost: **2026-07-16**
 
-Official event rules and the submission form remain authoritative. This file tracks durable repository evidence and intentionally omits transient form-field snapshots.
+Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 
 ## Product position
 
-- Product: **MortalOS Lab**
-- Track: **Developer Tools**
-- Job: let developers inspect and falsify identity, custody, replay, fork, turnover, and mortality assumptions in ephemeral multi-endpoint systems.
+- Project: **MortalOS**
+- Product surface: **MortalOS Lab**
+- Category: **Developer Tools**
+- Job: let developers inspect and falsify identity, custody, succession, replay,
+  fork, and qualified mortality assumptions in ephemeral multi-endpoint systems.
 
-## Evidence state
+## Official deliverables
 
-| Requirement | State | Evidence or blocker |
-|---|---|---|
-| Public source and Apache-2.0 | Complete | Repository, root license, package metadata, contribution terms |
-| Reproducible portable core | Implemented; exact-head gate required | Locked install, trust-boundary/conformance/property tests, coverage, deterministic H2 v4 traces, and all seven mortality-limit variants are implemented; every published SHA requires immutable-head review and its own Verify run |
-| Node/Chromium differential | Implemented as a two-step gate | `verify:portable` establishes committed/Node/browser-target equality, then `test:chromium` compares actual Chromium with the committed result; every deployed/reviewed head needs its own successful Verify run |
-| Canonical wire contract and independent verifier | Blocked | R1 must define bounded versioned operation/result bytes and replay them in an independently written non-JavaScript verifier |
-| One-person CLI birth proof | Complete within proof scope | Ephemeral singleton birth/heartbeat; not a stable CLI product |
-| No-rebuild developer-tool path | Blocked | H3A works locally; R1-C must first move it onto bounded wire records, then H3B can publish it over HTTPS |
-| One-person visual browser birth | Implemented; exact-head gate required | The actual-Chromium gate covers three non-extractable Worker keys, 3/3 Genesis, one-key rejection, every 2-key heartbeat combination, and controlled termination |
-| Reference falsification Lab | Implemented; exact-head gate required | The actual-Chromium gate covers turnover, four mutations, replay, signed fork, resurrection, mortality qualification, clone, corpus, and export |
-| Meaningful GPT-5.6 use | Blocked | Scenario designer not implemented |
-| Accurate project story/tagline | Open | Must describe only the final demonstrated scope |
-| Public demo video | Blocked | Record after build and deployment freeze |
-| `/feedback` Codex Session ID | Open | Preserve and record the session containing most core work |
-| Final secret/license/package scan | Open | Current source passes; repeat against deployed commit and assets |
+| Deliverable | State | Closure evidence |
+| --- | --- | --- |
+| Working project | H3A implemented; H3B candidate | exact-head CI and logged-out public Chromium run |
+| Category | Selected in plan | Devpost field `Developer Tools` |
+| Project description | Draft required | final story matches deployed behavior |
+| Demo video | Missing | public YouTube, under three minutes, narrated |
+| Code repository | Available | public repo, Apache-2.0, final README |
+| README/setup/sample/run guidance | In progress | clean-room instructions and judge path |
+| Codex and GPT-5.6 usage | Evidence draft required | concrete README/story/video examples |
+| `/feedback` Session ID | Missing | required Devpost custom field |
+| Dev-tool installation/platform/testing path | In progress | browser URL plus local Node 22.5+ fallback |
 
-Git history is the canonical provenance record. The concept predates the event; repository commits identify implementation produced during the eligible period.
+The Devpost form does not globally require a website, but the Developer Tools rules
+require a no-rebuild test path. For this project, the public Cloudflare Lab is the
+primary path; local `npm ci && npm run dev:lab` is the fallback, not the submission
+definition of done.
+
+## Repository release gate
+
+- [x] Apache-2.0 root license and package metadata.
+- [x] Third-party notices and bundled browser licenses.
+- [x] Honest distinction among logical keys, physical failure domains, local
+  authority loss, and qualified protocol death.
+- [ ] Submission PR is independently reviewed at one immutable head SHA.
+- [ ] `Agent PR Policy` and `Verify` pass for that exact head.
+- [ ] `npm test`, coverage, actual Chromium, Lab, audit, and package dry-run pass.
+- [ ] README includes supported platforms, install/run commands, sample path, public
+  test URL, deployed commit, and concise judge instructions.
+- [ ] Final secret scan finds no API token, private key, credential, or restricted
+  artifact in source, history delta, logs, screenshots, bundle, or video.
+
+## Public Lab release gate
+
+- [ ] Cloudflare Pages deployment completes from reviewed `main`.
+- [ ] `asset-manifest.json` names the exact deployed source commit.
+- [ ] Every remote asset matches local bytes, digest, MIME, and security headers.
+- [ ] `npm run verify:lab` passes against the public URL in three clean contexts.
+- [ ] Logged-out browser completes birth, one-key rejection, every two-key heartbeat
+  pair, replay, fork, qualified death, resurrection rejection, clone, corpus, and
+  canonical evidence export/replay.
+- [ ] No external browser requests, analytics, cookies, persistence, Service Worker,
+  private custodian material, or console errors.
+
+## Codex/GPT-5.6 evidence gate
+
+Runtime GPT is not required. The repository and video must instead show how Codex
+with GPT-5.6 materially accelerated construction:
+
+- [ ] operational definitions of birth, identity, succession, qualified death, and
+  resurrection rejection;
+- [ ] adversarial P0 review of evidence completeness, hostile observation, equivocation,
+  and resource ceilings;
+- [ ] deterministic conformance/property/browser test generation and interpretation;
+- [ ] Cloudflare exact-artifact and security-header deployment contract; and
+- [ ] deadline-driven separation of submission surface from R1/R2 research.
+
+Human decisions must remain visible: North Star, scope, threat assumptions, claim
+limits, Apache-2.0, product category, and final submission wording.
 
 ## Minimum judge path
 
-1. one-person browser birth;
-2. valid logical `2-of-3` heartbeat;
-3. fixed public reference custody turnover with stable identity, visibly distinct from the random live organism;
-4. replay/fork inspection;
-5. qualified below-quorum mortality and rejected resurrection;
-6. clone with a different identity; and
-7. one accepted and one rejected GPT-generated scenario proposal.
+1. Open the public Lab and read the `3 logical custodians / 1 physical failure domain`
+   warning.
+2. Create a live organism; show one key rejected and two keys accepted.
+3. Run the fixed reference succession path with stable identity.
+4. Show replay, signed fork, qualified death, and resurrection rejection.
+5. Run the committed corpus and export/replay canonical public evidence.
+6. Point to the exact deployed SHA and explain browser-first, endpoint-neutral design.
 
-The CLI singleton may be shown as evidence of endpoint neutrality, but it does not replace the visual judge path.
+The CLI singleton is supporting evidence only. It does not replace the visual path.
+
+## Devpost form gate
+
+- [ ] Submitter type completed.
+- [ ] Country of residence completed.
+- [ ] Category set to `Developer Tools`.
+- [ ] Repository URL entered.
+- [ ] Public Lab URL and judge instructions entered.
+- [ ] `/feedback` Session ID entered.
+- [ ] Dev-tool installation, supported platforms, and test instructions entered.
+- [ ] Project story and accurate tagline saved.
+- [ ] Public narrated YouTube video attached.
+- [ ] Team membership is correct.
+- [ ] Final state is submitted, not `submission_draft`.
+
+## Video gate
+
+- [ ] Duration is less than three minutes.
+- [ ] Video is public on YouTube and the URL opens logged out.
+- [ ] Voiceover explains the project, Codex use, and GPT-5.6 use.
+- [ ] Loading, typing, silence, and irrelevant setup are removed.
+- [ ] No private key, token, account detail, or unrelated notification is visible.
+- [ ] The recorded behavior and repository both match the deployed commit.
 
 ## No-submit conditions
 
 Do not submit while:
 
 - the executable path and public claims disagree;
-- network silence, browser close, CLI exit, or an incomplete evidence inventory is presented as globally proven death;
-- `1-of-1` creation is presented as ownerless authority;
-- logical key quorum is presented as independent physical distribution;
-- the judge cannot open the demonstrated product without rebuilding;
-- GPT is described but not invoked in the submitted path;
-- repository, deployment, and video use different commits or behavior;
-- the `/feedback` session ID is missing; or
-- any API key, token, private custodian key, or restricted artifact appears in source, history, logs, screenshots, or bundles.
+- browser close, process exit, silence, or incomplete evidence is presented as death;
+- `1-of-1` or one-browser logical quorum is presented as ownerless distribution;
+- the judge cannot test the project without rebuilding;
+- repository, deployment, video, and story use different behavior or commits;
+- the video, `/feedback` Session ID, or required fields are missing;
+- the Cloudflare URL has not passed exact-SHA remote verification; or
+- any secret or private custodian material appears in a public artifact.
 
 ## Claim discipline
 
-Prefer:
+Prefer: `portable lifecycle and evidence kernel`, `logical 2-of-3`, `one physical
+failure domain`, `signed succession`, `qualified death under explicit assumptions`,
+and `browser Lab for inspection and falsification`.
 
-- `portable lifecycle and evidence kernel`;
-- `creator-controlled 1-of-1 bootstrap`;
-- `logical 2-of-3 key quorum`;
-- `one physical failure domain before handoff`;
-- `local authority lost under controlled ephemeral-key assumptions`;
-- `dead under v0 assumptions only with explicit irreversibility and a complete pending-evidence basis`; and
-- `peer-validated evidence with participant-held custody authority and replaceable bootstrap infrastructure, without claiming ownerlessness until independently evidenced distribution`.
-
-Do not claim globally provable death, guaranteed erasure, Byzantine safety, Sybil resistance, state-backed mortality, zero infrastructure, a running OS, or ownerless computation before the corresponding gate is implemented and demonstrated.
+Do not claim a completed OS, zero infrastructure, guaranteed erasure, global death,
+independent-host resilience, Byzantine/Sybil safety, mutable state, ownerless
+computation, or ownerless LLM inference before the corresponding gate exists.

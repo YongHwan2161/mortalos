@@ -1,278 +1,261 @@
 # MortalOS Implementation Plan
 
-Status: **P0 implemented; every published SHA requires immutable-head review and Verify; H3A local Lab implemented**
+Status: **P0 merged; H3A implemented; H3B deployment contract in review; submission sprint active**
 
 Last reviewed: **2026-07-16**
 
-This is a rolling, gate-based plan. Current evidence belongs in [`PROJECT_STATUS.md`](PROJECT_STATUS.md); historical decisions belong in Git history.
+This is the only rolling implementation plan. Current evidence belongs in
+[`PROJECT_STATUS.md`](PROJECT_STATUS.md); historical plans remain in Git history.
 
-## 1. Delivery order
+## 1. Fixed deadline and optimization target
 
-1. deterministic protocol meaning;
-2. authority lineage and recognized-head safety;
-3. cross-runtime portability;
-4. independent-verifier registration, then a versioned raw operation/result wire
-   contract, JavaScript golden corpus, and independent Python differential verifier;
-5. thin one-page browser incubation and MortalOS Lab consuming that wire contract;
-6. optional stable non-browser adapter work after R1-C, outside the critical gate chain;
-7. deterministic mutable state and availability;
-8. GPT-assisted adversarial scenarios and release evidence; and
-9. transport/resource organs.
+OpenAI Build Week submissions close at **2026-07-22 00:00 UTC**, which is
+**2026-07-22 09:00 KST**. The internal freeze is **2026-07-21 18:00 KST** and the
+submit target is **2026-07-22 07:00 KST**, leaving a two-hour recovery buffer.
 
-Browser is first for zero-install visual demonstration, not because the protocol lives in a browser. UI, endpoint type, transport, storage, model output, and hosted infrastructure may propose or carry bytes but may never become validity authority.
+The judging dimensions are technological implementation, design, potential impact,
+and quality of the idea. The submission must include a working project, one category,
+a project description, a public YouTube demo under three minutes with voiceover
+covering Codex and GPT-5.6 use, a code repository with README and appropriate
+licensing, and a `/feedback` Codex Session ID. Because MortalOS is submitted as a
+Developer Tool, it also needs installation/platform guidance and a way to test
+without rebuilding.
 
-The next gates have one reviewed order:
+The deadline changes delivery order, not protocol truth. The sprint optimizes for
+one coherent, falsifiable, zero-install product slice. It does not attempt to finish
+a network OS in five days.
 
-`P0 → independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → H3B public deployment → R2`
+## 2. Two lanes, one source of truth
 
-Stable CLI work may proceed after R1-C as non-blocking adapter work, but it cannot
-delay, replace, or reorder that critical chain.
+### Submission lane — now
 
-## 2. Verified baseline — C0
+`P0 merged → H3B honest Lab preview → release evidence → video → submit`
 
-The reference core verifies:
+H3B may publish H3A before R1 solely as a static, explicitly qualified preview. It
+does not upgrade the JavaScript observer boundary, add network participants, prove
+ownerlessness, or implement mutable state. The deployment must be byte-bound to one
+reviewed commit and may expose only claims already enforced by the portable kernel.
 
-- canonical bounded Genesis/Pulse/payload snapshots with hostile-metadata and shared-memory defenses;
-- strict canonical prime-subgroup Ed25519 Genesis approval, Pulse quorum, and custody acceptance;
-- total validation with stable first-error precedence;
-- immutable validator-produced context capabilities;
-- parent resolution from an accepted-object graph;
-- replay rejection, fork evidence, intersecting signer evidence, and post-fork halt;
-- complete A/B/C → D/E/F custodian turnover with stable identity;
-- single-read public validation of complete and durable acceptance-incomplete successors, plus lineage-internal completion from independently collected body/signature/sidecar evidence, one early usable-key snapshot filtered per body by sign-once commitments, unclassified authenticated equivocation, and conditional payload-unavailability after irreversible authority loss when an opaque membership body is the sole obstacle to a death conclusion;
-- conditional authority and state mortality states scoped to the graph-recognized head, with death requiring both explicit irreversibility and a complete pending-evidence basis;
-- bounded named-field mortality acquisition plus seven whole-observation limits, including pre-JCS candidate occurrence and post-JCS aggregate canonical-byte ceilings that return frozen unclassified results without graph mutation;
-- 10,000 deterministic mixed valid/invalid continuation cases; and
-- byte-identical H2 v4 traces in fresh processes.
+### Protocol lane — after submission
 
-## 3. Verified gate — C1 portable deterministic core
+`independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
-### Objective
+This remains the North Star path. H3B is a delivery surface, not a substitute for
+R1 or R2. The previously prepared R2 prototype was based on a pre-P0 branch and is
+research input only; it must not be merged ahead of the current mortality-safe main
+or the language-neutral R1 contract.
 
-Run one consensus implementation in Node.js and Chromium and obtain byte-identical results for the committed corpus.
+## 3. Submission critical path
 
-### Implemented boundary
+### S0 — public judge path
 
-- portable `Uint8Array`, base64url, UTF-8, and constant-time comparison helpers;
-- intrinsic-backed owned byte snapshots that reject shared or detached storage and preserve exact root-depth semantics, plus data-descriptor canonicalization with captured internal-slot probes and an explicit transparent-Proxy limit;
-- portable SHA-256 and strict RFC 8032 Ed25519 using locked direct pure-JavaScript dependencies, with canonical prime-subgroup point validation;
-- portable structural validators, differentially checked against normative JSON Schemas with development-only Ajv;
-- total semantic validators with stable first-error precedence; strict complete/public-durable validation remains separate from lineage-internal mortality completion helpers, which are not re-exported by `src/index.mjs`;
-- custody-change activation proof and recognized-head-only conditional mortality;
-- no `node:*`, `Buffer`, filesystem, process, DOM, network, ambient clock, or ambient randomness in trusted `src/` paths;
-- a public signed singleton, multi-custodian turnover, clone, and fork corpus;
-- a committed expected result with named first-error outcomes and a fixed-seed histogram; and
-- isolated browser-target plus actual headless-Chromium runners.
+Goal: a logged-out judge opens one HTTPS URL and completes the working Lab without
+credentials, installation, or a local build.
 
-### Pass record
+Strict pass criteria:
 
-- [x] Portable modules contain no forbidden platform dependency.
-- [x] The committed result, Node 22, isolated browser-target, and actual Chromium results are required to be byte-identical on every review head; the latest successful exact-head Verify run is the publication evidence.
-- [x] The PR workflow requires every changed head to rerun the Node/Chromium differential gate.
-- [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
-- [x] Forged context, leaked constructor, replay, fork, no-op membership, durable latent succession, conditional-current-approval completion, evidence poisoning, sign-once/equivocation, and payload-unavailability cases pass in Node and the isolated browser-target runtime.
-- [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
-- [x] Node conformance covers exact/+1, precedence, frozen-result, graph atomicity,
-  and retry for every mortality limit, including genuine signature work and depth-64
-  nested candidate amplification. The portable browser-target and actual-Chromium
-  corpus cover the normalized +1 result for all seven resource identifiers.
-- [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
-- [x] Trusted-core branch coverage remains above 90%.
-- [x] The Verify workflow performs a clean locked installation and full repository suite for every publishable head.
-- [x] Actual Chromium execution is part of the required CI gate for every review head.
-- [x] An adapter cannot alter canonical bytes, validation order, rejection codes, or lineage decisions.
+- the deployed `source_commit` is an exact 40-character SHA on reviewed `main`;
+- the canonical asset manifest matches a clean local build byte-for-byte;
+- every HTML, JavaScript, CSS, JSON, and license asset matches its declared SHA-256
+  and MIME type;
+- CSP, COOP, COEP, CORP, no-store, permissions, referrer, and nosniff headers match
+  the checked-in deployment contract;
+- actual Chromium completes birth, every two-key quorum pair, heartbeat, replay,
+  fork, qualified mortality, resurrection rejection, clone, corpus, and evidence
+  export/replay in three clean contexts;
+- the page performs no external request and uses no cookies, persistent storage,
+  Service Worker, analytics, or embedded secret; and
+- `npm run verify:lab` passes against the public URL and exact deployed SHA.
 
-Failure rule: any cross-runtime mismatch reopens C1 and blocks endpoint product work. Do not copy the validator into UI or CLI code as a workaround.
+Implementation: Cloudflare Pages is the chosen host. A GitHub workflow builds,
+tests, deploys, and then re-verifies the exact reviewed commit. Cloudflare is not a
+global Devpost website requirement; it is the lowest-friction way to satisfy the
+Developer Tools no-rebuild test-path requirement for this browser-first project.
 
-## 4. H3 — single-browser incubator and MortalOS Lab
+Failure rule: an unverified, stale, preview-only, or credentialed URL is not a pass.
+If Cloudflare credentials are unavailable, local H3A remains verified but S0 remains
+blocked; no document may call it publicly deployed.
 
-### Delivery and fundamental gates
+### S1 — repository and judge instructions
 
-H3A already demonstrates the portable JavaScript kernel locally. H3B does not run in
-parallel with R1: public hosting waits until an independent verifier identity is
-registered, R1-A freezes bounded wire/golden bytes, R1-B proves them in Python, and
-R1-C moves the Lab onto those wire records. H3B then publishes that reviewed thin
-consumer without adding UI-side validity logic.
+Goal: the public repository independently explains what exists, how to run it, and
+what it does not prove.
 
-### Incubator path
+Strict pass criteria:
 
-```text
-one person opens one page
-  -> three dedicated volatile custodian Workers generate one key each
-  -> all three approve Genesis
-  -> the portable core accepts birth
-  -> any two workers authorize a Pulse
+- Apache-2.0, package metadata, contribution terms, and third-party notices agree;
+- Node 22.5+, supported browsers, `npm ci`, local Lab, full tests, and deployed-verifier
+  commands are explicit;
+- sample evidence and the shortest judge path are documented;
+- public claims distinguish logical `2-of-3` from physical distribution and qualified
+  death from silence or browser closure;
+- Codex/GPT-5.6 workflow contributions and human decisions are described accurately;
+- secret, dependency-audit, package, link, and clean-tree checks pass on the final SHA.
+
+### S2 — Codex and GPT-5.6 evidence
+
+Goal: show genuine use of Codex with GPT-5.6 during construction.
+
+The event requirement concerns how the project was built; it does not require an
+OpenAI API call in the product runtime. Therefore a rushed model endpoint is not a
+submission gate. The evidence package must instead identify concrete work accelerated
+by Codex/GPT-5.6: operational lifecycle definitions, P0 adversarial review, conformance
+vectors, browser boundary tests, deployment invariants, and deadline replanning.
+
+Strict pass criteria:
+
+- README and Devpost story contain concrete, reviewable examples rather than generic
+  “AI helped” language;
+- the demo voiceover explains both Codex and GPT-5.6 use;
+- the required `/feedback` Session ID names the session containing most core work;
+- no runtime GPT integration is claimed unless a real tested path exists; and
+- model output never becomes validity authority.
+
+### S3 — Devpost story and category
+
+Goal: an honest Developer Tools submission whose prose matches the final executable.
+
+Strict pass criteria:
+
+- category is `Developer Tools`;
+- the tagline describes a lifecycle/evidence Lab, not a completed ownerless OS;
+- the story covers inspiration, operation, construction, challenges, accomplishments,
+  learning, and next work;
+- repository and public-test URLs resolve logged out; and
+- all required custom fields are complete before submission.
+
+### S4 — public demo video
+
+Goal: one clear public YouTube video, shorter than three minutes.
+
+Required sequence:
+
+1. 0:00–0:20 — the problem and honest scope;
+2. 0:20–1:20 — live logical `2-of-3` birth, one-key failure, two-key heartbeat;
+3. 1:20–2:10 — turnover, replay/fork, qualified death, resurrection rejection;
+4. 2:10–2:35 — exact evidence/corpus and endpoint neutrality;
+5. 2:35–2:55 — how Codex and GPT-5.6 accelerated the implementation; and
+6. final seconds — repository, public Lab, and next R1/R2 step.
+
+Strict pass criteria: public YouTube URL, duration under three minutes, audible
+voiceover, no secret/private key in frame, and behavior identical to the deployed SHA.
+
+### S5 — final submission
+
+Strict pass criteria:
+
+- repository, deployment, README, video, and Devpost prose describe the same SHA;
+- every required field including category, repo URL, video, test instructions, and
+  `/feedback` Session ID is present;
+- final logged-out smoke test and GitHub checks pass;
+- submission state is not draft; and
+- completion occurs by **07:00 KST on July 22**, not at the 09:00 hard deadline.
+
+## 4. Calendar
+
+| KST deadline | Deliverable | Exit gate |
+| --- | --- | --- |
+| Jul 17, 23:59 | H3B PR reviewed and merged; automatic Cloudflare run observed | exact-SHA CI plus public verifier, or an explicit credential blocker without false deployment claim |
+| Jul 18, 23:59 | README, install/platform/test path, Codex/GPT-5.6 evidence | clean-room local and public judge-path rehearsal |
+| Jul 19, 23:59 | Devpost story/category/custom-field draft and video script | every statement mapped to executable evidence |
+| Jul 20, 23:59 | public video recorded and uploaded | under three minutes; voiceover covers project, Codex, GPT-5.6 |
+| Jul 21, 18:00 | final code/content freeze | all checks green; exact URLs and SHA frozen |
+| Jul 22, 07:00 | Devpost submitted | non-draft submission confirmed; two-hour buffer remains |
+
+Do not spend the submission lane on R2, distributed inference, WebRTC/libp2p,
+token economics, durable key custody, or a polished CLI unless every S0–S5 blocker
+is already closed.
+
+## 5. Verified foundation
+
+P0 on current `main` provides canonical bounded Genesis/Pulse evidence, strict
+Ed25519, stable first-error validation, quorum activation, recognized-head lineage,
+replay/fork handling, sign-once-aware latent evidence, explicit irreversible-loss and
+complete-inventory requirements for qualified death, and seven whole-observation
+resource ceilings. H3A provides a local one-page Lab over the same kernel.
+
+Every publishable SHA must still pass:
+
+Committed, Node, isolated browser-target, and actual Chromium results must be
+byte-identical for each review head. Exactly 10,000 cases replay from seed
+`1297044052`. Any cross-runtime mismatch reopens the earliest portable gate.
+
+```bash
+npm ci
+npm test
+npm run test:coverage
+npm run test:chromium
+npm run verify:lab
+npm audit --audit-level=moderate
+npm pack --dry-run
 ```
 
-The UI must display `3 logical custodians / 1 physical failure domain`. It must not describe the initial profile as independently distributed.
+For a public deployment:
 
-### Developer-tool path
-
-```text
-run reference lifecycle
-  -> inspect identity, parent, custody, and evidence timeline
-  -> mutate or replay one artifact
-  -> see stable rejection or fork evidence
-  -> export canonical trace bytes and digest
+```bash
+MORTALOS_LAB_URL=https://mortalos-lab-yonghwan2161.pages.dev \
+MORTALOS_EXPECTED_COMMIT=<exact-main-sha> \
+npm run verify:deployed-lab
 ```
 
-### H3A local executable slice — implemented; exact-head gate required
+## 6. Post-submission protocol gates
 
-- [x] Worker private keys are non-extractable and never persisted, exported, logged, or sent.
-- [x] Controlled Worker termination visibly demonstrates local authority loss without claiming global death.
-- [x] The displayed decisions come from the portable kernel.
-- [x] Replay, fork, mortality qualifications, resurrection rejection, clone separation, and logical-key/failure-domain distinctions are visible.
-- [x] Canonical public evidence exports, independently digests, and raw-replays to the same head.
-- [x] The complete committed portable corpus runs in the Lab.
-- [x] Cross-origin-isolated Chromium exposes `SharedArrayBuffer`, and SAB-backed validator input is rejected.
-- [x] The local judge path passes three clean browser contexts.
-- [x] Keyboard semantics, contrast profile, narrow viewport, and reduced-motion behavior are checked.
+### R1 — language-neutral authority evidence
 
-The reference handoff trace proves stable identity through complete custody turnover. Moving live Worker slots to genuinely independent endpoints remains a network-adapter milestone, because a browser-only simulation cannot prove physical distribution.
+Goal: replace the JavaScript object-graph operation boundary with canonical bounded
+operation/result bytes and independent verification.
 
-### H3B public deployment — after R1-C
+- **Registration gate:** register an independent verifier identity, task, workspace,
+  non-JavaScript restriction, and separate reviewer before golden fixtures are frozen.
+- **R1-A:** JavaScript emits canonical positive/negative operation/result goldens for
+  Genesis, Pulse, replay, append, snapshot, fork, and qualified mortality.
+- **R1-B:** independently authored Python consumes those unchanged bytes without
+  importing or translating the JavaScript implementation.
+- **R1-C:** Lab and later CLI consume the same wire records; process-local accepted
+  capabilities never cross a persistence or network boundary.
 
-- [ ] A public HTTPS URL works without credentials, install, or rebuilding.
-- [ ] The deployed commit equals the reviewed repository commit.
-- [ ] CSP, COOP, COEP, CORP, no-store, and MIME behavior match the local acceptance server.
-- [ ] `npm run verify:lab` passes against the deployed URL in three clean contexts.
-- [ ] A logged-out judge can complete birth, heartbeat, falsification, corpus, and export paths.
-- [ ] No analytics, external requests, storage, Service Worker, private material, or console errors appear.
+Exit criteria: byte-identical results and rejection precedence across both languages;
+bounded unknown/malformed inputs fail closed; restart rebuilds state only by replay;
+and the browser no longer supplies mortality observation as a JavaScript object graph.
 
-## 5. H4 — GPT-5.6 adversarial scenario designer
+### R2 — deterministic state-bearing kernel
 
-Flow:
-
-```text
-developer hypothesis
-  -> GPT-5.6 structured scenario proposal
-  -> strict allowlisted schema and size limits
-  -> deterministic fixture compiler
-  -> portable validator
-  -> trace plus stable-code explanation
-```
-
-Pass criteria:
-
-- [ ] The submitted product invokes GPT-5.6 in the demonstrated path.
-- [ ] Model output cannot supply accepted context, private keys, recognized heads, or validity results.
-- [ ] Invalid or incomplete proposals fail closed and remain editable.
-- [ ] At least 25 fixed adversarial prompts cover forgery, injection, impossible transitions, malformed fields, and overclaimed death.
-- [ ] The compiled scenario produces the same result with GPT disabled.
-- [ ] No API key appears in browser code, logs, artifacts, screenshots, or history.
-
-## 6. H5 — release evidence
-
-- accurate repository and submission descriptions;
-- Apache-2.0, third-party inventory, setup, platform, sample, and no-rebuild testing information;
-- exact deployed commit passing CI, audit, link, package, and secret gates;
-- a public sub-three-minute video of the working path;
-- `/feedback` Codex Session ID; and
-- a logged-out clean-browser judge run.
-
-Do not claim an OS, independent-host resilience, globally provable death, mutable digital life, or ownerless computation unless the corresponding executable gate is complete.
-
-## 7. C2 — stable CLI adapter
-
-The existing singleton script proves that a CLI endpoint can create a valid world. It is not yet a supported interface.
-
-Target commands:
-
-```text
-mortalos create --custody singleton --ephemeral
-mortalos verify < evidence.jsonl
-mortalos replay lineage.jsonl
-mortalos inspect --json
-mortalos export --canonical
-```
-
-Pass criteria:
-
-- [ ] Creation emits only canonical public evidence; private material never appears in output, logs, trace files, or shell arguments.
-- [ ] Ephemeral and persistent key policies are explicit and testable.
-- [ ] Import/replay reconstructs the same graph, head, fork state, and digest after restart.
-- [ ] CLI and browser import the same kernel and pass the same committed corpus.
-- [ ] Machine output is versioned; human prose is never consensus input.
-- [ ] File, stdin, IPC, and future network adapters carry the same bounded evidence records.
-- [ ] `1-of-1` creation warns that it is creator-controlled and exposes a handoff path to distributed custody.
-- [ ] Partial writes, concurrent writers, corrupt input, and interrupted key creation fail closed.
-
-After R1-C moves H3A onto the verified raw wire contract, H3B publishes the first
-thin visual consumer and C2 can provide the first stable non-browser adapter. Neither
-may define a private result shape or duplicate validation logic.
-
-## 8. Research path
-
-### R1 — language-neutral authority evidence ⏭ NEXT
-
-Define a versioned, bounded raw operation/result wire contract for Genesis validation, Pulse validation, lineage replay/append/snapshot, and qualified mortality observations. Each operation and each result must itself have canonical wire bytes; operations carry canonical evidence bytes and explicit observation assumptions, never process-local capabilities or prose.
-
-Execute R1 as three reviewable implementation gates after first registering the
-independent-verifier identity, task, workspace, and isolation rules. Registration
-preserves logical separation; technical independence comes from the non-JavaScript
-implementation restrictions and differential golden gate, while account-level
-independence requires a separate GitHub App or bot:
-
-- **R1-A — JavaScript wire/golden:** define bounded versioned operation/result bytes,
-  implement the JavaScript adapter, and commit canonical positive/negative golden
-  records without Python code;
-- **R1-B — Python differential:** an independently authored Python verifier consumes
-  the frozen records without importing or translating the JavaScript implementation
-  and must match canonical results, precedence, hashes, fork state, and mortality
-  qualification; and
-- **R1-C — Lab wire consumption:** MortalOS Lab stops calling the object-graph
-  mortality boundary directly and imports/exports the same bounded wire records
-  before public hosting.
+Goal: make one entity carry deterministic mutable state without conflating state with
+custody or liveness.
 
 Exit criteria:
 
-- one committed operation/result corpus is replayed unchanged by the JavaScript implementation and an independently written non-JavaScript verifier;
-- both implementations agree on canonical bytes, stable rejection codes and precedence, accepted hashes, fork state, and mortality qualification;
-- restart rebuilds accepted context only by replaying canonical evidence;
-- malformed, unknown-version, and oversized operations fail closed; and
-- broader correctly re-signed histories cover churn, delayed evidence, and rebuild.
-
-Every changed review head must still rerun the Node/browser-target/actual-Chromium reference-agreement gate. A live `1-of-1` or single-browser `2-of-3` state is not ownerless; externally evidenced key distribution must show that no physical or administrative domain controls threshold keys.
-
-### R2 — deterministic state-bearing kernel ⏭ AFTER H3B
-
-Create a new protocol version with:
-
-- a minimal deterministic genome ABI;
-- canonical prior-state and event inputs;
+- versioned genome ABI and canonical prior-state/event inputs;
 - deterministic next-state bytes and content-addressed root;
-- capability/resource ceilings and stable failure codes; and
-- two independent runtimes agreeing on every vector.
+- explicit instruction, memory, output, and state-size ceilings with stable errors;
+- at least two independent runtimes agree on every committed vector;
+- replay, restart, crash, invalid instruction, and resource exhaustion are atomic;
+- lifecycle Pulse binds the resulting state root without letting the executor decide
+  custody validity; and
+- 10,000 seeded differential transitions produce exact results.
 
-Until this passes, MortalOS is an authority-lineage protocol rather than an executing life or OS.
+### R3/R4 — availability and network embodiment
 
-### R3 — state availability and recovery
-
-Define replication/recovery thresholds and verifiable possession or retrieval evidence. Preserve the distinction among authority-viable, state-stalled, and dead.
-
-### R4 — endpoint-neutral network embodiment
-
-Add deterministic virtual transport, a process-neutral adapter contract, browser multi-context and CLI process churn, then swappable WebRTC/libp2p/other transports with replaceable discovery. Transport never selects accepted state.
+R3 defines replication/recovery thresholds and verifiable possession or retrieval
+evidence. R4 adds process-neutral transport, multi-endpoint churn, then swappable
+WebRTC/libp2p/other transports. Transport and storage carry evidence; neither selects
+accepted state.
 
 ### R5/R6 — resource and model organs
 
-Only after state transition, recovery, and participant turnover work should the project add sandboxed compute, storage markets, WebGPU, distributed weights, or ownerless model claims.
+Only after R2–R4 should MortalOS add sandboxed shared compute, storage markets,
+WebGPU, distributed weights, or ownerless-model claims.
 
-## 9. Stop conditions
+## 7. Global stop conditions
 
-Reopen the earliest responsible gate if:
+Stop and reopen the earliest responsible gate if:
 
-- hostile, shared, detached, or changing byte storage influences a decision after acquisition;
-- a non-canonical, small-order, torsion, or non-prime-subgroup Ed25519 point is accepted;
-- a cloned or hand-built context is accepted;
-- two runtimes disagree on bytes, signatures, parent resolution, or first rejection code;
-- a custody handoff is accepted although the supplied approval-and-acceptance activation set cannot activate the declared threshold;
-- replay or fork silently changes the head;
-- mortality trusts a caller-selected head or prevalidated pending capability;
-- mortality projects a usable signer onto a body after that signer authenticated another body, treats authenticated equivocation as life/death, or ignores a completion-capable membership body solely because its committed sidecar is unavailable;
-- mortality converts an incomplete inventory, a malformed declared carrier, an acquisition or parse failure, runtime/dependency drift, or an unexpected internal failure into absence or death;
-- mortality enumerates caller container keys, truncates an over-limit observation, retains an over-budget target body, or mutates the graph before returning `indeterminate / limit_exceeded`;
-- UI, GPT, endpoint, transport, or storage bypasses validation;
-- `1-of-1` or one-browser logical quorum is misrepresented as ownerless physical distribution;
-- death is inferred only from silence, process exit, an empty local inventory, or an unverified deletion claim; or
-- public claims exceed executable evidence.
+- two runtimes disagree on bytes, signatures, parent resolution, state, or first error;
+- replay/fork silently changes the recognized head;
+- death is inferred from silence, process exit, empty local evidence, or unverifiable
+  deletion;
+- UI, endpoint, transport, storage, deployment, or model output bypasses validation;
+- logical keys are presented as independent physical participants;
+- a URL is called deployed without exact-SHA asset/header/browser verification;
+- repository, deployment, video, and submission describe different behavior; or
+- a public claim exceeds executable evidence.
