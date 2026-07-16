@@ -111,4 +111,3 @@ export function decodeCorpusEntry(entry) {
   const operation = parseJsonBytes(new TextEncoder().encode(JSON.stringify(entry)));
   return operation;
 }
-
