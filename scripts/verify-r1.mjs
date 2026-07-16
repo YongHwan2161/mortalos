@@ -43,4 +43,3 @@ if (python.status !== 0) {
   throw new Error(`R1 Python differential failed: ${python.stderr || python.stdout}`);
 }
 console.log(`MortalOS R1 JavaScript/Python differential: PASS (${expected.entries.length} records)`);
-
