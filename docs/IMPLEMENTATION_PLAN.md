@@ -65,7 +65,7 @@ Run one consensus implementation in Node.js and Chromium and obtain byte-identic
 - [x] RFC 8785 number/string/UTF-16 ordering and RFC 8032 positive/mutation cases pass in Node and the isolated browser-target runtime.
 - [x] Forged context, leaked constructor, replay, fork, no-op membership, durable latent succession, conditional-current-approval completion, evidence poisoning, sign-once/equivocation, and payload-unavailability cases pass in Node and the isolated browser-target runtime.
 - [x] Hostile byte metadata, shared storage, invalid Ed25519 points, falsey roots, activation insufficiency, and caller-selected mortality heads fail closed.
-- [x] Pending-record, owned-byte, usable-ID, and signature-work overflow returns portable `indeterminate / limit_exceeded` without graph mutation or a death decision.
+- [x] Pending-record, owned-byte, usable-ID count/character, and signature-work overflow returns portable `indeterminate / limit_exceeded` without graph mutation or a death decision.
 - [x] Exactly 10,000 cases replay from seed `1297044052` and zero-based case ID.
 - [x] Trusted-core branch coverage remains above 90%.
 - [x] Clean locked installation and the full local suite pass.

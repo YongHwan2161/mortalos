@@ -276,8 +276,9 @@ for (const statement of [
 }
 
 for (const statement of [
-  "Pending successor records | 128",
-  "Signature-verification work units | 4,096",
+  "`usable_key_id_chars` | Supplied usable-key ID characters | 768",
+  "`pending_records` | Pending successor records | 128",
+  "`signature_verifications` | Signature-verification work units | 4,096",
   "reason: \"limit_exceeded\"",
   "MUST NOT yield alive, dead",
   "INV-18"

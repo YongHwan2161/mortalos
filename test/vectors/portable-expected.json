@@ -56,6 +56,14 @@
       "resource": "pending_records",
       "observed": 129,
       "maximum": 128
+    },
+    "mortality_usable_key_chars_limit": {
+      "status": "indeterminate",
+      "reason": "limit_exceeded",
+      "mortality_classified": false,
+      "resource": "usable_key_id_chars",
+      "observed": 769,
+      "maximum": 768
     }
   },
   "trust_cases": {

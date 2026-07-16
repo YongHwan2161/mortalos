@@ -1036,12 +1036,25 @@ test("mortality resource limits return indeterminate without truncating into dea
 
   assert.deepEqual(lineage.evaluateMortality({
     ...assumptions,
-    usableKeyIds: Array(MORTALITY_LIMITS.usable_key_ids + 1).fill("irrelevant")
+    usableKeyIds: Array(MORTALITY_LIMITS.usable_key_ids + 7).fill("irrelevant")
   }), expectedLimit(
     "usable_key_ids",
     MORTALITY_LIMITS.usable_key_ids + 1,
     MORTALITY_LIMITS.usable_key_ids
   ));
+
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    usableKeyIds: ["x".repeat(MORTALITY_LIMITS.usable_key_id_chars + 100)]
+  }), expectedLimit(
+    "usable_key_id_chars",
+    MORTALITY_LIMITS.usable_key_id_chars + 1,
+    MORTALITY_LIMITS.usable_key_id_chars
+  ));
+  assert.equal(lineage.evaluateMortality({
+    ...assumptions,
+    usableKeyIds: ["x".repeat(MORTALITY_LIMITS.usable_key_id_chars)]
+  }).status, "dead_under_v0_assumptions");
 
   assert.deepEqual(lineage.evaluateMortality({
     ...assumptions,
@@ -1064,8 +1077,22 @@ test("mortality resource limits return indeterminate without truncating into dea
   });
   assert.deepEqual(byteLimited, expectedLimit(
     "pending_bytes",
-    65 * fullEnvelopeBytes.byteLength,
+    MORTALITY_LIMITS.pending_bytes + 1,
     MORTALITY_LIMITS.pending_bytes
+  ));
+
+  const oversizedReservation = clone(vector.steps[0].envelope);
+  oversizedReservation.approvals = Array.from({ length: 5_000 }, () => ({}));
+  assert.deepEqual(lineage.evaluateMortality({
+    ...assumptions,
+    pendingSuccessors: [{
+      envelopeBytes: canonicalBytes(oversizedReservation),
+      eventPayloadBytes: canonicalBytes(vector.steps[0].payload)
+    }]
+  }), expectedLimit(
+    "signature_verifications",
+    MORTALITY_LIMITS.signature_verifications + 1,
+    MORTALITY_LIMITS.signature_verifications
   ));
 
   const pendingSuccessors = Array.from({ length: 16 }, (_, bodyIndex) => {

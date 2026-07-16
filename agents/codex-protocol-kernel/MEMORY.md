@@ -34,8 +34,8 @@ Original post-PR-#2 base: `f08c8be0fa43d86d706d67dfc56f577cf1a90f72`
   completion-capable membership body without a verified sidecar becomes
   `evidence_payload_unavailable` only after authority loss is declared irreversible
   and no fresh quorum or verified latent child independently establishes non-death.
-  The current P0 candidate fixes whole-observation limits for usable IDs, pending
-  records, owned pending bytes, and conservative signature-verification work;
+  The current P0 candidate fixes whole-observation limits for usable-ID count and
+  characters, pending records, owned pending bytes, and conservative signature-verification work;
   overflow returns `indeterminate / limit_exceeded` without graph mutation or a
   truncated death decision. Internal conditional helpers are not re-exported by
   `src/index.mjs`.

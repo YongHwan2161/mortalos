@@ -18,7 +18,7 @@ Implemented:
 - a lineage registry that rejects replay, detects valid siblings, exposes quorum equivocation, and halts after a fork;
 - resource-bounded recognized-head mortality that independently pools candidate bodies, body-bound signatures, and content-addressed sidecars; cryptographically reconstructs same-body evidence; filters one explicit usable-key snapshot through sign-once commitments; keeps equivocation and payload uncertainty unclassified; and returns `indeterminate / limit_exceeded` instead of classifying a truncated evidence set;
 - a public singleton birth/heartbeat, a verified `1-of-1` to logical `2-of-3` custody/authority expansion, and the complete A/B/C → D/E/F lifecycle;
-- a v4 committed result corpus with 15 named negatives, seven reported boundary outcomes, same-body completion, payload-unavailability, resource-limit, repairable-fork equivocation, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
+- a v4 committed result corpus with 15 named negatives, eight reported boundary outcomes, same-body completion, payload-unavailability, resource-limit, repairable-fork equivocation, and 10,000 seeded adversarial cases; Node and the isolated browser-target VM exercise every portable case; and
 - byte-identical committed, Node.js, isolated browser-target, and actual headless-Chromium gates that every changed head must rerun before publication; and
 - a local H3A MortalOS Lab with three non-extractable Worker keys, live `2-of-3` birth/heartbeat experiments, reference lifecycle falsification, full corpus replay, canonical public-evidence export, and cross-origin-isolated browser boundary checks.
 

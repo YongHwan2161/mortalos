@@ -32,15 +32,16 @@ export const MORTALITY_LIMITS = Object.freeze({
   pending_records: 128,
   pending_bytes: 4 * 1024 * 1024,
   signature_verifications: 4096,
+  usable_key_id_chars: 16 * 48,
   usable_key_ids: 16
 });
 
 class MortalityLimitExceeded extends Error {
-  constructor(resource, observed, maximum) {
+  constructor(resource, maximum) {
     super(`mortality ${resource} limit exceeded`);
     this.name = "MortalityLimitExceeded";
     this.resource = resource;
-    this.observed = observed;
+    this.observed = maximum + 1;
     this.maximum = maximum;
   }
 }
@@ -63,7 +64,7 @@ function snapshotDataArray(value, label, limit = null) {
     throw new TypeError(`${label} must have a stable length`);
   }
   if (limit !== null && length > limit.maximum) {
-    throw new MortalityLimitExceeded(limit.resource, length, limit.maximum);
+    throw new MortalityLimitExceeded(limit.resource, limit.maximum);
   }
 
   const snapshot = [];
@@ -110,6 +111,29 @@ function snapshotObserverOptions(value) {
   });
 }
 
+function snapshotUsableKeyIds(value) {
+  const references = snapshotDataArray(value, "usableKeyIds", {
+    resource: "usable_key_ids",
+    maximum: MORTALITY_LIMITS.usable_key_ids
+  });
+  let observedChars = 0;
+  return references.map((keyId) => {
+    if (typeof keyId !== "string") return undefined;
+    const nextObservedChars = observedChars + keyId.length;
+    if (nextObservedChars > MORTALITY_LIMITS.usable_key_id_chars) {
+      throw new MortalityLimitExceeded(
+        "usable_key_id_chars",
+        MORTALITY_LIMITS.usable_key_id_chars
+      );
+    }
+    observedChars = nextObservedChars;
+    // A v0 peer ID is `peer:` plus the 43-character base64url encoding of 32 bytes.
+    // Filtering by the exact fixed length keeps later Set/Map hashing bounded; full
+    // membership equality is still decided against the validated current descriptor.
+    return keyId.length === 48 ? keyId : undefined;
+  });
+}
+
 function snapshotPendingRecords(value) {
   const references = snapshotDataArray(value, "pendingSuccessors", {
     resource: "pending_records",
@@ -147,7 +171,6 @@ function snapshotPendingRecords(value) {
         ) {
           throw new MortalityLimitExceeded(
             "pending_bytes",
-            observedBytes + stableView.byteLength,
             MORTALITY_LIMITS.pending_bytes
           );
         }
@@ -156,7 +179,6 @@ function snapshotPendingRecords(value) {
         if (nextObservedBytes > MORTALITY_LIMITS.pending_bytes) {
           throw new MortalityLimitExceeded(
             "pending_bytes",
-            nextObservedBytes,
             MORTALITY_LIMITS.pending_bytes
           );
         }
@@ -207,7 +229,6 @@ function createVerificationBudget() {
     if (observed > MORTALITY_LIMITS.signature_verifications) {
       throw new MortalityLimitExceeded(
         "signature_verifications",
-        observed,
         MORTALITY_LIMITS.signature_verifications
       );
     }
@@ -495,10 +516,7 @@ class Lineage {
     }
     const observerOptions = snapshotObserverOptions(options);
     const usableKeyIdsInput = observerOptions.usableKeyIds;
-    const usableKeyIdsSnapshot = snapshotDataArray(usableKeyIdsInput, "usableKeyIds", {
-      resource: "usable_key_ids",
-      maximum: MORTALITY_LIMITS.usable_key_ids
-    });
+    const usableKeyIdsSnapshot = snapshotUsableKeyIds(usableKeyIdsInput);
     const stateAvailable = observerOptions.stateAvailable;
     if (typeof stateAvailable !== "boolean") {
       throw new TypeError("stateAvailable must be boolean");

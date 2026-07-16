@@ -12,7 +12,7 @@ This is the rolling status and audit document. Update it when evidence changes; 
 
 MortalOS now has a portable authority-lineage kernel. Genesis, signed Pulses, singleton creation, `2-of-3` handoffs, complete original-custodian turnover, replay/fork handling, latent succession, conditional mortality, and clone separation are executable. Byte acquisition, Ed25519 points, validation order, handoff activation, and mortality authority have explicit fail-closed boundaries rather than relying on caller discipline.
 
-The trusted implementation no longer depends on Node.js or the browser. H3A uses that kernel in a local one-page Lab rather than creating a second validator. The current P0 candidate also caps whole-observation mortality work: excessive usable IDs, pending records, owned evidence bytes, or signature-verification work returns `indeterminate / limit_exceeded` without truncation or graph mutation. Every changed head must rerun both the differential gate and the Lab acceptance gate before publication.
+The trusted implementation no longer depends on Node.js or the browser. H3A uses that kernel in a local one-page Lab rather than creating a second validator. The current P0 candidate also caps whole-observation mortality work: excessive usable-ID count or characters, pending records, owned evidence bytes, or signature-verification work returns `indeterminate / limit_exceeded` without truncation or graph mutation. Every changed head must rerun both the differential gate and the Lab acceptance gate before publication.
 
 The project still does not transition mutable logical state or connect participants. It supports claims about deterministic identity and authority lineage, not yet an OS, independent-host deployment, or state-bearing digital life.
 
@@ -30,7 +30,7 @@ The project still does not transition mutable logical state or connect participa
 | Stateful lineage | Verified | Replay, fork, equivocator, unknown-parent, and post-fork halt tests pass. |
 | Mortality observer | Verified conditionally; P0 limit candidate | The lineage supplies its recognized head through a private constructor capability, blocks reentrant mutation, snapshots usability once, pools candidate bodies/signatures/sidecars independently, cryptographically reconstructs evidence per exact body, and filters projected usable signers through sign-once commitments. Authenticated multi-body evidence, payload uncertainty, forks, and any fixed work-limit overflow remain unclassified. Overflow never truncates into death. Global usability and irreversibility remain observer assumptions; internal conditional helpers are not re-exported by `src/index.mjs`. |
 | Portable adversarial corpus | v4 candidate | Corpus v4 adds deterministic mortality-limit overflow to the existing strict points, trust boundaries, same-body completion, sign-once-aware equivocation, missing-membership-payload uncertainty, 15/15 named negatives, and 10,000 fixed-seed rejects. Node/browser-target/actual-Chromium equality is required on the exact publication head. H3A additionally verifies actual-browser SAB rejection under cross-origin isolation. |
-| Node/Chromium equivalence | Verified on publication candidate | The then-current committed expected result, Node 22, browser-target realm, and actual Chromium were byte-identical on `9eae8c34`. This integration working tree also passes the local actual-Chromium differential; the next published head must rerun the remote CI gate. |
+| Node/Chromium equivalence | Verified on publication candidate | The then-current committed expected result, Node 22, browser-target realm, and actual Chromium were byte-identical on `9eae8c34`. This integration working tree passes committed/Node/browser-target equality; local actual Chromium could not launch because the browser download was unavailable, so the exact head must pass the remote CI gate. |
 | Single-browser incubator | Verified locally | Three dedicated Workers hold non-extractable WebCrypto keys; 3/3 birth, one-key rejection, every 2-key heartbeat pair, controlled termination, and the one-physical-domain warning pass actual Chromium. |
 | MortalOS Lab | Verified locally | Reference turnover, mutation, replay, fork, qualified mortality, resurrection rejection, clone separation, 10,000-case corpus, canonical public-evidence export/replay, and browser boundary probes pass. Public HTTPS hosting remains H3B. |
 | Stable CLI | Proof only | Creation works in memory; import, persistence, replay, export, and compatibility contract are absent. |
@@ -61,10 +61,10 @@ Current results:
 - conformance tests: 59/59 PASS on this candidate;
 - fixed-seed Node property cases: 10,000 mixed valid/invalid continuations (1,008 accepts and 8,992 rejects) with exact expected outcomes and invariant preservation;
 - portable named negatives: 15/15 expected codes;
-- portable boundary probes: 7/7 expected outcomes in Node and the isolated browser-target, including deterministic mortality-limit overflow;
+- portable boundary probes: 8/8 expected outcomes in Node and the isolated browser-target, including deterministic pending-count and usable-ID-character mortality overflow;
 - portable fixed-seed cases: 10,000/10,000 expected rejects from seed `1297044052`;
 - committed result, Node 24, and browser-target realm: byte-identical on this candidate; actual Chromium must pass on the exact remote head;
-- trusted-core coverage on this candidate: 97.97% line, 93.65% branch, and 100% function coverage;
+- trusted-core coverage on this candidate: 98.02% line, 93.79% branch, and 100% function coverage;
 - fresh-process deterministic trace comparison: PASS;
 - H2 trace format: `mortalos-lifecycle-trace/3`;
 - H2 trace digest: `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;
@@ -88,7 +88,7 @@ The kernel now snapshots byte inputs through captured intrinsics, rejects `Share
 
 ### Closed in P0 candidate — mortality work was unbounded
 
-The observer now fixes limits of 16 supplied usable IDs, 128 pending records, 4 MiB of owned pending bytes, and 4,096 conservative signature-verification work units. Any overflow returns a structured unclassified result and leaves the graph unchanged. This trades an availability false-negative under evidence flooding for the safety property that resource pressure cannot manufacture a death conclusion.
+The observer now fixes limits of 16 supplied usable IDs, 768 total usable-ID characters, 128 pending records, 4 MiB of owned pending bytes, and 4,096 conservative signature-verification work units. Non-48-character entries are discarded before keyed lookup, so an oversized identifier cannot move unbounded string hashing outside the count budget. Any overflow returns a structured unclassified result and leaves the graph unchanged. This trades an availability false-negative under evidence flooding for the safety property that resource pressure cannot manufacture a death conclusion.
 
 ### High — two bootstrap profiles serve different purposes
 

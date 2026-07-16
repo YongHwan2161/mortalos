@@ -22,13 +22,16 @@ shared project files and must not be used as a lock that blocks the project inde
   - `docs/REJECTION_CODES.md`
   - `docs/THREAT_MODEL.md`
   - `docs/TRACEABILITY.md`
+  - `lab/index.html`
   - `scripts/verify-portable.mjs`
+  - `scripts/verify-lab.mjs`
   - `scripts/verify-spec.mjs`
   - `src/lineage.mjs`
   - `test/mortality.test.mjs`
   - `test/portable-corpus.mjs`
   - `test/vectors/portable-expected.json`
-- Contract affected: fixed mortality-observer resource limits and the portable
+- Contract affected: fixed mortality-observer resource limits, actual-browser
+  corpus-count coupling, and the portable
   `indeterminate` / `limit_exceeded` result; no accepted-object or wire-format change
 - Required evidence: focused mortality limits, complete conformance/property/portable
   suites, actual Chromium differential, trusted-core coverage, audit, package scan,

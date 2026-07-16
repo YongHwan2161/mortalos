@@ -303,6 +303,12 @@ function runBoundaryCases(lifecycle, rfc8032) {
     ),
     authorityLossIrreversible: true
   });
+  const mortalityUsableKeyCharsLimit = limited.lineage.evaluateMortality({
+    usableKeyIds: ["x".repeat(MORTALITY_LIMITS.usable_key_id_chars + 100)],
+    stateAvailable: false,
+    pendingSuccessors: [],
+    authorityLossIrreversible: true
+  });
 
   return {
     low_order_peer_id_rejected:
@@ -321,7 +327,8 @@ function runBoundaryCases(lifecycle, rfc8032) {
       validateGenesis(new HostileBytes(canonicalBytes(lifecycle.birth))).status === "accept",
     shared_bytes_rejected: sharedBytesRejected,
     falsey_root_code: validateGenesis(canonicalBytes(0)).code,
-    mortality_pending_limit: mortalityPendingLimit
+    mortality_pending_limit: mortalityPendingLimit,
+    mortality_usable_key_chars_limit: mortalityUsableKeyCharsLimit
   };
 }
 

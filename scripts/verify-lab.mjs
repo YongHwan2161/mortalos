@@ -7,6 +7,11 @@ import { replayEvidenceBundle } from "../lab/evidence-export.mjs";
 import { buildLab } from "./build-lab.mjs";
 import { LAB_CSP, startLabServer } from "./serve-lab.mjs";
 
+const portableExpected = JSON.parse(
+  await readFile(new URL("../test/vectors/portable-expected.json", import.meta.url), "utf8")
+);
+const expectedBoundaryCount = Object.keys(portableExpected.boundary_cases).length;
+
 function rgb(value) {
   const hex = value.trim().match(/^#([0-9a-f]{6})$/i);
   if (hex) {
@@ -213,8 +218,8 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
       corpus = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().corpus);
       assert.equal(corpus.exact, true);
       assert.equal(corpus.named_passed, corpus.named_total);
-      assert.equal(corpus.boundary_passed, 6);
-      assert.equal(corpus.boundary_total, 6);
+      assert.equal(corpus.boundary_passed, expectedBoundaryCount);
+      assert.equal(corpus.boundary_total, expectedBoundaryCount);
       assert.equal(corpus.shared_memory_available, true);
       assert.equal(corpus.adversarial_rejected, 10_000);
       assert.equal(corpus.adversarial_cases, 10_000);
@@ -348,7 +353,7 @@ try {
   console.log("- 3 clean contexts / all 3 two-key quorum combinations: accepted");
   console.log("- Worker keys: non-extractable, private export rejected, message derived internally, sign-once per Pulse tuple");
   console.log("- one-key/replay/fork/post-fork/resurrection outcomes: exact kernel codes");
-  console.log("- full 15 named + 6 boundary + 10,000 adversarial corpus (separate Worker gate): committed-result exact");
+  console.log(`- full 15 named + ${expectedBoundaryCount} boundary + 10,000 adversarial corpus (separate Worker gate): committed-result exact`);
   console.log("- cross-origin-isolated page/Worker: SharedArrayBuffer available and rejected as unstable input");
   console.log("- public evidence: canonical, independently digested, replayed to identical head");
   console.log("- storage/service-worker/external-request/console-error checks: clean");

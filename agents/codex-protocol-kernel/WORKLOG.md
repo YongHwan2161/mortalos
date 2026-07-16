@@ -317,17 +317,19 @@ result, and reproducible verification.
 - Branch: `agent/codex-protocol-kernel--north-star-foundation`
 - Intended shared paths: the exact runtime, portable-vector, verification,
   specification/status, README, and agent-record paths declared in the active handoff
-- Result: fixed whole-observation limits now cap usable key IDs at 16, pending
-  records at 128, owned pending bytes at 4 MiB, and conservative signature-
+- Result: fixed whole-observation limits now cap usable key IDs at 16 and 768
+  total characters, pending records at 128, owned pending bytes at 4 MiB, and conservative signature-
   verification work at 4,096 units. Overflow returns structured
   `indeterminate / limit_exceeded` without truncating evidence, classifying death,
   or mutating the graph. Observer containers use bounded named/indexed descriptor
-  acquisition instead of caller-controlled enumeration. Portable corpus v4 records
-  the deterministic overflow contract.
+  acquisition instead of caller-controlled enumeration, and non-fixed-length usable
+  IDs never reach keyed lookup. Portable corpus v4 records both pending-count and
+  oversized-ID overflow; the actual-browser Lab derives its boundary count from the
+  committed corpus instead of retaining a stale literal.
 - Verification: clean locked install; full `npm test`; governance 30/30;
   conformance 59/59; 10,000 fixed-seed mixed property cases; Lab 5/5 and static
   build; committed/Node 24/browser-target portable v4 byte identity with
-  10,000/10,000 rejects; trusted-core coverage 97.97% line, 93.65% branch, and
+  10,000/10,000 rejects; trusted-core coverage 98.02% line, 93.79% branch, and
   100% function; governance coverage 92.68%/84.39%/93.75%; audit 0; 76-file
   package dry-run; license/spec/syntax/diff checks pass. Local actual Chromium was
   blocked before launch because the Playwright CDN returned a zero-byte archive in
