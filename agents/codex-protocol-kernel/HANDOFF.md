@@ -5,6 +5,25 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
+### ACTIVE — R1 cross-runtime evidence contract
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
+- Work branch: `agent/codex-protocol-kernel--r1-gpt-award`
+- Exact intended shared paths: `README.md`, `docs/SUBMISSION_CHECKLIST.md`,
+  `package.json`, `r1/**`, `scripts/generate-r1-corpus.mjs`,
+  `scripts/verify-r1.mjs`, `test/r1-wire.test.mjs`, and
+  `test/vectors/r1-operations.json`
+- Exact intended agent path: `agents/codex-protocol-kernel/HANDOFF.md`
+- Contract affected: bounded canonical R1 operation/result bytes for Genesis
+  validation, lineage replay, and qualified mortality; JavaScript/Python golden
+  differential; GPT remains outside the trusted validity boundary.
+- Required evidence: full `npm test`, exact/+1 byte limits, unknown version and
+  noncanonical rejection, eight byte-identical JavaScript/Python records,
+  immutable-head policy, independent review, and exact-head Verify.
+- Expected handoff: focused R1 PR for immutable-head review; the author neither
+  self-reviews nor merges.
+
 ### ACTIVE — Build Week submission sprint and H3B public Lab
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`

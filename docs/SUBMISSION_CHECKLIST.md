@@ -18,15 +18,15 @@ Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 
 | Deliverable | State | Closure evidence |
 | --- | --- | --- |
-| Working project | H3A implemented; H3B candidate | exact-head CI and logged-out public Chromium run |
+| Working project | R1 and public evidence Lab implemented | exact-head CI plus public HTTP/GPT smoke test |
 | Category | Selected in plan | Devpost field `Developer Tools` |
-| Project description | Saved; final URL pending | final story matches deployed behavior |
+| Project description | Saved; public URL ready | final story matches deployed behavior |
 | Demo video | Missing | public YouTube, under three minutes, narrated |
 | Code repository | Available | public repo, Apache-2.0, final README |
 | README/setup/sample/run guidance | Implemented in H3B candidate | clean-room instructions and judge path |
 | Codex and GPT-5.6 usage | Repository/story saved; video pending | concrete README/story/video examples |
 | `/feedback` Session ID | Missing | required Devpost custom field |
-| Dev-tool installation/platform/testing path | Documented; public URL pending | browser URL plus local Node 22.5+ fallback |
+| Dev-tool installation/platform/testing path | Documented; public URL ready | browser URL plus local Node 22.5+ fallback |
 
 The Devpost form does not globally require a website, but the Developer Tools rules
 require a no-rebuild test path. For this project, the public Cloudflare Lab is the
@@ -39,8 +39,8 @@ definition of done.
 - [x] Third-party notices and bundled browser licenses.
 - [x] Honest distinction among logical keys, physical failure domains, local
   authority loss, and qualified protocol death.
-- [ ] Submission PR is independently reviewed at one immutable head SHA.
-- [ ] `Agent PR Policy` and `Verify` pass for that exact head.
+- [x] H3B submission PR was independently reviewed at one immutable head SHA.
+- [x] H3B `Agent PR Policy` and `Verify` passed for that exact head.
 - [ ] `npm test`, coverage, actual Chromium, Lab, audit, and package dry-run pass.
 - [ ] README includes supported platforms, install/run commands, sample path, public
   test URL, deployed commit, and concise judge instructions.
@@ -48,6 +48,10 @@ definition of done.
   artifact in source, history delta, logs, screenshots, bundle, or video.
 
 ## Public Lab release gate
+
+- [x] Public Sites URL returns HTTP 200 without sign-in.
+- [x] GPT-5.6 witness returns strict structured output from the deployed server route.
+- [x] Unknown/private result fields fail closed before the model call.
 
 - [ ] Cloudflare Pages deployment completes from reviewed `main`.
 - [ ] `asset-manifest.json` names the exact deployed source commit.
