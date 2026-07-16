@@ -13,7 +13,8 @@ shared project files and must not be used as a lock that blocks the project inde
 - Worktree:
   `/workspace/mortalos-worktrees/pr2-integration-worktrees/codex-protocol-kernel--h3b-r2-worktrees/codex-protocol-kernel--submission-sprint-worktrees/codex-protocol-kernel--post-merge-status-worktrees/codex-protocol-kernel--submission-reconcile`
 - Exact intended shared paths: `README.md`, `docs/IMPLEMENTATION_PLAN.md`,
-  `docs/PROJECT_STATUS.md`, `docs/SUBMISSION_CHECKLIST.md`, and
+  `docs/ACCESS_ARCHITECTURE.md`, `docs/PROJECT_STATUS.md`,
+  `docs/SINGLE_BROWSER_INCUBATOR.md`, `docs/SUBMISSION_CHECKLIST.md`, and
   `scripts/verify-spec.mjs`
 - Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
   `agents/codex-protocol-kernel/MEMORY.md`,
