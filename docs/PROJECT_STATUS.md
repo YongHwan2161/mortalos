@@ -64,7 +64,7 @@ Current results:
 - portable boundary probes: 8/8 expected outcomes in Node and the isolated browser-target, including deterministic pending-count and usable-ID-character mortality overflow;
 - portable fixed-seed cases: 10,000/10,000 expected rejects from seed `1297044052`;
 - committed result, Node 24, and browser-target realm: byte-identical on this candidate; actual Chromium must pass on the exact remote head;
-- trusted-core coverage on this candidate: 98.02% line, 93.79% branch, and 100% function coverage;
+- trusted-core coverage on this candidate: 98.02% line, at least 93.69% branch across repeated Node 24 runs, and 100% function coverage;
 - fresh-process deterministic trace comparison: PASS;
 - H2 trace format: `mortalos-lifecycle-trace/3`;
 - H2 trace digest: `b5443d179a48a5645d40c940e7420831f9672ebf5afa51e2f45c4e9fb3abda36`;

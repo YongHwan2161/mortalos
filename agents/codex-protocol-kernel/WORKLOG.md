@@ -325,12 +325,17 @@ result, and reproducible verification.
   acquisition instead of caller-controlled enumeration, and non-fixed-length usable
   IDs never reach keyed lookup. Portable corpus v4 records both pending-count and
   oversized-ID overflow; the actual-browser Lab derives its boundary count from the
-  committed corpus instead of retaining a stale literal.
+  committed corpus instead of retaining a stale literal. Independent review also
+  reconciled every normative/status/threat/traceability occurrence of the new
+  usable-ID-character limit before final publication. Randomly generated test-key
+  ordering moves aggregate branch coverage by roughly 0.1 points without changing
+  outcomes; deterministic coverage fixtures remain a follow-up.
 - Verification: clean locked install; full `npm test`; governance 30/30;
   conformance 59/59; 10,000 fixed-seed mixed property cases; Lab 5/5 and static
   build; committed/Node 24/browser-target portable v4 byte identity with
-  10,000/10,000 rejects; trusted-core coverage 98.02% line, 93.79% branch, and
-  100% function; governance coverage 92.68%/84.39%/93.75%; audit 0; 76-file
+  10,000/10,000 rejects; trusted-core coverage 98.02% line, at least 93.69%
+  branch across repeated Node 24 runs, and 100% function; governance coverage
+  92.68%/84.39%/93.75%; audit 0; 76-file
   package dry-run; license/spec/syntax/diff checks pass. Local actual Chromium was
   blocked before launch because the Playwright CDN returned a zero-byte archive in
   this environment; exact-head remote Chromium CI remains mandatory.

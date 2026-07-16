@@ -302,7 +302,7 @@ MortalOS v0 provides integrity and lineage semantics, not confidentiality. Publi
 
 Resource contribution must be explicit and revocable in later participant-runtime phases. v0 does not include background execution, hidden mining, incentives, or unrestricted arbitrary code.
 
-Mortality evidence recomposition is intentionally fail-closed under resource pressure. The fixed reference limits are 16 usable-key IDs, 128 pending records, 4 MiB of successfully snapshotted pending bytes, and 4,096 signature-verification work units. An attacker can force an indeterminate observation by exceeding a limit, but cannot turn omitted evidence into a false death classification. Availability policy may retry bounded batches only if it preserves the complete evidence set semantics.
+Mortality evidence recomposition is intentionally fail-closed under resource pressure. The fixed reference limits are 16 usable-key IDs, 768 total usable-ID characters, 128 pending records, 4 MiB of successfully snapshotted pending bytes, and 4,096 signature-verification work units. An attacker can force an indeterminate observation by exceeding a limit, but cannot turn omitted evidence into a false death classification. Availability policy may retry bounded batches only if it preserves the complete evidence set semantics.
 
 ## 14. Security claims matrix
 

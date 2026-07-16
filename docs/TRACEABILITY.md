@@ -110,7 +110,7 @@ Example: `T-P2-AUTH-003` is the third authorization test planned for P2.
 | Overrideable byte metadata, shared memory, sparse/non-JSON values, or TOCTOU substitution | `T-P1-SNAPSHOT-001`, `T-P1-SAB-001`, `T-P1-IJSON-001`, `T-P4-LATENT-TOCTOU-001` |
 | Next custody cannot activate its threshold | `T-P3-ACTIVATION-001`, `T-P3-ACTIVATION-002` |
 | Caller-injected mortality head or pending valid-sibling fork classification | `T-P4-HEAD-SCOPE-001`, `T-P4-PENDING-FORK-001`, `T-P4-FORK-UNCLASSIFIED-001`; [`test/mortality.test.mjs`](../test/mortality.test.mjs) — “lineage mortality states use its private recognized head” and “distinct fully valid pending siblings record a fork and leave mortality unclassified” |
-| Oversized mortality observation causes truncation or resource exhaustion | `T-P4-LIMIT-001`, `T-C1-DIFF-LIMIT-001`; [`test/mortality.test.mjs`](../test/mortality.test.mjs) — “mortality resource limits return indeterminate without truncating into death”; portable corpus v4 pending-record overflow |
+| Oversized mortality observation causes truncation or resource exhaustion | `T-P4-LIMIT-001`, `T-C1-DIFF-LIMIT-001`; [`test/mortality.test.mjs`](../test/mortality.test.mjs) — “mortality resource limits return indeterminate without truncating into death”; portable corpus v4 pending-record and usable-ID-character overflow |
 | Multi-fault schema precedence disagreement | `T-P1-PRECEDENCE-001`, `T-C1-DIFF-001` |
 
 ## 6. Change rule
