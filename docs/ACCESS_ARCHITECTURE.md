@@ -1,7 +1,7 @@
 # MortalOS Endpoint-Neutral Access Architecture
 
-Status: **architectural decision; portable kernel implemented**  
-Date: **2026-07-16**
+Status: **architectural decision; portable kernel and bounded R1 profile implemented**
+Date: **2026-07-17 KST**
 
 ## 1. Decision
 
@@ -83,33 +83,33 @@ Portability is not sufficient, however. The current kernel validates who can aut
 
 ## 7. Ordered consequence
 
-The Build Week submission lane is:
+The deadline-critical Build Week submission lane is:
 
-`P0 merged → H3B honest Lab preview → release evidence → video → submit`
+`truthful merged status → Sites source/provenance → video → required fields → logged-out rehearsal → submit`
 
-This permits public static hosting before R1 only as an exact-commit, explicitly
-qualified view of the already implemented H3A behavior. Hosting does not change the
+P0, H3A, the H3B deployment contract, and the bounded R1-A/R1-B corpus profile are
+merged. The public Sites Lab is the current no-rebuild judge path, but its source must
+be committed or reproducibly linked before freeze. Direct Cloudflare Pages remains
+optional exact-commit hardening while Sites is healthy. Neither host changes the
 protocol trust boundary.
 
 The post-submission protocol order is:
 
-`independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
+`R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
-1. **independent-verifier registration** — reserve a logically isolated identity,
-   task, and workspace before golden records are authored; account-level independence
-   still requires a separate GitHub App or bot;
-2. **R1-A JavaScript wire/golden** — freeze versioned canonical bounded
-   operation/result bytes and their golden corpus;
-3. **R1-B Python differential** — independently implement the same contract without
-   importing or translating the JavaScript kernel;
-4. **R1-C Lab wire consumption** — make the Lab and later CLI thin consumers of those
+R1-A has frozen bounded versioned JavaScript operation/result records and eight
+goldens. R1-B independently reproduces that committed, empty-pending corpus profile
+in Python; it is not yet a general verifier for arbitrary pending, fork, or
+resource-limit inputs. The remaining order is:
+
+1. **R1-C Lab wire consumption** — make the Lab and later CLI thin consumers of those
    operation/result records;
-5. **R2 deterministic state-bearing kernel** — add canonical state transitions only
+2. **R2 deterministic state-bearing kernel** — add canonical state transitions only
    after the operation boundary is independently reproducible;
-6. **state availability and transport-neutral participant runtime** — define recovery,
+3. **state availability and transport-neutral participant runtime** — define recovery,
    then deterministic virtual transport before real networks;
-7. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
-8. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
+4. **WebRTC/libp2p/other transports** — interchangeable embodiments after virtual-network invariants pass; and
+5. **resource and model organs** — only after state, recovery, scheduling, and adversarial contribution rules exist.
 
 Browser and CLI adapters may share implementation effort, but neither may invent a
 second validator or become mandatory authority infrastructure.
