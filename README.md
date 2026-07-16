@@ -29,7 +29,7 @@ Implemented:
 - a local H3A MortalOS Lab with three non-extractable Worker keys, live `2-of-3`
   birth/heartbeat experiments, reference lifecycle falsification, full corpus replay,
   canonical public-evidence export, and cross-origin-isolated browser boundary checks.
-- an H3B deployment candidate that binds a clean static build to one source commit,
+- an H3B deployment contract on `main` that binds a clean static build to one source commit,
   hashes every served asset, mirrors the local security-header contract on Cloudflare
   Pages, and verifies the public bytes and Chromium judge path after deployment.
 
@@ -88,6 +88,11 @@ npm run verify:deployed-lab
 Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is the
 equivalent local maintainer command and requires Cloudflare credentials; judges do
 not need those credentials.
+
+Current release status: the H3B contract is merged and the post-merge Verify run
+passes, but the first production workflow stopped at credential preflight because
+the repository has neither `CLOUDFLARE_ACCOUNT_ID` nor `CLOUDFLARE_API_TOKEN`.
+Therefore the `pages.dev` URL above is a target URL, not a verified public demo.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed

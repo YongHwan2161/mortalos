@@ -18,12 +18,12 @@ Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 
 | Deliverable | State | Closure evidence |
 | --- | --- | --- |
-| Working project | H3A implemented; H3B candidate | exact-head CI and logged-out public Chromium run |
+| Working project | H3A works; H3B contract merged; public deploy blocked | exact-head CI and logged-out public Chromium run |
 | Category | Selected in plan | Devpost field `Developer Tools` |
 | Project description | Saved; final URL pending | final story matches deployed behavior |
 | Demo video | Missing | public YouTube, under three minutes, narrated |
 | Code repository | Available | public repo, Apache-2.0, final README |
-| README/setup/sample/run guidance | Implemented in H3B candidate | clean-room instructions and judge path |
+| README/setup/sample/run guidance | Implemented; public URL pending | clean-room instructions and judge path |
 | Codex and GPT-5.6 usage | Repository/story saved; video pending | concrete README/story/video examples |
 | `/feedback` Session ID | Missing | required Devpost custom field |
 | Dev-tool installation/platform/testing path | Documented; public URL pending | browser URL plus local Node 22.5+ fallback |
@@ -39,9 +39,11 @@ definition of done.
 - [x] Third-party notices and bundled browser licenses.
 - [x] Honest distinction among logical keys, physical failure domains, local
   authority loss, and qualified protocol death.
-- [ ] Submission PR is independently reviewed at one immutable head SHA.
-- [ ] `Agent PR Policy` and `Verify` pass for that exact head.
-- [ ] `npm test`, coverage, actual Chromium, Lab, audit, and package dry-run pass.
+- [ ] PR #11's review-provenance/TOCTOU incident is recorded and not represented as
+  a normal reviewer-gate pass; subsequent changes use the normal immutable-head gate.
+- [x] Post-merge `main` Verify `29513454019/1` passed.
+- [x] `npm test`, coverage, actual Chromium, Lab, audit, and package dry-run passed
+  for the merged contract.
 - [ ] README includes supported platforms, install/run commands, sample path, public
   test URL, deployed commit, and concise judge instructions.
 - [ ] Final secret scan finds no API token, private key, credential, or restricted
@@ -49,6 +51,9 @@ definition of done.
 
 ## Public Lab release gate
 
+- [ ] GitHub repository secrets `CLOUDFLARE_ACCOUNT_ID` and
+  `CLOUDFLARE_API_TOKEN` are non-empty; the token is account-scoped to Cloudflare
+  Pages Edit and never exposed in repository or logs.
 - [ ] Cloudflare Pages deployment completes from reviewed `main`.
 - [ ] `asset-manifest.json` names the exact deployed source commit.
 - [ ] Every remote asset matches local bytes, digest, MIME, and security headers.

@@ -2,7 +2,7 @@
 
 As of: **2026-07-16**
 
-Stage: **P0 merged on `main`; H3A local Lab implemented; H3B deployment candidate in review**
+Stage: **P0 and H3B contract merged on `main`; public H3B deployment blocked at credential preflight**
 
 Security baseline: **every published or deployed SHA requires immutable-head review and its own successful verification**
 
@@ -13,11 +13,19 @@ Lab. It is not yet an operating system, participant network, deterministic mutab
 state machine, or ownerless model runtime.
 
 Current `main` at audit time is
-`d50c8f41ec648c757cb26b170340c467f792b770`. It contains the merged P0 mortality
-correction and H3A Lab. The submission-sprint branch adds a Cloudflare Pages build,
-deployment, exact-asset/header verifier, and remote Chromium path without changing
-trusted `src/` protocol semantics. Those changes are candidate evidence until their
-own PR and checks pass.
+`294b741bc89c72ee4ae4f3aea27a21515d0d1469`. It contains P0, H3A, and the H3B
+Cloudflare Pages build/deployment/remote-verification contract without changing
+trusted `src/` protocol semantics. Push Verify run `29513454019/1` passed. Deploy
+run `29513454211/1` failed before install or deployment because both required
+Cloudflare repository secrets were empty; every deployment and public-verification
+step was skipped.
+
+PR #11 also has a governance incident: an attestation of unverifiable logical-agent
+provenance was followed by merge before the assigned reviewer completed the required
+immediate re-fetch and expected-head merge call. The assigned reviewer later passed
+an independent full test/diff review, but explicitly recorded that it does not
+retroactively satisfy the merge gate. This affects process evidence, not the green
+post-merge technical Verify result.
 
 ## 2. Capability matrix
 
@@ -29,16 +37,16 @@ own PR and checks pass.
 | Node/browser agreement | Required per review head | Committed, Node, isolated browser target, and actual Chromium results must be byte-identical; an old green run does not cover a new SHA. |
 | CLI bootstrap proof | Verified proof only | Ephemeral `1-of-1` birth/heartbeat and handoff proof. No stable import/persistence/replay/export CLI contract. |
 | H3A MortalOS Lab | Implemented | Three non-extractable Worker keys, logical `2-of-3`, reference turnover, replay/fork, qualified mortality, resurrection rejection, clone, full corpus, and public evidence export/replay. One browser remains one physical failure domain. |
-| H3B deployment contract | Candidate in this branch | Deterministic asset manifest, exact source SHA, Cloudflare headers, pinned Actions, Pages deploy workflow, remote asset verifier, and remote Chromium path. |
-| Public HTTPS Lab | Not yet verified | It becomes complete only after the reviewed `main` SHA is deployed and the public verifier plus logged-out Chromium gate pass. |
+| H3B deployment contract | Merged on `main`; post-merge Verify passed | Deterministic asset manifest, exact source SHA, Cloudflare headers, pinned Actions, idempotent Pages project discovery, remote asset verifier, and remote Chromium path. |
+| Public HTTPS Lab | Blocked; not deployed or verified | Deploy `29513454211/1` found both Cloudflare secrets empty. It becomes complete only after `main` is deployed and the public verifier plus logged-out Chromium gate pass. |
 | Language-neutral wire and independent verifier | Not implemented | R1 remains the most fundamental post-submission trust-boundary improvement. |
 | Mutable logical state/genome | Not implemented on `main` | An older local R2 prototype is not merge evidence because it predates current P0 and R1. |
 | Participant network/replication | Not implemented | No WebRTC/libp2p transport, distributed custody evidence, state availability protocol, or independent-host survival. |
 | Runtime GPT feature | Not implemented and not required for the current judge path | Build Week evidence concerns construction with Codex/GPT-5.6; model output is not validity authority. |
 
-## 3. H3B candidate contract
+## 3. H3B merged contract and release state
 
-The deployment candidate adds no consensus or validity logic. A clean build emits
+The deployment contract adds no consensus or validity logic. A clean build emits
 `mortalos.lab-assets/1`, containing sorted asset paths, media types, SHA-256 digests,
 an aggregate digest, and one exact source commit. Cloudflare `_headers` mirrors the
 local server contract. The remote verifier rejects wrong protocol/path, source SHA,
@@ -54,6 +62,7 @@ The GitHub workflow:
 5. runs the complete Lab acceptance suite against the public HTTPS origin.
 
 No public URL is considered valid merely because a deploy command returned success.
+The first run did not reach the deploy command at all.
 
 ## 4. Build Week status
 
@@ -68,12 +77,15 @@ Live Devpost state observed on 2026-07-16:
 - video URL: missing; and
 - website/test URL: missing.
 
-Submission-critical blockers, in order:
+At the latest synchronization (`2026-07-16T16:10:06Z`), no announcement changed the
+deadline or deliverables. Submission-critical blockers, in order:
 
-1. merge and verify the exact H3B candidate, then observe the public Cloudflare run;
-2. add the verified Cloudflare URL and exact judge path to the repository and Devpost;
+1. provision an account-scoped Cloudflare Pages token and account ID as the two
+   repository secrets, rerun `Deploy MortalOS Lab`, and require exact-SHA remote
+   asset/header plus Chromium success;
+2. add the verified URL and exact judge path to the repository and Devpost;
 3. record and upload the public sub-three-minute narrated video;
-4. add the `/feedback` Codex Session ID and all required custom fields; and
+4. add the `/feedback` Codex Session ID and required custom fields; and
 5. perform a logged-out final run and submit the already-published project page to
    the hackathon.
 

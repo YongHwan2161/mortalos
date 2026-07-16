@@ -417,3 +417,30 @@ result, and reproducible verification.
 - Handoff: publish one ready PR from this branch, require immutable-head policy and
   Verify success, then let `reviewer-merge-gate` decide merge and observe the
   automatic Cloudflare run. Do not call H3B complete without the public verifier.
+
+## 2026-07-16 — Post-merge H3B and submission status correction
+
+- Base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
+- Branch: `agent/codex-protocol-kernel--post-merge-status`
+- GitHub evidence: PR #11 merged the H3B contract; push Verify
+  `29513454019/1` passed every Node, actual-Chromium, Lab, coverage, and audit step.
+  Deploy `29513454211/1` failed at credential preflight with empty
+  `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`; install, deployment, and all
+  remote verification steps were skipped.
+- Governance incident: review `4715507067` had unverifiable logical-agent provenance
+  and merge occurred nine seconds later before the assigned reviewer performed the
+  required immediate re-fetch and expected-head merge. Post-merge incident comment
+  `4994066948` supersedes that review for governance purposes. The assigned
+  reviewer's later independent full test/diff PASS is technical evidence only and
+  is not retroactive approval.
+- Devpost evidence: the project page is published with story/tagline/repository but
+  `submitted_at` and video remain empty. At `2026-07-16T16:10:06Z`, submissions were
+  open and the exact deadline remained `2026-07-22T00:00:00Z` (09:00 KST).
+- Result: current docs distinguish the merged contract from an undeployed public
+  Lab and make Cloudflare credentials, exact-SHA remote proof, video, `/feedback`,
+  custom fields, and final submission the deadline-critical chain.
+- Validation: clean locked install with an isolated writable npm cache; full
+  `npm test` PASS (governance 30/30, conformance 76/76, seeded properties 10,000,
+  Lab 8/8, portable 10,000/10,000, singleton, H2 v4); coverage 96.00% line,
+  92.56% branch, and 95.22% function; audit zero vulnerabilities; package dry-run
+  82 files; license/spec/link, JavaScript syntax, and diff checks PASS.

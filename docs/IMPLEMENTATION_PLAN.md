@@ -1,6 +1,6 @@
 # MortalOS Implementation Plan
 
-Status: **P0 merged; H3A implemented; H3B deployment contract in review; submission sprint active**
+Status: **P0 merged; H3A implemented; H3B contract merged; production deploy credential-blocked; submission sprint active**
 
 Last reviewed: **2026-07-16**
 
@@ -75,6 +75,23 @@ Developer Tools no-rebuild test-path requirement for this browser-first project.
 Failure rule: an unverified, stale, preview-only, or credentialed URL is not a pass.
 If Cloudflare credentials are unavailable, local H3A remains verified but S0 remains
 blocked; no document may call it publicly deployed.
+
+Current evidence and closure sequence:
+
+1. `main` `294b741bc89c72ee4ae4f3aea27a21515d0d1469` passed push Verify
+   `29513454019/1`, including actual Chromium, Lab, coverage, and audit.
+2. Deploy `29513454211/1` failed at credential preflight; both
+   `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` were empty, so deployment and
+   all remote checks were skipped.
+3. Create a Cloudflare custom API token restricted to the intended account with
+   `Account → Cloudflare Pages → Edit`, obtain the account ID, and store them as the
+   two same-named GitHub Actions repository secrets. Do not put either value in code,
+   logs, PR text, or Devpost.
+4. Rerun `Deploy MortalOS Lab` with `workflow_dispatch`; require project discovery,
+   exact clean build, deployment, propagation retries, remote byte/MIME/header/source
+   verification, and the full logged-out Chromium path to pass in one run.
+5. Only then add `https://mortalos-lab-yonghwan2161.pages.dev` to Devpost and freeze
+   the deployed source SHA for the video.
 
 ### S1 — repository and judge instructions
 
@@ -155,10 +172,11 @@ Strict pass criteria:
 
 | KST deadline | Deliverable | Exit gate |
 | --- | --- | --- |
-| Jul 17, 23:59 | H3B PR reviewed and merged; automatic Cloudflare run observed | exact-SHA CI plus public verifier, or an explicit credential blocker without false deployment claim |
-| Jul 18, 23:59 | README, install/platform/test path, Codex/GPT-5.6 evidence | clean-room local and public judge-path rehearsal |
-| Jul 19, 23:59 | Devpost story/category/custom-field draft and video script | every statement mapped to executable evidence |
-| Jul 20, 23:59 | public video recorded and uploaded | under three minutes; voiceover covers project, Codex, GPT-5.6 |
+| Jul 17, 12:00 | Cloudflare account ID and least-privilege Pages token stored as repository secrets | credential preflight passes without exposing either value |
+| Jul 17, 18:00 | production H3B workflow rerun and public URL frozen | exact-SHA assets/headers plus logged-out Chromium pass |
+| Jul 18, 18:00 | Devpost category/custom fields and public judge instructions staged | only video and `/feedback` may remain open |
+| Jul 19, 18:00 | final video script and clean recording rehearsal | every statement mapped to deployed behavior; duration below three minutes |
+| Jul 20, 18:00 | public video uploaded and submission rehearsal completed | public YouTube voiceover covers project, Codex, and GPT-5.6 |
 | Jul 21, 18:00 | final code/content freeze | all checks green; exact URLs and SHA frozen |
 | Jul 22, 07:00 | Devpost submitted | non-draft submission confirmed; two-hour buffer remains |
 

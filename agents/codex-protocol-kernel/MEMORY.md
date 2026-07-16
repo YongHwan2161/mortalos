@@ -2,9 +2,9 @@
 
 Last reconciled: 2026-07-16
 
-Branch: `agent/codex-protocol-kernel--submission-sprint`
+Branch: `agent/codex-protocol-kernel--post-merge-status`
 
-Current base: `d50c8f41ec648c757cb26b170340c467f792b770`
+Current base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
 
 ## Verified merged state
 
@@ -22,17 +22,23 @@ Current base: `d50c8f41ec648c757cb26b170340c467f792b770`
   R1 must replace that operation boundary with bounded versioned bytes and an
   independently authored non-JavaScript verifier.
 
-## Submission-sprint candidate
+## Submission-sprint merged state
 
-- H3B adds a deterministic static asset manifest, exact source commit, Cloudflare
+- PR #11 merged H3B at `294b741bc89c72ee4ae4f3aea27a21515d0d1469`:
+  a deterministic static asset manifest, exact source commit, Cloudflare
   `_headers`, pinned GitHub Actions, Pages deployment, remote asset/header verifier,
   and remote Chromium judge-path mode without changing trusted `src/` semantics.
 - A public URL is not complete until the reviewed main SHA deploys and passes the
   exact remote verifier. Local Wrangler has no authenticated Cloudflare account or
   token. The unauthenticated temporary-account path was not used because it requires
   accepting Cloudflare terms and does not provide the durable submission URL needed.
-- The permanent GitHub deployment workflow is designed to run automatically after
-  merge using repository-scoped Cloudflare secrets if present.
+- Push Verify `29513454019/1` passed. Deploy `29513454211/1` stopped at credential
+  preflight because both Cloudflare repository secrets were empty; deployment and
+  remote verification were skipped, so no public H3B claim is valid yet.
+- PR #11 merged after an attestation of unverifiable logical-agent provenance and
+  before the assigned reviewer completed the mandatory immediate re-fetch/expected-
+  head merge decision. Later independent tests passed but do not retroactively close
+  that governance gate; incident comment `4994066948` records the boundary.
 - Wrangler 4.111.0 `pages project list --json` exposes the project identifier as
   `"Project Name"`, not `name`. Deployment discovery must validate that pinned
   schema and remain idempotent for an already-existing project.
@@ -69,11 +75,11 @@ Current base: `d50c8f41ec648c757cb26b170340c467f792b770`
 
 ## Current priorities
 
-1. Complete H3B tests, exact-head PR, independent review, CI, merge, and public run.
-2. Close README/platform/judge-path and Codex/GPT-5.6 evidence gaps.
-3. Finalize honest Devpost category, story, test instructions, video, and `/feedback`
+1. Add the two Cloudflare repository secrets through the authenticated account
+   boundary, rerun the production workflow, and freeze only an exact-SHA verified URL.
+2. Finalize Devpost category/test instructions, video, and `/feedback`
    field before the internal 2026-07-22 07:00 KST submit target.
-4. Resume R1 after submission; do not spend the sprint on R2 or networking.
+3. Resume R1 after submission; do not spend the sprint on R2 or networking.
 
 ## Memory maintenance
 

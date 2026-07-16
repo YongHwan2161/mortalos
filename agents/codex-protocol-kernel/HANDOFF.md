@@ -5,38 +5,31 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — Build Week submission sprint and H3B public Lab
+### ACTIVE — Post-merge deployment and submission status correction
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `d50c8f41ec648c757cb26b170340c467f792b770`
-- Work branch: `agent/codex-protocol-kernel--submission-sprint`
+- Base: `294b741bc89c72ee4ae4f3aea27a21515d0d1469`
+- Work branch: `agent/codex-protocol-kernel--post-merge-status`
 - Worktree:
-  `/workspace/mortalos-worktrees/pr2-integration-worktrees/codex-protocol-kernel--h3b-r2-worktrees/codex-protocol-kernel--submission-sprint`
-- Exact intended shared paths: `.github/workflows/deploy-lab.yml`,
-  `.github/workflows/verify.yml`, `README.md`, `THIRD_PARTY_NOTICES.md`,
-  `docs/IMPLEMENTATION_PLAN.md`,
-  `docs/ACCESS_ARCHITECTURE.md`, `docs/PROJECT_STATUS.md`,
-  `docs/SINGLE_BROWSER_INCUBATOR.md`, `docs/SUBMISSION_CHECKLIST.md`,
-  `docs/TRACEABILITY.md`, `lab/_headers`,
-  `package.json`, `package-lock.json`, `scripts/build-lab.mjs`,
-  `scripts/deploy-lab.mjs`, `scripts/lab-contract.mjs`,
-  `scripts/serve-lab.mjs`, `scripts/verify-deployed-lab.mjs`,
-  `scripts/verify-lab.mjs`, `scripts/verify-license.mjs`,
-  `scripts/verify-spec.mjs`, and `test/lab.test.mjs`
+  `/workspace/mortalos-worktrees/pr2-integration-worktrees/codex-protocol-kernel--h3b-r2-worktrees/codex-protocol-kernel--submission-sprint-worktrees/codex-protocol-kernel--post-merge-status`
+- Exact intended shared paths: `README.md`, `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/PROJECT_STATUS.md`, `docs/SUBMISSION_CHECKLIST.md`, and
+  `scripts/verify-spec.mjs`
 - Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
   `agents/codex-protocol-kernel/MEMORY.md`,
   `agents/codex-protocol-kernel/README.md`, and
   `agents/codex-protocol-kernel/WORKLOG.md`
-- Contract affected: deployment and submission evidence only. The protocol wire,
-  lifecycle semantics, and trusted `src/` core are intentionally unchanged. H3B
-  publishes the honest H3A Lab as a time-bounded judge path; it does not claim R1,
-  participant networking, state-bearing execution, or ownerlessness.
-- Required evidence: locked install; full repository tests; actual Chromium Lab;
-  deterministic deployment manifest and exact-commit/security-header verifier;
-  audit, package, secret scan, and immutable-head GitHub checks. A real public URL
-  must pass the same verifier before it may be called deployed.
-- Expected handoff: one focused ready PR, followed by independent immutable-head
-  review by `reviewer-merge-gate`; the author neither self-reviews nor merges.
+- Contract affected: rolling status and submission planning only; no runtime,
+  deployment workflow, protocol, schema, or generated artifact changes. Record that
+  PR #11 merged, post-merge Verify passed, Cloudflare credential preflight failed,
+  and the public H3B URL remains unverified. Record the review-provenance/TOCTOU
+  incident without treating the later independent review as retroactive approval.
+- Required evidence: live GitHub PR/main/workflow/log observations; live Devpost
+  project, announcement, requirement, and key-date observations; documentation/spec
+  verification; diff and secret checks; exact-head policy and Verify on the focused
+  status PR.
+- Expected handoff: one focused status-correction PR. `reviewer-merge-gate` must
+  review its immutable head normally; the author neither self-reviews nor merges.
 
 ## Completed handoffs
 

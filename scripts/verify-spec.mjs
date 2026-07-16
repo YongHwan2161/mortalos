@@ -283,7 +283,7 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "P0 merged on `main`; H3A local Lab implemented; H3B deployment candidate in review",
+  "P0 and H3B contract merged on `main`; public H3B deployment blocked at credential preflight",
   "| Node/browser agreement | Required per review head |",
   "an old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"
