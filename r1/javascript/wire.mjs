@@ -214,7 +214,9 @@ function resultEnvelope(operationBytes, operation, outcome) {
   return {
     format: R1_RESULT_FORMAT,
     operation: operation ?? null,
-    operation_hash: `sha256:${encodeBase64Url(sha256(operationBytes))}`,
+    operation_hash: operationBytes === null
+      ? null
+      : `sha256:${encodeBase64Url(sha256(operationBytes))}`,
     outcome
   };
 }
@@ -235,6 +237,21 @@ function errorEnvelope(operationBytes, operation, error) {
 
 export function executeR1Operation(operationBytes) {
   let operationName = null;
+  let inputLength = null;
+  try {
+    inputLength = operationBytes instanceof Uint8Array
+      ? operationBytes.byteLength
+      : null;
+  } catch {
+    return canonicalBytes(errorEnvelope(null, null, new R1Error("R1_PARSE", "input")));
+  }
+  if (inputLength !== null && inputLength > R1_LIMITS.operation_bytes) {
+    return canonicalBytes(errorEnvelope(
+      null,
+      null,
+      new R1Error("R1_LIMIT", "operation_bytes")
+    ));
+  }
   try {
     const document = parseJsonDocument(operationBytes, {
       maxBytes: R1_LIMITS.operation_bytes,
@@ -260,7 +277,7 @@ export function executeR1Operation(operationBytes) {
   } catch (error) {
     let stableBytes;
     try {
-      stableBytes = operationBytes instanceof Uint8Array
+      stableBytes = inputLength !== null && inputLength <= R1_LIMITS.operation_bytes
         ? new Uint8Array(operationBytes)
         : new Uint8Array(0);
     } catch {
@@ -269,4 +286,3 @@ export function executeR1Operation(operationBytes) {
     return canonicalBytes(errorEnvelope(stableBytes, operationName, error));
   }
 }
-
