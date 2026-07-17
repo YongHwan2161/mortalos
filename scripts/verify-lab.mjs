@@ -12,6 +12,11 @@ const portableExpected = JSON.parse(
   await readFile(new URL("../test/vectors/portable-expected.json", import.meta.url), "utf8")
 );
 const expectedBoundaryCount = Object.keys(portableExpected.boundary_cases).length;
+const VIEWPORTS = Object.freeze([
+  Object.freeze({ width: 1440, height: 900 }),
+  Object.freeze({ width: 768, height: 900 }),
+  Object.freeze({ width: 360, height: 800 })
+]);
 
 function rgb(value) {
   const hex = value.trim().match(/^#([0-9a-f]{6})$/i);
@@ -104,14 +109,47 @@ async function storageSnapshot(page) {
   }));
 }
 
+async function focusByTab(page, selector, maximumTabs = 80) {
+  for (let count = 0; count <= maximumTabs; count += 1) {
+    if (await page.evaluate((target) => document.activeElement?.matches(target) === true, selector)) {
+      const focus = await page.locator(selector).evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+      });
+      assert.notEqual(focus.outlineStyle, "none", `${selector} has no visible focus outline`);
+      assert.notEqual(focus.outlineWidth, "0px", `${selector} has a zero-width focus outline`);
+      return;
+    }
+    await page.keyboard.press("Tab");
+  }
+  assert.fail(`keyboard tab order did not reach ${selector}`);
+}
+
+async function activate(page, selector, keyboardOnly) {
+  if (keyboardOnly) {
+    await focusByTab(page, selector);
+    await page.keyboard.press("Enter");
+  } else {
+    await page.click(selector);
+  }
+}
+
 async function runContext(browser, serverUrl, contextIndex, pair) {
   const context = await browser.newContext({
     acceptDownloads: true,
-    viewport: contextIndex === 2 ? { width: 360, height: 800 } : { width: 1280, height: 900 }
+    viewport: VIEWPORTS[contextIndex]
   });
   const errors = [];
   const requests = [];
   const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Network.enable");
+  await cdp.send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 40,
+    downloadThroughput: 1_250_000,
+    uploadThroughput: 625_000
+  });
   if (contextIndex === 2) await page.emulateMedia({ reducedMotion: "reduce" });
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("request", (request) => requests.push(request.url()));
@@ -148,6 +186,18 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
       service_workers: 0,
       cookies: ""
     });
+    const interactiveMs = await page.evaluate(() => {
+      const navigation = performance.getEntriesByType("navigation")[0];
+      return navigation?.domInteractive ?? Number.POSITIVE_INFINITY;
+    });
+    assert.ok(interactiveMs <= 2_000, `broadband-simulated DOM interactive ${interactiveMs}ms exceeds 2000ms`);
+    assert.equal(await page.locator("#hero-proof-link").isVisible(), true);
+    await cdp.send("Network.emulateNetworkConditions", {
+      offline: false,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1
+    });
 
     const signOnce = await workerSignOnceAudit(page);
     assert.equal(signOnce.type, "error");
@@ -159,26 +209,53 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
       assert.equal(await page.evaluate(() => document.activeElement?.className), "skip-link");
       await page.keyboard.press("Tab");
       assert.equal(await page.evaluate(() => document.activeElement?.id), "hero-proof-link");
+      const heroFocus = await page.locator("#hero-proof-link").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+      });
+      assert.notEqual(heroFocus.outlineStyle, "none");
+      assert.notEqual(heroFocus.outlineWidth, "0px");
       await page.keyboard.press("Enter");
-      await page.click("#guided-start");
+      await activate(page, "#guided-start", true);
       await page.locator("#guided-baseline").filter({ hasText: "3/3" }).waitFor();
-      await page.click("#ask-gpt");
+      await focusByTab(page, "#scenario-kind");
+      await page.keyboard.press("ArrowDown");
+      assert.equal(await page.locator("#scenario-kind").inputValue(), "fork");
+      await focusByTab(page, "#scenario-hypothesis");
+      await page.keyboard.press("Control+A");
+      await page.keyboard.type("Can two signed siblings both become authoritative?");
+      await activate(page, "#ask-gpt", true);
       await page.locator('#guided-status[data-state="accept"]').waitFor({ timeout: 25_000 });
       const guided = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().scenario);
       assert.match(guided.model, /^gpt-5\.6/);
       assert.match(guided.compiled_digest, /^sha256:[A-Za-z0-9_-]{43}$/);
       assert.equal(guided.kernel.matches_trusted_expectation, true);
       assert.equal(guided.replay, null);
-      await page.click("#replay-without-gpt");
+      await activate(page, "#replay-without-gpt", true);
       await page.locator("#offline-replay").filter({ hasText: "PASS" }).waitFor();
       const offline = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().scenario);
       assert.deepEqual(offline.replay.actual, offline.kernel.actual);
       assert.equal(offline.replay.matches_trusted_expectation, true);
-      await page.click("#create-live");
+      await page.locator("#guided-complete:not([hidden])").waitFor();
+      assert.match(await page.locator("#release-asset-digest").textContent(), /^sha256:[A-Za-z0-9_-]{43}$/);
+      assert.match(await page.locator("#release-source-commit").textContent(), /^(?:local|[0-9a-f]{40})$/);
+      await activate(page, "#run-another-attack", true);
+      assert.equal(await page.locator("#guided-complete").isHidden(), true);
+      assert.equal(await page.locator("#ask-gpt").isEnabled(), true);
+      await activate(page, "#create-live", true);
+      await page.locator('#live-status[data-state="accept"]').waitFor({ timeout: 20_000 });
+      await focusByTab(page, "#first-signer");
+      await page.keyboard.press("End");
+      await page.keyboard.press("Home");
+      assert.equal(await page.locator("#first-signer").inputValue(), "0");
+      await focusByTab(page, "#second-signer");
+      await page.keyboard.press("End");
+      await page.keyboard.press("Home");
+      assert.equal(await page.locator("#second-signer").inputValue(), "1");
     } else {
       await page.selectOption("#first-signer", String(pair[0]));
       await page.selectOption("#second-signer", String(pair[1]));
-      await page.click("#create-live");
+      await activate(page, "#create-live", false);
     }
     await page.locator('#live-status[data-state="accept"]').waitFor({ timeout: 20_000 });
 
@@ -195,19 +272,19 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
     }
     assert.doesNotMatch(JSON.stringify(born), /private[_-]?key|CryptoKey|pkcs8/i);
 
-    await page.click("#try-one");
+    await activate(page, "#try-one", contextIndex === 0);
     await page.locator("#one-key-verdict").filter({ hasText: "E_APPROVAL_INSUFFICIENT_QUORUM" }).waitFor();
-    await page.click("#complete-quorum");
+    await activate(page, "#complete-quorum", contextIndex === 0);
     await page.locator("#two-key-verdict").filter({ hasText: "accept" }).waitFor();
     const advanced = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot());
     assert.equal(advanced.live.organism_id, born.live.organism_id);
     assert.equal(advanced.live.sequence, "1");
     assert.equal(advanced.live.records.length, 2);
 
-    await page.click("#replay-live");
+    await activate(page, "#replay-live", contextIndex === 0);
     await page.locator("#replay-verdict").filter({ hasText: "E_REPLAY_STALE" }).waitFor();
 
-    await page.click("#run-reference");
+    await activate(page, "#run-reference", contextIndex === 0);
     await page.locator('#reference-status[data-state="accept"]').waitFor();
     const reference = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().reference);
     assert.equal(reference.complete_initial_turnover, true);
@@ -227,7 +304,7 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
 
     let corpus = null;
     if (contextIndex === 0) {
-      await page.click("#run-corpus");
+      await activate(page, "#run-corpus", true);
       const corpusOutcome = await page.waitForFunction(() => {
         const result = document.getElementById("corpus-result")?.textContent ?? "";
         if (result === "Not run") return null;
@@ -250,7 +327,7 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
     let exported = null;
     if (contextIndex === 0) {
       const downloadPromise = page.waitForEvent("download");
-      await page.click("#export-live");
+      await activate(page, "#export-live", true);
       const download = await downloadPromise;
       assert.equal(download.suggestedFilename(), "mortalos-lab-evidence.json");
       const path = await download.path();
@@ -271,7 +348,7 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
       assert.doesNotMatch(JSON.stringify(exported), /private[_-]?key|acceptedContexts|CryptoKey/i);
     }
 
-    await page.click("#retire-live");
+    await activate(page, "#retire-live", contextIndex === 0);
     await page.locator("#retirement-result").filter({ hasText: "authority_unavailable_not_proven_dead" }).waitFor();
     await page.locator("#retirement-result").filter({ hasText: "E_APPROVAL_INSUFFICIENT_QUORUM" }).waitFor();
     const retired = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot());
@@ -307,6 +384,49 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
     assert.ok(contrast(rgb(palette.faint), rgb(palette.body)) >= 4.5);
     assert.ok(contrast(rgb(palette.muted), rgb(palette.surface)) >= 4.5);
     assert.ok(contrast(rgb(palette.muted), rgb(palette.surface2)) >= 4.5);
+    const accessibility = await page.evaluate(() => {
+      const controls = [...document.querySelectorAll("button, select, textarea, a[href]")]
+        .filter((element) => element.checkVisibility())
+        .map((element) => ({
+          id: element.id,
+          name: element.getAttribute("aria-label") || element.labels?.[0]?.textContent?.trim() || element.textContent?.trim()
+        }));
+      const statuses = [...document.querySelectorAll(".status")].map((element) => ({
+        state: element.dataset.state,
+        text: element.textContent?.trim(),
+        role: element.getAttribute("role"),
+        live: element.getAttribute("aria-live")
+      }));
+      return { controls, statuses };
+    });
+    assert.ok(accessibility.controls.length >= 13);
+    for (const control of accessibility.controls) {
+      assert.ok(control.name, `control ${control.id || "without id"} has no accessible name`);
+    }
+    for (const status of accessibility.statuses) {
+      assert.ok(status.text, "status has no non-color text");
+      assert.ok(status.state, "status has no machine-readable state");
+      assert.equal(status.role, "status");
+      assert.equal(status.live, "polite");
+    }
+    await cdp.send("Accessibility.enable");
+    const tree = await cdp.send("Accessibility.getFullAXTree");
+    const accessibleButtons = tree.nodes.filter((node) => node.role?.value === "button" && node.name?.value);
+    assert.ok(accessibleButtons.length >= 8, "Chromium accessibility tree omitted named controls");
+    const links = await page.locator("a[href]").evaluateAll((elements) => elements.map((element) => element.href));
+    assert.ok(links.length >= 3);
+    const pageOrigin = new URL(serverUrl).origin;
+    for (const href of links) {
+      const target = new URL(href);
+      if (target.origin === pageOrigin) {
+        const linked = await page.request.get(target.href);
+        assert.equal(linked.status(), 200, `broken same-origin link: ${target.href}`);
+      } else {
+        assert.equal(target.protocol, "https:", `external link is not HTTPS: ${target.href}`);
+      }
+    }
+    assert.equal(await page.locator("button[data-label]").count(), 0, "stale busy button label remains");
+    assert.equal(await page.locator(".status.busy").count(), 0, "unrecoverable busy status remains");
     if (contextIndex === 2) {
       assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior), "auto");
     }
@@ -315,7 +435,7 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
     const reloaded = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot());
     assert.equal(reloaded.live.organism_id, null);
     assert.equal(reloaded.live.custodians.length, 0);
-    await page.click("#create-live");
+    await activate(page, "#create-live", contextIndex === 0);
     await page.locator('#live-status[data-state="accept"]').waitFor({ timeout: 20_000 });
     const rebornId = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().live.organism_id);
     assert.notEqual(rebornId, born.live.organism_id);
@@ -389,7 +509,7 @@ try {
   if (server.requests) {
     const allowedPaths = new Set([
       "/", "/THIRD_PARTY_LICENSES.txt", "/api/scenarios", "/app.js", "/corpus-worker.js",
-      "/custodian-worker.js", "/styles.css"
+      "/custodian-worker.js", "/styles.css", "/asset-manifest.json"
     ]);
     assert.ok(server.requests.length > 0);
     for (const request of server.requests) {
@@ -405,7 +525,8 @@ try {
   console.log(`- full 15 named + ${expectedBoundaryCount} boundary + 10,000 adversarial corpus (separate Worker gate): committed-result exact`);
   console.log("- cross-origin-isolated page/Worker: SharedArrayBuffer available and rejected as unstable input");
   console.log("- public evidence: canonical, independently digested, replayed to identical head");
-  console.log("- storage/service-worker/external-request/console-error checks: clean");
+  console.log("- 360/768/1440 responsive, full keyboard, focus, accessibility-tree, status-text, reduced-motion gates: clean");
+  console.log("- simulated broadband DOM interactive <= 2s; links/stale/loading/storage/service-worker/external-request/console gates: clean");
   if (deployment) console.log(`- deployed assets: ${deployment.assets} exact / ${deployment.asset_digest}`);
 } finally {
   await browser.close();

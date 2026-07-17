@@ -233,7 +233,9 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_ACCOUNT_ID:/gm) ?? []).length, 2);
   assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_API_TOKEN:/gm) ?? []).length, 2);
   assert.equal((deploymentWorkflow.match(/^          OPENAI_API_KEY:/gm) ?? []).length, 2);
+  assert.equal((deploymentWorkflow.match(/^          SAFETY_IDENTIFIER_SECRET:/gm) ?? []).length, 2);
   assert.doesNotMatch(deploymentWorkflow, /^      OPENAI_API_KEY:/m);
+  assert.doesNotMatch(deploymentWorkflow, /^      SAFETY_IDENTIFIER_SECRET:/m);
   for (const workflow of [
     deploymentWorkflow,
     await readFile(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8")

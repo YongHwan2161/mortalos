@@ -66,9 +66,27 @@ async function invoke(entry, index) {
       headers: { "content-type": "application/json", origin: remote.origin },
       body: JSON.stringify(body)
     });
-    return response;
+    return { response, upstreamTrace: null };
   }
-  return handleScenarioRequest({
+  let upstreamTrace = null;
+  const fetchImpl = async (url, init) => {
+    const started = performance.now();
+    const sent = JSON.parse(init.body);
+    const response = await fetch(url, init);
+    const payload = await response.clone().json().catch(() => null);
+    upstreamTrace = {
+      duration_ms: Math.round(performance.now() - started),
+      endpoint: String(url),
+      method: init.method,
+      request_model: sent.model,
+      response_model: payload?.model ?? null,
+      safety_identifier_format: /^mortalos_[A-Za-z0-9_-]{43}$/.test(sent.safety_identifier ?? ""),
+      status: response.status,
+      store: sent.store
+    };
+    return response;
+  };
+  const response = await handleScenarioRequest({
     request: new Request("https://mortalos.eval/api/scenarios", {
       method: "POST",
       headers: {
@@ -83,14 +101,19 @@ async function invoke(entry, index) {
       SAFETY_IDENTIFIER_SECRET: process.env.SAFETY_IDENTIFIER_SECRET,
       SCENARIO_RATE_LIMITER: { limit: async () => ({ success: true }) }
     }
-  }, { timeoutMs: 30_000 });
+  }, { fetchImpl });
+  return { response, upstreamTrace };
 }
 
 async function evaluate(entry, index) {
   let response;
   let payload;
+  let upstreamTrace;
+  const started = performance.now();
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    response = await invoke(entry, index);
+    const invocation = await invoke(entry, index);
+    response = invocation.response;
+    upstreamTrace = invocation.upstreamTrace;
     payload = JSON.parse(await response.text());
     if (response.ok) break;
     if (attempt < 3 && [429, 502, 504].includes(response.status)) {
@@ -110,11 +133,13 @@ async function evaluate(entry, index) {
   return {
     id: entry.id,
     kernel: first.actual,
+    latency_ms: Math.round(performance.now() - started),
     model: payload.model,
     mutation: payload.proposal.mutation,
     prediction_exact: payload.proposal.prediction.status === first.actual.status &&
       payload.proposal.prediction.code === first.actual.code,
-    target_selected: payload.proposal.mutation === entry.target_mutation
+    target_selected: payload.proposal.mutation === entry.target_mutation,
+    upstream_trace: upstreamTrace
   };
 }
 
@@ -134,15 +159,46 @@ const targetSelections = results.filter((entry) => entry.target_selected).length
 const predictionExact = results.filter((entry) => entry.prediction_exact).length;
 assert.ok(targetSelections >= 20, `GPT target selection ${targetSelections}/25 is below the 80% gate`);
 assert.equal(results.length, 25);
+const latency = results.map((entry) => entry.latency_ms).sort((left, right) => left - right);
+const p95 = latency[Math.ceil(latency.length * 0.95) - 1];
+assert.ok(p95 <= 15_000, `production-timeout evaluation p95 ${p95}ms exceeds 15000ms`);
+if (!remote) {
+  for (const result of results) {
+    assert.deepEqual(result.upstream_trace && {
+      endpoint: result.upstream_trace.endpoint,
+      method: result.upstream_trace.method,
+      request_model: result.upstream_trace.request_model,
+      response_model: result.upstream_trace.response_model,
+      safety_identifier_format: result.upstream_trace.safety_identifier_format,
+      status: result.upstream_trace.status,
+      store: result.upstream_trace.store
+    }, {
+      endpoint: "https://api.openai.com/v1/responses",
+      method: "POST",
+      request_model: "gpt-5.6",
+      response_model: result.model,
+      safety_identifier_format: true,
+      status: 200,
+      store: false
+    });
+  }
+}
 
 const summary = {
   format: "mortalos-gpt-scenario-eval/1",
   kernel_and_offline_replay_passed: results.length,
   models: [...new Set(results.map((entry) => entry.model))].sort(),
   mutations_selected: [...new Set(results.map((entry) => entry.mutation))].sort(),
+  production_timeout_ms: 15_000,
+  latency_ms: {
+    maximum: latency.at(-1),
+    p50: latency[Math.ceil(latency.length * 0.5) - 1],
+    p95
+  },
   prediction_exact: predictionExact,
   target_selection: targetSelections,
-  total: results.length
+  total: results.length,
+  upstream_traces: remote ? "available in Cloudflare invocation logs" : results.map((entry) => entry.upstream_trace)
 };
 console.log("MortalOS GPT-5.6 fixed scenario evaluation: PASS");
 console.log(JSON.stringify(summary));

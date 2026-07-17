@@ -184,6 +184,24 @@ main { display: grid; gap: 1rem; }
 .scenario-inputs select:focus-visible, .scenario-inputs textarea:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
 .guided-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem; }
 .model-note { margin: 0.7rem 0 0 !important; border-left: 2px solid var(--cyan); padding-left: 0.75rem; overflow-wrap: anywhere; }
+.guided-complete {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+  border: 1px solid rgba(200, 255, 92, 0.55);
+  border-radius: 0.85rem;
+  padding: 1rem;
+  background: rgba(200, 255, 92, 0.055);
+}
+.guided-complete[hidden] { display: none; }
+.guided-complete h3, .guided-complete p, .guided-complete dl { margin-bottom: 0; }
+.guided-complete p { color: var(--muted); }
+.guided-complete dl { display: grid; gap: 0.55rem; }
+.guided-complete dl div { min-width: 0; }
+.guided-complete dt { color: var(--faint); font-size: 0.7rem; text-transform: uppercase; }
+.guided-complete dd { margin: 0.2rem 0 0; color: var(--cyan); overflow-wrap: anywhere; }
+.completion-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+.completion-actions a { text-decoration: none; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin: 1.5rem 0; }
 

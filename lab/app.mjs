@@ -19,10 +19,12 @@ const firstSigner = byId("first-signer");
 const secondSigner = byId("second-signer");
 const incubator = new BrowserIncubator();
 const scenarioClientId = crypto.randomUUID();
+byId("public-repository-link").href = ["https:", "", "github.com", "YongHwan2161", "mortalos"].join("/");
 let referenceProof = null;
 let corpusProof = null;
 let lastBundle = null;
 let guidedScenario = null;
+let deploymentManifestPromise = null;
 let logIndex = 1;
 
 function verdict(result) {
@@ -56,6 +58,22 @@ function buttonBusy(button, busy, busyText) {
     button.textContent = button.dataset.label || button.textContent;
     delete button.dataset.label;
   }
+}
+
+function deploymentManifest() {
+  deploymentManifestPromise ??= fetch("./asset-manifest.json", { cache: "no-store" }).then(async (response) => {
+    if (!response.ok) throw new Error(`release manifest HTTP ${response.status}`);
+    const value = await response.json();
+    if (
+      value?.format !== "mortalos.lab-assets/1" ||
+      !/^sha256:[A-Za-z0-9_-]{43}$/.test(value.asset_digest ?? "") ||
+      !/^(?:local|[0-9a-f]{40})$/.test(value.source_commit ?? "")
+    ) {
+      throw new Error("release manifest schema mismatch");
+    }
+    return value;
+  });
+  return deploymentManifestPromise;
 }
 
 function renderCustodians(custodians) {
@@ -287,7 +305,11 @@ byId("replay-without-gpt").addEventListener("click", async () => {
     const identical = JSON.stringify(replay.actual) === JSON.stringify(guidedScenario.kernel.actual);
     if (!identical) throw new Error("offline replay changed the kernel result");
     guidedScenario.replay = replay;
+    const manifest = await deploymentManifest();
     byId("offline-replay").textContent = `PASS · ${guidedScenario.compiled.digest} · ${replay.actual.status} / ${replay.actual.code ?? "no code"}`;
+    byId("release-asset-digest").textContent = manifest.asset_digest;
+    byId("release-source-commit").textContent = manifest.source_commit;
+    byId("guided-complete").hidden = false;
     setStatus(byId("guided-status"), "GPT-off replay exact", "accept");
     button.disabled = true;
     log(`GPT-off replay byte/result identity: ${guidedScenario.compiled.digest}`);
@@ -299,6 +321,24 @@ byId("replay-without-gpt").addEventListener("click", async () => {
   } finally {
     buttonBusy(button, false);
   }
+});
+
+byId("run-another-attack").addEventListener("click", () => {
+  guidedScenario = null;
+  byId("scenario-kind").disabled = false;
+  byId("scenario-hypothesis").disabled = false;
+  byId("ask-gpt").disabled = false;
+  byId("replay-without-gpt").disabled = true;
+  byId("gpt-proposal").textContent = "Waiting for a new bounded proposal";
+  byId("model-prediction").textContent = "—";
+  byId("kernel-actual").textContent = "—";
+  byId("compiled-digest").textContent = "—";
+  byId("scenario-rationale").textContent = "No model text yet.";
+  byId("offline-replay").textContent = "Not run";
+  byId("guided-complete").hidden = true;
+  setStatus(byId("guided-status"), "Ready for another attack", "neutral");
+  byId("scenario-kind").focus();
+  log("Guided attack reset; deterministic baseline retained");
 });
 
 byId("run-reference").addEventListener("click", () => {

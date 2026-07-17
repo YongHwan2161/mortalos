@@ -1,8 +1,68 @@
 # MortalOS
 
-**An endpoint-neutral lifecycle protocol for network-native entities.**
+**The problem:** long-running agents can rotate processes and keys, but ordinary uptime
+checks cannot prove whether a successor is authorized, a replay is stale, two valid
+children created a fork, or available evidence is complete enough for a qualified
+mortality claim.
 
-MortalOS separates identity, continuation authority, lineage, state availability, and observable liveness. Its long-term question is whether one network-native entity can preserve an authorized identity after every original host has been replaced—and stop when succession becomes impossible under explicit assumptions.
+MortalOS is an endpoint-neutral lifecycle evidence protocol. GPT-5.6 proposes a
+bounded attack; canonical bytes bind that proposal; the deterministic kernel alone
+decides whether identity continued, forked, or lost authority.
+
+Public final judge URL: pending independently reviewed Cloudflare deployment. The
+current zero-install [R1 evidence fallback](https://mortalos-evidence-lab.ant713800.chatgpt.site)
+is public but is not represented as this release candidate.
+Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos).
+
+## 90-second judge path
+
+1. Select **Run the 90-second proof**.
+2. Run the committed deterministic baseline.
+3. Ask GPT-5.6 for one allowlisted falsification; compare its prediction with the
+   kernel's actual status and rejection code.
+4. Replay the exact compiled bytes without GPT and confirm the same digest and verdict.
+
+The path demonstrates three concrete proofs: stale evidence cannot advance a head;
+valid signed siblings create a detected fork rather than two authoritative heads; and
+silence or key loss is not global death without the explicitly closed evidence basis.
+
+It does **not** claim that three browser Workers are three independent operators, that
+the current artifact is an OS, or that v0 proves global death or ownerless operation.
+
+## Three-minute local proof
+
+Supported release gates are Windows and Ubuntu Linux with Node.js 22.5+, plus current
+Chromium. Other operating systems are best-effort until they have an equivalent gate.
+
+```bash
+npm ci
+npm run test:scenarios
+npm run build:lab
+npm run dev:lab
+```
+
+Open the printed local URL and follow the four actions above. This path uses a local,
+schema-valid model fixture; it needs no API or Cloudflare credential. The full fixed
+GPT-5.6 evaluation is intentionally separated under **Run** because it requires
+runtime secrets.
+
+## Codex and GPT-5.6 evidence, not endorsements
+
+| Evidence | Concrete contribution | Human-owned boundary |
+| --- | --- | --- |
+| `functions/api/scenarios.js` + 7 API tests | Codex implemented strict request/output limits, fail-closed errors, HMAC actor privacy, and the Responses API adapter. | Maintainers chose the anonymous edge-actor compromise and secret policy. |
+| `lab/scenario-compiler.mjs` + ten mutation cases | Codex connected each model enum to deterministic canonical bytes and the existing kernel. | GPT prose is discarded; no model output becomes authority. |
+| `scripts/verify-gpt-scenarios.mjs` + 25 fixed calls | GPT-5.6 selected the intended attack 25/25 and covered all ten mutations. | The kernel disagreed with the model's exact verdict 25/25; the mismatch is preserved as evidence. |
+| `.gitattributes`, portable launchers, Windows clean-clone run | Codex found and fixed LF, drive-path, and POSIX-only coverage defects exposed on Windows. | Windows and Ubuntu are the only claimed gated hosts. |
+| `asset-manifest.json`, deployment verifier, immutable reviewer contract | Codex bound public bytes, headers, digest, and source SHA to a reviewed release. | An independent reviewer and post-merge CI must pass before deployment or submission. |
+
+Exact commands, run IDs, coverage, remaining external gates, and human-owned decisions
+are recorded in [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md).
+
+MortalOS separates identity, continuation authority, lineage, state availability, and
+observable liveness. Its long-term question is whether one network-native entity can
+preserve an authorized identity after every original host has been replaced—and stop
+when succession becomes impossible under explicit assumptions.
 
 ## Honest status
 
@@ -62,7 +122,7 @@ R1-A/R1-B evidence profile**.
 Any SHA is publishable only after immutable-head review and its own successful Verify
 run. The Build Week submission lane now follows:
 
-`truthful status → Sites provenance → video → fields → submit`
+`immutable review → post-merge Verify → exact-SHA Cloudflare deploy → final-SHA video → fields → submit`
 
 That deadline exception improves judge access without claiming that hosting closes
 the JavaScript observer boundary. R1-A/R1-B are merged; R1-C, R2, and networking
@@ -92,9 +152,9 @@ verification pass.
 
 ## Run
 
-Supported platforms: Node.js 22.5 or later on macOS, Linux, or Windows for local
-verification; a current Chromium-class browser for MortalOS Lab. The local H3A Lab is
-static; the public Sites Lab needs no account or extension.
+Supported and release-gated platforms: Node.js 22.5 or later on Windows and Ubuntu
+Linux, plus current Chromium for MortalOS Lab. Other platforms are best-effort until
+the same clean-clone gates are recorded. The local H3A Lab needs no account.
 
 ```bash
 npm ci
@@ -108,10 +168,23 @@ npm run test:r1
 npm run build:lab
 npm run verify:r1
 npm run verify:lab
-npm run verify:gpt-scenarios
 npm run dev:lab
 npm run demo:singleton
 npm run demo:trace
+```
+
+The live fixed GPT-5.6 evaluation additionally requires `OPENAI_API_KEY` and an
+independent 32+ character `SAFETY_IDENTIFIER_SECRET` in the process environment.
+Never write either value to a file, command transcript, or repository:
+
+```bash
+npm run verify:gpt-scenarios
+```
+
+Final release-document URLs are resolved, rather than syntax-checked only, with:
+
+```bash
+MORTALOS_CHECK_EXTERNAL_LINKS=1 npm run verify:links
 ```
 
 To verify a reviewed Cloudflare deployment against its exact commit:

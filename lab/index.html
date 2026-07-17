@@ -105,6 +105,20 @@
             </div>
           </li>
         </ol>
+        <section id="guided-complete" class="guided-complete" aria-labelledby="guided-complete-title" hidden>
+          <div>
+            <h3 id="guided-complete-title">Proof complete — the kernel stayed authoritative</h3>
+            <p>The static release digest and exact source revision below bind this public artifact to reviewed evidence.</p>
+          </div>
+          <dl>
+            <div><dt>Release asset digest</dt><dd><code id="release-asset-digest">—</code></dd></div>
+            <div><dt>Exact source commit</dt><dd><code id="release-source-commit">—</code></dd></div>
+          </dl>
+          <div class="completion-actions">
+            <button id="run-another-attack" class="button primary" type="button">Run another attack</button>
+            <a id="public-repository-link" class="button">Inspect the public repository</a>
+          </div>
+        </section>
         <p class="warning"><strong>Authority boundary:</strong> GPT‑5.6 may be wrong. Only the actual kernel result is authoritative, and a mismatch is shown rather than repaired or hidden.</p>
       </section>
 

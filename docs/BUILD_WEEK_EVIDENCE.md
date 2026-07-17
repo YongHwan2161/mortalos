@@ -17,8 +17,8 @@ means the implementation may exist but the required external evidence does not.
 | 0 — truthful baseline and Windows fidelity | PASS | Isolated current-main worktree; `.gitattributes`; repository text scan reports zero CRLF files; `npm ci` succeeds with zero audit vulnerabilities. |
 | 1 — exact-SHA public Cloudflare release | WAIT | Pages Function and rate-limit configuration compile, but Cloudflare OAuth is waiting for account sign-in. No `pages.dev` success claim is permitted yet. |
 | 2 — GPT-5.6 adversarial witness | PASS locally | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, keyed privacy-preserving actor identifiers, no client secret. |
-| 3 — 90-second judge path | PASS locally | Desktop/mobile visual check plus three-context real-Chromium acceptance; four or fewer judge actions; GPT-off replay uses the same canonical digest and kernel result. |
-| 4 — evidence and source reconciliation | PASS locally | Source, tests, deployment config, this evidence record, and demo script are in the candidate; package, audit, coverage, and governance gates pass. Immutable review and deployed-SHA binding remain release gates. |
+| 3 — 90-second judge path | PARTIAL locally | Three-context real-Chromium automation passes at 360/768/1440 with a keyboard-only full-control path, accessibility-tree/status/focus checks, simulated-broadband interactivity, four judge actions, and GPT-off replay. Three first-time human testers remain mandatory. |
+| 4 — evidence and source reconciliation | PARTIAL locally | Judge-first README, five evidence mappings, link checker, source, tests, deployment config, this evidence record, and demo script are in the candidate. Immutable review, public-link resolution, and deployed-SHA binding remain release gates. |
 | 5 — Codex `/feedback` | WAIT | A qualifying Session ID has not been returned by `/feedback`; a task/thread UUID is not accepted as a substitute. |
 | 6 — Devpost fields and final story | WAIT | Project page is published, not submitted; required Session ID, video, submitter/country/category readback, and final judge instructions remain. |
 | 7 — public narrated demo | IN PROGRESS | A complete 2:50 script and shot list exist; final deployed recording and public YouTube readback remain. |
@@ -91,6 +91,13 @@ The last result is the strongest product evidence: GPT found the intended attack
 every case but did not reproduce the protocol's exact verdict vocabulary. The model
 is useful as an adversarial witness and unsafe as a validity oracle.
 
+The current production-timeout rerun captured a redacted trace for all 25 actual
+`POST https://api.openai.com/v1/responses` calls: request model `gpt-5.6`, response
+model `gpt-5.6-sol`, HTTP 200, `store: false`, and valid privacy identifier format on
+every call. No header, credential, hypothesis, response ID, or free-form content is
+retained in the trace. End-to-end API latency was p50 **4,425 ms**, p95 **11,140 ms**,
+and maximum **12,817 ms** under the production 15,000 ms deadline.
+
 Unit command: `npm run test:scenarios`
 
 Observed result: **7/7 tests pass**, including stable same-actor/different-client-ID
@@ -120,7 +127,7 @@ rejection.
 
 Command: `npm run verify:lab`
 
-Observed result: `MortalOS Lab H3A local Chromium acceptance: PASS` in 67.6 seconds.
+Observed result: `MortalOS Lab H3A local Chromium acceptance: PASS` in 87.8 seconds.
 
 - three clean contexts and all three logical two-key combinations accepted;
 - non-extractable Worker keys and private export rejection;
@@ -129,8 +136,14 @@ Observed result: `MortalOS Lab H3A local Chromium acceptance: PASS` in 67.6 seco
 - cross-origin isolation and `SharedArrayBuffer` rejection as protocol input;
 - canonical public evidence exported and replayed to the same head;
 - the guided GPT scenario compiled, ran in the kernel, and replayed without GPT;
-- mobile 360-pixel and reduced-motion checks; and
-- no persistence, cookie, Service Worker, external browser request, or console error.
+- 360-, 768-, and 1440-pixel overflow checks;
+- every interactive control exercised through the keyboard-only context with a
+  non-zero focus outline, plus named-control Chromium accessibility-tree evidence;
+- live-region roles, non-color status text, reduced motion, and final release
+  digest/source/repository/`Run another attack` completion state;
+- simulated 10 Mbps/40 ms broadband DOM interactive at or below two seconds; and
+- no broken same-origin link, stale busy label, unrecoverable loading state,
+  persistence, cookie, Service Worker, external browser request, or console error.
 
 The guided path requires at most four visible actions:
 
@@ -138,6 +151,24 @@ The guided path requires at most four visible actions:
 2. run the deterministic baseline;
 3. ask GPT, compile, and run the kernel; and
 4. replay the exact bytes without GPT.
+
+The automated contexts do not satisfy the separate human gate. Three first-time
+developers must still complete the protocol in `outputs/CLEAN_ROOM_TEST_PROTOCOL.md`
+without coaching and correctly explain logical-versus-physical quorum and
+silence-versus-qualified-death before Stage 3 can be marked complete.
+
+## Stage 4 local evidence
+
+- The README begins with the problem, public-status truth, four-action judge path,
+  three proofs, three non-claims, credential-free quickstart, and five concrete
+  Codex/GPT decision-or-test mappings.
+- Claimed release hosts are Windows, Ubuntu Linux, and current Chromium; macOS is no
+  longer presented as a gated platform.
+- `npm run verify:links` resolves all 19 local release-document targets and validates
+  HTTPS syntax. `MORTALOS_CHECK_EXTERNAL_LINKS=1 npm run verify:links` is the final
+  public-resolution gate after the exact Cloudflare URL exists.
+- The credential-free Run block no longer includes the live GPT evaluation. Its two
+  required runtime secrets and non-persistence rule are stated separately.
 
 ## Deployment evidence still required
 
