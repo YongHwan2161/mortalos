@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; connect-src 'self'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <title>MortalOS Lab — lifecycle protocol workbench</title>
     <link rel="stylesheet" href="./styles.css">
     <script type="module" src="./app.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#live-lab">Skip to the live Lab</a>
+    <a class="skip-link" href="#guided-proof">Skip to the 90-second proof</a>
     <header class="hero">
-      <div class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>MortalOS / local H3A proof</div>
-      <h1>A lifecycle you can try to break.</h1>
-      <p class="lede">Create a cryptographic organism in three browser Workers, test its 2-of-3 continuation rule, then inspect a deterministic public lineage through the same portable kernel.</p>
+      <div class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>MortalOS / deterministic lifecycle proof</div>
+      <h1>Ask GPT to break it. Let the kernel decide.</h1>
+      <p class="lede">GPT‑5.6 proposes a bounded adversarial test. MortalOS compiles only its allowlisted choice, runs the existing deterministic kernel, and proves the same verdict again with GPT completely offline.</p>
+      <p><a id="hero-proof-link" class="button primary hero-cta" href="#guided-proof">Run the 90-second proof</a></p>
       <div class="hero-chips" aria-label="Proof boundary summary">
         <span>Backend authority: none</span>
         <span>Logical custodians: 3</span>
@@ -42,10 +43,89 @@
         <p class="warning"><strong>Persistent disclosure:</strong> 3 logical custodians / 1 physical and administrative failure domain. This page can command quorum.</p>
       </section>
 
+      <section id="guided-proof" class="panel guided-panel" aria-labelledby="guided-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">01 / judge path · about 90 seconds</p>
+            <h2 id="guided-title">Model proposes. Canonical bytes bind. Kernel decides.</h2>
+          </div>
+          <span id="guided-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Ready</span>
+        </div>
+        <p class="section-copy">The model never receives a secret or a signing capability. Its free-form text is display-only; one allowlisted mutation enum becomes canonical input to the same kernel used everywhere else.</p>
+
+        <ol class="guided-steps">
+          <li class="guided-step">
+            <div class="step-marker" aria-hidden="true">1</div>
+            <div>
+              <h3>Establish a deterministic baseline</h3>
+              <p>Run the committed lifecycle, replay, fork, resurrection, and qualified-mortality fixtures.</p>
+              <button id="guided-start" class="button primary" type="button">Run deterministic baseline</button>
+              <strong id="guided-baseline" class="step-result" aria-live="polite">Not run</strong>
+            </div>
+          </li>
+          <li class="guided-step">
+            <div class="step-marker" aria-hidden="true">2</div>
+            <div>
+              <h3>Ask GPT‑5.6 for one bounded falsification</h3>
+              <div class="scenario-inputs">
+                <label for="scenario-kind">Invariant
+                  <select id="scenario-kind">
+                    <option value="continuation">Continuation and replay</option>
+                    <option value="fork">Fork and equivocation</option>
+                    <option value="mortality">Mortality and resurrection</option>
+                  </select>
+                </label>
+                <label for="scenario-hypothesis">Hypothesis
+                  <textarea id="scenario-hypothesis" maxlength="280" rows="3">Can authenticated but conflicting evidence create two authoritative heads?</textarea>
+                </label>
+              </div>
+              <button id="ask-gpt" class="button" type="button" disabled>Ask GPT, compile, and run kernel</button>
+              <strong id="gpt-proposal" class="step-result" aria-live="polite">Waiting for baseline</strong>
+            </div>
+          </li>
+          <li class="guided-step">
+            <div class="step-marker" aria-hidden="true">3</div>
+            <div>
+              <h3>Compare the untrusted prediction with kernel truth</h3>
+              <div class="guided-results">
+                <div class="result-row"><span>Model prediction</span><strong id="model-prediction">—</strong></div>
+                <div class="result-row"><span>Kernel actual</span><strong id="kernel-actual">—</strong></div>
+                <div class="result-row"><span>Canonical input digest</span><strong id="compiled-digest">—</strong></div>
+              </div>
+              <p id="scenario-rationale" class="model-note">No model text yet.</p>
+            </div>
+          </li>
+          <li class="guided-step">
+            <div class="step-marker" aria-hidden="true">4</div>
+            <div>
+              <h3>Turn GPT off and replay the exact bytes</h3>
+              <p>No second API call. The compiled digest and kernel result must remain identical.</p>
+              <button id="replay-without-gpt" class="button" type="button" disabled>Replay without GPT</button>
+              <strong id="offline-replay" class="step-result" aria-live="polite">Not run</strong>
+            </div>
+          </li>
+        </ol>
+        <section id="guided-complete" class="guided-complete" aria-labelledby="guided-complete-title" hidden>
+          <div>
+            <h3 id="guided-complete-title">Proof complete — the kernel stayed authoritative</h3>
+            <p>The static release digest and exact source revision below bind this public artifact to reviewed evidence.</p>
+          </div>
+          <dl>
+            <div><dt>Release asset digest</dt><dd><code id="release-asset-digest">—</code></dd></div>
+            <div><dt>Exact source commit</dt><dd><code id="release-source-commit">—</code></dd></div>
+          </dl>
+          <div class="completion-actions">
+            <button id="run-another-attack" class="button primary" type="button">Run another attack</button>
+            <a id="public-repository-link" class="button">Inspect the public repository</a>
+          </div>
+        </section>
+        <p class="warning"><strong>Authority boundary:</strong> GPT‑5.6 may be wrong. Only the actual kernel result is authoritative, and a mismatch is shown rather than repaired or hidden.</p>
+      </section>
+
       <section id="live-lab" class="panel" aria-labelledby="live-title">
         <div class="section-heading">
           <div>
-            <p class="section-number">01 / live incubator</p>
+            <p class="section-number">02 / advanced · live incubator</p>
             <h2 id="live-title">Create in this browser</h2>
           </div>
           <span id="live-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Not created</span>
@@ -129,7 +209,7 @@
       <section class="panel" aria-labelledby="reference-title">
         <div class="section-heading">
           <div>
-            <p class="section-number">02 / fixed public reference</p>
+            <p class="section-number">03 / advanced · fixed public reference</p>
             <h2 id="reference-title">One identity, complete custodian turnover</h2>
           </div>
           <span id="reference-status" class="status neutral" role="status" aria-live="polite">Not run</span>
@@ -146,7 +226,7 @@
 
       <section class="panel corpus-panel" aria-labelledby="corpus-title">
         <div>
-          <p class="section-number">03 / cross-runtime contract</p>
+          <p class="section-number">04 / advanced · cross-runtime contract</p>
           <h2 id="corpus-title">Run the complete committed corpus</h2>
           <p class="section-copy">A separate Worker runs the named negatives, trust-boundary and mortality-safety probes, and fixed-seed 10,000-case corpus, then compares the whole result with the committed reference. The result reports the committed case counts dynamically.</p>
         </div>
@@ -159,7 +239,7 @@
       <section class="panel log-panel" aria-labelledby="log-title">
         <div class="section-heading">
           <div>
-            <p class="section-number">04 / public event log</p>
+            <p class="section-number">05 / public event log</p>
             <h2 id="log-title">Kernel verdicts</h2>
           </div>
         </div>
@@ -170,7 +250,7 @@
     </main>
 
     <footer>
-      <p>MortalOS Lab H3A · static local build · protocol <code>mortalos/0</code></p>
+      <p>MortalOS Lab · deterministic kernel + untrusted GPT‑5.6 witness · protocol <code>mortalos/0</code></p>
       <p>Browser first, never browser-only. <a href="./THIRD_PARTY_LICENSES.txt">Third-party licenses</a></p>
     </footer>
     <noscript>This Lab requires JavaScript to run the portable validation kernel.</noscript>

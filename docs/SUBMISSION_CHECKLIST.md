@@ -18,12 +18,12 @@ Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 
 | Deliverable | State | Closure evidence |
 | --- | --- | --- |
-| Working project | R1 merged; public Sites Lab live | Sites provenance plus logged-out smoke tests |
+| Working project | R1 merged; public Sites Lab live; full Pages candidate locally green | reviewed exact-head Pages deployment plus logged-out smoke tests |
 | Category | Selected in plan | Devpost field `Developer Tools` |
 | Project description | Saved with R1/GPT story and Sites URL | final story matches merged code and deployed behavior |
 | Demo video | Missing | public YouTube, under three minutes, narrated |
 | Code repository | Available | public repo, Apache-2.0, final README |
-| README/setup/sample/run guidance | Local path implemented; Sites/R1 provenance pending | clean-room instructions and exact judge path |
+| README/setup/sample/run guidance | Candidate implemented; exact public SHA pending | clean-room instructions and exact judge path |
 | Codex and GPT-5.6 usage | Repository/story saved; video pending | concrete README/story/video examples |
 | `/feedback` Session ID | Missing | required Devpost custom field |
 | Dev-tool installation/platform/testing path | Public browser URL live; final text pending | browser URL plus local Node 22.5+ fallback |
@@ -63,8 +63,11 @@ exact-commit evidence layer, not the submission definition of done.
   private-field rejection, and Sites/R1 provenance.
 - [ ] Devpost, README, video, and Sites version identify the same final evidence set.
 
-## Optional direct H3B Cloudflare release gate
+## Direct H3B Cloudflare release gate
 
+- [x] GitHub repository secret `OPENAI_API_KEY` exists; its value is never emitted.
+- [x] GitHub repository secret `SAFETY_IDENTIFIER_SECRET` exists; its value is never
+  emitted, and Cloudflare receives it only through the deployment secret pipe.
 - [ ] GitHub repository secrets `CLOUDFLARE_ACCOUNT_ID` and
   `CLOUDFLARE_API_TOKEN` are non-empty; the token is account-scoped to Cloudflare
   Pages Edit and never exposed in repository or logs.
@@ -80,9 +83,9 @@ exact-commit evidence layer, not the submission definition of done.
 
 ## Codex/GPT-5.6 evidence gate
 
-Runtime GPT is not required, but the public Sites Lab now includes a tested GPT-5.6
-witness. The repository and video must show both its strict non-authority boundary
-and how Codex with GPT-5.6 materially accelerated construction:
+The release candidate includes a tested GPT-5.6 adversarial witness. The repository
+and video must show both its strict non-authority boundary and how Codex with GPT-5.6
+materially accelerated construction:
 
 - [x] operational definitions of birth, identity, succession, qualified death, and
   resurrection rejection;
@@ -91,21 +94,27 @@ and how Codex with GPT-5.6 materially accelerated construction:
 - [x] deterministic conformance/property/browser test generation and interpretation;
 - [x] Cloudflare exact-artifact and security-header deployment contract; and
 - [x] deadline-driven separation of submission surface from R1/R2 research.
-- [ ] Deployed GPT route/source and request/response schema are reproducibly linked
-  from the repository; no model credential appears client-side or in logs.
+- [x] Repository-owned GPT route, strict request/response schema, deterministic
+  compiler, all ten kernel cases, security failures, and 25-case live eval.
+- [x] Live eval selects the intended mutation 25/25 and covers 10/10, while exact
+  model verdict prediction is honestly reported as 0/25.
+- [ ] The reviewed source is deployed and bound to the exact public manifest SHA;
+  no model credential appears client-side, in logs, screenshots, or video.
 
 Human decisions must remain visible: North Star, scope, threat assumptions, claim
 limits, Apache-2.0, product category, and final submission wording.
 
 ## Minimum judge path
 
-1. Open the public Sites Lab without signing in.
-2. Observe authority unavailable plus incomplete evidence: `not proven dead`.
-3. Toggle only evidence completeness: `dead under v0 assumptions`.
-4. Ask GPT-5.6 to explain the public result and point out its explicit non-authority
-   caveat.
-5. Open the repository's R1 corpus and run the JavaScript/Python verifier.
-6. Explain that H3A is the deeper local experiment and R1-C/R2 are next.
+1. Open the final public Lab without signing in and choose `Run the 90-second proof`.
+2. Run the committed deterministic baseline.
+3. Ask GPT-5.6 to propose one bounded attack; compare its prediction with the actual
+   kernel status/code and canonical digest.
+4. Choose `Replay without GPT`; verify the same digest and kernel result with no
+   second API call.
+5. In advanced mode, show the logical `2-of-3` browser incubator, reference turnover,
+   and complete committed corpus.
+6. Open the repository evidence record and R1 JavaScript/Python verifier.
 
 The CLI singleton is supporting evidence only. It does not replace the visual path.
 

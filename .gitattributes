@@ -1,0 +1,22 @@
+* text=auto
+
+.gitattributes text eol=lf
+
+*.css text eol=lf
+*.html text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.jsonc text eol=lf
+*.md text eol=lf
+*.mjs text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+LICENSE text eol=lf
+_headers text eol=lf
+.npmignore text eol=lf
+
+*.ico binary
+*.jpg binary
+*.png binary
+*.webm binary

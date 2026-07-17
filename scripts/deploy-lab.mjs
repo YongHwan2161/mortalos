@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
@@ -12,6 +12,23 @@ const PAGES_PROJECT_KEYS = Object.freeze([
   "Project Name"
 ]);
 const PAGES_PROJECT_NAME = /^[a-z][a-z0-9-]{4,57}[a-z0-9]$/;
+
+function putPagesSecret({ environment, name, project, value, wrangler }) {
+  return new Promise((resolveSecret, rejectSecret) => {
+    const child = spawn(process.execPath, [
+      wrangler, "pages", "secret", "put", name, "--project-name", project
+    ], { env: environment, stdio: ["pipe", "pipe", "pipe"] });
+    child.stdout.resume();
+    child.stderr.resume();
+    child.once("error", rejectSecret);
+    child.stdin.once("error", rejectSecret);
+    child.once("close", (code) => {
+      if (code === 0) resolveSecret();
+      else rejectSecret(new Error(`Wrangler failed to configure ${name} secret (exit ${code})`));
+    });
+    child.stdin.end(`${value}\n`);
+  });
+}
 
 function equalStrings(left, right) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
@@ -53,12 +70,25 @@ export async function deployLab() {
   const project = process.env.MORTALOS_PAGES_PROJECT ?? "mortalos-lab-yonghwan2161";
   const branch = "main";
   const commit = process.env.MORTALOS_SOURCE_COMMIT;
+  const openAiKey = process.env.OPENAI_API_KEY;
+  const safetyIdentifierSecret = process.env.SAFETY_IDENTIFIER_SECRET;
 
   if (!commit || !/^[0-9a-f]{40}$/.test(commit)) {
     throw new Error("MORTALOS_SOURCE_COMMIT must name the exact lowercase 40-character commit being deployed");
   }
   if (!PAGES_PROJECT_NAME.test(project)) {
     throw new Error("MORTALOS_PAGES_PROJECT has an invalid Cloudflare Pages project name");
+  }
+  if (typeof openAiKey !== "string" || openAiKey.length < 20 || openAiKey.length > 512 || /[\r\n]/.test(openAiKey)) {
+    throw new Error("OPENAI_API_KEY must be supplied as a single-line deployment secret");
+  }
+  if (
+    typeof safetyIdentifierSecret !== "string" ||
+    safetyIdentifierSecret.length < 32 ||
+    safetyIdentifierSecret.length > 512 ||
+    /[\r\n]/.test(safetyIdentifierSecret)
+  ) {
+    throw new Error("SAFETY_IDENTIFIER_SECRET must be supplied as a 32+ character single-line deployment secret");
   }
 
   const wrangler = resolve("node_modules/wrangler/bin/wrangler.js");
@@ -86,6 +116,15 @@ export async function deployLab() {
       "--production-branch", branch
     ], { env: environment });
   }
+  await putPagesSecret({ environment, name: "OPENAI_API_KEY", project, value: openAiKey, wrangler });
+  await putPagesSecret({
+    environment,
+    name: "SAFETY_IDENTIFIER_SECRET",
+    project,
+    value: safetyIdentifierSecret,
+    wrangler
+  });
+  console.log("MortalOS Lab runtime secrets: configured in Cloudflare Pages");
   const deployment = await execute(process.execPath, [
     wrangler, "pages", "deploy", "dist/lab",
     "--project-name", project,

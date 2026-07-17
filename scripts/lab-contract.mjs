@@ -13,7 +13,7 @@ export const LAB_CSP = [
   "script-src 'self'",
   "style-src 'self'",
   "worker-src 'self'",
-  "connect-src 'none'",
+  "connect-src 'self'",
   "img-src 'none'",
   "font-src 'none'",
   "object-src 'none'",

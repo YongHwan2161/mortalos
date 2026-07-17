@@ -4,6 +4,8 @@ import { canonicalBytes } from "../src/index.mjs";
 import { createEvidenceBundle } from "./evidence-export.mjs";
 import { BrowserIncubator } from "./live-incubator.mjs";
 import { runReferenceProof } from "./reference-engine.mjs";
+import { SCENARIO_REQUEST_FORMAT } from "./scenario-contract.mjs";
+import { compileScenario, runCompiledScenario } from "./scenario-compiler.mjs";
 
 const byId = (id) => document.getElementById(id);
 const liveStatus = byId("live-status");
@@ -16,9 +18,13 @@ const exportButton = byId("export-live");
 const firstSigner = byId("first-signer");
 const secondSigner = byId("second-signer");
 const incubator = new BrowserIncubator();
+const scenarioClientId = crypto.randomUUID();
+byId("public-repository-link").href = ["https:", "", "github.com", "YongHwan2161", "mortalos"].join("/");
 let referenceProof = null;
 let corpusProof = null;
 let lastBundle = null;
+let guidedScenario = null;
+let deploymentManifestPromise = null;
 let logIndex = 1;
 
 function verdict(result) {
@@ -52,6 +58,22 @@ function buttonBusy(button, busy, busyText) {
     button.textContent = button.dataset.label || button.textContent;
     delete button.dataset.label;
   }
+}
+
+function deploymentManifest() {
+  deploymentManifestPromise ??= fetch("./asset-manifest.json", { cache: "no-store" }).then(async (response) => {
+    if (!response.ok) throw new Error(`release manifest HTTP ${response.status}`);
+    const value = await response.json();
+    if (
+      value?.format !== "mortalos.lab-assets/1" ||
+      !/^sha256:[A-Za-z0-9_-]{43}$/.test(value.asset_digest ?? "") ||
+      !/^(?:local|[0-9a-f]{40})$/.test(value.source_commit ?? "")
+    ) {
+      throw new Error("release manifest schema mismatch");
+    }
+    return value;
+  });
+  return deploymentManifestPromise;
 }
 
 function renderCustodians(custodians) {
@@ -204,6 +226,121 @@ function resultRow(label, value, testId) {
   return row;
 }
 
+byId("guided-start").addEventListener("click", () => {
+  const button = byId("guided-start");
+  buttonBusy(button, true, "Running committed evidence…");
+  setStatus(byId("guided-status"), "Baseline running", "busy");
+  try {
+    referenceProof = runReferenceProof({ lifecycle, fork });
+    const accepted = referenceProof.steps.filter((step) => step.status === "accept").length;
+    byId("guided-baseline").textContent = `${accepted}/${referenceProof.steps.length} lifecycle steps accepted · replay ${referenceProof.replay.code} · fork ${referenceProof.fork.sibling}`;
+    setStatus(byId("guided-status"), "Baseline proven", "accept");
+    byId("ask-gpt").disabled = false;
+    button.disabled = true;
+    log("90-second proof baseline established from committed public evidence");
+  } catch (error) {
+    byId("guided-baseline").textContent = "Failed closed";
+    setStatus(byId("guided-status"), "Baseline failed", "reject");
+    button.disabled = false;
+    log(`Guided baseline failed closed: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    buttonBusy(button, false);
+  }
+});
+
+byId("ask-gpt").addEventListener("click", async () => {
+  const button = byId("ask-gpt");
+  buttonBusy(button, true, "GPT proposes; kernel decides…");
+  setStatus(byId("guided-status"), "Generating bounded scenario", "busy");
+  try {
+    if (!referenceProof) throw new Error("run the deterministic baseline first");
+    const scenarioKind = byId("scenario-kind").value;
+    const hypothesis = byId("scenario-hypothesis").value.trim();
+    if (!hypothesis) throw new Error("enter a hypothesis");
+    const response = await fetch("/api/scenarios", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        client_id: scenarioClientId,
+        format: SCENARIO_REQUEST_FORMAT,
+        hypothesis,
+        scenario_kind: scenarioKind
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(`scenario API ${payload?.error ?? response.status}`);
+    if (!/^gpt-5\.6(?:-|$)/.test(payload?.model ?? "")) throw new Error("unexpected scenario model");
+    const compiled = await compileScenario(payload.proposal, scenarioKind);
+    const kernel = await runCompiledScenario(compiled);
+    const modelPrediction = `${payload.proposal.prediction.status} / ${payload.proposal.prediction.code ?? "no code"}`;
+    const kernelActual = `${kernel.actual.status} / ${kernel.actual.code ?? "no code"}`;
+    byId("gpt-proposal").textContent = `${payload.model} chose ${compiled.scenario.mutation}`;
+    byId("model-prediction").textContent = modelPrediction;
+    byId("kernel-actual").textContent = kernelActual;
+    byId("compiled-digest").textContent = compiled.digest;
+    byId("scenario-rationale").textContent = `Untrusted model note: ${payload.proposal.rationale}`;
+    guidedScenario = { compiled, kernel, model: payload.model, proposal: payload.proposal, replay: null };
+    byId("replay-without-gpt").disabled = false;
+    button.disabled = true;
+    byId("scenario-kind").disabled = true;
+    byId("scenario-hypothesis").disabled = true;
+    setStatus(byId("guided-status"), kernel.matches_trusted_expectation ? "Kernel decided" : "Kernel mismatch", kernel.matches_trusted_expectation ? "accept" : "reject");
+    log(`GPT proposal ${compiled.scenario.mutation}; authoritative kernel result ${kernelActual}`);
+  } catch (error) {
+    byId("gpt-proposal").textContent = "Failed closed; no model output executed";
+    setStatus(byId("guided-status"), "Scenario failed closed", "reject");
+    button.disabled = false;
+    log(`Guided scenario failed closed: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    buttonBusy(button, false);
+  }
+});
+
+byId("replay-without-gpt").addEventListener("click", async () => {
+  const button = byId("replay-without-gpt");
+  buttonBusy(button, true, "Replaying exact bytes…");
+  try {
+    if (!guidedScenario) throw new Error("no compiled scenario exists");
+    const replay = await runCompiledScenario(guidedScenario.compiled);
+    const identical = JSON.stringify(replay.actual) === JSON.stringify(guidedScenario.kernel.actual);
+    if (!identical) throw new Error("offline replay changed the kernel result");
+    guidedScenario.replay = replay;
+    const manifest = await deploymentManifest();
+    byId("offline-replay").textContent = `PASS · ${guidedScenario.compiled.digest} · ${replay.actual.status} / ${replay.actual.code ?? "no code"}`;
+    byId("release-asset-digest").textContent = manifest.asset_digest;
+    byId("release-source-commit").textContent = manifest.source_commit;
+    byId("guided-complete").hidden = false;
+    setStatus(byId("guided-status"), "GPT-off replay exact", "accept");
+    button.disabled = true;
+    log(`GPT-off replay byte/result identity: ${guidedScenario.compiled.digest}`);
+  } catch (error) {
+    byId("offline-replay").textContent = "Failed closed";
+    setStatus(byId("guided-status"), "Replay failed", "reject");
+    button.disabled = false;
+    log(`GPT-off replay failed closed: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    buttonBusy(button, false);
+  }
+});
+
+byId("run-another-attack").addEventListener("click", () => {
+  guidedScenario = null;
+  byId("scenario-kind").disabled = false;
+  byId("scenario-hypothesis").disabled = false;
+  byId("ask-gpt").disabled = false;
+  byId("replay-without-gpt").disabled = true;
+  byId("gpt-proposal").textContent = "Waiting for a new bounded proposal";
+  byId("model-prediction").textContent = "—";
+  byId("kernel-actual").textContent = "—";
+  byId("compiled-digest").textContent = "—";
+  byId("scenario-rationale").textContent = "No model text yet.";
+  byId("offline-replay").textContent = "Not run";
+  byId("guided-complete").hidden = true;
+  setStatus(byId("guided-status"), "Ready for another attack", "neutral");
+  byId("scenario-kind").focus();
+  log("Guided attack reset; deterministic baseline retained");
+});
+
 byId("run-reference").addEventListener("click", () => {
   const button = byId("run-reference");
   buttonBusy(button, true, "Validating evidence…");
@@ -304,7 +441,14 @@ globalThis.__MORTALOS_LAB__ = Object.freeze({
       live: incubator.publicState,
       reference: referenceProof,
       corpus: corpusProof,
-      export_bundle: lastBundle
+      export_bundle: lastBundle,
+      scenario: guidedScenario ? {
+        compiled_digest: guidedScenario.compiled.digest,
+        kernel: guidedScenario.kernel,
+        model: guidedScenario.model,
+        proposal: guidedScenario.proposal,
+        replay: guidedScenario.replay
+      } : null
     });
   }
 });

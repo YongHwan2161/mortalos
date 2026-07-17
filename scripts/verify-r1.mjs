@@ -7,6 +7,7 @@ import {
 } from "../src/index.mjs";
 import { buildR1Corpus } from "../r1/javascript/corpus.mjs";
 import { executeR1Operation, R1_LIMITS } from "../r1/javascript/wire.mjs";
+import { r1PythonArguments } from "./r1-python-paths.mjs";
 
 const expected = JSON.parse(
   await readFile(new URL("../test/vectors/r1-operations.json", import.meta.url), "utf8")
@@ -35,10 +36,7 @@ if (overResult.outcome.code !== "R1_LIMIT") {
   throw new Error("R1 byte-limit +1 did not fail closed");
 }
 
-const python = spawnSync("python3", [
-  new URL("../r1/python/verify.py", import.meta.url).pathname,
-  new URL("../test/vectors/r1-operations.json", import.meta.url).pathname
-], { encoding: "utf8" });
+const python = spawnSync("python3", r1PythonArguments(import.meta.url), { encoding: "utf8" });
 if (python.status !== 0) {
   throw new Error(`R1 Python differential failed: ${python.stderr || python.stdout}`);
 }

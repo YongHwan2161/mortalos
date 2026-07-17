@@ -4,6 +4,7 @@ coverage/
 upload/
 .agents/
 .codex/
+.wrangler/
 agents/
 AGENTS.md
 *.tgz

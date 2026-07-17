@@ -10,7 +10,7 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 async function files(directory) {
   return (await readdir(directory, { withFileTypes: true }))
-    .filter((entry) => entry.isFile() && !["_headers", "asset-manifest.json"].includes(entry.name))
+    .filter((entry) => entry.isFile() && !["_headers", "_routes.json", "asset-manifest.json"].includes(entry.name))
     .map((entry) => entry.name)
     .sort();
 }
@@ -51,6 +51,7 @@ export async function buildLab({
     copyFile(resolve(repositoryRoot, "lab/index.html"), resolve(outdir, "index.html")),
     copyFile(resolve(repositoryRoot, "lab/styles.css"), resolve(outdir, "styles.css")),
     copyFile(resolve(repositoryRoot, "lab/_headers"), resolve(outdir, "_headers")),
+    copyFile(resolve(repositoryRoot, "lab/_routes.json"), resolve(outdir, "_routes.json")),
     copyFile(
       resolve(repositoryRoot, "lab/THIRD_PARTY_LICENSES.txt"),
       resolve(outdir, "THIRD_PARTY_LICENSES.txt")

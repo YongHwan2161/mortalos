@@ -13,12 +13,18 @@ Lab. It is not yet an operating system, participant network, deterministic mutab
 state machine, or ownerless model runtime.
 
 Current `main` at audit time is
-`6c5b85fd8e467feb4df63556864ea5f8949e7b61`. It contains P0, H3A, H3B, and the
-bounded R1 operation/result contract. The H3B post-merge push Verify run
-`29513454019/1` passed. Deploy
-run `29513454211/1` failed before install or deployment because both required
+`1c3e7956b1386c4b6ff1edab2249ff0d6c5d21a7`. It contains P0, H3A, H3B, bounded
+R1, and the post-R1 documentation reconciliation. The latest audited push Verify run
+`29518934489` passed. Deploy
+run `29518934440` failed before install or deployment because both required
 Cloudflare repository secrets were empty; every deployment and public-verification
 step was skipped.
+
+The Build Week release candidate adds the repository-owned GPT-5.6 scenario route,
+deterministic compiler, four-action judge path, Pages rate limiting, exact-secret
+deployment plumbing, 25-case live evaluation, and narrated-video script. Its local
+unit, live-model, and real-Chromium gates pass. It is not merged or deployed evidence
+until independent immutable-head review, CI, and logged-out Pages verification pass.
 
 PR #11 also has a governance incident: an attestation of unverifiable logical-agent
 provenance was followed by merge before the assigned reviewer completed the required
@@ -44,6 +50,7 @@ post-merge technical Verify result.
 | Mutable logical state/genome | Not implemented on `main` | An older local R2 prototype is not merge evidence because it predates current P0 and R1. |
 | Participant network/replication | Not implemented | No WebRTC/libp2p transport, distributed custody evidence, state availability protocol, or independent-host survival. |
 | Runtime GPT witness | Live on Sites; repository source/provenance pending | Tested structured explanation of a public R1 result; private-field injection rejected before inference. GPT cannot sign, validate, choose a head, or classify death. |
+| GPT adversarial scenario release candidate | Implemented and locally verified; review/deploy pending | Ten allowlisted mutations, strict Responses API schema, canonical compilation, existing-kernel verdict, GPT-off replay, 25/25 target selection, and 0/25 exact model verdict predictions. |
 
 ## 3. H3B merged contract and release state
 

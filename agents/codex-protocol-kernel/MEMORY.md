@@ -85,14 +85,18 @@ Current base: `6c5b85fd8e467feb4df63556864ea5f8949e7b61`
 
 ## Current priorities
 
-1. Merge the truthful post-R1 status correction without preserving stale H3B
-   governance/deployment claims from PR #12.
-2. Bind the public Sites version/source and two displayed results to merged R1
-   repository SHA, then finalize judge instructions.
-3. Complete the video, `/feedback`, custom fields, final rehearsal, and submission by
-   the internal 2026-07-22 07:00 KST target.
-4. Treat direct Cloudflare Pages as optional hardening; do not let credentials displace
-   the submission-critical path. Do not start R2 or networking before submission.
+1. Review and merge the Build Week finalization candidate from current main. It adds
+   an exact allowlisted GPT-5.6 adversarial-witness path, deterministic compilation,
+   GPT-off replay, the four-action judge path, Windows portability fixes, and release
+   evidence without changing trusted `src/` protocol semantics.
+2. Authenticate the intended Cloudflare account, provision least-privilege Pages
+   credentials, deploy only the reviewed exact main SHA, and pass remote byte/header/
+   API/Chromium verification. The Sites URL remains a fallback, not exact-SHA proof.
+3. Complete the public narrated video, real `/feedback` Session ID, Devpost custom
+   fields, final rehearsal, and submitted-state readback by the internal
+   2026-07-22 07:00 KST target.
+4. Do not start R2 or networking before submission. GPT remains an untrusted attack
+   witness; only the deterministic kernel decides protocol validity.
 
 ## Memory maintenance
 
