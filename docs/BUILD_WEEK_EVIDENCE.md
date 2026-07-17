@@ -1,10 +1,10 @@
 # Build Week Release Evidence
 
-As of: **2026-07-17 KST**
+As of: **2026-07-18 KST**
 
-Candidate branch: `agent/codex-protocol-kernel--build-week-finalization`
+Candidate branch: `agent/codex-protocol-kernel--pages-d1-rate-limit`
 
-Candidate base: `1c3e7956b1386c4b6ff1edab2249ff0d6c5d21a7`
+Candidate base: `3d0529e40c66d13a7e326778d26312f6051c55bc`
 
 This is a rolling release record, not a completion claim. A gate is `PASS` only when
 the listed command or external readback has succeeded for the candidate. `WAIT`
@@ -15,20 +15,22 @@ means the implementation may exist but the required external evidence does not.
 | Stage | State | Strict evidence |
 | --- | --- | --- |
 | 0 — truthful baseline and Windows fidelity | PASS | Isolated current-main worktree; `.gitattributes`; repository text scan reports zero CRLF files; `npm ci` succeeds with zero audit vulnerabilities. |
-| 1 — exact-SHA public Cloudflare release | WAIT | Pages Function and rate-limit configuration compile, but Cloudflare OAuth is waiting for account sign-in. No `pages.dev` success claim is permitted yet. |
+| 1 — exact-SHA public Cloudflare release | WAIT | Account, scoped user token, Pages project, D1 database, GitHub secrets, remote migration, live Wrangler config readback, and a 20-call concurrent atomic D1 probe pass. The Pages-compatible candidate still requires immutable review, merge, exact-main deployment, and logged-out acceptance. |
 | 2 — GPT-5.6 adversarial witness | PASS locally | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, keyed privacy-preserving actor identifiers, no client secret. |
 | 3 — 90-second judge path | PARTIAL locally | Three-context real-Chromium automation passes at 360/768/1440 with a keyboard-only full-control path, accessibility-tree/status/focus checks, simulated-broadband interactivity, four judge actions, and GPT-off replay. Three first-time human testers remain mandatory. |
 | 4 — evidence and source reconciliation | PARTIAL locally | Judge-first README, five evidence mappings, link checker, source, tests, deployment config, this evidence record, and demo script are in the candidate. Immutable review, public-link resolution, and deployed-SHA binding remain release gates. |
-| 5 — Codex `/feedback` | WAIT | A qualifying Session ID has not been returned by `/feedback`; a task/thread UUID is not accepted as a substitute. |
-| 6 — Devpost fields and final story | WAIT | Project page is published, not submitted; required Session ID, video, submitter/country/category readback, and final judge instructions remain. |
-| 7 — public narrated demo | IN PROGRESS | A complete 2:50 script and shot list exist; final deployed recording and public YouTube readback remain. |
+| 5 — Codex `/feedback` | PARTIAL | The submitter selected the current implementation session; exact Devpost field readback still remains. |
+| 6 — Devpost fields and final story | PARTIAL | Project page is published and the public video is attached, but it is not submitted; submitter/country, Session ID, final URL/instructions, and required-field readback remain. |
+| 7 — public narrated demo | PASS | Public 2:38 YouTube video, English narration, burned captions, metadata, and logged-out oEmbed title/author/type readback pass: <https://youtu.be/QJBHKFyMrno>. |
 | 8 — freeze, reviewed deploy, and submit | WAIT | Requires immutable independent review, green exact-head CI, logged-out remote acceptance, public video, required form fields, and Devpost `submitted_at`. |
 
 ## Stage 0 evidence
 
-- Remote `main` audit base: `1c3e7956b1386c4b6ff1edab2249ff0d6c5d21a7`.
-- PR #11, #12, and #14 are merged. The latest audited `Verify` run on `main` passed.
-- The earlier direct deploy run failed at credential preflight; it did not deploy.
+- Remote `main` audit base: `3d0529e40c66d13a7e326778d26312f6051c55bc`.
+- PR #11, #12, #14, and #15 are merged. Post-merge `Verify` run `29567824512` passed.
+- Exact-main deploy runs `29588418943` and `29591202642` passed source tests, then
+  failed before deployment because Wrangler rejects `ratelimits` in a Pages project
+  configuration. The account and repository credentials themselves are present.
 - An isolated Windows worktree and task branch were created from that exact base.
 - `.gitattributes` now requires LF for source, workflow, JSON, Markdown, HTML, CSS,
   license, and Pages header files.
@@ -62,6 +64,15 @@ separation labels. The caller-controlled page `client_id` never contributes to e
 identifier: the same edge actor remains stable across rotated client IDs and different
 edge actors separate. Neither the raw address nor either derived value is logged or
 returned.
+
+The deployment-compatible repair binds `SCENARIO_RATE_DB` to the provisioned
+`mortalos-lab-rate-limit` D1 database. One atomic SQLite `INSERT ... ON CONFLICT ...
+RETURNING` statement rotates the minute window and increments the counter. The only
+stored actor value is the domain-separated HMAC identifier; no raw address is stored.
+Requests 1–10 proceed, request 11 and later receive `429`, and missing/failed/malformed
+D1 results fail closed before OpenAI. The remote strict-table migration passed, and
+20 concurrent production D1 API calls returned each count exactly once from 1 through
+20; the probe row was deleted and read back as absent.
 
 This anonymous public Lab uses the strongest server-trusted actor signal available
 without adding accounts, cookies, persistent browser storage, or an Enterprise-only
@@ -174,7 +185,7 @@ silence-versus-qualified-death before Stage 3 can be marked complete.
 
 The final Cloudflare evidence is all-or-nothing:
 
-1. authenticated account and account-scoped Pages token;
+1. authenticated account and user token scoped to Pages Edit and D1 Edit on the target account;
 2. GitHub secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`,
    `OPENAI_API_KEY`, and `SAFETY_IDENTIFIER_SECRET` present without value disclosure;
 3. independent review of one immutable candidate head;
@@ -183,6 +194,12 @@ The final Cloudflare evidence is all-or-nothing:
 6. byte, digest, MIME, security-header, API, and Chromium remote gates pass;
 7. logged-out public URL and API work; and
 8. Devpost, video, repository, and manifest identify the same behavior and SHA.
+
+Rollback rule: preserve the last logged-out-verified production deployment while a
+fault is investigated. Revert the faulty source through a focused PR, bind review and
+CI to that immutable revert head, merge with an expected SHA, and let the exact-main
+workflow deploy the resulting new commit. Never patch production bytes, bypass review,
+or relabel an older manifest as the current source.
 
 The live Sites URL remains a judge-access fallback until those criteria pass. It is
 not evidence that this candidate's Pages Function or exact assets are deployed.

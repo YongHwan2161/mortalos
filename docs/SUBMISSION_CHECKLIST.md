@@ -21,11 +21,11 @@ Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 | Working project | R1 merged; public Sites Lab live; full Pages candidate locally green | reviewed exact-head Pages deployment plus logged-out smoke tests |
 | Category | Selected in plan | Devpost field `Developer Tools` |
 | Project description | Saved with R1/GPT story and Sites URL | final story matches merged code and deployed behavior |
-| Demo video | Missing | public YouTube, under three minutes, narrated |
+| Demo video | Public and attached | <https://youtu.be/QJBHKFyMrno>, 2:38, narrated, captions, logged-out readback |
 | Code repository | Available | public repo, Apache-2.0, final README |
 | README/setup/sample/run guidance | Candidate implemented; exact public SHA pending | clean-room instructions and exact judge path |
 | Codex and GPT-5.6 usage | Repository/story saved; video pending | concrete README/story/video examples |
-| `/feedback` Session ID | Missing | required Devpost custom field |
+| `/feedback` Session ID | Current implementation session selected | required Devpost custom-field save/readback |
 | Dev-tool installation/platform/testing path | Public browser URL live; final text pending | browser URL plus local Node 22.5+ fallback |
 
 The Devpost form does not globally require a website, but the Developer Tools rules
@@ -68,9 +68,11 @@ exact-commit evidence layer, not the submission definition of done.
 - [x] GitHub repository secret `OPENAI_API_KEY` exists; its value is never emitted.
 - [x] GitHub repository secret `SAFETY_IDENTIFIER_SECRET` exists; its value is never
   emitted, and Cloudflare receives it only through the deployment secret pipe.
-- [ ] GitHub repository secrets `CLOUDFLARE_ACCOUNT_ID` and
+- [x] GitHub repository secrets `CLOUDFLARE_ACCOUNT_ID` and
   `CLOUDFLARE_API_TOKEN` are non-empty; the token is account-scoped to Cloudflare
-  Pages Edit and never exposed in repository or logs.
+  Pages Edit plus D1 Edit and its current value is not exposed in repository or logs.
+- [x] D1 strict-table migration and 20-call concurrent atomic counter probe pass; the
+  temporary probe row and diagnostic Pages secret were removed.
 - [ ] Cloudflare Pages deployment completes from reviewed `main`.
 - [ ] `asset-manifest.json` names the exact deployed source commit.
 - [ ] Every remote asset matches local bytes, digest, MIME, and security headers.
@@ -129,18 +131,18 @@ The CLI singleton is supporting evidence only. It does not replace the visual pa
 - [ ] `/feedback` Session ID entered.
 - [ ] Dev-tool installation, supported platforms, and test instructions entered.
 - [x] Project story and accurate tagline saved.
-- [ ] Public narrated YouTube video attached.
+- [x] Public narrated YouTube video attached.
 - [ ] Team membership is correct.
 - [ ] Final state is submitted to the hackathon; a merely published project page is
   not sufficient.
 
 ## Video gate
 
-- [ ] Duration is less than three minutes.
-- [ ] Video is public on YouTube and the URL opens logged out.
-- [ ] Voiceover explains the project, Codex use, and GPT-5.6 use.
-- [ ] Loading, typing, silence, and irrelevant setup are removed.
-- [ ] No private key, token, account detail, or unrelated notification is visible.
+- [x] Duration is less than three minutes (2:38 public readback; 2:37.29 local media).
+- [x] Video is public on YouTube and the URL opens logged out.
+- [x] Voiceover explains the project, Codex use, and GPT-5.6 use.
+- [x] Loading, typing, silence, and irrelevant setup are removed.
+- [x] No private key, token, account detail, or unrelated notification is visible.
 - [ ] The recorded behavior and repository both match the deployed commit.
 
 ## No-submit conditions

@@ -99,7 +99,9 @@ async function invoke(entry, index) {
     env: {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       SAFETY_IDENTIFIER_SECRET: process.env.SAFETY_IDENTIFIER_SECRET,
-      SCENARIO_RATE_LIMITER: { limit: async () => ({ success: true }) }
+      SCENARIO_RATE_DB: {
+        prepare: () => ({ bind: () => ({ first: async () => ({ request_count: 1 }) }) })
+      }
     }
   }, { fetchImpl });
   return { response, upstreamTrace };

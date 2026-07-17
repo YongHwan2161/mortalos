@@ -5,6 +5,33 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
+### ACTIVE — Pages-compatible production rate limiting
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `3d0529e40c66d13a7e326778d26312f6051c55bc`
+- Work branch: `agent/codex-protocol-kernel--pages-d1-rate-limit`
+- Worktree:
+  `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--pages-d1-rate-limit`
+- Exact intended shared paths: `.gitattributes`, `wrangler.jsonc`, `functions/api/scenarios.js`,
+  `migrations/0001_scenario_rate_limits.sql`, `scripts/deploy-lab.mjs`,
+  `scripts/serve-lab.mjs`, `scripts/verify-gpt-scenarios.mjs`,
+  `scripts/verify-license.mjs`, `scripts/verify-spec.mjs`, `test/scenario-api.test.mjs`,
+  `test/lab.test.mjs`, `README.md`, `docs/BUILD_WEEK_EVIDENCE.md`,
+  `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/PROJECT_STATUS.md`, and `docs/SUBMISSION_CHECKLIST.md`.
+- Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Contract affected: preserve the public GPT witness's fail-closed ten-request
+  per-minute private-actor boundary while replacing the unsupported Pages
+  `ratelimits` configuration with an atomic, Pages-supported D1 binding; surface
+  sanitized Wrangler diagnostics without disclosing deployment secrets.
+- Required evidence: targeted scenario/Lab tests; configuration and migration
+  assertions; full `npm test`; coverage, audit, package, secret-scan, and diff
+  gates; exact-head policy/Verify; immutable independent review; exact-main Pages
+  deployment plus logged-out asset/header/API/Chromium verification.
+- Expected handoff: one focused reviewed PR from current `main`; author does not
+  self-review, merge, or push directly to `main`.
+
 ### ACTIVE — Build Week finalization
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`

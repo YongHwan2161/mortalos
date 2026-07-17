@@ -6,14 +6,12 @@
   "vars": {
     "ENVIRONMENT": "production"
   },
-  "ratelimits": [
+  "d1_databases": [
     {
-      "name": "SCENARIO_RATE_LIMITER",
-      "namespace_id": "1001",
-      "simple": {
-        "limit": 10,
-        "period": 60
-      }
+      "binding": "SCENARIO_RATE_DB",
+      "database_name": "mortalos-lab-rate-limit",
+      "database_id": "d3010cc7-fba4-42ad-8b16-b54e8f777a04",
+      "migrations_dir": "migrations"
     }
   ]
 }

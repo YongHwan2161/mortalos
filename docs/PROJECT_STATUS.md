@@ -1,8 +1,8 @@
 # MortalOS Project Status
 
-As of: **2026-07-17 KST**
+As of: **2026-07-18 KST**
 
-Stage: **P0/H3A/H3B/R1 merged; public Sites judge path live; direct H3B deployment credential-blocked**
+Stage: **P0/H3A/H3B/R1/GPT/guided path merged; public Sites fallback live; direct Pages repair under review**
 
 Security baseline: **every published or deployed SHA requires immutable-head review and its own successful verification**
 
@@ -12,19 +12,20 @@ MortalOS is a portable lifecycle and evidence kernel plus a browser-based falsif
 Lab. It is not yet an operating system, participant network, deterministic mutable
 state machine, or ownerless model runtime.
 
-Current `main` at audit time is
-`1c3e7956b1386c4b6ff1edab2249ff0d6c5d21a7`. It contains P0, H3A, H3B, bounded
-R1, and the post-R1 documentation reconciliation. The latest audited push Verify run
-`29518934489` passed. Deploy
-run `29518934440` failed before install or deployment because both required
-Cloudflare repository secrets were empty; every deployment and public-verification
-step was skipped.
+Current remote `main` at audit time is
+`3d0529e40c66d13a7e326778d26312f6051c55bc`. It contains P0, H3A, H3B, bounded
+R1, the repository-owned GPT-5.6 witness, and the guided judge path. Post-merge Verify
+run `29567824512` passed. Exact-main deploy runs `29588418943` and `29591202642`
+passed the full source suite, then failed before deployment because Wrangler does not
+support the configured `ratelimits` binding for Pages projects.
 
-The Build Week release candidate adds the repository-owned GPT-5.6 scenario route,
-deterministic compiler, four-action judge path, Pages rate limiting, exact-secret
-deployment plumbing, 25-case live evaluation, and narrated-video script. Its local
-unit, live-model, and real-Chromium gates pass. It is not merged or deployed evidence
-until independent immutable-head review, CI, and logged-out Pages verification pass.
+This focused candidate replaces that unsupported binding with an atomic D1-backed
+ten-request-per-minute private-actor limiter. The Cloudflare account, user token,
+Pages project, GitHub secrets, and APAC D1 database exist. Wrangler config readback,
+the remote migration, and a concurrent 1-through-20 atomic counter probe pass. The
+probe row and the earlier diagnostic Pages secret were removed. This candidate is not
+deployed evidence until immutable-head review, CI, merge, and logged-out Pages
+verification pass.
 
 PR #11 also has a governance incident: an attestation of unverifiable logical-agent
 provenance was followed by merge before the assigned reviewer completed the required
@@ -45,7 +46,7 @@ post-merge technical Verify result.
 | H3A MortalOS Lab | Implemented | Three non-extractable Worker keys, logical `2-of-3`, reference turnover, replay/fork, qualified mortality, resurrection rejection, clone, full corpus, and public evidence export/replay. One browser remains one physical failure domain. |
 | H3B deployment contract | Merged on `main`; post-merge Verify passed | Deterministic asset manifest, exact source SHA, Cloudflare headers, pinned Actions, idempotent Pages project discovery, remote asset verifier, and remote Chromium path. |
 | Public Sites judge path | Live; source provenance pending | Logged-out HTTP 200, public-result GPT witness HTTP 200, and injected private field HTTP 422. Both displayed hashes/outcomes match merged R1. Sites version 2 has immutable source/archive metadata, but its source is not in this repository. |
-| Direct H3B Cloudflare Pages release | Credential-blocked; not deployed | Deploy `29513454211/1` found both Cloudflare secrets empty. The exact asset/header/Chromium path remains optional submission hardening while Sites stays healthy. |
+| Direct H3B Cloudflare Pages release | Configuration repair under review; not deployed | Credentials and resources are present. Exact-main deploys found that Pages rejects the prior `ratelimits` binding; the D1 replacement passes local and live database probes but still needs review/merge/deploy/remote acceptance. |
 | Language-neutral wire and independent verifier | Merged through PR #12 | Eight bounded Genesis/replay/mortality operations with JS/Python byte equality. Exact-head Verify and logical reviewer checks passed. Python covers the committed corpus profile, not arbitrary pending/fork/resource-limit inputs. |
 | Mutable logical state/genome | Not implemented on `main` | An older local R2 prototype is not merge evidence because it predates current P0 and R1. |
 | Participant network/replication | Not implemented | No WebRTC/libp2p transport, distributed custody evidence, state availability protocol, or independent-host survival. |
@@ -66,15 +67,16 @@ The GitHub workflow:
 2. requires a clean main ref and Cloudflare credentials scoped only to credential
    check and deployment steps;
 3. runs the full locked test suite;
-4. creates the Pages project if absent and deploys exact static bytes; and
-5. runs the complete Lab acceptance suite against the public HTTPS origin.
+4. applies the idempotent strict D1 migration;
+5. creates the Pages project if absent and deploys exact static bytes; and
+6. runs the complete Lab acceptance suite against the public HTTPS origin.
 
 No public URL is considered valid merely because a deploy command returned success.
-The first run did not reach the deploy command at all.
+The latest runs reached the secret/configuration boundary but did not deploy bytes.
 
 ## 4. Build Week status
 
-Live Devpost state observed at `2026-07-16T16:25:23Z`:
+Live Devpost requirements/project state last refreshed on **2026-07-18 KST**:
 
 - event phase: submissions open;
 - hard deadline: `2026-07-22T00:00:00Z` = **2026-07-22 09:00 KST**;
@@ -82,27 +84,23 @@ Live Devpost state observed at `2026-07-16T16:25:23Z`:
   submitted to the hackathon (`submitted_at` is empty);
 - project description, R1/GPT-5.6 story, repository link, and public Sites test URL:
   saved;
-- video URL: missing; and
+- public video URL: saved as <https://youtu.be/QJBHKFyMrno>; and
 - hackathon submission timestamp: missing.
 
 The exact deadline remains unchanged. Submission-critical blockers, in order:
 
-1. merge this truthful post-R1 status correction without restoring PR #12's stale H3B
-   review/deployment checklist claims;
-2. commit or reproducibly link the deployed Sites source and add a repeatable public
-   smoke/provenance verifier; both displayed operation hashes already match merged R1;
-3. publish exact judge instructions covering the A/B result, GPT non-authority, and
-   local verifier;
-4. record and upload the public sub-three-minute narrated video;
-5. add the `/feedback` Codex Session ID plus submitter, country, category, repository,
-   test, and dev-tool instruction fields; and
-6. perform a logged-out final run and submit the already-published project page.
+1. immutably review, merge, and verify the Pages-compatible D1 repair;
+2. deploy exact `main` and pass logged-out asset/header/API/Chromium acceptance;
+3. collect three genuine first-time-developer guided-path passes;
+4. publish final judge instructions covering GPT non-authority and the local fallback;
+5. add the selected Codex Session ID plus submitter, country, category, repository,
+   test, and dev-tool instruction fields and read each value back; and
+6. perform the final consistency run and submit the already-published project page.
 
-Cloudflare Pages is not a Devpost deliverable: the form reports
-`website_required: false`. Developer Tools still need a no-rebuild test path, and the
-live public Sites Lab now supplies it. Direct Pages deployment remains valuable
-exact-commit evidence, but missing Cloudflare account credentials no longer blocks
-submission while the Sites path and its provenance gates pass.
+Cloudflare Pages is not globally required by the form (`website_required: false`), but
+Developer Tools still need a no-rebuild test path. The live Sites Lab remains a
+fallback; the direct Pages release is now the intended final judge path because it
+binds the repository source, runtime Function, assets, and manifest to one exact SHA.
 
 ## 5. Claim boundaries
 

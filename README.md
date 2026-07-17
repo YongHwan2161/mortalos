@@ -91,7 +91,8 @@ Implemented:
   canonical public-evidence export, and cross-origin-isolated browser boundary checks.
 - an H3B deployment contract on `main` that binds a clean static build to one source commit,
   hashes every served asset, mirrors the local security-header contract on Cloudflare
-  Pages, and verifies the public bytes and Chromium judge path after deployment;
+  Pages, applies a D1-backed atomic ten-request-per-minute private-actor limit before
+  OpenAI, and verifies the public bytes and Chromium judge path after deployment;
 - an R1 canonical operation/result contract for Genesis validation, lineage replay,
   and qualified mortality, with exact byte ceilings, stable rejection results, eight
   committed goldens, and byte-identical JavaScript/Python corpus-profile differential
@@ -199,11 +200,14 @@ Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is
 equivalent local maintainer command and requires Cloudflare credentials; judges do
 not need those credentials.
 
-Current release status: the H3B contract is merged and the post-merge Verify run
-passes, but the first direct Pages workflow stopped at credential preflight because
-the repository has neither `CLOUDFLARE_ACCOUNT_ID` nor `CLOUDFLARE_API_TOKEN`.
-Therefore the `pages.dev` URL above is only a target. The separate Sites URL is the
-current public judge path; it does not satisfy H3B's exact-asset contract.
+Current release status: the H3B/GPT/guided contract is merged and its post-merge
+Verify run passes. Cloudflare credentials, the Pages project, and the APAC D1 database
+now exist. Two exact-main deploy attempts exposed an unsupported Pages `ratelimits`
+configuration before any deployment; this candidate replaces it with the supported
+D1 binding. The remote migration and a 20-call concurrent atomic counter probe pass,
+but the `pages.dev` URL remains a target until this change receives immutable review,
+merges, deploys from exact `main`, and passes logged-out verification. The separate
+Sites URL remains the current fallback and does not satisfy H3B's exact-asset contract.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed

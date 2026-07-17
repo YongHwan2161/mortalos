@@ -283,7 +283,7 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "P0/H3A/H3B/R1 merged; public Sites judge path live; direct H3B deployment credential-blocked",
+  "P0/H3A/H3B/R1/GPT/guided path merged; public Sites fallback live; direct Pages repair under review",
   "| Node/browser agreement | Required per review head |",
   "an old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"

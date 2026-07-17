@@ -84,25 +84,27 @@ Additional H3B exact-deployment criteria:
   Service Worker, analytics, or embedded secret; and
 - `npm run verify:lab` passes against the public URL and exact deployed SHA.
 
-Implementation: OpenAI Sites is now the primary judge URL and is served publicly
-through Cloudflare infrastructure. Direct Cloudflare Pages remains the deeper H3B
-path: its GitHub workflow builds, deploys, and re-verifies the exact reviewed commit.
-Devpost reports `website_required: false`; the Developer Tools rule requires a
-no-rebuild path, which the verified Sites URL can satisfy without a separate Pages
-deployment.
+Implementation: OpenAI Sites remains the live fallback judge URL. Direct Cloudflare
+Pages is the intended final judge path: its GitHub workflow migrates the rate-limit
+database, builds, deploys, and re-verifies the exact reviewed repository commit.
+Devpost reports `website_required: false`, but the direct Pages route supplies the
+stronger no-rebuild proof tying source, Function, assets, headers, and manifest to one
+SHA.
 
 Failure rule: an unverified, stale, preview-only, or credentialed URL is not a pass.
-Missing Cloudflare account credentials blocks only the direct H3B Pages proof while
-the Sites minimum path remains healthy and traceable. No document may call the
-`pages.dev` target deployed until its exact verifier passes.
+Cloudflare account credentials are now present. The remaining gate is the reviewed
+Pages-compatible D1 repair and its exact-main deployment. The Sites minimum path stays
+available during repair, and no document may call the `pages.dev` target deployed
+until its exact verifier passes.
 
 Current evidence and closure sequence:
 
 1. H3B merged at `294b741bc89c72ee4ae4f3aea27a21515d0d1469` and passed push
    Verify `29513454019/1`, including actual Chromium, Lab, coverage, and audit.
-2. Deploy `29513454211/1` failed at credential preflight; both
-   `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` were empty, so deployment and
-   all remote checks were skipped.
+2. The initial deploy `29513454211/1` historically failed at credential preflight.
+   The account ID, a Pages Edit plus D1 Edit user token, and all four GitHub secrets
+   are now present. Exact-main runs `29588418943` and `29591202642` passed source
+   tests, then exposed the unsupported Pages `ratelimits` configuration before deploy.
 3. `https://mortalos-evidence-lab.ant713800.chatgpt.site` returned logged-out HTTP
    200; its GPT witness returned HTTP 200 for a public R1 result and rejected an
    injected `private_key` with HTTP 422 before inference. Devpost now uses this URL.
@@ -114,10 +116,11 @@ Current evidence and closure sequence:
    after exact-head Verify `29515312168` and a logical reviewer PASS at head
    `f60be06529ac3b34c40d9873dddabc681577cb4d`. This correction removes the stale
    H3B checklist claims that landed with it while retaining the narrow R1 scope.
-6. A direct Cloudflare Pages deployment is a parallel hardening task, not a submit
-   blocker. If an authenticated account becomes available within the time box, use a
-   Pages-Edit-only token, store the account ID/token as the two GitHub secrets, rerun
-   `Deploy MortalOS Lab`, and accept it only after exact asset/header/Chromium proof.
+6. The Pages-compatible candidate uses the provisioned D1 database and one atomic
+   private-actor minute-window UPSERT. Wrangler config readback, the remote strict
+   migration, and a 20-call concurrent 1-through-20 counter probe pass. After
+   immutable review and exact-head CI, merge it, rerun `Deploy MortalOS Lab`, and
+   accept it only after exact asset/header/API/Chromium proof.
 
 ### S1 — repository and judge instructions
 
