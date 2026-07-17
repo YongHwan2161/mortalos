@@ -35,12 +35,13 @@ their implementation unless the user explicitly expands this role.
 
 ## Current user-directed exception
 
-For task branches `agent/codex-protocol-kernel--h3-browser-lab` and
-`agent/codex-protocol-kernel--submission-sprint`, the user explicitly expanded this
-role to the H3A protocol-facing Lab, Cloudflare H3B deployment contract, and Build
-Week plan reconciliation. This exception permits only an honest thin deployment and
-submission evidence; ongoing product design and independent endpoint networking
-remain outside this role.
+For task branches `agent/codex-protocol-kernel--h3-browser-lab`,
+`agent/codex-protocol-kernel--submission-sprint`, and
+`agent/codex-protocol-kernel--build-week-finalization`, the user explicitly expanded
+this role to the H3A protocol-facing Lab, Cloudflare H3B deployment contract,
+server-only GPT-5.6 witness, judge-facing guided proof, and Build Week submission
+finalization. This exception permits only an honest thin deployment and submission
+evidence; ongoing independent endpoint networking remains outside this role.
 
 ## Branch policy
 

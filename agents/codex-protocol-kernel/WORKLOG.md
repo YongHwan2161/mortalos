@@ -477,3 +477,40 @@ result, and reproducible verification.
   `docs/SINGLE_BROWSER_INCUBATOR.md`, distinguishes merged R1-A/R1-B from remaining
   R1-C, removes the duplicated incubator statement, and requires fresh exact-head CI
   plus a full new immutable review.
+
+## 2026-07-17 KST — Build Week exact-witness and judge-path finalization
+
+- Base: `1c3e7956b1386c4b6ff1edab2249ff0d6c5d21a7`
+- Branch: `agent/codex-protocol-kernel--build-week-finalization`
+- Product slice: added a same-origin Pages Function using the Responses API and
+  strict output schema. GPT-5.6 may select only one of ten committed mutations; a
+  pure compiler discards free-form text, emits canonical bytes and a digest, and the
+  existing kernel remains the sole verdict authority. The guided UI exposes the
+  model prediction, kernel result, and byte-identical replay without GPT in four
+  visible actions while preserving the advanced Lab.
+- Security boundary: server-only key, `store: false`, bounded request/output,
+  15-second timeout, strict method/origin/media/schema checks, separate hashed
+  safety and trusted-IP rate keys, structured non-sensitive logs, self-only CSP,
+  and stable refusal/incomplete/upstream/rate/config error codes. No model text may
+  supply a key, signature, accepted context, recognized head, or mortality proof.
+- Fixed live evaluation with the existing secret: 25/25 schema/API results, 25/25
+  intended mutation selections, 10/10 mutation coverage, 25/25 kernel and GPT-off
+  replays, and 0 reflected private sentinels. Exact model prediction matched the
+  kernel's status/code 0/25, directly supporting the untrusted-witness design.
+- Local evidence: scenario API 6/6; Lab unit 14/14; three-context Chromium Lab PASS
+  including all 2-key pairs, 15 named, 13 boundary, and 10,000 adversarial cases;
+  governance 30/30; conformance 76/76; fixed properties 10,000; portable committed/
+  Node/browser-target equality with 10,000/10,000 rejects; R1 JavaScript/Python 8/8;
+  singleton and H2 PASS; coverage 96.00% line, 92.56% branch, 95.22% function;
+  governance coverage 92.68%/84.39%/93.75%; audit zero vulnerabilities.
+- Windows findings: `URL.pathname` doubled the drive prefix for the Python R1
+  verifier and POSIX inline environment assignment broke the coverage command.
+  Both have cross-platform launchers and regression coverage. The LF checkout
+  contract prevents license/workflow byte drift. Generated `.wrangler` state is
+  excluded from npm publication, and the heavy exact gates have a 60-minute CI
+  bound based on measured component runtimes.
+- External release gates remain exact and non-substitutable: independent immutable
+  review, green GitHub exact-head checks, authenticated Cloudflare exact-SHA deploy
+  and logged-out remote verification, public narrated video, real `/feedback`
+  Session ID, required Devpost readback, and non-null `submitted_at`. The author does
+  not self-review or merge.

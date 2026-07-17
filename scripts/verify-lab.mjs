@@ -158,8 +158,23 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
       await page.keyboard.press("Tab");
       assert.equal(await page.evaluate(() => document.activeElement?.className), "skip-link");
       await page.keyboard.press("Tab");
-      assert.equal(await page.evaluate(() => document.activeElement?.id), "create-live");
+      assert.equal(await page.evaluate(() => document.activeElement?.id), "hero-proof-link");
       await page.keyboard.press("Enter");
+      await page.click("#guided-start");
+      await page.locator("#guided-baseline").filter({ hasText: "3/3" }).waitFor();
+      await page.click("#ask-gpt");
+      await page.locator('#guided-status[data-state="accept"]').waitFor({ timeout: 25_000 });
+      const guided = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().scenario);
+      assert.match(guided.model, /^gpt-5\.6/);
+      assert.match(guided.compiled_digest, /^sha256:[A-Za-z0-9_-]{43}$/);
+      assert.equal(guided.kernel.matches_trusted_expectation, true);
+      assert.equal(guided.replay, null);
+      await page.click("#replay-without-gpt");
+      await page.locator("#offline-replay").filter({ hasText: "PASS" }).waitFor();
+      const offline = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().scenario);
+      assert.deepEqual(offline.replay.actual, offline.kernel.actual);
+      assert.equal(offline.replay.matches_trusted_expectation, true);
+      await page.click("#create-live");
     } else {
       await page.selectOption("#first-signer", String(pair[0]));
       await page.selectOption("#second-signer", String(pair[1]));
@@ -373,12 +388,12 @@ try {
 
   if (server.requests) {
     const allowedPaths = new Set([
-      "/", "/THIRD_PARTY_LICENSES.txt", "/app.js", "/corpus-worker.js",
+      "/", "/THIRD_PARTY_LICENSES.txt", "/api/scenarios", "/app.js", "/corpus-worker.js",
       "/custodian-worker.js", "/styles.css"
     ]);
     assert.ok(server.requests.length > 0);
     for (const request of server.requests) {
-      assert.equal(request.method, "GET");
+      assert.ok(request.method === "GET" || (request.method === "POST" && request.pathname === "/api/scenarios"));
       assert.ok(allowedPaths.has(request.pathname), `unexpected request: ${request.pathname}`);
     }
   }

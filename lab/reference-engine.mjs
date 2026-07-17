@@ -28,6 +28,61 @@ function mutationResult(lifecycle, mutate) {
   return lineage.verifyCandidate(input(candidate));
 }
 
+function normalized(result) {
+  return { status: result.status, code: result.code ?? null };
+}
+
+export function runReferenceScenario({ mutation, lifecycle, fork }) {
+  if (mutation === "signed_fork_sibling") {
+    const lineage = open(fork.genesis);
+    lineage.append(input(fork.first));
+    return normalized(lineage.append(input(fork.sibling)));
+  }
+
+  const lineage = open(lifecycle.birth);
+  if (mutation === "exact_replay") {
+    lineage.append(input(lifecycle.steps[0]));
+    return normalized(lineage.append(input(lifecycle.steps[0])));
+  }
+  if (mutation === "resurrection_after_qualified_death") {
+    for (const step of lifecycle.steps) lineage.append(input(step));
+    const mortality = lineage.evaluateMortality({
+      usableKeyIds: [], stateAvailable: true, pendingSuccessors: [],
+      authorityLossIrreversible: true, latentEvidenceComplete: true
+    });
+    if (mortality.status !== "dead_under_v0_assumptions") throw new Error("closed death fixture did not qualify");
+    return normalized(lineage.verifyCandidate(input(lifecycle.resurrection_attempt)));
+  }
+  if (mutation === "incomplete_evidence_claiming_death") {
+    for (const step of lifecycle.steps) lineage.append(input(step));
+    return normalized(lineage.evaluateMortality({
+      usableKeyIds: [], stateAvailable: true, pendingSuccessors: [],
+      authorityLossIrreversible: true, latentEvidenceComplete: false
+    }));
+  }
+
+  const candidate = clone(lifecycle.steps[0]);
+  if (mutation === "signature_byte_mutation") {
+    candidate.envelope.approvals[0].signature = `ed25519:${encodeBase64Url(new Uint8Array(64))}`;
+  } else if (mutation === "parent_hash_mutation") {
+    candidate.envelope.body.parent_hash = `sha256:${encodeBase64Url(new Uint8Array(32))}`;
+  } else if (mutation === "organism_id_mutation") {
+    const other = open(lifecycle.clone);
+    candidate.envelope.body.organism_id = other.genesis.organism_id;
+  } else if (mutation === "insufficient_quorum") {
+    candidate.envelope.approvals = candidate.envelope.approvals.slice(0, 1);
+  } else if (mutation === "no_op_membership_change") {
+    candidate.envelope.body.next_custodians = clone(lifecycle.birth.body.initial_custodians);
+    candidate.envelope.body.next_quorum = clone(lifecycle.birth.body.initial_quorum);
+    candidate.envelope.acceptances = [];
+  } else if (mutation === "unsigned_forged_acceptance") {
+    candidate.envelope.acceptances[0].signature = `ed25519:${encodeBase64Url(new Uint8Array(64))}`;
+  } else {
+    throw new Error("unknown reference scenario mutation");
+  }
+  return normalized(lineage.verifyCandidate(input(candidate)));
+}
+
 export function runReferenceProof({ lifecycle, fork }) {
   const lineage = open(lifecycle.birth);
   const steps = lifecycle.steps.map((step) => {

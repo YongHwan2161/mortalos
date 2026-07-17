@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { isAbsolute } from "node:path";
 import test from "node:test";
 import {
   canonicalBytes,
@@ -12,6 +13,17 @@ import {
   R1_OPERATION_FORMAT,
   R1_RESULT_FORMAT
 } from "../r1/javascript/wire.mjs";
+import { r1PythonArguments } from "../scripts/r1-python-paths.mjs";
+
+test("R1 Python verifier receives native absolute paths on every platform", () => {
+  const paths = r1PythonArguments();
+  assert.equal(paths.length, 2);
+  assert.ok(paths.every(isAbsolute));
+  if (process.platform === "win32") {
+    assert.ok(paths.every((path) => /^[A-Za-z]:\\/.test(path)));
+    assert.ok(paths.every((path) => !/^\/[A-Za-z]:/.test(path)));
+  }
+});
 
 test("R1 operations return canonical versioned result bytes", () => {
   for (const entry of buildR1Corpus().entries) {

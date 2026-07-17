@@ -5,30 +5,37 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
-### ACTIVE — Post-R1 submission and deployment reconciliation
+### ACTIVE — Build Week finalization
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `6c5b85fd8e467feb4df63556864ea5f8949e7b61`
-- Work branch: `agent/codex-protocol-kernel--submission-reconcile`
+- Base: `1c3e7956b1386c4b6ff1edab2249ff0d6c5d21a7`
+- Work branch: `agent/codex-protocol-kernel--build-week-finalization`
 - Worktree:
-  `/workspace/mortalos-worktrees/pr2-integration-worktrees/codex-protocol-kernel--h3b-r2-worktrees/codex-protocol-kernel--submission-sprint-worktrees/codex-protocol-kernel--post-merge-status-worktrees/codex-protocol-kernel--submission-reconcile`
-- Exact intended shared paths: `README.md`, `docs/IMPLEMENTATION_PLAN.md`,
-  `docs/ACCESS_ARCHITECTURE.md`, `docs/PROJECT_STATUS.md`,
-  `docs/SINGLE_BROWSER_INCUBATOR.md`, `docs/SUBMISSION_CHECKLIST.md`, and
-  `scripts/verify-spec.mjs`
+  `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--build-week-finalization`
+- Exact intended shared paths: `.gitattributes`, `.npmignore`,
+  `.github/workflows/deploy-lab.yml`, `.github/workflows/verify.yml`, `README.md`,
+  `package.json`, `package-lock.json`, `wrangler.jsonc`, `lab/**`,
+  `functions/**`,
+  `scripts/build-lab.mjs`, `scripts/deploy-lab.mjs`, `scripts/serve-lab.mjs`,
+  `scripts/verify-deployed-lab.mjs`, `scripts/verify-gpt-scenarios.mjs`,
+  `scripts/r1-python-paths.mjs`, `scripts/run-coverage.mjs`, `scripts/verify-r1.mjs`,
+  `scripts/verify-spec.mjs`, `test/lab.test.mjs`, `test/r1-wire.test.mjs`,
+  `test/scenario-api.test.mjs`, `docs/BUILD_WEEK_EVIDENCE.md`,
+  `docs/DEMO_SCRIPT.md`, `docs/PROJECT_STATUS.md`, and
+  `docs/SUBMISSION_CHECKLIST.md`.
 - Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
-  `agents/codex-protocol-kernel/MEMORY.md`,
-  `agents/codex-protocol-kernel/WORKLOG.md`
-- Contract affected: rolling current state and Build Week submission priorities only;
-  no runtime, protocol, workflow, schema, or generated artifact change. Reconcile
-  merged R1, the live Sites/GPT path, the unverified direct Pages target, PR #11's
-  review-provenance incident, and remaining source/video/form blockers.
-- Required evidence: current GitHub main/PR/CI state; live Devpost dates, requirements,
-  project state, and judging criteria; logged-out Sites/GPT/private-field smoke tests;
-  immutable Sites version metadata; full repository verification; exact-head policy
-  and independent review.
-- Expected handoff: one new focused reconciliation PR from current `main`. The stale
-  pre-R1 PR #13 must close unmerged; the author neither self-reviews nor merges.
+  `agents/codex-protocol-kernel/MEMORY.md`, and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Contract affected: Windows checkout fidelity, public exact-SHA judge path,
+  server-only GPT-5.6 scenario generation, deterministic scenario compilation,
+  guided judge UX, release evidence, and submission-facing documentation. Trusted
+  protocol validity remains exclusively in the existing kernel.
+- Required evidence: Windows LF clean clone; complete repository and Chromium gates;
+  Pages Function unit/security/eval tests; GPT-off byte-identical replay; logged-out
+  remote asset/header/browser/API verification; secret and dependency scans; current
+  Devpost field readback; exact-head policy and immutable independent review.
+- Expected handoff: one reviewed release-candidate PR from current `main`; author does
+  not self-review, merge, or push directly to `main`.
 
 ## Completed handoffs
 

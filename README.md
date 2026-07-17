@@ -73,6 +73,23 @@ remain after the submission-critical provenance and media work:
 See [Project status](docs/PROJECT_STATUS.md) and the [implementation
 plan](docs/IMPLEMENTATION_PLAN.md).
 
+### Build Week release candidate
+
+The current release-candidate branch adds a repository-owned `POST /api/scenarios`
+Pages Function and a four-action judge path. GPT-5.6 is a server-only, strict-schema
+adversarial witness. It selects one of ten allowlisted mutations; a deterministic
+compiler emits canonical scenario bytes; the existing MortalOS kernel independently
+decides the result; and `Replay without GPT` proves the same digest and verdict with
+no second model call.
+
+The fixed live evaluation passed 25/25 scenario selections, covered all ten mutations,
+and reproduced 25/25 kernel results offline. GPT's exact status/code prediction was
+0/25, which demonstrates the intended authority boundary rather than hiding model
+error. See [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md) and the
+[2:50 demo script](docs/DEMO_SCRIPT.md). This candidate is not a deployed or merged
+release until independent review, exact-head CI, Cloudflare deployment, and remote
+verification pass.
+
 ## Run
 
 Supported platforms: Node.js 22.5 or later on macOS, Linux, or Windows for local
@@ -86,10 +103,12 @@ npm run test:coverage
 npx playwright install chromium
 npm run test:chromium
 npm run test:lab
+npm run test:scenarios
 npm run test:r1
 npm run build:lab
 npm run verify:r1
 npm run verify:lab
+npm run verify:gpt-scenarios
 npm run dev:lab
 npm run demo:singleton
 npm run demo:trace
@@ -191,6 +210,8 @@ JavaScript cannot distinguish a transparent `Proxy` that lies consistently throu
 - [Requirements traceability](docs/TRACEABILITY.md)
 - [Single-browser incubator profile](docs/SINGLE_BROWSER_INCUBATOR.md)
 - [Build Week submission checklist](docs/SUBMISSION_CHECKLIST.md)
+- [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md)
+- [2:50 narrated demo script](docs/DEMO_SCRIPT.md)
 
 Current documentation contains only normative rules, rolling status/plan, deployment profiles, traceability, and submission evidence. Git history preserves dated provenance.
 
@@ -210,9 +231,11 @@ resurrection rejection. It was used to red-team evidence completeness and hostil
 observer inputs, implement deterministic conformance/property/browser tests, compare
 the project against Devpost requirements, and design the exact-asset Cloudflare
 deployment verifier. Git history and committed vectors make those contributions
-reviewable instead of treating model prose as evidence. The public Lab's GPT-5.6
-witness explains only a supplied public R1 result and cannot sign, validate, select a
-head, or declare death.
+reviewable instead of treating model prose as evidence. The release-candidate Lab
+also uses GPT-5.6 to select a bounded adversarial scenario. Model prose remains
+display-only: canonical compilation and the existing kernel determine the actual
+result, and GPT-off replay proves the result is not model-dependent. GPT cannot sign,
+validate, select a head, or declare death.
 
 The human retained the consequential decisions: North Star, threat assumptions,
 scope, browser-first product strategy, claim limits, Apache-2.0 license, and final
