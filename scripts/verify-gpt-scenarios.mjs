@@ -41,6 +41,11 @@ const remote = process.env.MORTALOS_LAB_URL ? new URL("/", process.env.MORTALOS_
 const concurrency = remote ? 1 : Number(process.env.MORTALOS_GPT_EVAL_CONCURRENCY ?? "4");
 assert.ok(Number.isSafeInteger(concurrency) && concurrency >= 1 && concurrency <= 8, "eval concurrency must be 1..8");
 if (!remote) assert.match(process.env.OPENAI_API_KEY ?? "", /^\S{20,512}$/, "OPENAI_API_KEY is required");
+if (!remote) assert.match(
+  process.env.SAFETY_IDENTIFIER_SECRET ?? "",
+  /^\S{32,512}$/,
+  "SAFETY_IDENTIFIER_SECRET is required"
+);
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -75,6 +80,7 @@ async function invoke(entry, index) {
     }),
     env: {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      SAFETY_IDENTIFIER_SECRET: process.env.SAFETY_IDENTIFIER_SECRET,
       SCENARIO_RATE_LIMITER: { limit: async () => ({ success: true }) }
     }
   }, { timeoutMs: 30_000 });

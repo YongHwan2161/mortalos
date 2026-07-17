@@ -85,18 +85,46 @@ function base64Url(bytes) {
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }
 
-async function safetyIdentifier(clientId) {
-  const bytes = new TextEncoder().encode(`mortalos-scenario/1:${clientId}`);
-  return `mortalos_${base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)))}`;
-}
-
-async function rateIdentifier(request) {
+function trustedConnectingAddress(request) {
   const address = request.headers.get("cf-connecting-ip");
   if (typeof address !== "string" || address.length < 3 || address.length > 64 || /[\u0000-\u0020]/.test(address)) {
     throw new ApiError(503, "not_configured");
   }
-  const bytes = new TextEncoder().encode(`mortalos-rate/1:${address}`);
-  return `rate_${base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)))}`;
+  return address;
+}
+
+async function privateActorIdentifier(prefix, purpose, address, secret) {
+  if (typeof secret !== "string" || secret.length < 32 || secret.length > 512 || /[\r\n]/.test(secret)) {
+    throw new ApiError(503, "not_configured");
+  }
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, encoder.encode(`${purpose}:${address}`));
+  return `${prefix}_${base64Url(new Uint8Array(digest))}`;
+}
+
+async function safetyIdentifier(address, env) {
+  return privateActorIdentifier(
+    "mortalos",
+    "mortalos-safety/1",
+    address,
+    env.SAFETY_IDENTIFIER_SECRET
+  );
+}
+
+async function rateIdentifier(address, env) {
+  return privateActorIdentifier(
+    "rate",
+    "mortalos-rate/1",
+    address,
+    env.SAFETY_IDENTIFIER_SECRET
+  );
 }
 
 function modelInput(request) {
@@ -152,11 +180,10 @@ function outputText(payload) {
   return texts[0];
 }
 
-async function callOpenAi(request, env, fetchImpl, timeoutMs) {
+async function callOpenAi(request, env, fetchImpl, timeoutMs, safetyId) {
   if (typeof env.OPENAI_API_KEY !== "string" || env.OPENAI_API_KEY.length < 20) {
     throw new ApiError(503, "not_configured");
   }
-  const safetyId = await safetyIdentifier(request.client_id);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   let response;
@@ -215,13 +242,16 @@ export async function handleScenarioRequest(context, options = {}) {
     }
     const parsed = await readRequest(request);
     if (typeof env.SCENARIO_RATE_LIMITER?.limit !== "function") throw new ApiError(503, "not_configured");
-    const limit = await env.SCENARIO_RATE_LIMITER.limit({ key: await rateIdentifier(request) });
+    const actorAddress = trustedConnectingAddress(request);
+    const safetyId = await safetyIdentifier(actorAddress, env);
+    const limit = await env.SCENARIO_RATE_LIMITER.limit({ key: await rateIdentifier(actorAddress, env) });
     if (limit?.success !== true) throw new ApiError(429, "rate_limited", "60");
     const result = await callOpenAi(
       parsed,
       env,
       options.fetchImpl ?? fetch,
-      options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+      options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      safetyId
     );
     outcome = "ok";
     mutation = result.proposal.mutation;

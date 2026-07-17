@@ -16,7 +16,7 @@ means the implementation may exist but the required external evidence does not.
 | --- | --- | --- |
 | 0 — truthful baseline and Windows fidelity | PASS | Isolated current-main worktree; `.gitattributes`; repository text scan reports zero CRLF files; `npm ci` succeeds with zero audit vulnerabilities. |
 | 1 — exact-SHA public Cloudflare release | WAIT | Pages Function and rate-limit configuration compile, but Cloudflare OAuth is waiting for account sign-in. No `pages.dev` success claim is permitted yet. |
-| 2 — GPT-5.6 adversarial witness | PASS locally | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, hashed safety identifier, hashed trusted rate key, no client secret. |
+| 2 — GPT-5.6 adversarial witness | PASS locally | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, keyed privacy-preserving actor identifiers, no client secret. |
 | 3 — 90-second judge path | PASS locally | Desktop/mobile visual check plus three-context real-Chromium acceptance; four or fewer judge actions; GPT-off replay uses the same canonical digest and kernel result. |
 | 4 — evidence and source reconciliation | PASS locally | Source, tests, deployment config, this evidence record, and demo script are in the candidate; package, audit, coverage, and governance gates pass. Immutable review and deployed-SHA binding remain release gates. |
 | 5 — Codex `/feedback` | WAIT | A qualifying Session ID has not been returned by `/feedback`; a task/thread UUID is not accepted as a substitute. |
@@ -55,10 +55,23 @@ lineage/mortality kernel then evaluates fresh committed evidence.
 
 The route rejects wrong method, origin, media type, body size, schema, mutation kind,
 model family, refusal, incomplete response, malformed model output, missing binding,
-and missing secret with stable non-sensitive errors. The Cloudflare rate key is a
-SHA-256 digest of the platform-supplied connecting address; the OpenAI
-`safety_identifier` is a separate SHA-256 digest of an ephemeral page-session ID.
-Neither raw value is logged or returned.
+and missing secret with stable non-sensitive errors. The server derives both the
+Cloudflare rate key and OpenAI `safety_identifier` from the Cloudflare-injected
+connecting address using HMAC-SHA-256, a runtime-only secret, and distinct domain
+separation labels. The caller-controlled page `client_id` never contributes to either
+identifier: the same edge actor remains stable across rotated client IDs and different
+edge actors separate. Neither the raw address nor either derived value is logged or
+returned.
+
+This anonymous public Lab uses the strongest server-trusted actor signal available
+without adding accounts, cookies, persistent browser storage, or an Enterprise-only
+device fingerprint. OpenAI requires a stable, hashed end-user identifier, and
+Cloudflare documents that direct edge traffic receives `CF-Connecting-IP` from the
+edge while a client-supplied value is stripped. The HMAC secret prevents offline
+recovery of low-entropy address values from the identifier.
+
+- OpenAI: <https://developers.openai.com/api/docs/guides/safety-checks#implementing-safety-identifiers-for-individual-users>
+- Cloudflare: <https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-connecting-ip>
 
 ### Fixed evaluation
 
@@ -80,7 +93,8 @@ is useful as an adversarial witness and unsafe as a validity oracle.
 
 Unit command: `npm run test:scenarios`
 
-Observed result: **6/6 tests pass**, including all ten enum-to-kernel cases, request
+Observed result: **7/7 tests pass**, including stable same-actor/different-client-ID
+and different-actor privacy regressions, all ten enum-to-kernel cases, request
 abuse, rate limiting, missing configuration, upstream failures/refusal/incomplete
 output, timeout, secret non-disclosure, canonical digest stability, and byte tamper
 rejection.
@@ -130,8 +144,8 @@ The guided path requires at most four visible actions:
 The final Cloudflare evidence is all-or-nothing:
 
 1. authenticated account and account-scoped Pages token;
-2. GitHub secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, and
-   `OPENAI_API_KEY` present without value disclosure;
+2. GitHub secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`,
+   `OPENAI_API_KEY`, and `SAFETY_IDENTIFIER_SECRET` present without value disclosure;
 3. independent review of one immutable candidate head;
 4. deploy from reviewed `main`, never a dirty tree or feature branch;
 5. `asset-manifest.json.source_commit` equals that exact 40-character SHA;

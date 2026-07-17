@@ -49,6 +49,7 @@ async function localScenarioResponse(request, origin) {
     request: webRequest,
     env: {
       OPENAI_API_KEY: `local-acceptance-${"x".repeat(32)}`,
+      SAFETY_IDENTIFIER_SECRET: `local-safety-${"s".repeat(32)}`,
       SCENARIO_RATE_LIMITER: { limit: async () => ({ success: true }) }
     }
   }, { fetchImpl: localScenarioFetch });

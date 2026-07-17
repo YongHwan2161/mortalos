@@ -11,6 +11,7 @@ import { handleScenarioRequest } from "../functions/api/scenarios.js";
 const ORIGIN = "https://mortalos.example";
 const CLIENT_ID = "018f47a2-9b7c-4d11-8a42-0123456789ab";
 const TEST_KEY = `unit-test-key-${"x".repeat(32)}`;
+const TEST_SAFETY_SECRET = `unit-test-safety-${"s".repeat(32)}`;
 
 function requestBody(kind = "continuation", hypothesis = "Can replayed evidence move the head?") {
   return {
@@ -49,6 +50,7 @@ function context({
   contentType = "application/json",
   connectingIp = "203.0.113.7",
   key = TEST_KEY,
+  safetySecret = TEST_SAFETY_SECRET,
   limiter = { limit: async () => ({ success: true }) }
 } = {}) {
   const headers = new Headers();
@@ -61,7 +63,11 @@ function context({
       headers,
       body: method === "GET" ? undefined : typeof body === "string" ? body : JSON.stringify(body)
     }),
-    env: { OPENAI_API_KEY: key, SCENARIO_RATE_LIMITER: limiter }
+    env: {
+      OPENAI_API_KEY: key,
+      SAFETY_IDENTIFIER_SECRET: safetySecret,
+      SCENARIO_RATE_LIMITER: limiter
+    }
   };
 }
 
@@ -107,6 +113,34 @@ test("scenario API keeps GPT-5.6 server-side, structured, stateless, and non-aut
   assert.equal(rateKeys[0].includes("203.0.113.7"), false);
 });
 
+test("scenario API derives stable private actor identifiers from the trusted edge signal", async () => {
+  async function capture(input) {
+    let sent;
+    const result = await parsed(await handleScenarioRequest(input, {
+      fetchImpl: async (_url, init) => {
+        sent = JSON.parse(init.body);
+        return upstream();
+      }
+    }));
+    assert.equal(result.response.status, 200);
+    return sent.safety_identifier;
+  }
+
+  const first = await capture(context({ body: requestBody() }));
+  const sameActorDifferentClient = await capture(context({
+    body: { ...requestBody(), client_id: "118f47a2-9b7c-4d11-8a42-0123456789ab" }
+  }));
+  const differentActor = await capture(context({
+    body: requestBody(),
+    connectingIp: "203.0.113.8"
+  }));
+
+  assert.equal(sameActorDifferentClient, first);
+  assert.notEqual(differentActor, first);
+  assert.equal(first.includes(CLIENT_ID), false);
+  assert.equal(first.includes("203.0.113.7"), false);
+});
+
 test("scenario API rejects malformed, oversized, cross-origin, and non-JSON requests before GPT", async () => {
   let called = 0;
   const fetchImpl = async () => { called += 1; return upstream(); };
@@ -139,7 +173,12 @@ test("scenario API rate limits before OpenAI and fails closed when bindings or k
   assert.equal(limited.body.error, "rate_limited");
   assert.equal(limited.response.headers.get("retry-after"), "60");
 
-  for (const input of [context({ limiter: null }), context({ key: "" }), context({ connectingIp: null })]) {
+  for (const input of [
+    context({ limiter: null }),
+    context({ key: "" }),
+    context({ safetySecret: "" }),
+    context({ connectingIp: null })
+  ]) {
     const result = await parsed(await handleScenarioRequest(input, { fetchImpl }));
     assert.equal(result.response.status, 503);
     assert.equal(result.body.error, "not_configured");

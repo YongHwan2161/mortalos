@@ -66,6 +66,8 @@ exact-commit evidence layer, not the submission definition of done.
 ## Direct H3B Cloudflare release gate
 
 - [x] GitHub repository secret `OPENAI_API_KEY` exists; its value is never emitted.
+- [x] GitHub repository secret `SAFETY_IDENTIFIER_SECRET` exists; its value is never
+  emitted, and Cloudflare receives it only through the deployment secret pipe.
 - [ ] GitHub repository secrets `CLOUDFLARE_ACCOUNT_ID` and
   `CLOUDFLARE_API_TOKEN` are non-empty; the token is account-scoped to Cloudflare
   Pages Edit and never exposed in repository or logs.
