@@ -18,6 +18,10 @@ available for incident recovery but is not the final judge path.
 The new [mortal-os.com](https://mortal-os.com/) hostname is TLS-active and serves the
 exact static release, but remains a candidate canonical URL until its valid
 `POST /api/scenarios` and three-context Chromium path pass the same remote gate.
+The current candidate routes only that page origin to the already accepted
+`pages.dev` API origin through an exact-pair CSP/CORS allowlist; every other origin
+remains fail-closed. `pages.dev` stays the published judge URL until post-deploy
+acceptance proves the bridge.
 Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos).
 
 ## 90-second judge path
@@ -56,7 +60,7 @@ runtime secrets.
 
 | Evidence | Concrete contribution | Human-owned boundary |
 | --- | --- | --- |
-| `functions/api/scenarios.js` + 7 API tests | Codex implemented strict request/output limits, fail-closed errors, HMAC actor privacy, and the Responses API adapter. | Maintainers chose the anonymous edge-actor compromise and secret policy. |
+| `functions/api/scenarios.js` + 10 API tests | Codex implemented strict request/output limits, exact-pair CORS, fail-closed errors, HMAC actor privacy, and the Responses API adapter. | Maintainers chose the anonymous edge-actor compromise, custom-origin fallback, and secret policy. |
 | `lab/scenario-compiler.mjs` + ten mutation cases | Codex connected each model enum to deterministic canonical bytes and the existing kernel. | GPT prose is discarded; no model output becomes authority. |
 | `scripts/verify-gpt-scenarios.mjs` + 25 fixed calls | GPT-5.6 selected the intended attack 25/25 and covered all ten mutations. | The kernel disagreed with the model's exact verdict 25/25; the mismatch is preserved as evidence. |
 | `.gitattributes`, portable launchers, Windows clean-clone run | Codex found and fixed LF, drive-path, and POSIX-only coverage defects exposed on Windows. | Windows and Ubuntu are the only claimed gated hosts. |

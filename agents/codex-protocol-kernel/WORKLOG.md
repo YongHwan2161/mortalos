@@ -660,3 +660,30 @@ result, and reproducible verification.
   independent review, merge only the expected head, wait for post-merge Pages deploy,
   then re-run the custom-domain API/three-context acceptance. Promote the hostname
   and update Devpost only on PASS; otherwise preserve `pages.dev` through the deadline.
+
+## 2026-07-19 KST — Exact-origin custom-domain API bridge candidate
+
+- Base: `f23a4d501f89a4798d6d2a490000117774c69457` after PR #19, post-merge
+  Verify `29655465238/1`, and deploy `29655465232/1` all passed. Exact static
+  custom-host readback passed, but direct valid API requests still returned HKG
+  plaintext `502`; the identical Pages-host request returned ICN HTTP 200 with
+  `gpt-5.6-sol`.
+- Branch: `agent/codex-protocol-kernel--custom-origin-bridge`.
+- Design: when and only when the browser page origin is `https://mortal-os.com`,
+  select the accepted Pages API origin. CSP permits that one origin; the Function
+  permits only the exact primary-page/Pages-API pair, POST, and `content-type`
+  preflight header. Same-origin behavior remains unchanged and attacker origins,
+  extra headers, and other methods fail closed. Model output and protocol validity
+  semantics are unchanged. The fixed remote GPT verifier consumes the same endpoint
+  selector so the documented custom-domain evaluation cannot bypass the bridge.
+- Local evidence: endpoint/CORS/preflight/security unit cases and combined Lab/API
+  **19/19** PASS; local three-context Chromium PASS; final full `npm test` PASS in
+  **1,159.0 seconds** with governance 30/30, conformance 76/76, property 10,000,
+  portable 10,000/10,000, R1 5/5 plus eight JS/Python records, singleton, and H2.
+  Core coverage remained 96.00/92.64/95.22 and governance coverage
+  92.68/84.39/93.75. Actual Chromium 149, Wrangler compile, audit, 102-file package
+  dry-run, four external links, diff whitespace, and high-confidence secret scan
+  passed.
+- Remaining gate: exact-head policy/Verify, independent immutable reviewer, expected-
+  head merge, exact-main deploy, custom-host preflight/valid POST/three-context
+  Chromium acceptance. Canonical docs/workflow/Devpost switch only after that PASS.

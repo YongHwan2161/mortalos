@@ -4,6 +4,7 @@ import {
   validateScenarioProposal,
   validateScenarioRequest
 } from "../../lab/scenario-contract.mjs";
+import { scenarioCorsOrigin } from "../../lab/runtime-endpoints.mjs";
 
 const MAX_REQUEST_BYTES = 4_096;
 const MAX_UPSTREAM_BYTES = 65_536;
@@ -11,6 +12,7 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 const OPENAI_URL = "https://api.openai.com/v1/responses";
 const RATE_LIMIT_MAXIMUM = 10;
 const RATE_LIMIT_RETRY_SECONDS = "60";
+const CORS_MAX_AGE_SECONDS = "600";
 const SCENARIO_RATE_LIMIT_SQL = `
 INSERT INTO scenario_rate_limits (actor_key, window_id, request_count)
 VALUES (?1, CAST(unixepoch() / 60 AS INTEGER), 1)
@@ -45,6 +47,40 @@ function json(status, body, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...RESPONSE_HEADERS, ...extraHeaders }
+  });
+}
+
+function responseOriginHeaders(request) {
+  const allowed = scenarioCorsOrigin(request.url, request.headers.get("origin"));
+  if (allowed === false) throw new ApiError(403, "invalid_origin");
+  return allowed === null
+    ? {}
+    : { "access-control-allow-origin": allowed, vary: "Origin" };
+}
+
+function preflight(request, originHeaders) {
+  if (!originHeaders["access-control-allow-origin"]) throw new ApiError(405, "method_not_allowed");
+  if (request.headers.get("access-control-request-method") !== "POST") {
+    throw new ApiError(405, "method_not_allowed");
+  }
+  const requestedHeaders = (request.headers.get("access-control-request-headers") ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (requestedHeaders.length !== 1 || requestedHeaders[0] !== "content-type") {
+    throw new ApiError(403, "invalid_cors_preflight");
+  }
+  return new Response(null, {
+    status: 204,
+    headers: {
+      ...originHeaders,
+      "access-control-allow-headers": "content-type",
+      "access-control-allow-methods": "POST",
+      "access-control-max-age": CORS_MAX_AGE_SECONDS,
+      "cache-control": "no-store",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff"
+    }
   });
 }
 
@@ -263,11 +299,15 @@ export async function handleScenarioRequest(context, options = {}) {
   const requestId = crypto.randomUUID();
   let outcome = "internal_error";
   let mutation = null;
+  let originHeaders = {};
   try {
     const { request, env } = context;
+    originHeaders = responseOriginHeaders(request);
+    if (request.method === "OPTIONS") {
+      outcome = "cors_preflight";
+      return preflight(request, originHeaders);
+    }
     if (request.method !== "POST") throw new ApiError(405, "method_not_allowed");
-    const requestOrigin = new URL(request.url).origin;
-    if (request.headers.get("origin") !== requestOrigin) throw new ApiError(403, "invalid_origin");
     if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get("content-type") ?? "")) {
       throw new ApiError(415, "invalid_content_type");
     }
@@ -288,14 +328,18 @@ export async function handleScenarioRequest(context, options = {}) {
     );
     outcome = "ok";
     mutation = result.proposal.mutation;
-    return json(200, { format: "mortalos-scenario-response/1", request_id: requestId, ...result });
+    return json(200, { format: "mortalos-scenario-response/1", request_id: requestId, ...result }, originHeaders);
   } catch (error) {
     const safe = error instanceof ApiError ? error : new ApiError(500, "internal_error");
     outcome = safe.code;
     return json(
       safe.status,
       { error: safe.code, request_id: requestId },
-      safe.retryAfter ? { "retry-after": safe.retryAfter } : safe.status === 405 ? { allow: "POST" } : {}
+      {
+        ...originHeaders,
+        ...(safe.retryAfter ? { "retry-after": safe.retryAfter } : {}),
+        ...(safe.status === 405 ? { allow: "POST" } : {})
+      }
     );
   } finally {
     console.log(JSON.stringify({

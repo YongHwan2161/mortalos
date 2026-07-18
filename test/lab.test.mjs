@@ -23,6 +23,7 @@ import {
   genesisEnvelope,
   pulseEnvelope
 } from "../lab/live-incubator.mjs";
+import { MORTALOS_SAFE_API_ORIGIN } from "../lab/runtime-endpoints.mjs";
 import { summarizePortableCorpus } from "../lab/corpus-summary.mjs";
 import { runReferenceProof } from "../lab/reference-engine.mjs";
 import { buildLab } from "../scripts/build-lab.mjs";
@@ -197,6 +198,7 @@ test("browser Lab source fails closed and contains no persistence or copied vali
     "evidence-export.mjs",
     "live-incubator.mjs",
     "reference-engine.mjs",
+    "runtime-endpoints.mjs",
     "signing-policy.mjs"
   ];
   const sources = await Promise.all(files.map((name) => readFile(new URL(`../lab/${name}`, import.meta.url), "utf8")));
@@ -215,16 +217,25 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.equal(LAB_SECURITY_HEADERS["cross-origin-embedder-policy"], "require-corp");
   assert.equal(LAB_SECURITY_HEADERS["cross-origin-opener-policy"], "same-origin");
   assert.equal(LAB_SECURITY_HEADERS["cross-origin-resource-policy"], "same-origin");
+  assert.equal(
+    LAB_SECURITY_HEADERS["content-security-policy"].includes(`connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN}`),
+    true
+  );
 
   const deploymentHeaders = await readFile(new URL("../lab/_headers", import.meta.url), "utf8");
   assert.match(deploymentHeaders, /Cross-Origin-Embedder-Policy: require-corp/);
   assert.match(deploymentHeaders, /Cross-Origin-Opener-Policy: same-origin/);
   assert.match(deploymentHeaders, /Content-Security-Policy: default-src 'none'/);
+  assert.match(deploymentHeaders, new RegExp(`connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN.replaceAll(".", "\\.")}`));
 
   const deploymentSource = await readFile(new URL("../scripts/deploy-lab.mjs", import.meta.url), "utf8");
   assert.match(deploymentSource, /\["rev-parse", "HEAD"\]/);
   assert.match(deploymentSource, /\["status", "--porcelain=v1", "--untracked-files=all"\]/);
   assert.match(deploymentSource, /const branch = "main"/);
+
+  const gptVerifierSource = await readFile(new URL("../scripts/verify-gpt-scenarios.mjs", import.meta.url), "utf8");
+  assert.match(gptVerifierSource, /fetch\(scenarioApiUrl\(remote\)/);
+  assert.doesNotMatch(gptVerifierSource, /new URL\("api\/scenarios", remote\)/);
 
   const deploymentWorkflow = await readFile(new URL("../.github/workflows/deploy-lab.yml", import.meta.url), "utf8");
   assert.match(deploymentWorkflow, /test "\$GITHUB_REF" = "refs\/heads\/main"/);
@@ -250,9 +261,9 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   }
 
   const html = await readFile(new URL("../lab/index.html", import.meta.url), "utf8");
-  assert.match(html, /connect-src 'self'/);
+  assert.match(html, new RegExp(`connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN.replaceAll(".", "\\.")}`));
   assert.match(html, /worker-src 'self'/);
-  assert.doesNotMatch(html, /https?:\/\//);
+  assert.deepEqual(html.match(/https?:\/\/[^"'\s;]+/g) ?? [], [MORTALOS_SAFE_API_ORIGIN]);
   assert.match(html, /THIRD_PARTY_LICENSES\.txt/);
   assert.match(html, /pending-evidence inventory is explicitly complete/);
 

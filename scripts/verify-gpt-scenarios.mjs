@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { handleScenarioRequest } from "../functions/api/scenarios.js";
+import { scenarioApiUrl } from "../lab/runtime-endpoints.mjs";
 import { SCENARIO_REQUEST_FORMAT } from "../lab/scenario-contract.mjs";
 import { compileScenario, runCompiledScenario } from "../lab/scenario-compiler.mjs";
 
@@ -61,7 +62,7 @@ async function invoke(entry, index) {
     scenario_kind: entry.scenario_kind
   };
   if (remote) {
-    const response = await fetch(new URL("api/scenarios", remote), {
+    const response = await fetch(scenarioApiUrl(remote), {
       method: "POST",
       headers: { "content-type": "application/json", origin: remote.origin },
       body: JSON.stringify(body)

@@ -81,12 +81,14 @@ places every later stage on `HOLD`.
 구현:
 
 - Cloudflare Pages 프로젝트에 apex custom domain을 연결한다.
-- HKG upstream 502를 피하기 위한 Function targeted placement를 exact-main에
-  배포하고 기존 `pages.dev` judge path를 동시에 보존한다.
+- custom hostname의 HKG upstream 502가 placement 변경 후에도 지속되므로,
+  `mortal-os.com` 페이지에서만 검증된 `pages.dev` API origin을 사용한다.
+- CSP와 CORS/preflight는 정확한 두 origin과 `/api/scenarios`만 허용하고,
+  attacker origin, 다른 method/header, 임의 endpoint는 fail-closed한다.
 - workflow, README, release evidence, Devpost 비공개 judge instructions를 새
   URL로 통일한다.
-- 브라우저 runtime 바이트는 변경하지 않는다. 문서-only merge가 동일 asset
-  digest를 유지하도록 한다.
+- 브라우저 runtime 변경은 endpoint 선택에만 한정하고, canonical scenario
+  compilation과 kernel validity bytes는 변경하지 않는다.
 
 PASS:
 
@@ -98,7 +100,7 @@ PASS:
 
 HOLD/rollback:
 
-- TLS, 502/522/525, manifest mismatch가 지속되면 Devpost는 검증된 `pages.dev`
+- bridge preflight/POST, TLS, 502/522/525, manifest mismatch가 지속되면 Devpost는 검증된 `pages.dev`
   URL을 유지한다. DNS record를 수동으로 덧대거나 검증되지 않은 redirect를
   만들지 않는다.
 
