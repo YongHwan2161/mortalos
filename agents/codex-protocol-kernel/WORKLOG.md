@@ -627,3 +627,36 @@ result, and reproducible verification.
   a complete immutable reviewer snapshot.
   The resulting main SHA must redeploy and pass its own manifest readback before the
   final-source video is rendered. The author does not self-review or merge.
+
+## 2026-07-19 KST — Custom-domain qualification and documentation consolidation
+
+- Base: `03e868ccd810064e81275a7ac2d71b543030b916`
+- Branch: `agent/codex-protocol-kernel--custom-domain-docs`
+- Domain evidence: `mortal-os.com` is registered, Pages-attached, `Active`,
+  SSL-enabled, and serves the accepted exact static manifest and asset digest. A
+  valid scenario request consistently returned Cloudflare plaintext `502` from HKG,
+  while the same exact deployment on `pages.dev` returned HTTP 200 JSON from ICN
+  with model `gpt-5.6-sol`. Smart Placement and a fresh production deployment did
+  not remove the fault.
+- Remediation: pin Pages Function placement to targeted `aws:us-east-1`, retain the
+  verified `pages.dev` workflow/judge URL until full custom-host acceptance, and add
+  a config regression. Wrangler 4.111.0 compiled the Functions bundle locally.
+- Documentation: added a compact docs map and a standalone Korean North Star roadmap
+  with strict PASS/HOLD/rollback gates; consolidated current release evidence;
+  removed four superseded planning/status/checklist/demo documents; updated README,
+  traceability/access architecture, link/spec verification, and current agent
+  memory/handoff while preserving the required closed policy-migration audit marker.
+- Devpost: refreshed live requirements, project description, answers 27949/27951,
+  and all required answers. Submission `1080076` remained `Submitted` with original
+  non-null `submitted_at`, Individual/Korea/Developer Tools, the public 2:37 video,
+  and exact Session ID `019f6b83-d606-70b0-a712-20c22deaac63`.
+- Local verification: full `npm test` PASS in 1,397.4 seconds; governance 30/30;
+  conformance 76/76; property 10,000; Lab/API 17/17; portable and actual Chromium
+  byte equality with 10,000/10,000 rejects; R1 5/5 plus eight JS/Python records;
+  local three-context Lab PASS; core coverage 96.00/92.64/95.22; governance coverage
+  92.68/84.39/93.75; audit zero vulnerabilities; package dry-run 101 files; focused
+  spec/link/config tests, diff check, and high-confidence secret scan PASS.
+- Remaining gate: publish one immutable PR head, require exact-head policy/Verify and
+  independent review, merge only the expected head, wait for post-merge Pages deploy,
+  then re-run the custom-domain API/three-context acceptance. Promote the hostname
+  and update Devpost only on PASS; otherwise preserve `pages.dev` through the deadline.

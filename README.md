@@ -9,11 +9,15 @@ MortalOS is an endpoint-neutral lifecycle evidence protocol. GPT-5.6 proposes a
 bounded attack; canonical bytes bind that proposal; the deterministic kernel alone
 decides whether identity continued, forked, or lost authority.
 
-Public final judge URL: [MortalOS Lab on Cloudflare Pages](https://mortalos-lab-yonghwan2161.pages.dev/).
+Public final judge URL:
+[MortalOS Lab](https://mortalos-lab-yonghwan2161.pages.dev/).
 The release manifest displayed after the four-action proof identifies the exact
 reviewed source commit and aggregate asset digest. The separate zero-install
 [R1 evidence fallback](https://mortalos-evidence-lab.ant713800.chatgpt.site) remains
 available for incident recovery but is not the final judge path.
+The new [mortal-os.com](https://mortal-os.com/) hostname is TLS-active and serves the
+exact static release, but remains a candidate canonical URL until its valid
+`POST /api/scenarios` and three-context Chromium path pass the same remote gate.
 Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos).
 
 ## 90-second judge path
@@ -113,29 +117,28 @@ Not implemented:
 - participant-to-participant transport or replicated state;
 - a deterministic executable genome or mutable logical state.
 
-Submission status outside this `main` snapshot: the exact-source Cloudflare Pages
-Lab is the zero-install judge path. Its four-action proof runs the committed baseline,
-calls GPT-5.6 only for an allowlisted proposal, exposes the authoritative kernel
-result, and reproduces the same digest and verdict with GPT off. The Sites A/B view
-remains an emergency fallback only. The Devpost project page and public narrated
-video exist, but hackathon submission and human clean-room evidence are tracked as
-separate release gates rather than inferred from a working deployment.
+Submission status: the exact-source Cloudflare Pages Lab is the zero-install judge
+path. Its four-action proof runs the committed baseline, calls GPT-5.6 only for an
+allowlisted proposal, exposes the authoritative kernel result, and reproduces the
+same digest and verdict with GPT off. The Devpost entry is `Submitted`, the public
+narrated video is attached, and the required `/feedback` Session ID is saved. The
+official rules allow an individual entrant and do not impose a three-developer or
+three-first-time-tester gate.
 
 This tree implements the **P0 mortality-safe kernel, H3A/H3B Lab contract, and bounded
 R1-A/R1-B evidence profile**.
 Any SHA is publishable only after immutable-head review and its own successful Verify
-run. The Build Week submission lane now follows:
+run. Every release update follows:
 
-`immutable review → post-merge Verify → exact-SHA Cloudflare deploy → final-SHA video → fields → submit`
+`immutable review → post-merge Verify → exact-SHA Cloudflare deploy → public readback → Devpost reconciliation`
 
-That deadline exception improves judge access without claiming that hosting closes
-the JavaScript observer boundary. R1-A/R1-B are merged; R1-C, R2, and networking
-remain after the submission-critical provenance and media work:
+Hosting improves judge access without claiming that it closes the JavaScript observer
+boundary. R1-A/R1-B are merged; R1-C, R2, and networking remain the ordered core work:
 
 `independent-verifier registration → R1-A JavaScript wire/golden → R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
-See [Project status](docs/PROJECT_STATUS.md) and the [implementation
-plan](docs/IMPLEMENTATION_PLAN.md).
+See the [North Star and pre-deadline roadmap](docs/NORTH_STAR_ROADMAP.md) and
+[current release evidence](docs/BUILD_WEEK_EVIDENCE.md).
 
 ### Build Week release
 
@@ -149,10 +152,10 @@ no second model call.
 The fixed live evaluation passed 25/25 scenario selections, covered all ten mutations,
 and reproduced 25/25 kernel results offline. GPT's exact status/code prediction was
 0/25, which demonstrates the intended authority boundary rather than hiding model
-error. See [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md) and the
-[2:50 demo script](docs/DEMO_SCRIPT.md). PR #17 passed exact-head policy/CI,
-immutable review, expected-head merge, post-merge Verify, and the complete public
-Cloudflare acceptance workflow. Any later source SHA must repeat those gates.
+error. See [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md). Runtime PR #17
+and evidence PR #18 passed exact-head policy/CI, immutable review, expected-head
+merge, post-merge Verify, and the complete public Cloudflare acceptance workflow.
+Any later source SHA must repeat those gates.
 
 ## Run
 
@@ -203,19 +206,14 @@ Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is
 equivalent local maintainer command and requires Cloudflare credentials; judges do
 not need those credentials.
 
-Current release status: the H3B/GPT/guided, D1 rate-limit, Pages JavaScript MIME, and
-canonical-root verification contracts are merged. PR #17's final head
-`4d792ae90448c9e6baf7734b768cd242f60120bc` passed exact-head Verify
-`29629764845/1`, final-body policy `29630353742/1`, and immutable review. Its
-expected-head squash merge produced `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`;
-post-merge Verify `29630532558/1` and Deploy MortalOS Lab `29630532541/1` both
-passed. The deployment applied the D1 migration, configured runtime secrets without
-emitting them, verified six exact assets and security headers, exercised the API
-failure/happy/rate-limit paths, and completed the full judge path in three clean
-Chromium contexts. The public proof displayed source commit `4bb8924d...` and release
-asset digest `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98` at that
-accepted snapshot. A subsequent source change is accepted only after its own
-post-merge deployment and manifest readback; Sites remains the emergency fallback.
+Current accepted release: PR #18 produced `main`
+`03e868ccd810064e81275a7ac2d71b543030b916`; post-merge Verify
+`29632638423/1` and Deploy MortalOS Lab `29632638421/1` passed. The workflow
+verified six exact assets and security headers, the API failure/happy/rate-limit
+paths, and the full judge path in three clean Chromium contexts. The release asset
+digest is `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`.
+A later source change is accepted only after its own post-merge deployment and public
+manifest readback.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed
@@ -286,19 +284,20 @@ JavaScript cannot distinguish a transparent `Proxy` that lies consistently throu
 
 ## Documentation
 
-- [Project status and review findings](docs/PROJECT_STATUS.md)
-- [Prioritized implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [Documentation map](docs/README.md)
+- [North Star and pre-deadline implementation roadmap](docs/NORTH_STAR_ROADMAP.md)
 - [Endpoint-neutral access architecture](docs/ACCESS_ARCHITECTURE.md)
 - [Protocol v0](docs/PROTOCOL.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Rejection codes](docs/REJECTION_CODES.md)
 - [Requirements traceability](docs/TRACEABILITY.md)
 - [Single-browser incubator profile](docs/SINGLE_BROWSER_INCUBATOR.md)
-- [Build Week submission checklist](docs/SUBMISSION_CHECKLIST.md)
 - [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md)
-- [2:50 narrated demo script](docs/DEMO_SCRIPT.md)
+- [Agent collaboration and merge protocol](docs/AGENT_COLLABORATION.md)
 
-Current documentation contains only normative rules, rolling status/plan, deployment profiles, traceability, and submission evidence. Git history preserves dated provenance.
+Current documentation contains only normative rules, one current roadmap, deployment
+profiles, traceability, governance, and release evidence. Git history preserves dated
+provenance and superseded submission artifacts.
 
 ## Project direction
 

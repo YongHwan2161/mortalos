@@ -1,224 +1,149 @@
-# Build Week Release Evidence
+# Build Week release evidence
 
-As of: **2026-07-18 KST**
+Last synchronized: **2026-07-19 KST**
 
-Evidence-sync branch: `agent/codex-protocol-kernel--release-evidence-freeze`
+This file is the current external-release record. Historical failures, superseded
+video scripts, and pre-submission checklists remain available in Git history. A claim
+is `PASS` only when its local, GitHub, public deployment, or Devpost readback exists.
 
-Evidence-sync base: `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`
+## Current scoreboard
 
-This is a rolling release record, not a completion claim. A gate is `PASS` only when
-the listed command or external readback has succeeded for the candidate. `WAIT`
-means the implementation may exist but the required external evidence does not.
-
-## Release scoreboard
-
-| Stage | State | Strict evidence |
+| Surface | State | Current evidence |
 | --- | --- | --- |
-| 0 — truthful baseline and Windows fidelity | PASS | Isolated current-main worktree; `.gitattributes`; repository text scan reports zero CRLF files; `npm ci` succeeds with zero audit vulnerabilities. |
-| 1 — exact-SHA public Cloudflare release | PASS at `4bb8924d...` | PR #17 final head passed exact-head Verify/policy and immutable review; post-merge Verify `29630532558/1` and Deploy `29630532541/1` passed. The public manifest, six assets, security headers, API, and three-context Chromium path all matched exact `main`. |
-| 2 — GPT-5.6 adversarial witness | PASS locally and publicly | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, keyed privacy-preserving actor identifiers, no client secret. Public proposal, kernel verdict, and GPT-off exact replay passed. |
-| 3 — 90-second judge path | PARTIAL locally | Three-context real-Chromium automation passes at 360/768/1440 with a keyboard-only full-control path, accessibility-tree/status/focus checks, simulated-broadband interactivity, four judge actions, and GPT-off replay. Three first-time human testers remain mandatory. |
-| 4 — evidence and source reconciliation | PASS at accepted source | Judge-first README, five evidence mappings, link checker, source, tests, deployment config, evidence record, and demo script are repository-owned. The public manifest binds them to the reviewed source; this docs-only synchronization must repeat normal review/deploy gates. |
-| 5 — Codex `/feedback` | PARTIAL | The submitter selected the current implementation session; exact Devpost field readback still remains. |
-| 6 — Devpost fields and final story | PARTIAL | Project page is published and the public video is attached, but it is not submitted; submitter/country, Session ID, final URL/instructions, and required-field readback remain. |
-| 7 — public narrated demo | PARTIAL | Public 2:38 YouTube video, English narration, burned captions, metadata, and logged-out oEmbed readback pass: <https://youtu.be/QJBHKFyMrno>. Its displayed source SHA predates the accepted deployment, so a final-source rerender/upload remains. |
-| 8 — freeze, reviewed deploy, and submit | WAIT | Public deployment is accepted. Final-source video, three genuine first-time testers, required personal/form readback, and non-null Devpost `submitted_at` remain. |
+| Protocol and Lab | PASS | P0/H3A/H3B, GPT guided path, R1-A/R1-B, fixed portable/property/browser gates are merged. |
+| Reviewed source | PASS | `main` `03e868ccd810064e81275a7ac2d71b543030b916`, PR #18, post-merge Verify `29632638423`. |
+| Public Pages release | PASS | Deploy run `29632638421`; exact source manifest, six assets, MIME, headers, API, and three clean Chromium contexts passed. |
+| Canonical domain | HOLD | `mortal-os.com` is Active with SSL and exact static bytes, but a valid scenario POST returns a Cloudflare HKG plaintext 502; `pages.dev` remains the judge URL. |
+| GPT-5.6 evaluation | PASS | 25/25 schema/API and intended mutation; 10/10 mutation coverage; 25/25 kernel/offline replay; 0/25 exact model verdict agreement. |
+| Public video | PASS | <https://youtu.be/kR-TPuwoNaI>, public, narrated, below three minutes, attached to Devpost. |
+| Devpost | PASS | Submission `1080076`, state `Submitted`, `submitted_at` `2026-07-18T10:25:36.990-04:00`. |
+| `/feedback` | PASS | Session ID `019f6b83-d606-70b0-a712-20c22deaac63` saved in required field 27950. |
+| Entrant | PASS | `Individual`, `Korea Republic of`; official live rules report `team_required: false`. |
 
-## Stage 0 evidence
+The hackathon does not require three developers or three first-time testers. Those
+items were an internal clean-room idea, not a submission rule, and are not a release
+gate. Browser automation, protocol conformance, exact-source deployment, logged-out
+judge access, and truthful claim boundaries remain mandatory.
 
-- Remote `main` audit base: `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`.
-- PR #11, #12, #14, #15, #16, and #17 are merged. Latest post-merge `Verify`
-  run `29630532558/1` passed.
-- Exact-main deploy runs `29588418943` and `29591202642` passed source tests, then
-  failed before deployment because Wrangler rejects `ratelimits` in a Pages project
-  configuration. The account and repository credentials themselves are present.
-- A Windows `core.autocrlf=true` clean clone of exact PR #17 head `4d792ae90448...`
-  completed `npm ci && npm test` in 1,149.0 seconds with a clean checkout.
-- `.gitattributes` now requires LF for source, workflow, JSON, Markdown, HTML, CSS,
-  license, and Pages header files.
-- A repository-wide scan over those text classes returned `LF scan: PASS (no CRLF)`.
-- Windows exposed two pre-existing portability defects that Linux CI did not catch:
-  `URL.pathname` produced a doubled drive prefix for the Python R1 verifier, and the
-  coverage script used POSIX-only inline environment assignment. Both now have
-  cross-platform launchers and regression coverage.
+## Accepted source and deployment
 
-Pass condition: every runtime-changing candidate must preserve the recorded Windows
-clean-clone gate. This evidence-only follow-up changes no runtime/build asset and
-must still pass exact-head CI and diff/line-ending checks.
+- Repository: <https://github.com/YongHwan2161/mortalos>
+- Accepted `main`: `03e868ccd810064e81275a7ac2d71b543030b916`
+- Evidence PR: <https://github.com/YongHwan2161/mortalos/pull/18>
+- Exact-head Verify: `29631936378/1`
+- Final-body trusted-base policy: `29632195368/1`
+- Post-merge Verify: <https://github.com/YongHwan2161/mortalos/actions/runs/29632638423>
+- Post-merge deploy: <https://github.com/YongHwan2161/mortalos/actions/runs/29632638421>
+- Accepted aggregate asset digest:
+  `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`
+- Accepted source changed documentation only after runtime PR #17, so the deployed
+  asset digest stayed constant while `asset-manifest.json.source_commit` advanced.
 
-## Stage 2 evidence
+The current verified fallback host is
+<https://mortalos-lab-yonghwan2161.pages.dev/>. The canonical judge host becomes
+<https://mortal-os.com/> only after DNS, TLS, manifest, API, and Chromium readback all
+pass. The separate Sites evidence Lab remains incident recovery only and is not proof
+of the Pages Function or exact release assets.
 
-### Authority boundary
+Current domain evidence: dashboard status `Active`, SSL enabled, HTTPS root `200`,
+and `asset-manifest.json` exact source/digest equality all pass. Invalid API requests
+return the expected JSON errors, but a schema-valid request reaches HKG and returns
+platform plaintext `502` before the application response. Smart Placement plus a
+fresh production deployment did not clear the fault. The reviewed remediation
+candidate uses explicit targeted placement in `aws:us-east-1`; no promotion occurs
+until that exact-main deployment passes the full remote gate.
 
-`POST /api/scenarios` accepts only four exact request keys and a 4,096-byte maximum.
-It permits ten versioned mutation enums across continuation, fork, and mortality.
-GPT-5.6 returns a schema-constrained proposal, prediction, and rationale. The
-compiler discards free-form text, derives a fixture from the selected enum, emits
-canonical `mortalos-compiled-scenario/1` bytes, and hashes them. The existing
-lineage/mortality kernel then evaluates fresh committed evidence.
+## Trusted runtime boundary
 
-The route rejects wrong method, origin, media type, body size, schema, mutation kind,
-model family, refusal, incomplete response, malformed model output, missing binding,
-and missing secret with stable non-sensitive errors. The server derives both the
-Cloudflare rate key and OpenAI `safety_identifier` from the Cloudflare-injected
-connecting address using HMAC-SHA-256, a runtime-only secret, and distinct domain
-separation labels. The caller-controlled page `client_id` never contributes to either
-identifier: the same edge actor remains stable across rotated client IDs and different
-edge actors separate. Neither the raw address nor either derived value is logged or
-returned.
+`POST /api/scenarios` accepts only the documented bounded request. GPT-5.6 may select
+one of ten versioned adversarial mutations and return a display rationale. A
+deterministic compiler discards free-form text, emits canonical
+`mortalos-compiled-scenario/1` bytes, and the existing kernel produces the only
+authoritative result. `Replay without GPT` reproduces the digest and verdict without
+a second model call.
 
-The deployment-compatible repair binds `SCENARIO_RATE_DB` to the provisioned
-`mortalos-lab-rate-limit` D1 database. One atomic SQLite `INSERT ... ON CONFLICT ...
-RETURNING` statement rotates the minute window and increments the counter. The only
-stored actor value is the domain-separated HMAC identifier; no raw address is stored.
-Requests 1–10 proceed, request 11 and later receive `429`, and missing/failed/malformed
-D1 results fail closed before OpenAI. The remote strict-table migration passed, and
-20 concurrent production D1 API calls returned each count exactly once from 1 through
-20; the probe row was deleted and read back as absent.
+The production route uses `store: false`, a 15-second fail-closed timeout, strict
+Structured Outputs, bounded body/output, a server-side OpenAI key, an HMAC-derived
+privacy-preserving safety identifier, and a separate HMAC actor key for D1 rate
+limiting. Missing/failed/malformed D1 state fails closed before inference. Static Lab
+requests do not invoke the model route.
 
-This anonymous public Lab uses the strongest server-trusted actor signal available
-without adding accounts, cookies, persistent browser storage, or an Enterprise-only
-device fingerprint. OpenAI requires a stable, hashed end-user identifier, and
-Cloudflare documents that direct edge traffic receives `CF-Connecting-IP` from the
-edge while a client-supplied value is stripped. The HMAC secret prevents offline
-recovery of low-entropy address values from the identifier.
+Fixed live evaluation:
 
-- OpenAI: <https://developers.openai.com/api/docs/guides/safety-checks#implementing-safety-identifiers-for-individual-users>
-- Cloudflare: <https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-connecting-ip>
+- response model readback: `gpt-5.6-sol`;
+- API/schema handling: **25/25**;
+- intended mutation: **25/25**;
+- allowlist coverage: **10/10**;
+- kernel result and GPT-off replay: **25/25**;
+- private sentinel reflection: **0**; and
+- model exact status/rejection-code agreement with the kernel: **0/25**.
 
-### Fixed evaluation
+The last result is evidence, not a defect: GPT-5.6 is useful as an adversarial witness
+and unsafe as a consensus oracle.
 
-Command: `npm run verify:gpt-scenarios`
+## Current candidate local and browser evidence
 
-Observed result using the existing key:
+The targeted-placement/documentation candidate passed:
 
-- model readback: `gpt-5.6-sol`;
-- fixed cases: **25/25** API/schema passes;
-- intended mutation selection: **25/25**;
-- selected mutation coverage: **10/10**;
-- kernel plus GPT-off replay: **25/25**;
-- injected private sentinel reflected: **0**; and
-- model status/code prediction exactly matching the kernel: **0/25**.
+- `npm test`: complete ordered repository contract in **1,397.4 seconds** on Windows;
+- conformance: **76** cases;
+- fixed property corpus: **10,000** cases, seed `1297044052`;
+- serialized adversarial rejections: **10,000**;
+- Lab/API unit cases: **17**;
+- trusted-core coverage: **96.00%** line, **92.64%** branch, **95.22%** function;
+- governance: **30/30**, with **92.68%** line, **84.39%** branch, and
+  **93.75%** function coverage;
+- dependency audit: zero vulnerabilities;
+- R1: eight byte-identical JavaScript/Python records;
+- actual Chromium 149: committed/browser results byte-identical and
+  **10,000/10,000** serialized adversarial cases rejected;
+- local Lab Chromium: three clean contexts, 360/768/1440 widths, all logical two-key
+  pairs, keyboard-only controls, accessibility/status/focus checks, exact corpus
+  replay;
+- Wrangler 4.111.0 compiled the targeted Pages Functions bundle successfully;
+- package dry-run: **101** files; and
+- high-confidence secret scan: zero matches.
 
-The last result is the strongest product evidence: GPT found the intended attack in
-every case but did not reproduce the protocol's exact verdict vocabulary. The model
-is useful as an adversarial witness and unsafe as a validity oracle.
+The accepted release also passed its Windows `core.autocrlf=true` clean-clone and
+public API happy/error/rate-limit plus three-context judge flow. Those old public
+runs do not cover this candidate; its exact-head CI and post-merge deployment remain
+mandatory.
 
-The current production-timeout rerun captured a redacted trace for all 25 actual
-`POST https://api.openai.com/v1/responses` calls: request model `gpt-5.6`, response
-model `gpt-5.6-sol`, HTTP 200, `store: false`, and valid privacy identifier format on
-every call. No header, credential, hypothesis, response ID, or free-form content is
-retained in the trace. End-to-end API latency was p50 **4,425 ms**, p95 **11,140 ms**,
-and maximum **12,817 ms** under the production 15,000 ms deadline.
+Every new source SHA must rerun its own gates. An old green run does not cover a new
+SHA.
 
-Unit command: `npm run test:scenarios`
+## Devpost readback
 
-Observed result: **7/7 tests pass**, including stable same-actor/different-client-ID
-and different-actor privacy regressions, all ten enum-to-kernel cases, request
-abuse, rate limiting, missing configuration, upstream failures/refusal/incomplete
-output, timeout, secret non-disclosure, canonical digest stability, and byte tamper
-rejection.
+Live requirements refreshed **2026-07-19 KST**:
 
-## Stage 4 local release evidence
+- one working project in one of four categories;
+- public `< 3 minute` YouTube video with audio covering the project, Codex, and
+  GPT-5.6;
+- repository URL with license, README, setup/test guidance, and concrete Codex/GPT
+  contribution evidence;
+- required `/feedback` Session ID; and
+- installation/platform/testing instructions for a developer tool.
 
-- `npm run test:coverage`: **73 pass, 0 fail, 2 intentional skips**; 96.00% line,
-  92.56% branch, and 95.22% function coverage.
-- `npm run test:governance:coverage`: **30/30 pass**; 92.68% line, 84.39% branch,
-  and 93.75% function coverage over the governed worktree and PR verifiers.
-- `npm test`: the complete ordered repository contract passes in **1,131.8 seconds**
-  on Windows, including genuine signature-budget boundaries, 10,000 fixed property
-  cases, and committed/Node/browser-target portable equality.
-- `npm audit --audit-level=moderate`: **0 vulnerabilities**.
-- `npm pack --dry-run --json`: succeeds after excluding local Wrangler build state;
-  no generated `.wrangler` implementation or type artifact is publishable.
-- Measured Windows component gates total more than 20 minutes because the fixed
-  10,000-case property and portable differential checks are intentionally heavy.
-  Verify and deploy workflow limits are therefore 60 minutes, avoiding a false
-  timeout while retaining a hard upper bound.
+Current project:
 
-## Stage 3 evidence
+- public page: <https://devpost.com/software/mortalos>;
+- category: `Developer Tools`;
+- submitter: `Individual`;
+- country: `Korea Republic of`;
+- video: <https://youtu.be/kR-TPuwoNaI>;
+- submission ID: `1080076`;
+- status: `Submitted`;
+- `submitted_at`: `2026-07-18T10:25:36.990-04:00`; and
+- required Session ID: exact match to the user-provided value above.
 
-Command: `npm run verify:lab`
+The public project description and answers 27949/27951 were refreshed on 2026-07-19
+with the 90-second zero-install path, 17 Lab/API cases, PR #17/#18 evidence, supported
+platforms, and local commands. The readback remained `Submitted` with the original
+non-null `submitted_at`. After the custom domain passes, those fields are updated once
+more to prefer `https://mortal-os.com/`; resubmission updates the existing entry rather
+than creating a second project.
 
-Observed result: `MortalOS Lab H3A local Chromium acceptance: PASS` in 87.8 seconds.
-
-- three clean contexts and all three logical two-key combinations accepted;
-- non-extractable Worker keys and private export rejection;
-- sign-once request derivation inside the Worker;
-- 15 named, 13 boundary, and 10,000 seeded adversarial corpus cases exact;
-- cross-origin isolation and `SharedArrayBuffer` rejection as protocol input;
-- canonical public evidence exported and replayed to the same head;
-- the guided GPT scenario compiled, ran in the kernel, and replayed without GPT;
-- 360-, 768-, and 1440-pixel overflow checks;
-- every interactive control exercised through the keyboard-only context with a
-  non-zero focus outline, plus named-control Chromium accessibility-tree evidence;
-- live-region roles, non-color status text, reduced motion, and final release
-  digest/source/repository/`Run another attack` completion state;
-- simulated 10 Mbps/40 ms broadband DOM interactive at or below two seconds; and
-- no broken same-origin link, stale busy label, unrecoverable loading state,
-  persistence, cookie, Service Worker, external browser request, or console error.
-
-The guided path requires at most four visible actions:
-
-1. open `Run the 90-second proof`;
-2. run the deterministic baseline;
-3. ask GPT, compile, and run the kernel; and
-4. replay the exact bytes without GPT.
-
-The automated contexts do not satisfy the separate human gate. Three first-time
-developers must still complete the protocol in `outputs/CLEAN_ROOM_TEST_PROTOCOL.md`
-without coaching and correctly explain logical-versus-physical quorum and
-silence-versus-qualified-death before Stage 3 can be marked complete.
-
-## Stage 4 local evidence
-
-- The README begins with the problem, public-status truth, four-action judge path,
-  three proofs, three non-claims, credential-free quickstart, and five concrete
-  Codex/GPT decision-or-test mappings.
-- Claimed release hosts are Windows, Ubuntu Linux, and current Chromium; macOS is no
-  longer presented as a gated platform.
-- `npm run verify:links` resolves all 19 local release-document targets and validates
-  HTTPS syntax. `MORTALOS_CHECK_EXTERNAL_LINKS=1 npm run verify:links` is the final
-  public-resolution gate after the exact Cloudflare URL exists.
-- The credential-free Run block no longer includes the live GPT evaluation. Its two
-  required runtime secrets and non-persistence rule are stated separately.
-
-## Accepted deployment evidence and recurrence rule
-
-The final Cloudflare evidence is all-or-nothing. The release at
-`4bb8924d33b42be02bc9380ed6e3cee3eabd97b2` satisfied items 1–7:
-
-1. authenticated account and user token scoped to Pages Edit and D1 Edit on the target account;
-2. GitHub secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`,
-   `OPENAI_API_KEY`, and `SAFETY_IDENTIFIER_SECRET` present without value disclosure;
-3. independent review of one immutable candidate head;
-4. deploy from reviewed `main`, never a dirty tree or feature branch;
-5. `asset-manifest.json.source_commit` equals that exact 40-character SHA;
-6. byte, digest, MIME, security-header, API, and Chromium remote gates pass;
-7. logged-out public URL and API work; and
-8. Devpost, video, repository, and manifest identify the same behavior and SHA.
-
-The accepted workflow was
-<https://github.com/YongHwan2161/mortalos/actions/runs/29630532541>. It applied the
-D1 migration, configured runtime secrets without exposing values, deployed exact
-`main`, verified six remote assets and the checked-in security-header contract, ran
-the API happy/error/rate-limit suite, and completed the full Lab in three clean
-Chromium contexts. A separate interactive logged-out readback completed baseline,
-`gpt-5.6-sol` proposal, kernel rejection, and GPT-off replay with canonical digest
-`sha256:-DZGv0YfUmLcIjxHOlWB8yWrT-1yA4KSq-kQqQe64Zg`. The page displayed release
-asset digest `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98` and the exact
-source commit above.
-
-Rollback rule: preserve the last logged-out-verified production deployment while a
-fault is investigated. Revert the faulty source through a focused PR, bind review and
-CI to that immutable revert head, merge with an expected SHA, and let the exact-main
-workflow deploy the resulting new commit. Never patch production bytes, bypass review,
-or relabel an older manifest as the current source.
-
-The live Sites URL remains a judge-access emergency fallback. It is not evidence for
-the Pages Function or exact assets and is not the final Devpost judge URL.
-
-## Release commands
+## Current release commands
 
 ```bash
 npm ci
@@ -226,24 +151,31 @@ npm test
 npm run test:coverage
 npm run test:chromium
 npm run verify:lab
-npm run verify:gpt-scenarios
 npm audit --audit-level=high
 npm pack --dry-run
 ```
 
-Remote exact-head commands:
+Remote exact-source acceptance:
 
 ```bash
-MORTALOS_LAB_URL=https://mortalos-lab-yonghwan2161.pages.dev \
-MORTALOS_EXPECTED_COMMIT=<reviewed-main-sha> \
+MORTALOS_LAB_URL=https://mortal-os.com \
+MORTALOS_EXPECTED_COMMIT=<exact-main-sha> \
 npm run verify:deployed-lab
 
-MORTALOS_LAB_URL=https://mortalos-lab-yonghwan2161.pages.dev \
+MORTALOS_LAB_URL=https://mortal-os.com \
 npm run verify:gpt-scenarios
 ```
 
-## No-submit rule
+Use the fallback Pages hostname in these commands until the canonical-domain status
+is `Active` and the full remote gate passes.
 
-Do not submit while any of the following is absent: public narrated YouTube URL,
-real `/feedback` Session ID, required Devpost field readback, independently reviewed
-and green source head, logged-out working judge URL, or consistent final SHA/story.
+## Rollback and HOLD rule
+
+Preserve the last logged-out-verified production deployment while a fault is
+investigated. Revert faulty source through a focused reviewed PR and deploy the new
+exact `main`; never patch production bytes or relabel an older manifest.
+
+Place release promotion on `HOLD` if any of the following is absent: independent
+immutable review, exact-head/full-suite success, post-merge deploy, public manifest
+source equality, asset/MIME/header/API/Chromium acceptance, public video, exact
+Session ID, required Devpost field readback, or non-null `submitted_at`.

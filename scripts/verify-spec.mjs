@@ -30,11 +30,11 @@ const paths = {
   threatModel: "docs/THREAT_MODEL.md",
   rejectionCodes: "docs/REJECTION_CODES.md",
   traceability: "docs/TRACEABILITY.md",
-  implementationPlan: "docs/IMPLEMENTATION_PLAN.md",
-  projectStatus: "docs/PROJECT_STATUS.md",
+  roadmap: "docs/NORTH_STAR_ROADMAP.md",
+  releaseEvidence: "docs/BUILD_WEEK_EVIDENCE.md",
   incubator: "docs/SINGLE_BROWSER_INCUBATOR.md",
   accessArchitecture: "docs/ACCESS_ARCHITECTURE.md",
-  submissionChecklist: "docs/SUBMISSION_CHECKLIST.md",
+  docsIndex: "docs/README.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
@@ -279,16 +279,19 @@ const portableGateStatements = [
   "Any cross-runtime mismatch reopens the earliest portable gate"
 ];
 for (const statement of portableGateStatements) {
-  assert(text.implementationPlan.includes(statement), `Implementation plan lost C1 evidence: ${statement}`);
+  assert(text.roadmap.includes(statement), `North Star roadmap lost C1 evidence: ${statement}`);
 }
 
 for (const statement of [
-  "P0/H3A/H3B/R1/GPT/guided path merged; direct Pages accepted; submission evidence in progress",
+  "P0/H3A/H3B/R1-A/R1-B/GPT/guided path merged",
   "| Node/browser agreement | Required per review head |",
   "an old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"
 ]) {
-  assert(text.projectStatus.includes(statement), `Project status is missing: ${statement}`);
+  assert(
+    text.roadmap.includes(statement) || text.releaseEvidence.includes(statement),
+    `Current roadmap/evidence is missing: ${statement}`
+  );
 }
 
 for (const statement of [
@@ -297,7 +300,7 @@ for (const statement of [
   "Three non-extractable Worker keys"
 ]) {
   assert(
-    text.implementationPlan.includes(statement) || text.projectStatus.includes(statement),
+    text.roadmap.includes(statement) || text.releaseEvidence.includes(statement),
     `H3 status evidence is missing: ${statement}`
   );
 }
@@ -424,12 +427,12 @@ const staleH2Prefix = ["b544", "3d17"].join("");
 const staleMortalityPhrase = ["no", "latent", "successor"].join(" ");
 for (const [name, artifact] of Object.entries({
   readme: text.readme,
-  projectStatus: text.projectStatus,
+  releaseEvidence: text.releaseEvidence,
   traceability: text.traceability,
   accessArchitecture: text.accessArchitecture,
   incubator: text.incubator,
-  submissionChecklist: text.submissionChecklist,
-  implementationPlan: text.implementationPlan,
+  roadmap: text.roadmap,
+  docsIndex: text.docsIndex,
   threatModel: text.threatModel
 })) {
   assert(!artifact.includes(stalePortableVersion), `${name} contains a stale corpus version`);
@@ -443,8 +446,7 @@ const orderedGateStatement =
   "R3 availability → R4 network embodiment";
 for (const [name, artifact] of Object.entries({
   readme: text.readme,
-  projectStatus: text.projectStatus,
-  implementationPlan: text.implementationPlan
+  roadmap: text.roadmap
 })) {
   assert(
     artifact.includes(orderedGateStatement),
@@ -470,20 +472,21 @@ for (const statement of [
   assert(text.protocol.includes(statement), `Protocol omits mortality/R1 boundary: ${statement}`);
 }
 assert(
-  text.submissionChecklist.includes("one-browser logical quorum is presented as ownerless distribution"),
+  text.roadmap.includes("one-browser logical quorum is presented as ownerless distribution"),
   "Submission claims omit the independent-distribution qualification"
 );
 
 const currentDocLinks = [
-  "PROJECT_STATUS.md",
-  "IMPLEMENTATION_PLAN.md",
+  "README.md",
+  "NORTH_STAR_ROADMAP.md",
   "ACCESS_ARCHITECTURE.md",
   "PROTOCOL.md",
   "THREAT_MODEL.md",
   "REJECTION_CODES.md",
   "TRACEABILITY.md",
   "SINGLE_BROWSER_INCUBATOR.md",
-  "SUBMISSION_CHECKLIST.md"
+  "BUILD_WEEK_EVIDENCE.md",
+  "AGENT_COLLABORATION.md"
 ];
 for (const fileName of currentDocLinks) {
   assert(text.readme.includes(`docs/${fileName}`), `README does not link current document: ${fileName}`);
@@ -494,8 +497,12 @@ const removedLegacyDocs = [
   "CORE_VERIFICATION_REPORT.md",
   "CURRENT_AUDIT_2026-07-14.md",
   "DEVPOST_COMPLIANCE.md",
+  "DEMO_SCRIPT.md",
+  "IMPLEMENTATION_PLAN.md",
   "P0_VERIFICATION_REPORT.md",
-  "PORTABLE_KERNEL_REPORT_2026-07-15.md"
+  "PORTABLE_KERNEL_REPORT_2026-07-15.md",
+  "PROJECT_STATUS.md",
+  "SUBMISSION_CHECKLIST.md"
 ];
 const existingDocs = new Set(await readdir(new URL("docs/", ROOT)));
 for (const fileName of removedLegacyDocs) {

@@ -3,6 +3,10 @@
   "name": "mortalos-lab-yonghwan2161",
   "pages_build_output_dir": "./dist/lab",
   "compatibility_date": "2026-07-17",
+  "placement": {
+    "mode": "targeted",
+    "region": "aws:us-east-1"
+  },
   "vars": {
     "ENVIRONMENT": "production"
   },
