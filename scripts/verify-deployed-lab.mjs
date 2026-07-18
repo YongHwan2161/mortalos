@@ -53,7 +53,10 @@ async function verifyOnce({ url, expectedCommit }) {
     assert.equal(remote.source_commit, expectedCommit);
 
     for (const asset of remote.files) {
-      const assetResponse = await fetch(new URL(asset.path, origin), {
+      const assetUrl = asset.path === "index.html"
+        ? new URL("/", origin)
+        : new URL(asset.path, origin);
+      const assetResponse = await fetch(assetUrl, {
         cache: "no-store",
         redirect: "error"
       });

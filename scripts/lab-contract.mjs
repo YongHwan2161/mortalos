@@ -3,7 +3,7 @@ import { extname } from "node:path";
 const mediaTypes = Object.freeze({
   ".css": "text/css",
   ".html": "text/html",
-  ".js": "text/javascript",
+  ".js": "application/javascript",
   ".json": "application/json",
   ".txt": "text/plain"
 });

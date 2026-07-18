@@ -200,14 +200,18 @@ Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is
 equivalent local maintainer command and requires Cloudflare credentials; judges do
 not need those credentials.
 
-Current release status: the H3B/GPT/guided contract is merged and its post-merge
-Verify run passes. Cloudflare credentials, the Pages project, and the APAC D1 database
-now exist. Two exact-main deploy attempts exposed an unsupported Pages `ratelimits`
-configuration before any deployment; this candidate replaces it with the supported
-D1 binding. The remote migration and a 20-call concurrent atomic counter probe pass,
-but the `pages.dev` URL remains a target until this change receives immutable review,
-merges, deploys from exact `main`, and passes logged-out verification. The separate
-Sites URL remains the current fallback and does not satisfy H3B's exact-asset contract.
+Current release status: the H3B/GPT/guided and D1 rate-limit contracts are merged.
+Post-merge Verify `29628252577/1` passed at exact `main`
+`b107a683e4d646b1b7940b241207d7740853e25f`. Deploy `29628252629/1` applied the
+D1 migration, configured runtime secrets, and published Pages, then the strict remote
+gate rejected the JavaScript MIME contract: Pages served `application/javascript`
+while the manifest declared `text/javascript`. Independent review of the first fix
+also found that Pages redirects `/index.html` to canonical `/`; the first MIME failure
+had masked that next asset-loop failure. This focused follow-up reconciles the MIME
+and verifies manifest `index.html` bytes at `/` without allowing redirects. The
+`pages.dev` URL is not a release PASS until a reviewed exact-main redeploy passes
+logged-out asset, header, API, and Chromium verification. Sites remains the emergency
+fallback.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed

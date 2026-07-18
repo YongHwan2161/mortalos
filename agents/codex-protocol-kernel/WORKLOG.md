@@ -561,3 +561,37 @@ result, and reproducible verification.
 - Handoff: publish a new immutable head, rerun exact-head policy and Verify, and
   require a complete fresh independent review before merge. The author does not
   self-review or merge.
+
+## 2026-07-18 KST — Cloudflare Pages JavaScript MIME reconciliation
+
+- Base: `b107a683e4d646b1b7940b241207d7740853e25f`
+- Branch: `agent/codex-protocol-kernel--pages-js-mime`
+- Trigger: PR #16 passed fresh immutable review, merged with the expected head, and
+  post-merge Verify `29628252577/1` passed. Exact-main deploy `29628252629/1`
+  successfully applied the D1 migration, configured runtime secrets, and published
+  Pages, but the strict remote verifier rejected `app.js` MIME.
+- Root cause: Cloudflare Pages serves JavaScript as `application/javascript`, while
+  the repository manifest and local server declared `text/javascript`. Bytes,
+  deployment, and D1 were not the failing boundary.
+- Repair: declare `application/javascript` as the shared manifest/local-server MIME
+  and pin it with an explicit Lab regression assertion. The verifier remains strict;
+  no MIME mismatch is ignored or allowlisted at verification time.
+- Handoff: rerun focused and complete gates, publish an immutable review head, and
+  redeploy only after independent expected-head merge.
+
+## 2026-07-18 KST — PR #17 canonical-root review correction
+
+- Reviewed snapshot: base `b107a683e4d646b1b7940b241207d7740853e25f`, head
+  `a44b5380b6525e6e76c96db572b81150645c5452`; exact-head policy, Verify, and
+  Windows fresh-clone tests passed.
+- Independent result: BLOCK. Live `GET` and `HEAD /index.html` return `308` to `/`.
+  The manifest includes `index.html`, and the verifier's strict asset loop would
+  therefore fail after the JavaScript MIME correction. The earlier MIME failure
+  masked this deterministic next failure, while the local mock returned `200` for
+  every path and did not reproduce Pages routing.
+- Correction: keep redirects forbidden, but fetch manifest `index.html` at canonical
+  `/`, whose bytes, MIME, and headers are already exact-contract inputs. The test mock
+  now returns the real `308` for `/index.html` and asserts that the verifier never
+  requests that alias.
+- Handoff: publish a new immutable head and require complete fresh policy, Verify,
+  Windows clone, and independent review before merge.

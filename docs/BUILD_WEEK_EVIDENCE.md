@@ -2,9 +2,9 @@
 
 As of: **2026-07-18 KST**
 
-Candidate branch: `agent/codex-protocol-kernel--pages-d1-rate-limit`
+Candidate branch: `agent/codex-protocol-kernel--pages-js-mime`
 
-Candidate base: `3d0529e40c66d13a7e326778d26312f6051c55bc`
+Candidate base: `b107a683e4d646b1b7940b241207d7740853e25f`
 
 This is a rolling release record, not a completion claim. A gate is `PASS` only when
 the listed command or external readback has succeeded for the candidate. `WAIT`
@@ -15,7 +15,7 @@ means the implementation may exist but the required external evidence does not.
 | Stage | State | Strict evidence |
 | --- | --- | --- |
 | 0 — truthful baseline and Windows fidelity | PASS | Isolated current-main worktree; `.gitattributes`; repository text scan reports zero CRLF files; `npm ci` succeeds with zero audit vulnerabilities. |
-| 1 — exact-SHA public Cloudflare release | WAIT | Account, scoped user token, Pages project, D1 database, GitHub secrets, remote migration, live Wrangler config readback, and a 20-call concurrent atomic D1 probe pass. The Pages-compatible candidate still requires immutable review, merge, exact-main deployment, and logged-out acceptance. |
+| 1 — exact-SHA public Cloudflare release | WAIT | PR #16 passed review/merge/post-merge Verify. Exact-main run `29628252629/1` applied D1, configured secrets, and deployed, then strictly rejected the live `application/javascript` response because the manifest declared `text/javascript`. PR #17's first review also found the masked `/index.html` → `/` 308. This candidate reconciles MIME and canonical-root verification, and still requires fresh review, redeploy, and full logged-out acceptance. |
 | 2 — GPT-5.6 adversarial witness | PASS locally | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, keyed privacy-preserving actor identifiers, no client secret. |
 | 3 — 90-second judge path | PARTIAL locally | Three-context real-Chromium automation passes at 360/768/1440 with a keyboard-only full-control path, accessibility-tree/status/focus checks, simulated-broadband interactivity, four judge actions, and GPT-off replay. Three first-time human testers remain mandatory. |
 | 4 — evidence and source reconciliation | PARTIAL locally | Judge-first README, five evidence mappings, link checker, source, tests, deployment config, this evidence record, and demo script are in the candidate. Immutable review, public-link resolution, and deployed-SHA binding remain release gates. |

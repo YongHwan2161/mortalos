@@ -78,7 +78,10 @@ to Pages.
   Pages Edit plus D1 Edit and its current value is not exposed in repository or logs.
 - [x] D1 strict-table migration and 20-call concurrent atomic counter probe pass; the
   temporary probe row and diagnostic Pages secret were removed.
-- [ ] Cloudflare Pages deployment completes from reviewed `main`.
+- [x] Cloudflare Pages deployment completes from reviewed `main` (run
+  `29628252629/1`); remote acceptance remains separate and failed closed on the
+  JavaScript MIME contract. Independent review also found the masked canonical
+  `/index.html` redirect before redeploy.
 - [ ] `asset-manifest.json` names the exact deployed source commit.
 - [ ] Every remote asset matches local bytes, digest, MIME, and security headers.
 - [ ] `npm run verify:lab` passes against the public URL in three clean contexts.
