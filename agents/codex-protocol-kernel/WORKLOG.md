@@ -561,3 +561,20 @@ result, and reproducible verification.
 - Handoff: publish a new immutable head, rerun exact-head policy and Verify, and
   require a complete fresh independent review before merge. The author does not
   self-review or merge.
+
+## 2026-07-18 KST — Cloudflare Pages JavaScript MIME reconciliation
+
+- Base: `b107a683e4d646b1b7940b241207d7740853e25f`
+- Branch: `agent/codex-protocol-kernel--pages-js-mime`
+- Trigger: PR #16 passed fresh immutable review, merged with the expected head, and
+  post-merge Verify `29628252577/1` passed. Exact-main deploy `29628252629/1`
+  successfully applied the D1 migration, configured runtime secrets, and published
+  Pages, but the strict remote verifier rejected `app.js` MIME.
+- Root cause: Cloudflare Pages serves JavaScript as `application/javascript`, while
+  the repository manifest and local server declared `text/javascript`. Bytes,
+  deployment, and D1 were not the failing boundary.
+- Repair: declare `application/javascript` as the shared manifest/local-server MIME
+  and pin it with an explicit Lab regression assertion. The verifier remains strict;
+  no MIME mismatch is ignored or allowlisted at verification time.
+- Handoff: rerun focused and complete gates, publish an immutable review head, and
+  redeploy only after independent expected-head merge.

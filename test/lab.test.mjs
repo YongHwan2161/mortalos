@@ -289,6 +289,12 @@ test("H3B build binds every served asset, MIME type, security header, and source
       `sha256:${encodeBase64Url(createHash("sha256").update(bytes).digest())}`
     );
   }
+  assert.equal(
+    manifest.files.find((entry) => entry.path === "app.js")?.media_type,
+    "application/javascript",
+    "the manifest must match Cloudflare Pages' canonical JavaScript MIME"
+  );
+  assert.equal(labContentType("app.js"), "application/javascript; charset=utf-8");
   const assets = { format: manifest.format, files: manifest.files };
   assert.equal(
     manifest.asset_digest,

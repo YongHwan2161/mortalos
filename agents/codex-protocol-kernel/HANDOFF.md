@@ -5,6 +5,27 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
+### ACTIVE — Cloudflare Pages JavaScript MIME reconciliation
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `b107a683e4d646b1b7940b241207d7740853e25f`
+- Work branch: `agent/codex-protocol-kernel--pages-js-mime`
+- Worktree:
+  `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--pages-js-mime`
+- Exact intended shared paths: `README.md`, `scripts/lab-contract.mjs`,
+  `scripts/verify-spec.mjs`, `test/lab.test.mjs`,
+  `docs/BUILD_WEEK_EVIDENCE.md`, `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/PROJECT_STATUS.md`, and `docs/SUBMISSION_CHECKLIST.md`.
+- Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Contract affected: bind manifest and local-server JavaScript MIME to the
+  `application/javascript` value served by Cloudflare Pages so the strict remote
+  verifier compares an accurate exact-MIME contract.
+- Required evidence: focused Lab tests, full verification, exact-head CI/policy,
+  immutable independent review, exact-main redeploy, and logged-out remote acceptance.
+- Expected handoff: one focused reviewed PR from current `main`; author does not
+  self-review, merge, or push directly to `main`.
+
 ### ACTIVE — Pages-compatible production rate limiting
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`

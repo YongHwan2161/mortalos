@@ -2,7 +2,7 @@
 
 As of: **2026-07-18 KST**
 
-Stage: **P0/H3A/H3B/R1/GPT/guided path merged; public Sites fallback live; direct Pages repair under review**
+Stage: **P0/H3A/H3B/R1/GPT/guided path merged; direct Pages deployed; exact-MIME acceptance repair in progress**
 
 Security baseline: **every published or deployed SHA requires immutable-head review and its own successful verification**
 
@@ -13,19 +13,17 @@ Lab. It is not yet an operating system, participant network, deterministic mutab
 state machine, or ownerless model runtime.
 
 Current remote `main` at audit time is
-`3d0529e40c66d13a7e326778d26312f6051c55bc`. It contains P0, H3A, H3B, bounded
-R1, the repository-owned GPT-5.6 witness, and the guided judge path. Post-merge Verify
-run `29567824512` passed. Exact-main deploy runs `29588418943` and `29591202642`
-passed the full source suite, then failed before deployment because Wrangler does not
-support the configured `ratelimits` binding for Pages projects.
+`b107a683e4d646b1b7940b241207d7740853e25f`. It contains P0, H3A, H3B, bounded
+R1, the repository-owned GPT-5.6 witness, guided judge path, and the D1-backed
+private-actor rate limiter. PR #16 passed fresh immutable review, expected-head merge,
+and post-merge Verify `29628252577/1`.
 
-This focused candidate replaces that unsupported binding with an atomic D1-backed
-ten-request-per-minute private-actor limiter. The Cloudflare account, user token,
-Pages project, GitHub secrets, and APAC D1 database exist. Wrangler config readback,
-the remote migration, and a concurrent 1-through-20 atomic counter probe pass. The
-probe row and the earlier diagnostic Pages secret were removed. This candidate is not
-deployed evidence until immutable-head review, CI, merge, and logged-out Pages
-verification pass.
+Exact-main deploy `29628252629/1` successfully applied the D1 migration, configured
+runtime secrets, and published the Pages artifact. Its final remote gate failed
+strictly because Cloudflare served `app.js` as `application/javascript` while the
+manifest declared `text/javascript`. This focused candidate aligns the shared
+manifest/local-server JavaScript MIME with the deployed platform. No public release
+PASS is claimed until a reviewed exact-main redeploy passes the full remote verifier.
 
 PR #11 also has a governance incident: an attestation of unverifiable logical-agent
 provenance was followed by merge before the assigned reviewer completed the required
@@ -46,7 +44,7 @@ post-merge technical Verify result.
 | H3A MortalOS Lab | Implemented | Three non-extractable Worker keys, logical `2-of-3`, reference turnover, replay/fork, qualified mortality, resurrection rejection, clone, full corpus, and public evidence export/replay. One browser remains one physical failure domain. |
 | H3B deployment contract | Merged on `main`; post-merge Verify passed | Deterministic asset manifest, exact source SHA, Cloudflare headers, pinned Actions, idempotent Pages project discovery, remote asset verifier, and remote Chromium path. |
 | Public Sites judge path | Live; source provenance pending | Logged-out HTTP 200, public-result GPT witness HTTP 200, and injected private field HTTP 422. Both displayed hashes/outcomes match merged R1. Sites version 2 has immutable source/archive metadata, but its source is not in this repository. |
-| Direct H3B Cloudflare Pages release | Configuration repair under review; not deployed | Credentials and resources are present. Exact-main deploys found that Pages rejects the prior `ratelimits` binding; the D1 replacement passes local and live database probes but still needs review/merge/deploy/remote acceptance. |
+| Direct H3B Cloudflare Pages release | Deployed; exact-MIME acceptance repair in progress | PR #16's D1 release deployed from exact main. The strict remote gate found only the JavaScript manifest MIME mismatch; this follow-up keeps verification strict and reconciles the contract before PASS. |
 | Language-neutral wire and independent verifier | Merged through PR #12 | Eight bounded Genesis/replay/mortality operations with JS/Python byte equality. Exact-head Verify and logical reviewer checks passed. Python covers the committed corpus profile, not arbitrary pending/fork/resource-limit inputs. |
 | Mutable logical state/genome | Not implemented on `main` | An older local R2 prototype is not merge evidence because it predates current P0 and R1. |
 | Participant network/replication | Not implemented | No WebRTC/libp2p transport, distributed custody evidence, state availability protocol, or independent-host survival. |
@@ -72,7 +70,8 @@ The GitHub workflow:
 6. runs the complete Lab acceptance suite against the public HTTPS origin.
 
 No public URL is considered valid merely because a deploy command returned success.
-The latest runs reached the secret/configuration boundary but did not deploy bytes.
+The latest run deployed bytes but remains unaccepted because the strict remote MIME
+comparison failed before browser/API acceptance.
 
 ## 4. Build Week status
 

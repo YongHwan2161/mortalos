@@ -118,11 +118,13 @@ Current evidence and closure sequence:
    after exact-head Verify `29515312168` and a logical reviewer PASS at head
    `f60be06529ac3b34c40d9873dddabc681577cb4d`. This correction removes the stale
    H3B checklist claims that landed with it while retaining the narrow R1 scope.
-6. The Pages-compatible candidate uses the provisioned D1 database and one atomic
-   private-actor minute-window UPSERT. Wrangler config readback, the remote strict
-   migration, and a 20-call concurrent 1-through-20 counter probe pass. After
-   immutable review and exact-head CI, merge it, rerun `Deploy MortalOS Lab`, and
-   accept it only after exact asset/header/API/Chromium proof.
+6. PR #16 merged the provisioned D1 database and one atomic private-actor
+   minute-window UPSERT at `b107a683e4d646b1b7940b241207d7740853e25f` after
+   immutable review and exact-head CI. Post-merge Verify passed and the exact-main
+   deploy published Pages. The final gate correctly rejected a JavaScript MIME
+   mismatch: live Pages used `application/javascript` while the manifest declared
+   `text/javascript`. Reconcile that contract through review and redeploy, then
+   accept the URL only after exact asset/header/API/Chromium proof.
 
 ### S1 — repository and judge instructions
 
