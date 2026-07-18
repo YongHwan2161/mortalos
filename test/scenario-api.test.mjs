@@ -43,6 +43,26 @@ function upstream(value = proposal(), overrides = {}) {
   }), { status: 200, headers: { "content-type": "application/json" } });
 }
 
+function rateDatabase({ count = 1, fail = null, onStatement = null } = {}) {
+  return {
+    prepare(sql) {
+      onStatement?.({ phase: "prepare", sql });
+      return {
+        bind(actorKey) {
+          onStatement?.({ actorKey, phase: "bind", sql });
+          return {
+            async first() {
+              onStatement?.({ actorKey, phase: "first", sql });
+              if (fail) throw fail;
+              return count === null ? null : { request_count: count };
+            }
+          };
+        }
+      };
+    }
+  };
+}
+
 function context({
   body = requestBody(),
   method = "POST",
@@ -51,7 +71,7 @@ function context({
   connectingIp = "203.0.113.7",
   key = TEST_KEY,
   safetySecret = TEST_SAFETY_SECRET,
-  limiter = { limit: async () => ({ success: true }) }
+  rateDb = rateDatabase()
 } = {}) {
   const headers = new Headers();
   if (origin !== null) headers.set("origin", origin);
@@ -66,7 +86,7 @@ function context({
     env: {
       OPENAI_API_KEY: key,
       SAFETY_IDENTIFIER_SECRET: safetySecret,
-      SCENARIO_RATE_LIMITER: limiter
+      SCENARIO_RATE_DB: rateDb
     }
   };
 }
@@ -82,7 +102,11 @@ test("scenario API keeps GPT-5.6 server-side, structured, stateless, and non-aut
   const result = await parsed(await handleScenarioRequest(
     context({
       body: requestBody("continuation", hypothesis),
-      limiter: { limit: async ({ key }) => { rateKeys.push(key); return { success: true }; } }
+      rateDb: rateDatabase({
+        onStatement: ({ actorKey, phase }) => {
+          if (phase === "bind") rateKeys.push(actorKey);
+        }
+      })
     }),
     { fetchImpl: async (url, init) => { calls.push({ url, init }); return upstream(); } }
   ));
@@ -163,18 +187,41 @@ test("scenario API rejects malformed, oversized, cross-origin, and non-JSON requ
   assert.equal(called, 0);
 });
 
-test("scenario API rate limits before OpenAI and fails closed when bindings or key are absent", async () => {
+test("scenario API performs one atomic D1 upsert before OpenAI and keeps actor keys private", async () => {
+  const statements = [];
+  const result = await parsed(await handleScenarioRequest(context({
+    rateDb: rateDatabase({
+      count: 10,
+      onStatement: (event) => statements.push(event)
+    })
+  }), { fetchImpl: async () => upstream() }));
+  assert.equal(result.response.status, 200);
+  assert.deepEqual(statements.map((entry) => entry.phase), ["prepare", "bind", "first"]);
+  const sql = statements[0].sql;
+  assert.match(sql, /INSERT INTO scenario_rate_limits/);
+  assert.match(sql, /ON CONFLICT\(actor_key\) DO UPDATE SET/);
+  assert.match(sql, /CAST\(unixepoch\(\) \/ 60 AS INTEGER\)/);
+  assert.match(sql, /RETURNING request_count/);
+  assert.equal((sql.match(/INSERT INTO/g) ?? []).length, 1);
+  assert.match(statements[1].actorKey, /^rate_[A-Za-z0-9_-]{43}$/);
+  assert.equal(statements[1].actorKey.includes("203.0.113.7"), false);
+});
+
+test("scenario API rate limits before OpenAI and fails closed when D1, secrets, or edge identity fail", async () => {
   let called = 0;
   const fetchImpl = async () => { called += 1; return upstream(); };
   const limited = await parsed(await handleScenarioRequest(context({
-    limiter: { limit: async () => ({ success: false }) }
+    rateDb: rateDatabase({ count: 11 })
   }), { fetchImpl }));
   assert.equal(limited.response.status, 429);
   assert.equal(limited.body.error, "rate_limited");
   assert.equal(limited.response.headers.get("retry-after"), "60");
 
   for (const input of [
-    context({ limiter: null }),
+    context({ rateDb: null }),
+    context({ rateDb: rateDatabase({ fail: new Error("D1 unavailable") }) }),
+    context({ rateDb: rateDatabase({ count: null }) }),
+    context({ rateDb: rateDatabase({ count: 0 }) }),
     context({ key: "" }),
     context({ safetySecret: "" }),
     context({ connectingIp: null })

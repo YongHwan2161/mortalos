@@ -26,7 +26,7 @@ import {
 import { summarizePortableCorpus } from "../lab/corpus-summary.mjs";
 import { runReferenceProof } from "../lab/reference-engine.mjs";
 import { buildLab } from "../scripts/build-lab.mjs";
-import { pagesProjectExists } from "../scripts/deploy-lab.mjs";
+import { pagesProjectExists, sanitizeWranglerDiagnostic } from "../scripts/deploy-lab.mjs";
 import { LAB_SECURITY_HEADERS, labContentType, labMediaType } from "../scripts/lab-contract.mjs";
 import { startLabServer } from "../scripts/serve-lab.mjs";
 import { verifyDeployedLab } from "../scripts/verify-deployed-lab.mjs";
@@ -396,4 +396,35 @@ test("H3B Cloudflare project discovery is idempotent and fails closed on schema 
     () => pagesProjectExists("{", "mortalos-lab-yonghwan2161"),
     /did not return valid JSON/
   );
+});
+
+test("H3B Pages deployment uses the provisioned D1 database and a strict migration", async () => {
+  const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
+  assert.equal("ratelimits" in config, false);
+  assert.deepEqual(config.d1_databases, [{
+    binding: "SCENARIO_RATE_DB",
+    database_name: "mortalos-lab-rate-limit",
+    database_id: "d3010cc7-fba4-42ad-8b16-b54e8f777a04",
+    migrations_dir: "migrations"
+  }]);
+
+  const migration = await readFile(
+    new URL("../migrations/0001_scenario_rate_limits.sql", import.meta.url),
+    "utf8"
+  );
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS scenario_rate_limits/);
+  assert.match(migration, /actor_key TEXT PRIMARY KEY NOT NULL/);
+  assert.match(migration, /request_count INTEGER NOT NULL CHECK \(request_count >= 1\)/);
+  assert.match(migration, /\) STRICT;/);
+
+  const deployment = await readFile(new URL("../scripts/deploy-lab.mjs", import.meta.url), "utf8");
+  assert.match(deployment, /"d1", "migrations", "apply", database, "--remote"/);
+  assert.doesNotMatch(deployment, /process\.(?:stdout|stderr)\.write\(deployment\.(?:stdout|stderr)\)/);
+  const secret = "test-secret-value-that-must-not-escape";
+  const diagnostic = sanitizeWranglerDiagnostic(
+    `failed for ${secret}; Authorization: Bearer another-sensitive-token-value`,
+    [secret]
+  );
+  assert.doesNotMatch(diagnostic, /test-secret-value|another-sensitive-token/);
+  assert.match(diagnostic, /\[REDACTED\]/);
 });

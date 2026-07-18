@@ -514,3 +514,50 @@ result, and reproducible verification.
   and logged-out remote verification, public narrated video, real `/feedback`
   Session ID, required Devpost readback, and non-null `submitted_at`. The author does
   not self-review or merge.
+
+## 2026-07-18 KST — Pages-compatible D1 production rate limit
+
+- Base: `3d0529e40c66d13a7e326778d26312f6051c55bc`
+- Branch: `agent/codex-protocol-kernel--pages-d1-rate-limit`
+- Root cause: exact-main deploy runs `29588418943` and `29591202642` passed source
+  tests but Wrangler rejected the Pages project configuration because Pages does not
+  support the Worker `ratelimits` binding. Direct project API readback proved the
+  token and account were valid; this was a configuration compatibility defect.
+- Repair: replaced `SCENARIO_RATE_LIMITER` with the provisioned
+  `SCENARIO_RATE_DB` D1 binding and a strict migration. One atomic minute-window
+  UPSERT stores only the private domain-separated HMAC actor key, increments before
+  OpenAI, permits counts 1–10, rejects 11+ with `429`, and fails closed on missing,
+  failed, or malformed D1 responses. Deployment applies migrations before runtime
+  secrets and emits bounded, secret-redacted Wrangler diagnostics.
+- Live Cloudflare evidence: Wrangler accepted the candidate Pages configuration;
+  remote migration `0001_scenario_rate_limits.sql` passed; 20 concurrent D1 queries
+  returned the exact unique sequence 1–20 and stored 20. The probe row was deleted
+  and read back at count zero. The earlier diagnostic Pages secret was deleted and
+  production environment keys read back empty before final secret deployment.
+- Local evidence: targeted scenario 8/8 and Lab 9/9; full `npm test` PASS in
+  1,212.8 seconds, including governance 30/30, conformance 76/76, seeded properties
+  10,000, combined Lab/API 17/17, portable 10,000/10,000, R1 JS/Python 8 records,
+  singleton, and H2. Coverage PASS at 96.00% line, 92.56% branch, 95.22% function;
+  actual Windows Chromium byte equality and 10,000/10,000 rejects PASS; three clean
+  local Lab contexts and responsive/accessibility/security gates PASS; audit reports
+  zero vulnerabilities; package dry-run includes the migration; diff checks and
+  pattern plus exact-current-token scans report zero secret matches.
+- External gates remain: immutable independent review, exact-head policy/Verify,
+  merge to `main`, exact-main deploy, logged-out remote asset/header/API/Chromium
+  acceptance, and final submission synchronization. The author does not self-review
+  or merge.
+
+## 2026-07-18 KST — PR #16 immutable-review documentation correction
+
+- Reviewed snapshot: base `3d0529e40c66d13a7e326778d26312f6051c55bc`, head
+  `aa4b0b5dc43073b2921fead4a0d8457e7fbe062d`; Agent PR Policy and Verify passed.
+- Independent result: runtime/D1 tests reproduced, but the reviewer correctly
+  blocked because current submission documents simultaneously called Sites primary
+  and Pages optional while other release evidence made Pages the intended final
+  judge path.
+- Correction: Pages is now the single intended final judge path; Sites is explicitly
+  an emergency fallback whose provenance gate blocks only if Devpost ultimately uses
+  Sites. The Devpost synchronization date and completed video state were refreshed.
+- Handoff: publish a new immutable head, rerun exact-head policy and Verify, and
+  require a complete fresh independent review before merge. The author does not
+  self-review or merge.

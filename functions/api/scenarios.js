@@ -9,6 +9,20 @@ const MAX_REQUEST_BYTES = 4_096;
 const MAX_UPSTREAM_BYTES = 65_536;
 const DEFAULT_TIMEOUT_MS = 15_000;
 const OPENAI_URL = "https://api.openai.com/v1/responses";
+const RATE_LIMIT_MAXIMUM = 10;
+const RATE_LIMIT_RETRY_SECONDS = "60";
+const SCENARIO_RATE_LIMIT_SQL = `
+INSERT INTO scenario_rate_limits (actor_key, window_id, request_count)
+VALUES (?1, CAST(unixepoch() / 60 AS INTEGER), 1)
+ON CONFLICT(actor_key) DO UPDATE SET
+  request_count = CASE
+    WHEN scenario_rate_limits.window_id = CAST(unixepoch() / 60 AS INTEGER)
+      THEN scenario_rate_limits.request_count + 1
+    ELSE 1
+  END,
+  window_id = CAST(unixepoch() / 60 AS INTEGER)
+RETURNING request_count
+`;
 
 const RESPONSE_HEADERS = Object.freeze({
   "cache-control": "no-store",
@@ -127,6 +141,23 @@ async function rateIdentifier(address, env) {
   );
 }
 
+async function consumeScenarioRateLimit(database, actorKey) {
+  if (typeof database?.prepare !== "function") throw new ApiError(503, "not_configured");
+  try {
+    const prepared = database.prepare(SCENARIO_RATE_LIMIT_SQL);
+    if (typeof prepared?.bind !== "function") throw new Error("D1 prepare did not return a bindable statement");
+    const bound = prepared.bind(actorKey);
+    if (typeof bound?.first !== "function") throw new Error("D1 bind did not return an executable statement");
+    const row = await bound.first();
+    if (!Number.isSafeInteger(row?.request_count) || row.request_count < 1) {
+      throw new Error("D1 rate-limit statement returned an invalid count");
+    }
+    return row.request_count <= RATE_LIMIT_MAXIMUM;
+  } catch {
+    throw new ApiError(503, "not_configured");
+  }
+}
+
 function modelInput(request) {
   const allowed = Object.entries(SCENARIO_CATALOG)
     .filter(([, value]) => value.kind === request.scenario_kind)
@@ -241,11 +272,13 @@ export async function handleScenarioRequest(context, options = {}) {
       throw new ApiError(415, "invalid_content_type");
     }
     const parsed = await readRequest(request);
-    if (typeof env.SCENARIO_RATE_LIMITER?.limit !== "function") throw new ApiError(503, "not_configured");
     const actorAddress = trustedConnectingAddress(request);
     const safetyId = await safetyIdentifier(actorAddress, env);
-    const limit = await env.SCENARIO_RATE_LIMITER.limit({ key: await rateIdentifier(actorAddress, env) });
-    if (limit?.success !== true) throw new ApiError(429, "rate_limited", "60");
+    const allowed = await consumeScenarioRateLimit(
+      env.SCENARIO_RATE_DB,
+      await rateIdentifier(actorAddress, env)
+    );
+    if (!allowed) throw new ApiError(429, "rate_limited", RATE_LIMIT_RETRY_SECONDS);
     const result = await callOpenAi(
       parsed,
       env,
