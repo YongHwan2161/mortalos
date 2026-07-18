@@ -1,8 +1,8 @@
 # MortalOS Implementation Plan
 
-Status: **P0/H3A/H3B/R1 merged; public Sites judge path live; direct Pages optional; submission sprint active**
+Status: **P0/H3A/H3B/R1 merged; public Sites fallback live; direct Pages final judge path under review; submission sprint active**
 
-Last reviewed: **2026-07-17 KST**
+Last reviewed: **2026-07-18 KST**
 
 This is the only rolling implementation plan. Current evidence belongs in
 [`PROJECT_STATUS.md`](PROJECT_STATUS.md); historical plans remain in Git history.
@@ -29,13 +29,15 @@ a network OS in five days.
 
 ### Submission lane — now
 
-`truthful status → public Sites provenance → video → fields → submit`
+`truthful status → reviewed exact-SHA Pages release → video → fields → submit`
 
-The public Sites Lab is the zero-install submission surface. It shows two committed
-R1 mortality outcomes and calls GPT-5.6 only as a server-side, non-authoritative
-witness. It does not add network participants, prove ownerlessness, or implement
-mutable state. Its source/version provenance and the R1 implementation it cites must
-be reconciled with the reviewed repository commit before final freeze.
+The direct Cloudflare Pages Lab is the intended zero-install final submission
+surface. It binds the repository-owned Function, assets, headers, and manifest to one
+reviewed `main` SHA. The public Sites Lab remains a logged-out fallback only while
+that Pages release is pending; it must not be presented as the final judge URL once
+Pages passes the exact-SHA remote gate. Both surfaces show two committed R1 mortality
+outcomes and call GPT-5.6 only as a server-side, non-authoritative witness. Neither
+adds network participants, proves ownerlessness, or implements mutable state.
 
 ### Protocol lane — R1-A/R1-B merged; R1-C and R2 after submission
 
@@ -57,7 +59,7 @@ credentials, installation, or a local build.
 
 Minimum Devpost pass criteria:
 
-- the Sites URL opens logged out over HTTPS and exposes the two deterministic R1
+- the final Pages URL opens logged out over HTTPS and exposes the two deterministic R1
   scenarios without installation, a build, credentials, or a test account;
 - the displayed operation hashes and outcomes match committed R1 corpus entries on
   the final reviewed repository SHA;
@@ -65,8 +67,8 @@ Minimum Devpost pass criteria:
   explanation, and never changes the R1 verdict;
 - unknown or private fields are rejected before the model call, and model failure
   leaves the deterministic result usable;
-- the repository contains or links reproducibly to the deployed Sites source, saved
-  version, and judge instructions; and
+- the repository contains the deployed Pages source and reproducible judge
+  instructions; and
 - the public page, repository, video, and Devpost prose use the same claim boundaries.
 
 Additional H3B exact-deployment criteria:
@@ -205,15 +207,16 @@ Strict pass criteria:
 | KST deadline | Deliverable | Exit gate |
 | --- | --- | --- |
 | Jul 17, 12:00 | post-R1 status correction reviewed and merged | no stale reviewer/deployment claim survives; 8/8 R1 scope remains explicit |
-| Jul 18, 12:00 | Sites source/version provenance and final public judge instructions frozen | logged-out 200, GPT 200, private-field 422, displayed outcomes match reviewed R1 |
+| Jul 18, 12:00 | Pages-compatible repair reviewed and final public judge instructions prepared | immutable review and exact-head checks pass; Sites remains fallback until exact-main deployment |
 | Jul 18, 18:00 | Devpost custom-field draft and video script/rehearsal complete | only public video and `/feedback` may remain open; duration below three minutes |
 | Jul 19, 18:00 | public video uploaded and submission rehearsal completed | public YouTube voiceover covers project, Codex, and GPT-5.6 |
 | Jul 20, 12:00 | `/feedback`, category, country, submitter type, URLs, and test instructions staged | every required field has a final value |
 | Jul 21, 18:00 | final code/content freeze | all checks green; exact URLs and SHA frozen |
 | Jul 22, 07:00 | Devpost submitted | non-draft submission confirmed; two-hour buffer remains |
 
-Cloudflare direct deployment may use spare capacity only through Jul 18 12:00 KST;
-after that it cannot displace R1 provenance, video, fields, rehearsal, or submission.
+Cloudflare direct deployment is the final judge-path gate. It must complete without
+displacing R1 provenance, video, required fields, rehearsal, or the Jul 22 submission
+deadline; Sites may replace it only as an explicitly documented emergency fallback.
 Do not spend the submission lane on R2, distributed inference, WebRTC/libp2p, token
 economics, durable key custody, or a polished CLI unless every S0–S5 blocker is closed.
 

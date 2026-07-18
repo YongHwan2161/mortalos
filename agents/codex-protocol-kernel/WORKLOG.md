@@ -546,3 +546,18 @@ result, and reproducible verification.
   merge to `main`, exact-main deploy, logged-out remote asset/header/API/Chromium
   acceptance, and final submission synchronization. The author does not self-review
   or merge.
+
+## 2026-07-18 KST — PR #16 immutable-review documentation correction
+
+- Reviewed snapshot: base `3d0529e40c66d13a7e326778d26312f6051c55bc`, head
+  `aa4b0b5dc43073b2921fead4a0d8457e7fbe062d`; Agent PR Policy and Verify passed.
+- Independent result: runtime/D1 tests reproduced, but the reviewer correctly
+  blocked because current submission documents simultaneously called Sites primary
+  and Pages optional while other release evidence made Pages the intended final
+  judge path.
+- Correction: Pages is now the single intended final judge path; Sites is explicitly
+  an emergency fallback whose provenance gate blocks only if Devpost ultimately uses
+  Sites. The Devpost synchronization date and completed video state were refreshed.
+- Handoff: publish a new immutable head, rerun exact-head policy and Verify, and
+  require a complete fresh independent review before merge. The author does not
+  self-review or merge.

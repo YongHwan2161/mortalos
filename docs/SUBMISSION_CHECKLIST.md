@@ -2,7 +2,7 @@
 
 Status: **active; project page published, hackathon submission not yet submitted**
 
-Last synchronized with Devpost: **2026-07-17 KST**
+Last synchronized with Devpost: **2026-07-18 KST**
 
 Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 
@@ -24,14 +24,15 @@ Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 | Demo video | Public and attached | <https://youtu.be/QJBHKFyMrno>, 2:38, narrated, captions, logged-out readback |
 | Code repository | Available | public repo, Apache-2.0, final README |
 | README/setup/sample/run guidance | Candidate implemented; exact public SHA pending | clean-room instructions and exact judge path |
-| Codex and GPT-5.6 usage | Repository/story saved; video pending | concrete README/story/video examples |
+| Codex and GPT-5.6 usage | Repository/story/video complete | concrete README/story/video examples |
 | `/feedback` Session ID | Current implementation session selected | required Devpost custom-field save/readback |
 | Dev-tool installation/platform/testing path | Public browser URL live; final text pending | browser URL plus local Node 22.5+ fallback |
 
 The Devpost form does not globally require a website, but the Developer Tools rules
-require a no-rebuild test path. The public Sites Lab is now the primary path; local
-`npm ci && npm run dev:lab` is the fallback. Direct Cloudflare Pages is an optional
-exact-commit evidence layer, not the submission definition of done.
+require a no-rebuild test path. Direct Cloudflare Pages is the intended final judge
+path because it binds the repository-owned Function, assets, headers, and manifest to
+one reviewed `main` SHA. The public Sites Lab is a temporary emergency fallback while
+Pages is pending; local `npm ci && npm run dev:lab` is the installable fallback.
 
 ## Repository release gate
 
@@ -51,7 +52,11 @@ exact-commit evidence layer, not the submission definition of done.
 - [ ] Final secret scan finds no API token, private key, credential, or restricted
   artifact in source, history delta, logs, screenshots, bundle, or video.
 
-## Public Sites minimum release gate
+## Public Sites emergency-fallback gate
+
+This gate blocks submission only if Sites is selected as the final Devpost judge URL.
+It does not block submission after the exact-SHA Pages gate passes and Devpost points
+to Pages.
 
 - [x] URL returns HTTP 200 without sign-in.
 - [x] Public R1 result receives a structured GPT-5.6 explanation with HTTP 200.
@@ -63,7 +68,7 @@ exact-commit evidence layer, not the submission definition of done.
   private-field rejection, and Sites/R1 provenance.
 - [ ] Devpost, README, video, and Sites version identify the same final evidence set.
 
-## Direct H3B Cloudflare release gate
+## Final H3B Cloudflare Pages release gate
 
 - [x] GitHub repository secret `OPENAI_API_KEY` exists; its value is never emitted.
 - [x] GitHub repository secret `SAFETY_IDENTIFIER_SECRET` exists; its value is never
@@ -126,7 +131,7 @@ The CLI singleton is supporting evidence only. It does not replace the visual pa
 - [ ] Country of residence completed.
 - [ ] Category set to `Developer Tools`.
 - [x] Repository URL entered.
-- [x] Public Sites Lab URL entered.
+- [x] Public Sites fallback URL entered; replace it with the verified final Pages URL.
 - [ ] Final judge instructions entered.
 - [ ] `/feedback` Session ID entered.
 - [ ] Dev-tool installation, supported platforms, and test instructions entered.
@@ -155,8 +160,8 @@ Do not submit while:
 - the judge cannot test the project without rebuilding;
 - repository, deployment, video, and story use different behavior or commits;
 - the video, `/feedback` Session ID, or required fields are missing;
-- the primary Sites URL/provenance/R1 evidence does not pass its minimum release
-  gate; or
+- the exact-SHA Pages release gate does not pass, unless Sites is explicitly selected
+  as the emergency final judge path and every Sites fallback gate passes; or
 - any secret or private custodian material appears in a public artifact.
 
 ## Claim discipline
