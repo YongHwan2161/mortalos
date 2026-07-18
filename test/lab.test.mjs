@@ -418,6 +418,7 @@ test("H3B Cloudflare project discovery is idempotent and fails closed on schema 
 test("H3B Pages deployment uses the provisioned D1 database and a strict migration", async () => {
   const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
   assert.equal("ratelimits" in config, false);
+  assert.deepEqual(config.placement, { mode: "targeted", region: "aws:us-east-1" });
   assert.deepEqual(config.d1_databases, [{
     binding: "SCENARIO_RATE_DB",
     database_name: "mortalos-lab-rate-limit",

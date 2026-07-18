@@ -6,9 +6,9 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const documents = [
   "README.md",
+  "docs/README.md",
   "docs/BUILD_WEEK_EVIDENCE.md",
-  "docs/DEMO_SCRIPT.md",
-  "docs/SUBMISSION_CHECKLIST.md"
+  "docs/NORTH_STAR_ROADMAP.md"
 ];
 const external = new Set();
 let localCount = 0;

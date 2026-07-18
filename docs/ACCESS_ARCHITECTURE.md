@@ -83,17 +83,19 @@ Portability is not sufficient, however. The current kernel validates who can aut
 
 ## 7. Ordered consequence
 
-The deadline-critical Build Week submission lane is:
+The current Build Week release lane is:
 
-`truthful merged status → Sites source/provenance → video → required fields → logged-out rehearsal → submit`
+`immutable review → post-merge Verify → exact-main Pages deploy → public readback → Devpost reconciliation`
 
-P0, H3A, the H3B deployment contract, and the bounded R1-A/R1-B corpus profile are
-merged. The public Sites Lab is the current no-rebuild judge path, but its source must
-be committed or reproducibly linked before freeze. Direct Cloudflare Pages remains
-optional exact-commit hardening while Sites is healthy. Neither host changes the
-protocol trust boundary.
+P0, H3A, the H3B deployment contract, the GPT guided path, and the bounded R1-A/R1-B
+corpus profile are merged. The exact-source Cloudflare Pages Lab is the final
+no-rebuild judge path. The verified `pages.dev` hostname remains canonical while
+`mortal-os.com` is TLS-active but held behind the valid-API/Chromium acceptance gate.
+The Function is targeted to `aws:us-east-1` to avoid an observed HKG upstream path;
+promotion still depends on public readback, not the configuration alone. Sites is
+incident recovery only. No host changes the protocol trust boundary.
 
-The post-submission protocol order is:
+The remaining protocol order is:
 
 `R1-C Lab wire consumption → R2 deterministic state → R3 availability → R4 network embodiment`
 
