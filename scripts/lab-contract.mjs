@@ -24,7 +24,7 @@ export const LAB_CSP = [
 ].join("; ");
 
 export const LAB_SECURITY_HEADERS = Object.freeze({
-  "cache-control": "no-store",
+  "cache-control": "no-store, no-transform",
   "content-security-policy": LAB_CSP,
   "cross-origin-embedder-policy": "require-corp",
   "cross-origin-opener-policy": "same-origin",
