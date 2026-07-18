@@ -89,13 +89,14 @@ The current Build Week release lane is:
 
 P0, H3A, the H3B deployment contract, the GPT guided path, and the bounded R1-A/R1-B
 corpus profile are merged. The exact-source Cloudflare Pages Lab is the final
-no-rebuild judge path. The verified `pages.dev` hostname remains canonical while
-`mortal-os.com` is TLS-active but held behind the valid-API/Chromium acceptance gate.
-Smart and targeted placement did not clear its observed HKG upstream path. The
-bounded recovery candidate sends only the exact `mortal-os.com` page origin to the
-accepted `pages.dev` scenario API and permits only that pair in CSP/CORS; every other
-origin remains rejected. Promotion still depends on public readback. Sites is
-incident recovery only. No host changes the protocol trust boundary.
+no-rebuild judge path at `https://mortal-os.com/`. Smart and targeted placement did
+not clear the custom host's observed HKG upstream path, so the accepted bridge sends
+only that exact page origin to the `pages.dev` scenario API and permits only that
+pair in CSP/CORS; every other origin remains rejected. PR #21 adds `no-transform` so
+the Cloudflare edge cannot inject an analytics script outside the self-only CSP. The
+custom host passed exact-source, valid GPT, fixed-scenario, and three-context Chromium
+readback. `pages.dev` is now incident fallback; Sites remains recovery only. No host
+changes the protocol trust boundary.
 
 The remaining protocol order is:
 

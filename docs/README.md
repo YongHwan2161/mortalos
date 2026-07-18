@@ -35,7 +35,9 @@ MortalOS is a portable lifecycle evidence kernel and browser falsification Lab. 
 not yet a state-bearing operating system, an independent-host participant network, a
 globally complete death oracle, or an ownerless model runtime. The current release
 proves deterministic lifecycle decisions, exact-byte replay, a bounded GPT-5.6
-adversarial-witness boundary, and exact-source public deployment.
+adversarial-witness boundary, and exact-source public deployment. The canonical
+zero-install judge URL is <https://mortal-os.com/>; the `pages.dev` hostname is an
+incident fallback.
 
 The OpenAI Build Week rules allow an individual entrant. There is no three-developer
 or three-first-time-tester submission requirement. Automated browser, protocol,

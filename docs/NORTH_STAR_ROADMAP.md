@@ -1,6 +1,6 @@
 # MortalOS North Star and pre-deadline implementation roadmap
 
-상태: **P0/H3A/H3B/R1-A/R1-B/GPT/guided path merged; exact-source Pages and Devpost submission accepted; custom-domain convergence in progress**
+상태: **P0/H3A/H3B/R1-A/R1-B/GPT/guided path merged; mortal-os.com canonical domain과 Devpost 정렬 완료; R1-C가 다음 구현 단계**
 
 기준 시각: **2026-07-19 KST**
 
@@ -36,7 +36,7 @@
 
 | 우선순위 | 개선 | 심사 기준 효과 | 위험 | 결정 |
 | --- | --- | --- | --- | --- |
-| P0 | `mortal-os.com` 단일 진입 URL과 Devpost/README 정렬 | Design, 완성도, judge friction | 중간 | API 502 해소 전 HOLD |
+| P0 | `mortal-os.com` 단일 진입 URL과 Devpost/README 정렬 | Design, 완성도, judge friction | 중간 | 완료; fallback 유지 |
 | P0 | 문서 SSOT 통합과 허위 human gate 제거 | Technological Implementation, 신뢰 | 낮음 | 즉시 완료 |
 | P1 | R1-C guided-path vertical slice | 기술 완성도, 아이디어의 일관성 | 중간 | 동결 전 통과 가능할 때만 구현 |
 | P1 | R2 state-bearing canary | North Star의 핵심 진전, novelty | 높음 | R1-C가 조기 통과한 경우만 |
@@ -73,10 +73,17 @@ places every later stage on `HOLD`.
 
 ## 4. 단계별 계획과 엄격한 통과 기준
 
-### S0 — custom domain과 judge path 수렴 (P0, 즉시)
+### S0 — custom domain과 judge path 수렴 (P0, 완료)
 
 목표: `https://mortal-os.com/`을 유일한 canonical judge URL로 만들고 기존
 `pages.dev` 호스트는 장애 복구용 fallback으로 유지한다.
+
+완료 증거: PR #20이 exact-origin API bridge를 배포했고 PR #21이 Cloudflare
+analytics HTML 변형을 `no-transform`으로 차단했다. Runtime baseline main
+`61cdd01865d7382066fec04d5dc1be7b1a68c8ae`, post-merge Verify
+`29660983347/1`, Deploy `29660983299/1`, public manifest/6 assets, CORS preflight,
+valid GPT POST, fixed 25-call evaluation, 세 clean Chromium context가 모두 PASS했다.
+Devpost 공개 page/story/judge instructions도 custom URL을 우선한다.
 
 구현:
 
@@ -247,8 +254,8 @@ FAIL 시:
 
 ## 6. 최종 우선순위 결론
 
-1. custom domain + documentation/Devpost convergence;
-2. R1-C 한 개의 완전한 vertical slice;
+1. **완료:** custom domain + documentation/Devpost convergence;
+2. **다음:** R1-C 한 개의 완전한 vertical slice;
 3. 시간이 남고 S2가 조기 통과할 때만 R2 state canary;
 4. 실제 기능이 바뀐 경우에만 영상 교체;
 5. 2026-07-21 18:00 KST부터 freeze와 exact-source 검증.
