@@ -18,21 +18,21 @@ Hard deadline: **2026-07-22 00:00 UTC / 2026-07-22 09:00 KST**
 
 | Deliverable | State | Closure evidence |
 | --- | --- | --- |
-| Working project | R1 merged; public Sites Lab live; full Pages candidate locally green | reviewed exact-head Pages deployment plus logged-out smoke tests |
+| Working project | Exact-main Pages release accepted | public Lab plus exact asset/header/API/three-context Chromium verifier |
 | Category | Selected in plan | Devpost field `Developer Tools` |
 | Project description | Saved with R1/GPT story and Sites URL | final story matches merged code and deployed behavior |
 | Demo video | Public and attached | <https://youtu.be/QJBHKFyMrno>, 2:38, narrated, captions, logged-out readback |
 | Code repository | Available | public repo, Apache-2.0, final README |
-| README/setup/sample/run guidance | Candidate implemented; exact public SHA pending | clean-room instructions and exact judge path |
+| README/setup/sample/run guidance | Public URL and local fallback documented | clean-room instructions and exact judge path |
 | Codex and GPT-5.6 usage | Repository/story/video complete | concrete README/story/video examples |
 | `/feedback` Session ID | Current implementation session selected | required Devpost custom-field save/readback |
-| Dev-tool installation/platform/testing path | Public browser URL live; final text pending | browser URL plus local Node 22.5+ fallback |
+| Dev-tool installation/platform/testing path | Public browser and local Node 22.5+ paths documented | final Devpost field save/readback |
 
 The Devpost form does not globally require a website, but the Developer Tools rules
 require a no-rebuild test path. Direct Cloudflare Pages is the intended final judge
 path because it binds the repository-owned Function, assets, headers, and manifest to
-one reviewed `main` SHA. The public Sites Lab is a temporary emergency fallback while
-Pages is pending; local `npm ci && npm run dev:lab` is the installable fallback.
+one reviewed `main` SHA. The public Sites Lab is an emergency fallback; local
+`npm ci && npm run dev:lab` is the installable fallback.
 
 ## Repository release gate
 
@@ -40,16 +40,16 @@ Pages is pending; local `npm ci && npm run dev:lab` is the installable fallback.
 - [x] Third-party notices and bundled browser licenses.
 - [x] Honest distinction among logical keys, physical failure domains, local
   authority loss, and qualified protocol death.
-- [ ] PR #11's review-provenance/TOCTOU incident is recorded and not represented as
+- [x] PR #11's review-provenance/TOCTOU incident is recorded and not represented as
   a normal reviewer-gate pass; subsequent changes use the normal immutable-head gate.
 - [x] Post-merge `main` Verify `29513454019/1` passed.
 - [x] `npm test`, coverage, actual Chromium, Lab, audit, and package dry-run passed
   for the merged contract.
-- [ ] README includes supported platforms, install/run commands, sample path, public
+- [x] README includes supported platforms, install/run commands, sample path, public
   test URL, deployed commit, and concise judge instructions.
 - [x] PR #12's final R1 head passed exact-head Verify and logical immutable-head
   reviewer checks; its Python claim remains limited to the eight-record profile.
-- [ ] Final secret scan finds no API token, private key, credential, or restricted
+- [x] Final source/history-delta secret scans find no API token, private key, credential, or restricted
   artifact in source, history delta, logs, screenshots, bundle, or video.
 
 ## Public Sites emergency-fallback gate
@@ -78,17 +78,16 @@ to Pages.
   Pages Edit plus D1 Edit and its current value is not exposed in repository or logs.
 - [x] D1 strict-table migration and 20-call concurrent atomic counter probe pass; the
   temporary probe row and diagnostic Pages secret were removed.
-- [x] Cloudflare Pages deployment completes from reviewed `main` (run
-  `29628252629/1`); remote acceptance remains separate and failed closed on the
-  JavaScript MIME contract. Independent review also found the masked canonical
-  `/index.html` redirect before redeploy.
-- [ ] `asset-manifest.json` names the exact deployed source commit.
-- [ ] Every remote asset matches local bytes, digest, MIME, and security headers.
-- [ ] `npm run verify:lab` passes against the public URL in three clean contexts.
-- [ ] Logged-out browser completes birth, one-key rejection, every two-key heartbeat
+- [x] Cloudflare Pages deployment completes from reviewed `main`; final accepted run
+  `29630532541/1` follows PR #17's strict MIME and canonical-root correction.
+- [x] `asset-manifest.json` names exact deployed source commit
+  `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2` at the accepted snapshot.
+- [x] Every one of six remote assets matches local bytes, digest, MIME, and security headers.
+- [x] `npm run verify:lab` passes against the public URL in three clean contexts.
+- [x] Logged-out browser completes birth, one-key rejection, every two-key heartbeat
   pair, replay, fork, qualified death, resurrection rejection, clone, corpus, and
   canonical evidence export/replay.
-- [ ] No external browser requests, analytics, cookies, persistence, Service Worker,
+- [x] No external browser requests, analytics, cookies, persistence, Service Worker,
   private custodian material, or console errors.
 
 ## Codex/GPT-5.6 evidence gate
@@ -108,7 +107,7 @@ materially accelerated construction:
   compiler, all ten kernel cases, security failures, and 25-case live eval.
 - [x] Live eval selects the intended mutation 25/25 and covers 10/10, while exact
   model verdict prediction is honestly reported as 0/25.
-- [ ] The reviewed source is deployed and bound to the exact public manifest SHA;
+- [x] The reviewed source is deployed and bound to the exact public manifest SHA;
   no model credential appears client-side, in logs, screenshots, or video.
 
 Human decisions must remain visible: North Star, scope, threat assumptions, claim
@@ -134,7 +133,7 @@ The CLI singleton is supporting evidence only. It does not replace the visual pa
 - [ ] Country of residence completed.
 - [ ] Category set to `Developer Tools`.
 - [x] Repository URL entered.
-- [x] Public Sites fallback URL entered; replace it with the verified final Pages URL.
+- [ ] Verified final Pages URL saved and read back in the judge instructions.
 - [ ] Final judge instructions entered.
 - [ ] `/feedback` Session ID entered.
 - [ ] Dev-tool installation, supported platforms, and test instructions entered.

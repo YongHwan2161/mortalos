@@ -5,6 +5,28 @@ shared project files and must not be used as a lock that blocks the project inde
 
 ## Active intent
 
+### ACTIVE — Build Week exact-main release evidence freeze
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`
+- Work branch: `agent/codex-protocol-kernel--release-evidence-freeze`
+- Worktree:
+  `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--release-evidence-freeze`
+- Exact intended shared paths: `README.md`, `docs/BUILD_WEEK_EVIDENCE.md`,
+  `docs/IMPLEMENTATION_PLAN.md`, `docs/PROJECT_STATUS.md`, and
+  `docs/SUBMISSION_CHECKLIST.md`, plus the matching documentation contract in
+  `scripts/verify-spec.mjs`.
+- Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Contract affected: evidence-only synchronization of the successful exact-main
+  Cloudflare release and logged-out judge path; no protocol, runtime, build asset,
+  API, workflow, dependency, or submission-side-effect change.
+- Required evidence: focused documentation/spec checks, full repository verification,
+  exact-head policy/Verify, immutable independent review, expected-head merge,
+  post-merge Verify/deploy, and final public source-commit readback.
+- Expected handoff: one focused evidence-only reviewed PR from current `main`;
+  author does not self-review, merge, or push directly to `main`.
+
 ### ACTIVE — Cloudflare Pages JavaScript MIME reconciliation
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`

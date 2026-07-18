@@ -2,9 +2,9 @@
 
 As of: **2026-07-18 KST**
 
-Candidate branch: `agent/codex-protocol-kernel--pages-js-mime`
+Evidence-sync branch: `agent/codex-protocol-kernel--release-evidence-freeze`
 
-Candidate base: `b107a683e4d646b1b7940b241207d7740853e25f`
+Evidence-sync base: `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`
 
 This is a rolling release record, not a completion claim. A gate is `PASS` only when
 the listed command or external readback has succeeded for the candidate. `WAIT`
@@ -15,23 +15,25 @@ means the implementation may exist but the required external evidence does not.
 | Stage | State | Strict evidence |
 | --- | --- | --- |
 | 0 — truthful baseline and Windows fidelity | PASS | Isolated current-main worktree; `.gitattributes`; repository text scan reports zero CRLF files; `npm ci` succeeds with zero audit vulnerabilities. |
-| 1 — exact-SHA public Cloudflare release | WAIT | PR #16 passed review/merge/post-merge Verify. Exact-main run `29628252629/1` applied D1, configured secrets, and deployed, then strictly rejected the live `application/javascript` response because the manifest declared `text/javascript`. PR #17's first review also found the masked `/index.html` → `/` 308. This candidate reconciles MIME and canonical-root verification, and still requires fresh review, redeploy, and full logged-out acceptance. |
-| 2 — GPT-5.6 adversarial witness | PASS locally | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, keyed privacy-preserving actor identifiers, no client secret. |
+| 1 — exact-SHA public Cloudflare release | PASS at `4bb8924d...` | PR #17 final head passed exact-head Verify/policy and immutable review; post-merge Verify `29630532558/1` and Deploy `29630532541/1` passed. The public manifest, six assets, security headers, API, and three-context Chromium path all matched exact `main`. |
+| 2 — GPT-5.6 adversarial witness | PASS locally and publicly | Existing key, Responses API, `gpt-5.6` alias resolving to `gpt-5.6-sol`, strict JSON Schema, `store: false`, bounded body/output, 15-second production timeout, keyed privacy-preserving actor identifiers, no client secret. Public proposal, kernel verdict, and GPT-off exact replay passed. |
 | 3 — 90-second judge path | PARTIAL locally | Three-context real-Chromium automation passes at 360/768/1440 with a keyboard-only full-control path, accessibility-tree/status/focus checks, simulated-broadband interactivity, four judge actions, and GPT-off replay. Three first-time human testers remain mandatory. |
-| 4 — evidence and source reconciliation | PARTIAL locally | Judge-first README, five evidence mappings, link checker, source, tests, deployment config, this evidence record, and demo script are in the candidate. Immutable review, public-link resolution, and deployed-SHA binding remain release gates. |
+| 4 — evidence and source reconciliation | PASS at accepted source | Judge-first README, five evidence mappings, link checker, source, tests, deployment config, evidence record, and demo script are repository-owned. The public manifest binds them to the reviewed source; this docs-only synchronization must repeat normal review/deploy gates. |
 | 5 — Codex `/feedback` | PARTIAL | The submitter selected the current implementation session; exact Devpost field readback still remains. |
 | 6 — Devpost fields and final story | PARTIAL | Project page is published and the public video is attached, but it is not submitted; submitter/country, Session ID, final URL/instructions, and required-field readback remain. |
-| 7 — public narrated demo | PASS | Public 2:38 YouTube video, English narration, burned captions, metadata, and logged-out oEmbed title/author/type readback pass: <https://youtu.be/QJBHKFyMrno>. |
-| 8 — freeze, reviewed deploy, and submit | WAIT | Requires immutable independent review, green exact-head CI, logged-out remote acceptance, public video, required form fields, and Devpost `submitted_at`. |
+| 7 — public narrated demo | PARTIAL | Public 2:38 YouTube video, English narration, burned captions, metadata, and logged-out oEmbed readback pass: <https://youtu.be/QJBHKFyMrno>. Its displayed source SHA predates the accepted deployment, so a final-source rerender/upload remains. |
+| 8 — freeze, reviewed deploy, and submit | WAIT | Public deployment is accepted. Final-source video, three genuine first-time testers, required personal/form readback, and non-null Devpost `submitted_at` remain. |
 
 ## Stage 0 evidence
 
-- Remote `main` audit base: `3d0529e40c66d13a7e326778d26312f6051c55bc`.
-- PR #11, #12, #14, and #15 are merged. Post-merge `Verify` run `29567824512` passed.
+- Remote `main` audit base: `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`.
+- PR #11, #12, #14, #15, #16, and #17 are merged. Latest post-merge `Verify`
+  run `29630532558/1` passed.
 - Exact-main deploy runs `29588418943` and `29591202642` passed source tests, then
   failed before deployment because Wrangler rejects `ratelimits` in a Pages project
   configuration. The account and repository credentials themselves are present.
-- An isolated Windows worktree and task branch were created from that exact base.
+- A Windows `core.autocrlf=true` clean clone of exact PR #17 head `4d792ae90448...`
+  completed `npm ci && npm test` in 1,149.0 seconds with a clean checkout.
 - `.gitattributes` now requires LF for source, workflow, JSON, Markdown, HTML, CSS,
   license, and Pages header files.
 - A repository-wide scan over those text classes returned `LF scan: PASS (no CRLF)`.
@@ -40,9 +42,9 @@ means the implementation may exist but the required external evidence does not.
   coverage script used POSIX-only inline environment assignment. Both now have
   cross-platform launchers and regression coverage.
 
-Pass condition: a fresh Windows clone must preserve LF-sensitive governance and
-workflow checks without manual conversion. This must be rerun after merge before
-Stage 8 can close.
+Pass condition: every runtime-changing candidate must preserve the recorded Windows
+clean-clone gate. This evidence-only follow-up changes no runtime/build asset and
+must still pass exact-head CI and diff/line-ending checks.
 
 ## Stage 2 evidence
 
@@ -181,9 +183,10 @@ silence-versus-qualified-death before Stage 3 can be marked complete.
 - The credential-free Run block no longer includes the live GPT evaluation. Its two
   required runtime secrets and non-persistence rule are stated separately.
 
-## Deployment evidence still required
+## Accepted deployment evidence and recurrence rule
 
-The final Cloudflare evidence is all-or-nothing:
+The final Cloudflare evidence is all-or-nothing. The release at
+`4bb8924d33b42be02bc9380ed6e3cee3eabd97b2` satisfied items 1–7:
 
 1. authenticated account and user token scoped to Pages Edit and D1 Edit on the target account;
 2. GitHub secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`,
@@ -195,14 +198,25 @@ The final Cloudflare evidence is all-or-nothing:
 7. logged-out public URL and API work; and
 8. Devpost, video, repository, and manifest identify the same behavior and SHA.
 
+The accepted workflow was
+<https://github.com/YongHwan2161/mortalos/actions/runs/29630532541>. It applied the
+D1 migration, configured runtime secrets without exposing values, deployed exact
+`main`, verified six remote assets and the checked-in security-header contract, ran
+the API happy/error/rate-limit suite, and completed the full Lab in three clean
+Chromium contexts. A separate interactive logged-out readback completed baseline,
+`gpt-5.6-sol` proposal, kernel rejection, and GPT-off replay with canonical digest
+`sha256:-DZGv0YfUmLcIjxHOlWB8yWrT-1yA4KSq-kQqQe64Zg`. The page displayed release
+asset digest `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98` and the exact
+source commit above.
+
 Rollback rule: preserve the last logged-out-verified production deployment while a
 fault is investigated. Revert the faulty source through a focused PR, bind review and
 CI to that immutable revert head, merge with an expected SHA, and let the exact-main
 workflow deploy the resulting new commit. Never patch production bytes, bypass review,
 or relabel an older manifest as the current source.
 
-The live Sites URL remains a judge-access fallback until those criteria pass. It is
-not evidence that this candidate's Pages Function or exact assets are deployed.
+The live Sites URL remains a judge-access emergency fallback. It is not evidence for
+the Pages Function or exact assets and is not the final Devpost judge URL.
 
 ## Release commands
 
