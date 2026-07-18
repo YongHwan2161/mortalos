@@ -687,3 +687,34 @@ result, and reproducible verification.
 - Remaining gate: exact-head policy/Verify, independent immutable reviewer, expected-
   head merge, exact-main deploy, custom-host preflight/valid POST/three-context
   Chromium acceptance. Canonical docs/workflow/Devpost switch only after that PASS.
+
+## 2026-07-19 KST — Canonical custom-domain acceptance
+
+- PR #20 passed policy `29657957607/1`, exact-head Verify `29657949540/1`,
+  immutable reviewer binding, expected-head merge to
+  `3f482227b73e899d292ae98b13913b213e099150`, post-merge Verify
+  `29658461252/1`, and deploy `29658461259/1`.
+- First custom-host three-context Chromium readback correctly failed because
+  Cloudflare injected `static.cloudflareinsights.com/beacon.min.js`, which the
+  self-only script CSP blocked. Pages and zone RUM settings displayed disabled, so
+  the source-controlled repair retained `no-store` and added standards-defined
+  `no-transform` rather than expanding the script allowlist.
+- PR #21 head `73657522aaf4a9722f33c14b74dc4e204c6d4433` passed policy
+  `29660690604/1`, exact-head Verify `29660657159/1`, immutable COMMENT review
+  `4729301191`, and expected-head merge to
+  `61cdd01865d7382066fec04d5dc1be7b1a68c8ae`. Post-merge Verify
+  `29660983347/1` and deploy `29660983299/1` passed.
+- Public custom readback passed: root `200`, exact `no-store, no-transform`, no
+  injected beacon, strict CSP/COEP, exact manifest source, six digest-valid assets,
+  aggregate digest `sha256:HYNcJotcdxxFCItMhI7_RP6_3oqpwTFsqcbS83xMD3A`,
+  preflight `204`, valid GPT POST `200`/`gpt-5.6-sol`, fixed scenarios 25/25, and
+  three clean Chromium contexts with the full 10,000-case corpus.
+- Devpost submission `1080076` was updated in place: public story and Try-it-out link,
+  judge instructions, and installation/testing answer now prefer
+  `https://mortal-os.com/`; validation names 19 Lab/API cases, PR #20/#21, main and
+  run evidence. Public readback passed. Submitter remains Individual/Korea, Session
+  ID remains exact, video is unchanged, and status remains `Submitted`.
+- Current task: reconcile README, workflow, roadmap, release evidence, access,
+  traceability, and agent ledgers so the accepted custom host is canonical and
+  `pages.dev` is explicitly only the incident fallback. No protocol or model-authority
+  semantics change.

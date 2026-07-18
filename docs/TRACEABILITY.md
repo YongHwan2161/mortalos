@@ -160,7 +160,7 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Fixed reference turnover, mutations, resurrection, mortality, and clone | `lab/reference-engine.mjs`, `test/lab.test.mjs`, `scripts/verify-lab.mjs` | PASS |
 | Experimental public-evidence canonical export, digest, and raw replay | `lab/evidence-export.mjs`, `test/lab.test.mjs`, `scripts/verify-lab.mjs` | PASS |
 | Browser storage, Service Worker, CSP, request, accessibility, and viewport boundary | `lab/index.html`, `scripts/serve-lab.mjs`, `scripts/verify-lab.mjs` | PASS |
-| Exact custom-page to accepted-API origin bridge; bounded preflight/CORS; attacker origins and extra methods/headers rejected | `lab/runtime-endpoints.mjs`, `functions/api/scenarios.js`, `test/scenario-api.test.mjs`, `scripts/verify-lab.mjs` | Local PASS; exact-main public acceptance required |
+| Exact custom-page to accepted-API origin bridge; bounded preflight/CORS; attacker origins and extra methods/headers rejected | `lab/runtime-endpoints.mjs`, `functions/api/scenarios.js`, `test/scenario-api.test.mjs`, `scripts/verify-lab.mjs` | PASS; exact-main public preflight, valid GPT POST, fixed 25-call evaluation, and three-context Chromium accepted |
 | Static artifact third-party license preservation | `lab/THIRD_PARTY_LICENSES.txt`, `scripts/build-lab.mjs`, `scripts/verify-lab.mjs` | PASS |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.

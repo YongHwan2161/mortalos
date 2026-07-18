@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 60
     env:
       MORTALOS_EXPECTED_COMMIT: ${{ github.sha }}
-      MORTALOS_LAB_URL: https://mortalos-lab-yonghwan2161.pages.dev
+      MORTALOS_LAB_URL: https://mortal-os.com
       MORTALOS_DEPLOY_VERIFY_ATTEMPTS: 12
       MORTALOS_DEPLOY_VERIFY_DELAY_MS: 5000
       MORTALOS_SOURCE_COMMIT: ${{ github.sha }}

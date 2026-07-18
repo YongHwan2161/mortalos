@@ -10,18 +10,16 @@ bounded attack; canonical bytes bind that proposal; the deterministic kernel alo
 decides whether identity continued, forked, or lost authority.
 
 Public final judge URL:
-[MortalOS Lab](https://mortalos-lab-yonghwan2161.pages.dev/).
+[MortalOS Lab](https://mortal-os.com/).
 The release manifest displayed after the four-action proof identifies the exact
 reviewed source commit and aggregate asset digest. The separate zero-install
 [R1 evidence fallback](https://mortalos-evidence-lab.ant713800.chatgpt.site) remains
 available for incident recovery but is not the final judge path.
-The new [mortal-os.com](https://mortal-os.com/) hostname is TLS-active and serves the
-exact static release, but remains a candidate canonical URL until its valid
-`POST /api/scenarios` and three-context Chromium path pass the same remote gate.
-The current candidate routes only that page origin to the already accepted
-`pages.dev` API origin through an exact-pair CSP/CORS allowlist; every other origin
-remains fail-closed. `pages.dev` stays the published judge URL until post-deploy
-acceptance proves the bridge.
+The exact-origin bridge routes only the `mortal-os.com` page to the accepted Pages
+API through a bounded CSP/CORS allowlist; every other cross-origin request remains
+fail-closed. The custom host passed exact-source, valid GPT, and three-context
+Chromium acceptance. The [Pages hostname](https://mortalos-lab-yonghwan2161.pages.dev/)
+remains an incident fallback, not the canonical judge URL.
 Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos).
 
 ## 90-second judge path
@@ -103,7 +101,7 @@ Implemented:
   hashes every served asset, mirrors the local security-header contract on Cloudflare
   Pages, applies a D1-backed atomic ten-request-per-minute private-actor limit before
   OpenAI, and verifies the public bytes and Chromium judge path after deployment;
-- a public, exact-source [Cloudflare Pages release](https://mortalos-lab-yonghwan2161.pages.dev/)
+- a public, exact-source [Cloudflare Pages release](https://mortal-os.com/)
   whose strict remote verifier checks every served byte, MIME type, security header,
   D1-backed GPT route, and three clean Chromium judge contexts;
 - an R1 canonical operation/result contract for Genesis validation, lineage replay,
@@ -121,13 +119,13 @@ Not implemented:
 - participant-to-participant transport or replicated state;
 - a deterministic executable genome or mutable logical state.
 
-Submission status: the exact-source Cloudflare Pages Lab is the zero-install judge
-path. Its four-action proof runs the committed baseline, calls GPT-5.6 only for an
-allowlisted proposal, exposes the authoritative kernel result, and reproduces the
-same digest and verdict with GPT off. The Devpost entry is `Submitted`, the public
-narrated video is attached, and the required `/feedback` Session ID is saved. The
-official rules allow an individual entrant and do not impose a three-developer or
-three-first-time-tester gate.
+Submission status: the exact-source custom-domain Cloudflare Pages Lab is the
+zero-install judge path. Its four-action proof runs the committed baseline, calls
+GPT-5.6 only for an allowlisted proposal, exposes the authoritative kernel result,
+and reproduces the same digest and verdict with GPT off. The Devpost entry is
+`Submitted`, the public narrated video is attached, and the required `/feedback`
+Session ID is saved. The official rules allow an individual entrant and do not
+impose a three-developer or three-first-time-tester gate.
 
 This tree implements the **P0 mortality-safe kernel, H3A/H3B Lab contract, and bounded
 R1-A/R1-B evidence profile**.
@@ -156,9 +154,10 @@ no second model call.
 The fixed live evaluation passed 25/25 scenario selections, covered all ten mutations,
 and reproduced 25/25 kernel results offline. GPT's exact status/code prediction was
 0/25, which demonstrates the intended authority boundary rather than hiding model
-error. See [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md). Runtime PR #17
-and evidence PR #18 passed exact-head policy/CI, immutable review, expected-head
-merge, post-merge Verify, and the complete public Cloudflare acceptance workflow.
+error. See [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md). Custom-origin
+PR #20 and CSP-preservation PR #21 passed exact-head policy/CI, immutable review,
+expected-head merge, post-merge Verify/deploy, and the complete custom-domain
+Cloudflare acceptance workflow.
 Any later source SHA must repeat those gates.
 
 ## Run
@@ -201,7 +200,7 @@ MORTALOS_CHECK_EXTERNAL_LINKS=1 npm run verify:links
 To verify a reviewed Cloudflare deployment against its exact commit:
 
 ```bash
-MORTALOS_LAB_URL=https://mortalos-lab-yonghwan2161.pages.dev \
+MORTALOS_LAB_URL=https://mortal-os.com \
 MORTALOS_EXPECTED_COMMIT=<exact-main-sha> \
 npm run verify:deployed-lab
 ```
@@ -210,12 +209,13 @@ Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is
 equivalent local maintainer command and requires Cloudflare credentials; judges do
 not need those credentials.
 
-Current accepted release: PR #18 produced `main`
-`03e868ccd810064e81275a7ac2d71b543030b916`; post-merge Verify
-`29632638423/1` and Deploy MortalOS Lab `29632638421/1` passed. The workflow
-verified six exact assets and security headers, the API failure/happy/rate-limit
-paths, and the full judge path in three clean Chromium contexts. The release asset
-digest is `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`.
+Current accepted runtime release: PR #21 produced `main`
+`61cdd01865d7382066fec04d5dc1be7b1a68c8ae`; post-merge Verify
+`29660983347/1` and Deploy MortalOS Lab `29660983299/1` passed. The custom host
+served six exact assets, retained the strict security headers without injected
+analytics, returned the bounded GPT response, and passed three clean Chromium
+contexts. The release asset digest is
+`sha256:HYNcJotcdxxFCItMhI7_RP6_3oqpwTFsqcbS83xMD3A`.
 A later source change is accepted only after its own post-merge deployment and public
 manifest readback.
 

@@ -5,23 +5,27 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Preserve strict CSP at the Cloudflare edge
+### ACTIVE — Promote the accepted canonical domain
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `3f482227b73e899d292ae98b13913b213e099150`
-- Work branch: `agent/codex-protocol-kernel--preserve-csp`
+- Base: `61cdd01865d7382066fec04d5dc1be7b1a68c8ae`
+- Work branch: `agent/codex-protocol-kernel--canonical-domain`
 - Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/wt-custom-origin`
-- Exact intended shared paths: `lab/_headers`, `scripts/lab-contract.mjs`, and
-  `test/lab.test.mjs`.
-- Exact intended agent path: `agents/codex-protocol-kernel/HANDOFF.md`.
-- Contract affected: retain `no-store` while adding the standards-defined
-  `no-transform` response directive so Cloudflare cannot inject an analytics beacon
-  that violates the Lab's self-only script CSP. Protocol, scenario, and kernel
-  validity semantics do not change.
-- Required evidence: focused Lab tests; full repository suite; exact-head policy
-  and Verify; immutable independent review; expected-head merge; exact-main deploy;
-  absence of the injected beacon; and three-context Chromium acceptance.
-- Expected handoff: one focused reviewed CSP-preservation PR from current `main`.
+- Exact intended shared paths: `README.md`, `.github/workflows/deploy-lab.yml`,
+  `docs/README.md`, `docs/BUILD_WEEK_EVIDENCE.md`,
+  `docs/NORTH_STAR_ROADMAP.md`, `docs/ACCESS_ARCHITECTURE.md`, and
+  `docs/TRACEABILITY.md`.
+- Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/MEMORY.md`, and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Contract affected: make `https://mortal-os.com/` the canonical judge and deploy-
+  verification URL only after its exact-source, CORS/GPT, fixed-scenario, and three-
+  context Chromium gates passed. Preserve `pages.dev` as fallback and leave protocol,
+  scenario, kernel, and model-authority semantics unchanged.
+- Required evidence: current public custom-host acceptance; Devpost public/required-
+  field readback; spec/link/governance/workflow checks; full exact-head Verify;
+  immutable independent review; expected-head merge; and exact-main custom deploy.
+- Expected handoff: one reviewed canonical-domain reconciliation PR from current `main`.
   The author does not self-review, merge, or push directly to `main`.
 
 ## Closed intents

@@ -11,9 +11,9 @@ is `PASS` only when its local, GitHub, public deployment, or Devpost readback ex
 | Surface | State | Current evidence |
 | --- | --- | --- |
 | Protocol and Lab | PASS | P0/H3A/H3B, GPT guided path, R1-A/R1-B, fixed portable/property/browser gates are merged. |
-| Reviewed source | PASS | `main` `f23a4d501f89a4798d6d2a490000117774c69457`, PR #19, post-merge Verify `29655465238`. |
-| Public Pages release | PASS | Deploy run `29655465232`; exact source manifest, six assets, MIME, headers, API, and three clean Chromium contexts passed. |
-| Canonical domain | HOLD | `mortal-os.com` is Active with SSL and exact static bytes, but direct valid POST remains HKG 502. The exact-origin Pages API bridge is locally accepted and still requires reviewed deployment/readback. |
+| Reviewed source | PASS | Runtime baseline `main` `61cdd01865d7382066fec04d5dc1be7b1a68c8ae`, PR #21, post-merge Verify `29660983347`. |
+| Public Pages release | PASS | Deploy run `29660983299`; exact source manifest, six assets, MIME, headers, API, and three clean Chromium contexts passed. |
+| Canonical domain | PASS | `mortal-os.com` is Active with SSL; exact source/assets, no-transform/CSP, preflight, valid GPT POST, 25 scenarios, and three clean Chromium contexts passed. |
 | GPT-5.6 evaluation | PASS | 25/25 schema/API and intended mutation; 10/10 mutation coverage; 25/25 kernel/offline replay; 0/25 exact model verdict agreement. |
 | Public video | PASS | <https://youtu.be/kR-TPuwoNaI>, public, narrated, below three minutes, attached to Devpost. |
 | Devpost | PASS | Submission `1080076`, state `Submitted`, `submitted_at` `2026-07-18T10:25:36.990-04:00`. |
@@ -28,32 +28,32 @@ judge access, and truthful claim boundaries remain mandatory.
 ## Accepted source and deployment
 
 - Repository: <https://github.com/YongHwan2161/mortalos>
-- Accepted `main`: `f23a4d501f89a4798d6d2a490000117774c69457`
-- Evidence PR: <https://github.com/YongHwan2161/mortalos/pull/19>
-- Exact-head Verify: `29654838652/1`
-- Final-body trusted-base policy: `29655060763/1`
-- Post-merge Verify: <https://github.com/YongHwan2161/mortalos/actions/runs/29655465238>
-- Post-merge deploy: <https://github.com/YongHwan2161/mortalos/actions/runs/29655465232>
+- Accepted runtime `main`: `61cdd01865d7382066fec04d5dc1be7b1a68c8ae`
+- CSP-preservation PR: <https://github.com/YongHwan2161/mortalos/pull/21>
+- Exact-head Verify: `29660657159/1`
+- Final-body trusted-base policy: `29660690604/1`
+- Post-merge Verify: <https://github.com/YongHwan2161/mortalos/actions/runs/29660983347>
+- Post-merge deploy: <https://github.com/YongHwan2161/mortalos/actions/runs/29660983299>
 - Accepted aggregate asset digest:
-  `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`
-- Accepted source changed documentation only after runtime PR #17, so the deployed
-  asset digest stayed constant while `asset-manifest.json.source_commit` advanced.
+  `sha256:HYNcJotcdxxFCItMhI7_RP6_3oqpwTFsqcbS83xMD3A`
+- PR #20 supplied the exact-origin bridge; PR #21 added `no-transform` so the
+  Cloudflare edge cannot inject an analytics script that violates the self-only CSP.
 
-The current verified fallback host is
-<https://mortalos-lab-yonghwan2161.pages.dev/>. The canonical judge host becomes
-<https://mortal-os.com/> only after DNS, TLS, manifest, API, and Chromium readback all
-pass. The separate Sites evidence Lab remains incident recovery only and is not proof
-of the Pages Function or exact release assets.
+The canonical judge host is <https://mortal-os.com/>. The exact-source
+<https://mortalos-lab-yonghwan2161.pages.dev/> hostname is an incident fallback.
+The separate Sites evidence Lab remains recovery only and is not proof of the Pages
+Function or exact release assets.
 
-Current domain evidence: dashboard status `Active`, SSL enabled, HTTPS root `200`,
-and `asset-manifest.json` exact source/digest equality all pass. Invalid API requests
-return the expected JSON errors, but a schema-valid request reaches HKG and returns
-platform plaintext `502` before the application response. Smart and targeted
-placement plus fresh production deployments did not clear the fault. The current
-candidate keeps the accepted Pages API as the only inference endpoint and, only for
-the exact `mortal-os.com` page origin, uses a single-origin CSP plus bounded
-CORS/preflight allowlist. No promotion occurs until its exact-main deployment passes
-valid API and three-context Chromium gates from the custom hostname.
+Current domain evidence: dashboard `Active`, SSL, HTTPS root `200`, exact manifest,
+six file digests, MIME, strict CSP/COEP, and `Cache-Control: no-store, no-transform`
+all pass. Direct custom-host inference previously reached HKG and returned platform
+plaintext `502`; Smart and targeted placement did not clear it. The accepted bridge
+therefore keeps the Pages API as the only inference endpoint and, only for the exact
+`mortal-os.com` page origin, permits that origin through bounded CSP/CORS/preflight.
+The public preflight returned `204`, a valid request returned `200` with
+`gpt-5.6-sol`, the fixed 25-call evaluation passed, and three clean custom-host
+Chromium contexts passed without injected analytics, console errors, or unexpected
+external requests.
 
 ## Trusted runtime boundary
 
@@ -83,11 +83,11 @@ Fixed live evaluation:
 The last result is evidence, not a defect: GPT-5.6 is useful as an adversarial witness
 and unsafe as a consensus oracle.
 
-## Current candidate local and browser evidence
+## Current accepted local and browser evidence
 
-The exact-origin bridge candidate currently passes:
+The exact-origin bridge and CSP-preservation releases pass:
 
-- `npm test`: complete ordered repository contract in **1,159.0 seconds** on Windows;
+- PR #21 `npm test`: complete ordered repository contract in **1,152.1 seconds** on Windows;
 - conformance: **76** cases;
 - fixed property corpus: **10,000** cases, seed `1297044052`;
 - serialized adversarial rejections: **10,000**;
@@ -107,10 +107,9 @@ The exact-origin bridge candidate currently passes:
 - package dry-run: **102** files; and
 - high-confidence secret scan: zero matches.
 
-The accepted release also passed its Windows `core.autocrlf=true` clean-clone and
-public API happy/error/rate-limit plus three-context judge flow. Those old public
-runs do not cover this candidate; its exact-head CI and post-merge deployment remain
-mandatory.
+The accepted release also passed its Windows `core.autocrlf=true` clean-clone,
+exact-head Verify, public API happy/error/rate-limit path, fixed 25-call evaluation,
+and three-context custom-host judge flow.
 
 Every new source SHA must rerun its own gates. An old green run does not cover a new
 SHA.
@@ -139,12 +138,12 @@ Current project:
 - `submitted_at`: `2026-07-18T10:25:36.990-04:00`; and
 - required Session ID: exact match to the user-provided value above.
 
-The public project description and answers 27949/27951 were refreshed on 2026-07-19
-with the 90-second zero-install path, 17 Lab/API cases, PR #17/#18 evidence, supported
-platforms, and local commands. The readback remained `Submitted` with the original
-non-null `submitted_at`. After the custom domain passes, those fields are updated once
-more to prefer `https://mortal-os.com/`; resubmission updates the existing entry rather
-than creating a second project.
+The public project story, Try-it-out links, and answers 27949/27951 were refreshed on
+2026-07-19 with `https://mortal-os.com/` first, the 90-second zero-install path, 19
+Lab/API cases, PR #20/#21 and run evidence, supported platforms, and local/remote
+commands. Public readback shows the custom URL and updated validation paragraph. The
+entry remains `Submitted` with the original non-null `submitted_at`; no second project
+was created.
 
 ## Current release commands
 
@@ -169,8 +168,8 @@ MORTALOS_LAB_URL=https://mortal-os.com \
 npm run verify:gpt-scenarios
 ```
 
-Use the fallback Pages hostname in these commands until the canonical-domain status
-is `Active` and the full remote gate passes.
+Use the Pages hostname only as the recorded incident fallback. Canonical release
+verification targets `mortal-os.com`.
 
 ## Rollback and HOLD rule
 
