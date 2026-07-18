@@ -2,7 +2,7 @@
 
 As of: **2026-07-18 KST**
 
-Stage: **P0/H3A/H3B/R1/GPT/guided path merged; direct Pages deployed; exact-MIME acceptance repair in progress**
+Stage: **P0/H3A/H3B/R1/GPT/guided path merged; direct Pages deployed; canonical-response acceptance repair in progress**
 
 Security baseline: **every published or deployed SHA requires immutable-head review and its own successful verification**
 
@@ -21,9 +21,11 @@ and post-merge Verify `29628252577/1`.
 Exact-main deploy `29628252629/1` successfully applied the D1 migration, configured
 runtime secrets, and published the Pages artifact. Its final remote gate failed
 strictly because Cloudflare served `app.js` as `application/javascript` while the
-manifest declared `text/javascript`. This focused candidate aligns the shared
-manifest/local-server JavaScript MIME with the deployed platform. No public release
-PASS is claimed until a reviewed exact-main redeploy passes the full remote verifier.
+manifest declared `text/javascript`. Independent review of the first repair also
+found that `/index.html` redirects to canonical `/`, which would have been the next
+failure in the asset loop. This focused candidate aligns the JavaScript MIME and
+canonical-root verification with the deployed platform. No public release PASS is
+claimed until a reviewed exact-main redeploy passes the full remote verifier.
 
 PR #11 also has a governance incident: an attestation of unverifiable logical-agent
 provenance was followed by merge before the assigned reviewer completed the required
@@ -44,7 +46,7 @@ post-merge technical Verify result.
 | H3A MortalOS Lab | Implemented | Three non-extractable Worker keys, logical `2-of-3`, reference turnover, replay/fork, qualified mortality, resurrection rejection, clone, full corpus, and public evidence export/replay. One browser remains one physical failure domain. |
 | H3B deployment contract | Merged on `main`; post-merge Verify passed | Deterministic asset manifest, exact source SHA, Cloudflare headers, pinned Actions, idempotent Pages project discovery, remote asset verifier, and remote Chromium path. |
 | Public Sites judge path | Live; source provenance pending | Logged-out HTTP 200, public-result GPT witness HTTP 200, and injected private field HTTP 422. Both displayed hashes/outcomes match merged R1. Sites version 2 has immutable source/archive metadata, but its source is not in this repository. |
-| Direct H3B Cloudflare Pages release | Deployed; exact-MIME acceptance repair in progress | PR #16's D1 release deployed from exact main. The strict remote gate found only the JavaScript manifest MIME mismatch; this follow-up keeps verification strict and reconciles the contract before PASS. |
+| Direct H3B Cloudflare Pages release | Deployed; canonical-response acceptance repair in progress | PR #16's D1 release deployed from exact main. The strict remote gate found the JavaScript manifest MIME mismatch; review then found the masked canonical `/index.html` redirect. This follow-up keeps verification strict and reconciles both before PASS. |
 | Language-neutral wire and independent verifier | Merged through PR #12 | Eight bounded Genesis/replay/mortality operations with JS/Python byte equality. Exact-head Verify and logical reviewer checks passed. Python covers the committed corpus profile, not arbitrary pending/fork/resource-limit inputs. |
 | Mutable logical state/genome | Not implemented on `main` | An older local R2 prototype is not merge evidence because it predates current P0 and R1. |
 | Participant network/replication | Not implemented | No WebRTC/libp2p transport, distributed custody evidence, state availability protocol, or independent-host survival. |

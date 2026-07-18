@@ -123,8 +123,10 @@ Current evidence and closure sequence:
    immutable review and exact-head CI. Post-merge Verify passed and the exact-main
    deploy published Pages. The final gate correctly rejected a JavaScript MIME
    mismatch: live Pages used `application/javascript` while the manifest declared
-   `text/javascript`. Reconcile that contract through review and redeploy, then
-   accept the URL only after exact asset/header/API/Chromium proof.
+   `text/javascript`. Review of the first fix found the masked canonical-route
+   behavior too: `/index.html` redirects to `/`. Reconcile both contracts through
+   review and redeploy, then accept the URL only after exact
+   asset/header/API/Chromium proof.
 
 ### S1 — repository and judge instructions
 

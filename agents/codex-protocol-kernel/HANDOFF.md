@@ -13,14 +13,15 @@ shared project files and must not be used as a lock that blocks the project inde
 - Worktree:
   `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--pages-js-mime`
 - Exact intended shared paths: `README.md`, `scripts/lab-contract.mjs`,
-  `scripts/verify-spec.mjs`, `test/lab.test.mjs`,
+  `scripts/verify-deployed-lab.mjs`, `scripts/verify-spec.mjs`, `test/lab.test.mjs`,
   `docs/BUILD_WEEK_EVIDENCE.md`, `docs/IMPLEMENTATION_PLAN.md`,
   `docs/PROJECT_STATUS.md`, and `docs/SUBMISSION_CHECKLIST.md`.
 - Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and
   `agents/codex-protocol-kernel/WORKLOG.md`.
 - Contract affected: bind manifest and local-server JavaScript MIME to the
-  `application/javascript` value served by Cloudflare Pages so the strict remote
-  verifier compares an accurate exact-MIME contract.
+  `application/javascript` value served by Cloudflare Pages, and verify the
+  manifest's `index.html` bytes at canonical `/` rather than the platform's
+  redirecting `/index.html` alias.
 - Required evidence: focused Lab tests, full verification, exact-head CI/policy,
   immutable independent review, exact-main redeploy, and logged-out remote acceptance.
 - Expected handoff: one focused reviewed PR from current `main`; author does not

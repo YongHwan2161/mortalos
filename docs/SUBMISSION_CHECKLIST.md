@@ -80,7 +80,8 @@ to Pages.
   temporary probe row and diagnostic Pages secret were removed.
 - [x] Cloudflare Pages deployment completes from reviewed `main` (run
   `29628252629/1`); remote acceptance remains separate and failed closed on the
-  JavaScript MIME contract.
+  JavaScript MIME contract. Independent review also found the masked canonical
+  `/index.html` redirect before redeploy.
 - [ ] `asset-manifest.json` names the exact deployed source commit.
 - [ ] Every remote asset matches local bytes, digest, MIME, and security headers.
 - [ ] `npm run verify:lab` passes against the public URL in three clean contexts.

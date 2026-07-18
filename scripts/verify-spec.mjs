@@ -283,7 +283,7 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "P0/H3A/H3B/R1/GPT/guided path merged; direct Pages deployed; exact-MIME acceptance repair in progress",
+  "P0/H3A/H3B/R1/GPT/guided path merged; direct Pages deployed; canonical-response acceptance repair in progress",
   "| Node/browser agreement | Required per review head |",
   "an old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"

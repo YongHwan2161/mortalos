@@ -339,9 +339,15 @@ test("H3B remote verifier rejects any deployed byte or contract substitution", a
   const sourceCommit = "b".repeat(40);
   const { manifest } = await buildLab({ outdir: directory, sourceCommit });
   const originalFetch = globalThis.fetch;
+  const requestedPaths = [];
   let tamperedPath = null;
   globalThis.fetch = async (url) => {
-    const path = new URL(url).pathname.slice(1) || "index.html";
+    const pathname = new URL(url).pathname;
+    requestedPaths.push(pathname);
+    if (pathname === "/index.html") {
+      return new Response(null, { status: 308, headers: { location: "/" } });
+    }
+    const path = pathname.slice(1) || "index.html";
     const bytes = new Uint8Array(await readFile(resolve(directory, path)));
     if (path === tamperedPath) bytes[0] ^= 1;
     return new Response(bytes, {
@@ -362,6 +368,11 @@ test("H3B remote verifier rejects any deployed byte or contract substitution", a
       assets: manifest.files.length,
       source_commit: sourceCommit
     });
+    assert.equal(requestedPaths.includes("/index.html"), false);
+    assert.ok(
+      requestedPaths.filter((path) => path === "/").length >= 2,
+      "manifest index.html bytes must be verified at the canonical root"
+    );
     tamperedPath = manifest.files[0].path;
     await assert.rejects(verifyDeployedLab({
       url: "https://mortalos.example/",

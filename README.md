@@ -205,10 +205,13 @@ Post-merge Verify `29628252577/1` passed at exact `main`
 `b107a683e4d646b1b7940b241207d7740853e25f`. Deploy `29628252629/1` applied the
 D1 migration, configured runtime secrets, and published Pages, then the strict remote
 gate rejected the JavaScript MIME contract: Pages served `application/javascript`
-while the manifest declared `text/javascript`. This focused follow-up reconciles the
-manifest/local-server MIME without weakening verification. The `pages.dev` URL is
-not a release PASS until a reviewed exact-main redeploy passes logged-out asset,
-header, API, and Chromium verification. Sites remains the emergency fallback.
+while the manifest declared `text/javascript`. Independent review of the first fix
+also found that Pages redirects `/index.html` to canonical `/`; the first MIME failure
+had masked that next asset-loop failure. This focused follow-up reconciles the MIME
+and verifies manifest `index.html` bytes at `/` without allowing redirects. The
+`pages.dev` URL is not a release PASS until a reviewed exact-main redeploy passes
+logged-out asset, header, API, and Chromium verification. Sites remains the emergency
+fallback.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed
