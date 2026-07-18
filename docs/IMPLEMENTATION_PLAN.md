@@ -1,6 +1,6 @@
 # MortalOS Implementation Plan
 
-Status: **P0/H3A/H3B/R1 merged; public Sites fallback live; direct Pages final judge path under review; submission sprint active**
+Status: **P0/H3A/H3B/R1/GPT/guided path merged; direct Pages accepted; submission sprint active**
 
 Last reviewed: **2026-07-18 KST**
 
@@ -31,13 +31,12 @@ a network OS in five days.
 
 `truthful status → reviewed exact-SHA Pages release → video → fields → submit`
 
-The direct Cloudflare Pages Lab is the intended zero-install final submission
+The direct Cloudflare Pages Lab is the accepted zero-install final submission
 surface. It binds the repository-owned Function, assets, headers, and manifest to one
-reviewed `main` SHA. The public Sites Lab remains a logged-out fallback only while
-that Pages release is pending; it must not be presented as the final judge URL once
-Pages passes the exact-SHA remote gate. Both surfaces show two committed R1 mortality
-outcomes and call GPT-5.6 only as a server-side, non-authoritative witness. Neither
-adds network participants, proves ownerlessness, or implements mutable state.
+reviewed `main` SHA. The public Sites Lab remains a logged-out emergency fallback.
+Pages exposes the four-action adversarial proof; Sites exposes a narrower R1 A/B
+view. Both call GPT-5.6 only as a server-side, non-authoritative witness. Neither adds
+network participants, proves ownerlessness, or implements mutable state.
 
 ### Protocol lane — R1-A/R1-B merged; R1-C and R2 after submission
 
@@ -86,18 +85,17 @@ Additional H3B exact-deployment criteria:
   Service Worker, analytics, or embedded secret; and
 - `npm run verify:lab` passes against the public URL and exact deployed SHA.
 
-Implementation: OpenAI Sites remains the live fallback judge URL. Direct Cloudflare
-Pages is the intended final judge path: its GitHub workflow migrates the rate-limit
+Implementation: OpenAI Sites remains the live emergency fallback. Direct Cloudflare
+Pages is the accepted final judge path: its GitHub workflow migrates the rate-limit
 database, builds, deploys, and re-verifies the exact reviewed repository commit.
 Devpost reports `website_required: false`, but the direct Pages route supplies the
 stronger no-rebuild proof tying source, Function, assets, headers, and manifest to one
 SHA.
 
 Failure rule: an unverified, stale, preview-only, or credentialed URL is not a pass.
-Cloudflare account credentials are now present. The remaining gate is the reviewed
-Pages-compatible D1 repair and its exact-main deployment. The Sites minimum path stays
-available during repair, and no document may call the `pages.dev` target deployed
-until its exact verifier passes.
+Cloudflare account credentials are present. Each new source SHA must repeat the
+post-merge deployment and exact remote verifier; the Sites minimum path stays
+available during recovery and never substitutes for an unverified Pages claim.
 
 Current evidence and closure sequence:
 
@@ -124,9 +122,14 @@ Current evidence and closure sequence:
    deploy published Pages. The final gate correctly rejected a JavaScript MIME
    mismatch: live Pages used `application/javascript` while the manifest declared
    `text/javascript`. Review of the first fix found the masked canonical-route
-   behavior too: `/index.html` redirects to `/`. Reconcile both contracts through
-   review and redeploy, then accept the URL only after exact
-   asset/header/API/Chromium proof.
+   behavior too: `/index.html` redirects to `/`.
+7. PR #17 reconciled both contracts. Final head `4d792ae90448c9e6baf7734b768cd242f60120bc`
+   passed Verify `29629764845/1`, final-body policy `29630353742/1`, and immutable
+   review. Merge `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2` passed post-merge
+   Verify `29630532558/1` and Deploy `29630532541/1`; the latter accepted all exact
+   assets, headers, API paths, and three clean Chromium contexts. The four-action
+   public replay displayed that source commit and aggregate asset digest
+   `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`.
 
 ### S1 — repository and judge instructions
 

@@ -2,7 +2,7 @@
 
 As of: **2026-07-18 KST**
 
-Stage: **P0/H3A/H3B/R1/GPT/guided path merged; direct Pages deployed; canonical-response acceptance repair in progress**
+Stage: **P0/H3A/H3B/R1/GPT/guided path merged; direct Pages accepted; submission evidence in progress**
 
 Security baseline: **every published or deployed SHA requires immutable-head review and its own successful verification**
 
@@ -13,19 +13,19 @@ Lab. It is not yet an operating system, participant network, deterministic mutab
 state machine, or ownerless model runtime.
 
 Current remote `main` at audit time is
-`b107a683e4d646b1b7940b241207d7740853e25f`. It contains P0, H3A, H3B, bounded
-R1, the repository-owned GPT-5.6 witness, guided judge path, and the D1-backed
-private-actor rate limiter. PR #16 passed fresh immutable review, expected-head merge,
-and post-merge Verify `29628252577/1`.
+`4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`. It contains P0, H3A, H3B, bounded
+R1, the repository-owned GPT-5.6 witness, guided judge path, the D1-backed
+private-actor rate limiter, and the strict Pages MIME/canonical-root contract.
 
-Exact-main deploy `29628252629/1` successfully applied the D1 migration, configured
-runtime secrets, and published the Pages artifact. Its final remote gate failed
-strictly because Cloudflare served `app.js` as `application/javascript` while the
-manifest declared `text/javascript`. Independent review of the first repair also
-found that `/index.html` redirects to canonical `/`, which would have been the next
-failure in the asset loop. This focused candidate aligns the JavaScript MIME and
-canonical-root verification with the deployed platform. No public release PASS is
-claimed until a reviewed exact-main redeploy passes the full remote verifier.
+PR #17's final head `4d792ae90448c9e6baf7734b768cd242f60120bc` passed exact-head
+Verify `29629764845/1`, final-body policy `29630353742/1`, and immutable review.
+Expected-head squash merge produced the current `main`; post-merge Verify
+`29630532558/1` and Deploy MortalOS Lab `29630532541/1` both passed. The latter
+verified D1 migration, runtime secret configuration, six exact assets, all security
+headers, public API error/happy/rate-limit paths, and the complete judge path in three
+clean Chromium contexts. The accepted public artifact displayed the same 40-character
+source commit and aggregate digest
+`sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`.
 
 PR #11 also has a governance incident: an attestation of unverifiable logical-agent
 provenance was followed by merge before the assigned reviewer completed the required
@@ -45,13 +45,13 @@ post-merge technical Verify result.
 | CLI bootstrap proof | Verified proof only | Ephemeral `1-of-1` birth/heartbeat and handoff proof. No stable import/persistence/replay/export CLI contract. |
 | H3A MortalOS Lab | Implemented | Three non-extractable Worker keys, logical `2-of-3`, reference turnover, replay/fork, qualified mortality, resurrection rejection, clone, full corpus, and public evidence export/replay. One browser remains one physical failure domain. |
 | H3B deployment contract | Merged on `main`; post-merge Verify passed | Deterministic asset manifest, exact source SHA, Cloudflare headers, pinned Actions, idempotent Pages project discovery, remote asset verifier, and remote Chromium path. |
-| Public Sites judge path | Live; source provenance pending | Logged-out HTTP 200, public-result GPT witness HTTP 200, and injected private field HTTP 422. Both displayed hashes/outcomes match merged R1. Sites version 2 has immutable source/archive metadata, but its source is not in this repository. |
-| Direct H3B Cloudflare Pages release | Deployed; canonical-response acceptance repair in progress | PR #16's D1 release deployed from exact main. The strict remote gate found the JavaScript manifest MIME mismatch; review then found the masked canonical `/index.html` redirect. This follow-up keeps verification strict and reconciles both before PASS. |
+| Public Sites judge path | Live emergency fallback; source provenance pending | Logged-out HTTP 200, public-result GPT witness HTTP 200, and injected private field HTTP 422. Both displayed hashes/outcomes match merged R1. It is not the final judge URL. |
+| Direct H3B Cloudflare Pages release | Accepted on exact `main` | Public HTTPS 200; six exact assets, MIME and security headers; D1-backed GPT route; three clean Chromium contexts; source commit and aggregate digest displayed after GPT-off replay. |
 | Language-neutral wire and independent verifier | Merged through PR #12 | Eight bounded Genesis/replay/mortality operations with JS/Python byte equality. Exact-head Verify and logical reviewer checks passed. Python covers the committed corpus profile, not arbitrary pending/fork/resource-limit inputs. |
 | Mutable logical state/genome | Not implemented on `main` | An older local R2 prototype is not merge evidence because it predates current P0 and R1. |
 | Participant network/replication | Not implemented | No WebRTC/libp2p transport, distributed custody evidence, state availability protocol, or independent-host survival. |
-| Runtime GPT witness | Live on Sites; repository source/provenance pending | Tested structured explanation of a public R1 result; private-field injection rejected before inference. GPT cannot sign, validate, choose a head, or classify death. |
-| GPT adversarial scenario release candidate | Implemented and locally verified; review/deploy pending | Ten allowlisted mutations, strict Responses API schema, canonical compilation, existing-kernel verdict, GPT-off replay, 25/25 target selection, and 0/25 exact model verdict predictions. |
+| Runtime GPT witness | Live on Pages; Sites witness retained as fallback | Pages exposes the repository-owned strict-schema adversarial proposal route. GPT cannot sign, validate, choose a head, or classify death. |
+| GPT adversarial scenario release | Merged, deployed, and publicly replayed | Ten allowlisted mutations, strict Responses API schema, canonical compilation, existing-kernel verdict, GPT-off replay, 25/25 target selection, and 0/25 exact model verdict predictions. |
 
 ## 3. H3B merged contract and release state
 
@@ -72,8 +72,8 @@ The GitHub workflow:
 6. runs the complete Lab acceptance suite against the public HTTPS origin.
 
 No public URL is considered valid merely because a deploy command returned success.
-The latest run deployed bytes but remains unaccepted because the strict remote MIME
-comparison failed before browser/API acceptance.
+The accepted run completed the strict byte/MIME/header verifier before API and
+browser acceptance, then repeated the complete public path in three clean contexts.
 
 ## 4. Build Week status
 
@@ -90,17 +90,15 @@ Live Devpost requirements/project state last refreshed on **2026-07-18 KST**:
 
 The exact deadline remains unchanged. Submission-critical blockers, in order:
 
-1. immutably review, merge, and verify the Pages-compatible D1 repair;
-2. deploy exact `main` and pass logged-out asset/header/API/Chromium acceptance;
-3. collect three genuine first-time-developer guided-path passes;
-4. publish final judge instructions covering GPT non-authority and the local fallback;
-5. add the selected Codex Session ID plus submitter, country, category, repository,
+1. collect three genuine first-time-developer guided-path and video-understanding passes;
+2. publish final judge instructions covering GPT non-authority and the local fallback;
+3. add the selected Codex Session ID plus submitter, country, category, repository,
    test, and dev-tool instruction fields and read each value back; and
-6. perform the final consistency run and submit the already-published project page.
+4. perform the final consistency run and submit the already-published project page.
 
 Cloudflare Pages is not globally required by the form (`website_required: false`), but
 Developer Tools still need a no-rebuild test path. The live Sites Lab remains a
-fallback; the direct Pages release is now the intended final judge path because it
+fallback; the accepted direct Pages release is the final judge path because it
 binds the repository source, runtime Function, assets, and manifest to one exact SHA.
 
 ## 5. Claim boundaries
@@ -113,8 +111,8 @@ Supported descriptions:
 - signed succession and complete original-custodian turnover;
 - deterministic replay/fork/resurrection rejection;
 - death only under explicit irreversible-loss and complete-evidence assumptions;
-- a public Sites Lab for contrasting incomplete and complete mortality evidence; and
-- GPT-5.6 as an untrusted explanatory witness over public deterministic output.
+- a public Pages Lab for falsifying bounded lifecycle assumptions; and
+- GPT-5.6 as an untrusted adversarial witness over public deterministic evidence.
 
 Unsupported descriptions:
 

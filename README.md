@@ -9,9 +9,11 @@ MortalOS is an endpoint-neutral lifecycle evidence protocol. GPT-5.6 proposes a
 bounded attack; canonical bytes bind that proposal; the deterministic kernel alone
 decides whether identity continued, forked, or lost authority.
 
-Public final judge URL: pending independently reviewed Cloudflare deployment. The
-current zero-install [R1 evidence fallback](https://mortalos-evidence-lab.ant713800.chatgpt.site)
-is public but is not represented as this release candidate.
+Public final judge URL: [MortalOS Lab on Cloudflare Pages](https://mortalos-lab-yonghwan2161.pages.dev/).
+The release manifest displayed after the four-action proof identifies the exact
+reviewed source commit and aggregate asset digest. The separate zero-install
+[R1 evidence fallback](https://mortalos-evidence-lab.ant713800.chatgpt.site) remains
+available for incident recovery but is not the final judge path.
 Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos).
 
 ## 90-second judge path
@@ -93,6 +95,9 @@ Implemented:
   hashes every served asset, mirrors the local security-header contract on Cloudflare
   Pages, applies a D1-backed atomic ten-request-per-minute private-actor limit before
   OpenAI, and verifies the public bytes and Chromium judge path after deployment;
+- a public, exact-source [Cloudflare Pages release](https://mortalos-lab-yonghwan2161.pages.dev/)
+  whose strict remote verifier checks every served byte, MIME type, security header,
+  D1-backed GPT route, and three clean Chromium judge contexts;
 - an R1 canonical operation/result contract for Genesis validation, lineage replay,
   and qualified mortality, with exact byte ceilings, stable rejection results, eight
   committed goldens, and byte-identical JavaScript/Python corpus-profile differential
@@ -103,20 +108,18 @@ Implemented:
 
 Not implemented:
 
-- a direct, exact-commit-verified Cloudflare Pages release of the full H3A Lab;
 - the deployed Sites frontend/server source in this `main` tree;
 - a stable CLI create/import/replay/export contract;
 - participant-to-participant transport or replicated state;
 - a deterministic executable genome or mutable logical state.
 
-Submission status outside this `main` snapshot: the public
-[MortalOS Evidence Lab](https://mortalos-evidence-lab.ant713800.chatgpt.site)
-provides a zero-install A/B view of two R1 mortality outcomes and an explicitly
-non-authoritative GPT-5.6 explanation. Logged-out HTTP, GPT response, and private-field
-rejection smoke tests pass. R1 merged through PR #12 at
-`6c5b85fd8e467feb4df63556864ea5f8949e7b61`; the separate Sites source/version
-provenance must still be reconciled with that reviewed repository evidence before
-submission freeze.
+Submission status outside this `main` snapshot: the exact-source Cloudflare Pages
+Lab is the zero-install judge path. Its four-action proof runs the committed baseline,
+calls GPT-5.6 only for an allowlisted proposal, exposes the authoritative kernel
+result, and reproduces the same digest and verdict with GPT off. The Sites A/B view
+remains an emergency fallback only. The Devpost project page and public narrated
+video exist, but hackathon submission and human clean-room evidence are tracked as
+separate release gates rather than inferred from a working deployment.
 
 This tree implements the **P0 mortality-safe kernel, H3A/H3B Lab contract, and bounded
 R1-A/R1-B evidence profile**.
@@ -134,9 +137,9 @@ remain after the submission-critical provenance and media work:
 See [Project status](docs/PROJECT_STATUS.md) and the [implementation
 plan](docs/IMPLEMENTATION_PLAN.md).
 
-### Build Week release candidate
+### Build Week release
 
-The current release-candidate branch adds a repository-owned `POST /api/scenarios`
+The reviewed release adds a repository-owned `POST /api/scenarios`
 Pages Function and a four-action judge path. GPT-5.6 is a server-only, strict-schema
 adversarial witness. It selects one of ten allowlisted mutations; a deterministic
 compiler emits canonical scenario bytes; the existing MortalOS kernel independently
@@ -147,9 +150,9 @@ The fixed live evaluation passed 25/25 scenario selections, covered all ten muta
 and reproduced 25/25 kernel results offline. GPT's exact status/code prediction was
 0/25, which demonstrates the intended authority boundary rather than hiding model
 error. See [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md) and the
-[2:50 demo script](docs/DEMO_SCRIPT.md). This candidate is not a deployed or merged
-release until independent review, exact-head CI, Cloudflare deployment, and remote
-verification pass.
+[2:50 demo script](docs/DEMO_SCRIPT.md). PR #17 passed exact-head policy/CI,
+immutable review, expected-head merge, post-merge Verify, and the complete public
+Cloudflare acceptance workflow. Any later source SHA must repeat those gates.
 
 ## Run
 
@@ -200,18 +203,19 @@ Maintainers deploy through the reviewed GitHub workflow. `npm run deploy:lab` is
 equivalent local maintainer command and requires Cloudflare credentials; judges do
 not need those credentials.
 
-Current release status: the H3B/GPT/guided and D1 rate-limit contracts are merged.
-Post-merge Verify `29628252577/1` passed at exact `main`
-`b107a683e4d646b1b7940b241207d7740853e25f`. Deploy `29628252629/1` applied the
-D1 migration, configured runtime secrets, and published Pages, then the strict remote
-gate rejected the JavaScript MIME contract: Pages served `application/javascript`
-while the manifest declared `text/javascript`. Independent review of the first fix
-also found that Pages redirects `/index.html` to canonical `/`; the first MIME failure
-had masked that next asset-loop failure. This focused follow-up reconciles the MIME
-and verifies manifest `index.html` bytes at `/` without allowing redirects. The
-`pages.dev` URL is not a release PASS until a reviewed exact-main redeploy passes
-logged-out asset, header, API, and Chromium verification. Sites remains the emergency
-fallback.
+Current release status: the H3B/GPT/guided, D1 rate-limit, Pages JavaScript MIME, and
+canonical-root verification contracts are merged. PR #17's final head
+`4d792ae90448c9e6baf7734b768cd242f60120bc` passed exact-head Verify
+`29629764845/1`, final-body policy `29630353742/1`, and immutable review. Its
+expected-head squash merge produced `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`;
+post-merge Verify `29630532558/1` and Deploy MortalOS Lab `29630532541/1` both
+passed. The deployment applied the D1 migration, configured runtime secrets without
+emitting them, verified six exact assets and security headers, exercised the API
+failure/happy/rate-limit paths, and completed the full judge path in three clean
+Chromium contexts. The public proof displayed source commit `4bb8924d...` and release
+asset digest `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98` at that
+accepted snapshot. A subsequent source change is accepted only after its own
+post-merge deployment and manifest readback; Sites remains the emergency fallback.
 
 `npm test` runs license/specification/governance gates, the conformance and Lab unit
 tests, the versioned cross-runtime corpus, a fixed-seed 10,000-case mixed

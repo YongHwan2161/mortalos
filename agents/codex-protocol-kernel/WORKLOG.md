@@ -595,3 +595,35 @@ result, and reproducible verification.
   requests that alias.
 - Handoff: publish a new immutable head and require complete fresh policy, Verify,
   Windows clone, and independent review before merge.
+
+## 2026-07-18 KST — Exact-main release evidence freeze
+
+- Base: `4bb8924d33b42be02bc9380ed6e3cee3eabd97b2`
+- Branch: `agent/codex-protocol-kernel--release-evidence-freeze`
+- Accepted predecessor evidence: PR #17 final head
+  `4d792ae90448c9e6baf7734b768cd242f60120bc` passed exact-head Verify
+  `29629764845/1`, final-body policy `29630353742/1`, immutable review, and
+  expected-head merge. Post-merge Verify `29630532558/1` and Deploy MortalOS Lab
+  `29630532541/1` passed at the base above.
+- Public readback: the four-action logged-out proof established the committed
+  baseline, obtained a `gpt-5.6-sol` `parent_hash_mutation`, recorded authoritative
+  `reject / E_PARENT_UNKNOWN`, and reproduced the exact canonical digest with GPT
+  off. The page displayed source commit `4bb8924d...` and release asset digest
+  `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`.
+- Change: synchronize README and rolling submission evidence with the accepted
+  Pages release; preserve video SHA mismatch, three genuine human tests, personal
+  Devpost fields, and non-null `submitted_at` as explicit external blockers. The
+  specification gate now requires the accepted/submission-evidence status string so
+  stale repair-in-progress documentation fails closed.
+- Local evidence: `npm ci` PASS with zero vulnerabilities; focused license/spec/link/
+  governance gates PASS; complete `npm test` PASS in 1,395.8 seconds, including
+  governance 30/30, conformance 76/76, seeded properties 10,000, Lab/API 17/17,
+  portable byte equality and 10,000/10,000 rejects, R1 JS/Python 8 records,
+  singleton, and H2. External link resolution passed for all three HTTPS targets;
+  moderate dependency audit reported zero vulnerabilities; package dry-run listed
+  103 files; diff checks and the high-confidence evidence-delta secret scan passed
+  with zero matches.
+- Handoff: publish one focused evidence PR and require exact-head policy/Verify plus
+  a complete immutable reviewer snapshot.
+  The resulting main SHA must redeploy and pass its own manifest readback before the
+  final-source video is rendered. The author does not self-review or merge.
