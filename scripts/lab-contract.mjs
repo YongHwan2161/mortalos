@@ -1,4 +1,5 @@
 import { extname } from "node:path";
+import { MORTALOS_SAFE_API_ORIGIN } from "../lab/runtime-endpoints.mjs";
 
 const mediaTypes = Object.freeze({
   ".css": "text/css",
@@ -13,7 +14,7 @@ export const LAB_CSP = [
   "script-src 'self'",
   "style-src 'self'",
   "worker-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN}`,
   "img-src 'none'",
   "font-src 'none'",
   "object-src 'none'",

@@ -6,6 +6,12 @@ import {
   SCENARIO_REQUEST_FORMAT
 } from "../lab/scenario-contract.mjs";
 import { compileScenario, runCompiledScenario } from "../lab/scenario-compiler.mjs";
+import {
+  MORTALOS_PRIMARY_ORIGIN,
+  MORTALOS_SAFE_API_ORIGIN,
+  scenarioApiUrl,
+  scenarioCorsOrigin
+} from "../lab/runtime-endpoints.mjs";
 import { handleScenarioRequest } from "../functions/api/scenarios.js";
 
 const ORIGIN = "https://mortalos.example";
@@ -67,7 +73,10 @@ function context({
   body = requestBody(),
   method = "POST",
   origin = ORIGIN,
+  requestOrigin = ORIGIN,
   contentType = "application/json",
+  accessControlRequestMethod = null,
+  accessControlRequestHeaders = null,
   connectingIp = "203.0.113.7",
   key = TEST_KEY,
   safetySecret = TEST_SAFETY_SECRET,
@@ -76,12 +85,20 @@ function context({
   const headers = new Headers();
   if (origin !== null) headers.set("origin", origin);
   if (contentType !== null) headers.set("content-type", contentType);
+  if (accessControlRequestMethod !== null) {
+    headers.set("access-control-request-method", accessControlRequestMethod);
+  }
+  if (accessControlRequestHeaders !== null) {
+    headers.set("access-control-request-headers", accessControlRequestHeaders);
+  }
   if (connectingIp !== null) headers.set("cf-connecting-ip", connectingIp);
   return {
-    request: new Request(`${ORIGIN}/api/scenarios`, {
+    request: new Request(`${requestOrigin}/api/scenarios`, {
       method,
       headers,
-      body: method === "GET" ? undefined : typeof body === "string" ? body : JSON.stringify(body)
+      body: ["GET", "OPTIONS"].includes(method)
+        ? undefined
+        : typeof body === "string" ? body : JSON.stringify(body)
     }),
     env: {
       OPENAI_API_KEY: key,
@@ -90,6 +107,77 @@ function context({
     }
   };
 }
+
+test("runtime endpoint policy bridges only the exact primary-host to safe-API pair", () => {
+  assert.equal(
+    scenarioApiUrl(`${MORTALOS_PRIMARY_ORIGIN}/demo`).href,
+    `${MORTALOS_SAFE_API_ORIGIN}/api/scenarios`
+  );
+  assert.equal(scenarioApiUrl(`${ORIGIN}/demo`).href, `${ORIGIN}/api/scenarios`);
+  assert.equal(
+    scenarioCorsOrigin(`${MORTALOS_SAFE_API_ORIGIN}/api/scenarios`, MORTALOS_PRIMARY_ORIGIN),
+    MORTALOS_PRIMARY_ORIGIN
+  );
+  assert.equal(scenarioCorsOrigin(`${ORIGIN}/api/scenarios`, ORIGIN), null);
+  assert.equal(scenarioCorsOrigin(`${ORIGIN}/api/scenarios`, MORTALOS_PRIMARY_ORIGIN), false);
+  assert.equal(scenarioCorsOrigin(`${MORTALOS_SAFE_API_ORIGIN}/api/scenarios`, "https://attacker.example"), false);
+});
+
+test("scenario API permits one bounded cross-origin preflight and POST pair", async () => {
+  const preflight = await handleScenarioRequest(context({
+    accessControlRequestHeaders: "content-type",
+    accessControlRequestMethod: "POST",
+    contentType: null,
+    method: "OPTIONS",
+    origin: MORTALOS_PRIMARY_ORIGIN,
+    requestOrigin: MORTALOS_SAFE_API_ORIGIN
+  }));
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get("access-control-allow-origin"), MORTALOS_PRIMARY_ORIGIN);
+  assert.equal(preflight.headers.get("access-control-allow-methods"), "POST");
+  assert.equal(preflight.headers.get("access-control-allow-headers"), "content-type");
+  assert.equal(preflight.headers.get("access-control-max-age"), "600");
+  assert.equal(preflight.headers.get("vary"), "Origin");
+
+  const result = await parsed(await handleScenarioRequest(context({
+    origin: MORTALOS_PRIMARY_ORIGIN,
+    requestOrigin: MORTALOS_SAFE_API_ORIGIN
+  }), { fetchImpl: async () => upstream() }));
+  assert.equal(result.response.status, 200);
+  assert.equal(result.response.headers.get("access-control-allow-origin"), MORTALOS_PRIMARY_ORIGIN);
+  assert.equal(result.response.headers.get("vary"), "Origin");
+  assert.equal(result.body.format, "mortalos-scenario-response/1");
+
+  for (const invalid of [
+    context({
+      accessControlRequestHeaders: "authorization, content-type",
+      accessControlRequestMethod: "POST",
+      contentType: null,
+      method: "OPTIONS",
+      origin: MORTALOS_PRIMARY_ORIGIN,
+      requestOrigin: MORTALOS_SAFE_API_ORIGIN
+    }),
+    context({
+      accessControlRequestHeaders: "content-type",
+      accessControlRequestMethod: "DELETE",
+      contentType: null,
+      method: "OPTIONS",
+      origin: MORTALOS_PRIMARY_ORIGIN,
+      requestOrigin: MORTALOS_SAFE_API_ORIGIN
+    }),
+    context({
+      accessControlRequestHeaders: "content-type",
+      accessControlRequestMethod: "POST",
+      contentType: null,
+      method: "OPTIONS",
+      origin: "https://attacker.example",
+      requestOrigin: MORTALOS_SAFE_API_ORIGIN
+    })
+  ]) {
+    const rejected = await parsed(await handleScenarioRequest(invalid));
+    assert.ok([403, 405].includes(rejected.response.status));
+  }
+});
 
 async function parsed(response) {
   return { response, body: JSON.parse(await response.text()) };

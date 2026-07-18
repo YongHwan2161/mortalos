@@ -4,6 +4,7 @@ import { canonicalBytes } from "../src/index.mjs";
 import { createEvidenceBundle } from "./evidence-export.mjs";
 import { BrowserIncubator } from "./live-incubator.mjs";
 import { runReferenceProof } from "./reference-engine.mjs";
+import { scenarioApiUrl } from "./runtime-endpoints.mjs";
 import { SCENARIO_REQUEST_FORMAT } from "./scenario-contract.mjs";
 import { compileScenario, runCompiledScenario } from "./scenario-compiler.mjs";
 
@@ -257,7 +258,7 @@ byId("ask-gpt").addEventListener("click", async () => {
     const scenarioKind = byId("scenario-kind").value;
     const hypothesis = byId("scenario-hypothesis").value.trim();
     if (!hypothesis) throw new Error("enter a hypothesis");
-    const response = await fetch("/api/scenarios", {
+    const response = await fetch(scenarioApiUrl(globalThis.location.href), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({

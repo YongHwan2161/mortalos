@@ -5,32 +5,31 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Custom domain qualification and documentation consolidation
+### ACTIVE — Exact-origin custom-domain API bridge
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `03e868ccd810064e81275a7ac2d71b543030b916`
-- Work branch: `agent/codex-protocol-kernel--custom-domain-docs`
-- Worktree:
-  `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--release-evidence-freeze-worktrees/codex-protocol-kernel--custom-domain-docs`
-- Exact intended shared paths: `README.md`, `wrangler.jsonc`, `test/lab.test.mjs`,
-  `docs/README.md`,
-  `docs/NORTH_STAR_ROADMAP.md`, `docs/BUILD_WEEK_EVIDENCE.md`,
-  `docs/ACCESS_ARCHITECTURE.md`, `docs/TRACEABILITY.md`, removal of superseded
-  submission/planning Markdown, `scripts/verify-links.mjs`, and
-  `scripts/verify-spec.mjs`.
+- Base: `f23a4d501f89a4798d6d2a490000117774c69457`
+- Work branch: `agent/codex-protocol-kernel--custom-origin-bridge`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/wt-custom-origin`
+- Exact intended shared paths: `functions/api/scenarios.js`, `lab/app.mjs`,
+  `lab/runtime-endpoints.mjs`, `lab/index.html`, `lab/_headers`,
+  `scripts/lab-contract.mjs`, `scripts/verify-gpt-scenarios.mjs`,
+  `scripts/verify-lab.mjs`,
+  `test/scenario-api.test.mjs`, `test/lab.test.mjs`, and the current README,
+  roadmap, release-evidence, access, traceability, and agent status documents.
 - Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
   `agents/codex-protocol-kernel/MEMORY.md`, and
   `agents/codex-protocol-kernel/WORKLOG.md`.
-- Contract affected: retain the verified Pages hostname while qualifying
-  `https://mortal-os.com/`; target the D1/OpenAI-backed Function to
-  `aws:us-east-1` after the observed HKG platform 502; consolidate documentation
-  into a small current SSOT; define strict pre-deadline R1-C/R2 gates. Protocol and
-  Lab validity semantics do not change.
-- Required evidence: focused config/Lab/spec/link tests; full repository suite;
+- Contract affected: when and only when the page origin is `https://mortal-os.com`,
+  send the bounded scenario request to the exact accepted Pages API origin. Permit
+  only that origin pair through CSP and CORS/preflight; retain same-origin behavior
+  elsewhere and reject every other cross-origin request. Protocol and Lab validity
+  semantics do not change.
+- Required evidence: focused CORS/CSP/Lab tests; full repository suite;
   coverage/audit/package/secret/diff gates; exact-head policy and Verify; immutable
-  independent review; expected-head merge; post-merge Pages deploy; custom-domain
-  exact-source/API/three-context Chromium acceptance; and final Devpost readback.
-- Expected handoff: one focused reviewed remediation/SSOT PR from current `main`.
+  independent review; expected-head merge; exact-main deploy; custom-domain
+  preflight/valid API/three-context Chromium acceptance; and final canonical switch.
+- Expected handoff: one focused reviewed origin-bridge PR from current `main`.
   The author does not self-review, merge, or push directly to `main`.
 
 ## Closed intents

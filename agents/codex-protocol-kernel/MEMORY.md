@@ -2,9 +2,9 @@
 
 Last reconciled: 2026-07-19 KST
 
-Branch: `agent/codex-protocol-kernel--custom-domain-docs`
+Branch: `agent/codex-protocol-kernel--custom-origin-bridge`
 
-Current base: `03e868ccd810064e81275a7ac2d71b543030b916`
+Current base: `f23a4d501f89a4798d6d2a490000117774c69457`
 
 ## Verified merged state
 
@@ -13,8 +13,8 @@ Current base: `03e868ccd810064e81275a7ac2d71b543030b916`
   life, or ownerless model runtime.
 - P0/H3A/H3B, the bounded GPT-5.6 witness, the four-action judge path, and R1-A/R1-B
   are merged. R1-C remains the next protocol implementation layer.
-- Accepted `main` is `03e868ccd810064e81275a7ac2d71b543030b916` through PR #18.
-  Post-merge Verify `29632638423` and deploy `29632638421` passed with aggregate
+- Accepted `main` is `f23a4d501f89a4798d6d2a490000117774c69457` through PR #19.
+  Post-merge Verify `29655465238` and deploy `29655465232` passed with aggregate
   asset digest `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`.
 - The verified zero-install judge URL is
   `https://mortalos-lab-yonghwan2161.pages.dev/`.
@@ -32,9 +32,13 @@ Current base: `03e868ccd810064e81275a7ac2d71b543030b916`
 - A schema-valid `POST /api/scenarios` reaches HKG and returns Cloudflare plaintext
   `502`; invalid requests still return the expected application JSON. The custom
   domain is therefore not yet an accepted judge path.
-- Smart Placement and a fresh production deployment did not clear the fault. The
-  current reviewed candidate uses targeted `aws:us-east-1` Function placement while
-  keeping the accepted `pages.dev` workflow URL fail-safe.
+- Smart and targeted placement plus fresh production deployments did not clear the
+  fault. The current candidate routes only the exact `mortal-os.com` page origin to
+  the accepted `pages.dev` API origin and permits only that pair through CSP and
+  bounded CORS/preflight; every other origin remains fail-closed.
+- Candidate-local evidence is full-suite PASS: Lab/API 19/19, three-context Chromium,
+  governance 30/30, conformance 76/76, property 10,000, R1, portable 10,000/10,000,
+  coverage, audit, package, link, diff, and secret gates. Public evidence is pending.
 - Do not promote the custom hostname in README, Devpost, or the deploy verifier until
   its exact-source, valid API, and three clean Chromium contexts all pass.
 
@@ -54,7 +58,7 @@ Current base: `03e868ccd810064e81275a7ac2d71b543030b916`
 
 ## Current priorities
 
-1. Merge and deploy the targeted-placement/documentation candidate only after full
+1. Merge and deploy the exact-origin bridge candidate only after full
    local, exact-head, and immutable-review gates.
 2. Re-run the complete custom-domain API and Chromium acceptance; promote only on
    PASS, otherwise keep `pages.dev` through the deadline.

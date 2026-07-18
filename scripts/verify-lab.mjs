@@ -4,6 +4,11 @@ import { readFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { canonicalBytes, encodeBase64Url } from "../src/index.mjs";
 import { replayEvidenceBundle } from "../lab/evidence-export.mjs";
+import {
+  MORTALOS_PRIMARY_ORIGIN,
+  MORTALOS_SAFE_API_ORIGIN,
+  MORTALOS_SCENARIO_PATH
+} from "../lab/runtime-endpoints.mjs";
 import { buildLab } from "./build-lab.mjs";
 import { LAB_CSP, startLabServer } from "./serve-lab.mjs";
 import { verifyDeployedLab } from "./verify-deployed-lab.mjs";
@@ -442,11 +447,16 @@ async function runContext(browser, serverUrl, contextIndex, pair) {
 
     assert.deepEqual(errors, []);
     const expectedOrigin = new URL(serverUrl).origin;
+    const allowedExternalScenario = expectedOrigin === MORTALOS_PRIMARY_ORIGIN
+      ? new URL(MORTALOS_SCENARIO_PATH, MORTALOS_SAFE_API_ORIGIN).href
+      : null;
     assert.ok(requests.length > 0);
     for (const requestUrl of requests) {
       const parsed = new URL(requestUrl);
       if (parsed.protocol === "blob:" || parsed.protocol === "data:") continue;
-      assert.equal(parsed.origin, expectedOrigin, `external browser request: ${requestUrl}`);
+      if (parsed.origin !== expectedOrigin) {
+        assert.equal(parsed.href, allowedExternalScenario, `external browser request: ${requestUrl}`);
+      }
     }
     return {
       organismId: born.live.organism_id,

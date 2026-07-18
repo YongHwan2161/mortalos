@@ -91,8 +91,10 @@ P0, H3A, the H3B deployment contract, the GPT guided path, and the bounded R1-A/
 corpus profile are merged. The exact-source Cloudflare Pages Lab is the final
 no-rebuild judge path. The verified `pages.dev` hostname remains canonical while
 `mortal-os.com` is TLS-active but held behind the valid-API/Chromium acceptance gate.
-The Function is targeted to `aws:us-east-1` to avoid an observed HKG upstream path;
-promotion still depends on public readback, not the configuration alone. Sites is
+Smart and targeted placement did not clear its observed HKG upstream path. The
+bounded recovery candidate sends only the exact `mortal-os.com` page origin to the
+accepted `pages.dev` scenario API and permits only that pair in CSP/CORS; every other
+origin remains rejected. Promotion still depends on public readback. Sites is
 incident recovery only. No host changes the protocol trust boundary.
 
 The remaining protocol order is:

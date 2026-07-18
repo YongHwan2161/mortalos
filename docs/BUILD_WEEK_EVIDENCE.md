@@ -11,9 +11,9 @@ is `PASS` only when its local, GitHub, public deployment, or Devpost readback ex
 | Surface | State | Current evidence |
 | --- | --- | --- |
 | Protocol and Lab | PASS | P0/H3A/H3B, GPT guided path, R1-A/R1-B, fixed portable/property/browser gates are merged. |
-| Reviewed source | PASS | `main` `03e868ccd810064e81275a7ac2d71b543030b916`, PR #18, post-merge Verify `29632638423`. |
-| Public Pages release | PASS | Deploy run `29632638421`; exact source manifest, six assets, MIME, headers, API, and three clean Chromium contexts passed. |
-| Canonical domain | HOLD | `mortal-os.com` is Active with SSL and exact static bytes, but a valid scenario POST returns a Cloudflare HKG plaintext 502; `pages.dev` remains the judge URL. |
+| Reviewed source | PASS | `main` `f23a4d501f89a4798d6d2a490000117774c69457`, PR #19, post-merge Verify `29655465238`. |
+| Public Pages release | PASS | Deploy run `29655465232`; exact source manifest, six assets, MIME, headers, API, and three clean Chromium contexts passed. |
+| Canonical domain | HOLD | `mortal-os.com` is Active with SSL and exact static bytes, but direct valid POST remains HKG 502. The exact-origin Pages API bridge is locally accepted and still requires reviewed deployment/readback. |
 | GPT-5.6 evaluation | PASS | 25/25 schema/API and intended mutation; 10/10 mutation coverage; 25/25 kernel/offline replay; 0/25 exact model verdict agreement. |
 | Public video | PASS | <https://youtu.be/kR-TPuwoNaI>, public, narrated, below three minutes, attached to Devpost. |
 | Devpost | PASS | Submission `1080076`, state `Submitted`, `submitted_at` `2026-07-18T10:25:36.990-04:00`. |
@@ -28,12 +28,12 @@ judge access, and truthful claim boundaries remain mandatory.
 ## Accepted source and deployment
 
 - Repository: <https://github.com/YongHwan2161/mortalos>
-- Accepted `main`: `03e868ccd810064e81275a7ac2d71b543030b916`
-- Evidence PR: <https://github.com/YongHwan2161/mortalos/pull/18>
-- Exact-head Verify: `29631936378/1`
-- Final-body trusted-base policy: `29632195368/1`
-- Post-merge Verify: <https://github.com/YongHwan2161/mortalos/actions/runs/29632638423>
-- Post-merge deploy: <https://github.com/YongHwan2161/mortalos/actions/runs/29632638421>
+- Accepted `main`: `f23a4d501f89a4798d6d2a490000117774c69457`
+- Evidence PR: <https://github.com/YongHwan2161/mortalos/pull/19>
+- Exact-head Verify: `29654838652/1`
+- Final-body trusted-base policy: `29655060763/1`
+- Post-merge Verify: <https://github.com/YongHwan2161/mortalos/actions/runs/29655465238>
+- Post-merge deploy: <https://github.com/YongHwan2161/mortalos/actions/runs/29655465232>
 - Accepted aggregate asset digest:
   `sha256:VW018QRVpiK50L0YHwTPG0p5PP7dILdiay2Ia9aFc98`
 - Accepted source changed documentation only after runtime PR #17, so the deployed
@@ -48,10 +48,12 @@ of the Pages Function or exact release assets.
 Current domain evidence: dashboard status `Active`, SSL enabled, HTTPS root `200`,
 and `asset-manifest.json` exact source/digest equality all pass. Invalid API requests
 return the expected JSON errors, but a schema-valid request reaches HKG and returns
-platform plaintext `502` before the application response. Smart Placement plus a
-fresh production deployment did not clear the fault. The reviewed remediation
-candidate uses explicit targeted placement in `aws:us-east-1`; no promotion occurs
-until that exact-main deployment passes the full remote gate.
+platform plaintext `502` before the application response. Smart and targeted
+placement plus fresh production deployments did not clear the fault. The current
+candidate keeps the accepted Pages API as the only inference endpoint and, only for
+the exact `mortal-os.com` page origin, uses a single-origin CSP plus bounded
+CORS/preflight allowlist. No promotion occurs until its exact-main deployment passes
+valid API and three-context Chromium gates from the custom hostname.
 
 ## Trusted runtime boundary
 
@@ -83,13 +85,13 @@ and unsafe as a consensus oracle.
 
 ## Current candidate local and browser evidence
 
-The targeted-placement/documentation candidate passed:
+The exact-origin bridge candidate currently passes:
 
-- `npm test`: complete ordered repository contract in **1,397.4 seconds** on Windows;
+- `npm test`: complete ordered repository contract in **1,159.0 seconds** on Windows;
 - conformance: **76** cases;
 - fixed property corpus: **10,000** cases, seed `1297044052`;
 - serialized adversarial rejections: **10,000**;
-- Lab/API unit cases: **17**;
+- Lab/API unit cases: **19**;
 - trusted-core coverage: **96.00%** line, **92.64%** branch, **95.22%** function;
 - governance: **30/30**, with **92.68%** line, **84.39%** branch, and
   **93.75%** function coverage;
@@ -100,8 +102,9 @@ The targeted-placement/documentation candidate passed:
 - local Lab Chromium: three clean contexts, 360/768/1440 widths, all logical two-key
   pairs, keyboard-only controls, accessibility/status/focus checks, exact corpus
   replay;
-- Wrangler 4.111.0 compiled the targeted Pages Functions bundle successfully;
-- package dry-run: **101** files; and
+- exact-pair endpoint, CORS/preflight, attacker-origin, and CSP regressions;
+- Wrangler 4.111.0 compiled the Pages Functions bundle successfully;
+- package dry-run: **102** files; and
 - high-confidence secret scan: zero matches.
 
 The accepted release also passed its Windows `core.autocrlf=true` clean-clone and
