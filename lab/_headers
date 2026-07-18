@@ -1,5 +1,5 @@
 /*
-  Cache-Control: no-store
+  Cache-Control: no-store, no-transform
   Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; connect-src 'self' https://mortalos-lab-yonghwan2161.pages.dev; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin

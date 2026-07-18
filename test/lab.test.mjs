@@ -214,6 +214,7 @@ test("browser Lab source fails closed and contains no persistence or copied vali
 
   const serverSource = await readFile(new URL("../scripts/serve-lab.mjs", import.meta.url), "utf8");
   assert.match(serverSource, /LAB_SECURITY_HEADERS, labContentType.*lab-contract\.mjs/);
+  assert.equal(LAB_SECURITY_HEADERS["cache-control"], "no-store, no-transform");
   assert.equal(LAB_SECURITY_HEADERS["cross-origin-embedder-policy"], "require-corp");
   assert.equal(LAB_SECURITY_HEADERS["cross-origin-opener-policy"], "same-origin");
   assert.equal(LAB_SECURITY_HEADERS["cross-origin-resource-policy"], "same-origin");
@@ -223,6 +224,7 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   );
 
   const deploymentHeaders = await readFile(new URL("../lab/_headers", import.meta.url), "utf8");
+  assert.match(deploymentHeaders, /Cache-Control: no-store, no-transform/);
   assert.match(deploymentHeaders, /Cross-Origin-Embedder-Policy: require-corp/);
   assert.match(deploymentHeaders, /Cross-Origin-Opener-Policy: same-origin/);
   assert.match(deploymentHeaders, /Content-Security-Policy: default-src 'none'/);
