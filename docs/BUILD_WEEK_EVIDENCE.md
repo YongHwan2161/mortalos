@@ -128,7 +128,7 @@ Final local release-gate readout:
 | Trusted-core coverage | PASS, line 94.70%, branch 92.31%, function 95.22% |
 | Governance coverage | PASS, 30/30; line 92.68%, branch 84.39%, function 93.75% |
 | Dependency audit | PASS, zero vulnerabilities at `moderate` threshold |
-| Package dry run | PASS, stable 138-file inventory. Windows worktree measured 346,964/1,368,844 archive/unpacked bytes; an LF reviewer checkout measured 346,967/1,368,809. Byte sizes are EOL/compression diagnostics, not release invariants. |
+| Package dry run | PASS, stable 138-file inventory; archive and unpacked byte sizes vary with checkout EOL/compression and are not release invariants. |
 | Build reproducibility | PASS, two clean output directories, seven exact assets, digest `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME` |
 | High-confidence secret scan | PASS, zero matches; private feedback value absent from repository |
 
