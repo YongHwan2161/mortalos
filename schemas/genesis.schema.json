@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mortalos.dev/schemas/v0/genesis.schema.json",
-  "title": "MortalOS v0 Genesis Envelope",
+  "$id": "https://mortalos.dev/schemas/genesis.schema.json",
+  "title": "MortalOS v0/v1 Genesis Envelope",
   "type": "object",
   "additionalProperties": false,
   "required": ["kind", "body", "approvals"],
@@ -103,6 +103,12 @@
         },
         "initial_state_root": {
           "$ref": "#/$defs/digest"
+        },
+        "genome_base64url": {
+          "type": "string"
+        },
+        "initial_state_base64url": {
+          "type": "string"
         },
         "initial_custodians": {
           "type": "array",

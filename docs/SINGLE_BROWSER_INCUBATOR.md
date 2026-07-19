@@ -1,105 +1,86 @@
-# Single-Browser Incubator Profile
+# Single-browser incubator and profile boundary
 
-Status: **H3A/H3B/R1 merged; public Sites judge path live; direct H3B Pages release unverified; every publishable SHA requires actual-Chromium evidence**
+Status: **legacy L0 profile retained as advanced evidence; L2/L3 candidate uses
+isolated browser participants and must pass exact production acceptance before public
+promotion**
 
-Protocol: `mortalos/0`
+Protocol profiles: `mortalos/0` and `mortalos/1`
 
-## 1. Purpose
+## Purpose
 
-One person opening one page should be able to create a new organism without recruiting other people or devices, while visually demonstrating quorum and later handoff.
+The original incubator lets one person visualize Genesis, quorum, heartbeat,
+turnover, fork, and observer-relative mortality in one page. It creates three
+in-memory non-extractable Ed25519 Worker keys and a logical `2-of-3` descriptor.
+That remains useful protocol evidence, but it is deliberately no longer the main
+product story.
 
-The local browser profile does:
+## Profiles are different claims
 
-1. start three dedicated in-memory custodian Workers;
-2. generate and retain one non-persisted Ed25519 key per Worker;
-3. obtain all three Genesis approvals;
-4. create a `2-of-3` continuation descriptor;
-5. run a fixed public reference lineage through complete custodian turnover; and
-6. demonstrate local authority loss by controlled Worker termination under explicit
-   ephemeral-key assumptions.
+| Profile | Persistence | What it proves | What it does not prove |
+| --- | --- | --- | --- |
+| CLI singleton | process memory | smallest valid `1-of-1` birth and continuation | ownerless authority |
+| Ephemeral single-browser incubator | none | logical quorum and controlled local key loss | independent failure domains |
+| Durable Participant | consent-gated IndexedDB | one endpoint can recover its non-extractable key and replay state after reload | key transfer or cross-browser succession by itself |
+| Two-browser succession | endpoint-local keys | A→B accepted custody handoff and B continuation after A closes | `2-of-3` resilience |
+| Three-endpoint quorum | endpoint-local keys | any complementary pair can continue and repair after one loss | three people, organizations, or physical devices |
 
-The repository contains the hardened portable validator, three dedicated custodian
-Workers, browser signing, a reference falsification Lab, a static build, and
-actual-Chromium acceptance. Every changed review head must reproduce the same
-portable v4 result in Node, the isolated browser-target VM, and actual Chromium.
-The cross-origin-isolated Lab test additionally exposes `SharedArrayBuffer` and proves
-that SAB-backed validator input is rejected. The Lab checks non-extractable/sign-once
-Worker keys, all three quorum pairs, public-evidence export/replay, storage and Service
-Worker absence, request/console cleanliness, narrow viewport, and reduced motion. It
-does not implement remote handoff or prove independent failure domains.
+The single-browser incubator has three logical custodian slots but one physical
+failure domain. One process that holds two or three current keys can advance by
+itself. Therefore UI labels and documentation must never call that profile
+independently distributed or ownerless.
 
-## 2. Relationship to the singleton profile
+## Exact quorum meaning
 
-MortalOS also verifies a simpler CLI `1-of-1` bootstrap. The two profiles are alternatives:
+- Birth requires every initial custodian to approve.
+- A `2-of-3` Pulse needs signatures from two distinct eligible `key_id` values.
+- One current key is insufficient.
+- The protocol counts keys, not people, tabs, devices, or organizations.
+- Independent control is external deployment evidence, not a validator predicate.
 
-| Profile | Logical lesson | Limitation |
-|---|---|---|
-| CLI singleton | The smallest valid birth can be created by any endpoint. | One key has unilateral continuation and fork authority. |
-| Single-browser `2-of-3` | Quorum, key slots, and handoff can be shown visually in one page. | One browser still controls quorum and is one failure domain. |
-| Distributed `2-of-3` | No one domain can continue alone. | Requires real distribution evidence and participant adapters. |
+## Ephemeral close and mortality
 
-A valid membership handoff can move either bootstrap toward distributed custody without rebirth.
+Closing the incubator page terminates its dedicated Workers and removes locally
+usable keys under the declared demo assumptions. This proves local authority loss,
+not universal erasure. Public history remains, a modified client might have copied a
+key, and separately carried signatures or sidecars might still compose a successor.
 
-## 3. Exact meaning of `2-of-3`
+Consequently, public evidence alone cannot create the next valid Pulse, but browser
+closure alone is also not a global death certificate. A live endpoint loss is shown
+as `stalled` or read-only unless the observer separately supplies an explicit,
+complete, irreversible evidence basis required by the mortality profile.
 
-`2-of-3` counts distinct eligible custodian `key_id` values.
+## Browser constraints
 
-- Birth requires `3-of-3`: every initial key proves possession and consent.
-- After birth, any two current keys may approve a Pulse.
-- One current key cannot advance.
-- One process that holds two or three current keys can advance by itself.
+The Ephemeral Demo must:
 
-The protocol cannot infer how many people, tabs, browsers, devices, or organizations control those keys.
+- use dedicated Workers rather than a Service Worker;
+- create no IndexedDB, local/session storage, cache, cookie, or key restoration;
+- keep one non-extractable private key per Worker and export only public keys and
+  signatures;
+- import the same portable validator used outside the UI; and
+- disclose its single failure domain.
 
-## 4. Logical quorum versus physical resilience
+The Durable Participant must:
 
-The sole-browser profile has three logical custodian slots but one physical failure domain.
+- require explicit retention consent;
+- store exactly the structured-cloned non-extractable key, canonical public evidence,
+  and versioned expiry/authority metadata;
+- replay evidence through R1/state validation on restore instead of trusting a stored
+  head or verdict; and
+- fail closed on pending, corrupt, stale, extractable, or custody-mismatched state.
 
-| Profile | Logical custodians | Physical failure domains | Consequence |
-|---|---:|---:|---|
-| Sole-browser incubator | 3 | 1 | One person can create and continue; closing the page loses local authority under assumptions but is not itself global death. |
-| Two-domain mixed handoff | 3 | 2 | Resilience depends on whether either domain controls two keys. |
-| Three independent endpoints | 3 | 3 | Loss of one endpoint leaves two keys able to continue or repair. |
+## Required reproducible evidence
 
-Independent-host resilience exists only when no one physical or administrative failure domain controls `threshold` current keys. This is deployment evidence, not a validator predicate.
+`npm run verify:lab` must show both boundaries in actual Chromium:
 
-## 5. Close and mortality semantics
+1. Ephemeral mode starts with and leaves no durable browser storage.
+2. Durable mode creates one non-extractable key only after consent.
+3. A state transition changes sequence and root, then survives reload by canonical
+   replay.
+4. English/Korean switching changes no key, evidence, identity, or protocol value.
+5. Removing authority deletes the key and preserves read-only public history.
+6. A stale pending marker restores no authority or trusted head.
+7. A→B handoff keeps the same identity; premature A loss leaves B stalled.
 
-Before handoff:
-
-```text
-three volatile keys in one page
-  -> page reloads, crashes, or closes
-  -> zero locally usable current keys
-  -> no new local quorum can sign
-  -> authority lost under controlled ephemeral-key assumptions
-```
-
-This does not delete public history and is not a globally provable death certificate. A modified browser could copy a key, or independently carried body-bound signatures and a matching sidecar could still compose a successor. The UI must describe the immediate result as local authority loss or local disappearance. R1 now supplies bounded canonical operation/result bytes for its committed corpus profile, but the full H3A experiment still uses a trusted Proxy-free own-data adapter until R1-C consumes that wire contract end to end; raw evidence remains hostile. Only the documented named fields and bounded indices are read; unrelated properties are ignored and cannot contribute evidence. Recognized accessors, invalid key representations, or any malformed, oversized, wrong-type, detached, or otherwise unsnapshotable declared byte source abort the whole observation as uncertainty and must be shown as such. The seven whole-observation limits return frozen unclassified overflow rather than analyze a truncated inventory. The adapter must never supply its own head or cached latent verdict. The controlled reference fixture may set both `authorityLossIrreversible: true` and `latentEvidenceComplete: true` because its local evidence inventory is closed and explicitly enumerated. Live-incubator Worker retirement sets both to false: closing the page demonstrates local disappearance but is not a complete death basis. An omitted or false completeness flag, or an empty array alone, remains `authority_unavailable_not_proven_dead`.
-
-## 6. Browser constraints
-
-The implementation must:
-
-- use dedicated Workers, not a Service Worker designed to outlive the page;
-- import the portable validator, never a UI-specific validity path;
-- generate non-extractable WebCrypto keys where supported;
-- avoid IndexedDB, local/session storage, restoration, analytics, and logs for private keys;
-- keep one private key per Worker and exchange only public keys, signing requests, and signatures;
-- disclose failure-domain concentration; and
-- reconstruct accepted context only from canonical evidence.
-
-Workers and non-extractable keys reduce accidental persistence. They do not prove erasure against a modified browser or compromised operating system.
-
-## 7. Required demonstration
-
-```text
-one page creates Genesis
-  -> any two local Workers sign a heartbeat
-  -> browsers or other endpoints D, E, and F accept successive handoffs
-  -> every incubator key is replaced
-  -> original page closes
-  -> the same organism_id continues
-```
-
-A second run closes before handoff and shows immediate local authority loss: public evidence alone cannot create the next valid Pulse. It must separately show the difference between an incomplete evidence view (`authority_unavailable_not_proven_dead`) and a controlled, explicitly complete successor-free view (`dead_under_v0_assumptions`).
+The canonical judge host is <https://mortal-os.com/>. `pages.dev` is incident
+fallback, and the separate Sites artifact is historical recovery evidence only.

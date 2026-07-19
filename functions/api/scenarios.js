@@ -8,22 +8,32 @@ import { scenarioCorsOrigin } from "../../lab/runtime-endpoints.mjs";
 
 const MAX_REQUEST_BYTES = 4_096;
 const MAX_UPSTREAM_BYTES = 65_536;
+const MAX_TURNSTILE_BYTES = 8_192;
 const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_TURNSTILE_TIMEOUT_MS = 5_000;
 const OPENAI_URL = "https://api.openai.com/v1/responses";
+const TURNSTILE_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+const TURNSTILE_ACTION = "mortalos_gpt_scenario";
+const TURNSTILE_HEADER = "x-mortalos-turnstile-token";
 const RATE_LIMIT_MAXIMUM = 10;
 const RATE_LIMIT_RETRY_SECONDS = "60";
 const CORS_MAX_AGE_SECONDS = "600";
+const GLOBAL_MINUTE_KEY = "global:gpt:minute";
+const GLOBAL_DAY_KEY = "global:gpt:day";
 const SCENARIO_RATE_LIMIT_SQL = `
 INSERT INTO scenario_rate_limits (actor_key, window_id, request_count)
-VALUES (?1, CAST(unixepoch() / 60 AS INTEGER), 1)
+VALUES
+  (?1, CAST(unixepoch() / 60 AS INTEGER), 1),
+  (?2, CAST(unixepoch() / 60 AS INTEGER), 1),
+  (?3, CAST(unixepoch() / 86400 AS INTEGER), 1)
 ON CONFLICT(actor_key) DO UPDATE SET
   request_count = CASE
-    WHEN scenario_rate_limits.window_id = CAST(unixepoch() / 60 AS INTEGER)
+    WHEN scenario_rate_limits.window_id = excluded.window_id
       THEN scenario_rate_limits.request_count + 1
     ELSE 1
   END,
-  window_id = CAST(unixepoch() / 60 AS INTEGER)
-RETURNING request_count
+  window_id = excluded.window_id
+RETURNING actor_key, request_count
 `;
 
 const RESPONSE_HEADERS = Object.freeze({
@@ -66,15 +76,20 @@ function preflight(request, originHeaders) {
   const requestedHeaders = (request.headers.get("access-control-request-headers") ?? "")
     .split(",")
     .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  if (requestedHeaders.length !== 1 || requestedHeaders[0] !== "content-type") {
+    .filter(Boolean)
+    .sort();
+  const expectedHeaders = ["content-type", TURNSTILE_HEADER];
+  if (
+    requestedHeaders.length !== expectedHeaders.length ||
+    requestedHeaders.some((value, index) => value !== expectedHeaders[index])
+  ) {
     throw new ApiError(403, "invalid_cors_preflight");
   }
   return new Response(null, {
     status: 204,
     headers: {
       ...originHeaders,
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-headers": expectedHeaders.join(", "),
       "access-control-allow-methods": "POST",
       "access-control-max-age": CORS_MAX_AGE_SECONDS,
       "cache-control": "no-store",
@@ -177,20 +192,135 @@ async function rateIdentifier(address, env) {
   );
 }
 
-async function consumeScenarioRateLimit(database, actorKey) {
+function positiveIntegerSetting(value) {
+  if (typeof value !== "string" || !/^[1-9]\d{0,8}$/.test(value)) {
+    throw new ApiError(503, "not_configured");
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) throw new ApiError(503, "not_configured");
+  return parsed;
+}
+
+function scenarioAdmissionLimits(env) {
+  if (env.GPT_SCENARIOS_ENABLED !== "true") throw new ApiError(503, "gpt_disabled");
+  return {
+    daily: positiveIntegerSetting(env.GPT_DAILY_REQUEST_CAP),
+    globalMinute: positiveIntegerSetting(env.GPT_GLOBAL_MINUTE_CAP)
+  };
+}
+
+async function consumeScenarioAdmission(database, actorKey, limits) {
   if (typeof database?.prepare !== "function") throw new ApiError(503, "not_configured");
   try {
     const prepared = database.prepare(SCENARIO_RATE_LIMIT_SQL);
     if (typeof prepared?.bind !== "function") throw new Error("D1 prepare did not return a bindable statement");
-    const bound = prepared.bind(actorKey);
-    if (typeof bound?.first !== "function") throw new Error("D1 bind did not return an executable statement");
-    const row = await bound.first();
-    if (!Number.isSafeInteger(row?.request_count) || row.request_count < 1) {
-      throw new Error("D1 rate-limit statement returned an invalid count");
+    const keys = [actorKey, GLOBAL_MINUTE_KEY, GLOBAL_DAY_KEY];
+    const bound = prepared.bind(...keys);
+    if (typeof bound?.all !== "function") throw new Error("D1 bind did not return an executable statement");
+    const result = await bound.all();
+    if (!Array.isArray(result?.results) || result.results.length !== keys.length) {
+      throw new Error("D1 admission statement returned an invalid row count");
     }
-    return row.request_count <= RATE_LIMIT_MAXIMUM;
-  } catch {
+    const counts = new Map();
+    for (const row of result.results) {
+      if (
+        !keys.includes(row?.actor_key) ||
+        counts.has(row.actor_key) ||
+        !Number.isSafeInteger(row.request_count) ||
+        row.request_count < 1
+      ) {
+        throw new Error("D1 admission statement returned an invalid counter");
+      }
+      counts.set(row.actor_key, row.request_count);
+    }
+    if (counts.get(actorKey) > RATE_LIMIT_MAXIMUM) {
+      throw new ApiError(429, "rate_limited", RATE_LIMIT_RETRY_SECONDS);
+    }
+    if (counts.get(GLOBAL_MINUTE_KEY) > limits.globalMinute) {
+      throw new ApiError(429, "global_rate_limited", RATE_LIMIT_RETRY_SECONDS);
+    }
+    if (counts.get(GLOBAL_DAY_KEY) > limits.daily) {
+      throw new ApiError(429, "daily_budget_exhausted", RATE_LIMIT_RETRY_SECONDS);
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
     throw new ApiError(503, "not_configured");
+  }
+}
+
+function configuredTurnstile(env) {
+  const secret = env.TURNSTILE_SECRET_KEY;
+  const hostname = env.TURNSTILE_EXPECTED_HOSTNAME;
+  if (
+    typeof secret !== "string" || secret.length < 20 || secret.length > 512 || /[\r\n]/.test(secret) ||
+    typeof hostname !== "string" || hostname.length < 1 || hostname.length > 253 ||
+    !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$/u.test(hostname)
+  ) {
+    throw new ApiError(503, "not_configured");
+  }
+  return { hostname, secret };
+}
+
+function turnstileToken(request) {
+  const token = request.headers.get(TURNSTILE_HEADER);
+  if (
+    typeof token !== "string" || token.length < 1 || token.length > 2_048 ||
+    /[\u0000-\u0020\u007f]/u.test(token)
+  ) {
+    throw new ApiError(403, "turnstile_required");
+  }
+  return token;
+}
+
+async function verifyTurnstile({
+  address,
+  env,
+  fetchImpl,
+  request,
+  requestId,
+  timeoutMs
+}) {
+  const configured = configuredTurnstile(env);
+  const token = turnstileToken(request);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetchImpl(TURNSTILE_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        idempotency_key: requestId,
+        remoteip: address,
+        response: token,
+        secret: configured.secret
+      }),
+      signal: controller.signal
+    });
+  } catch {
+    throw new ApiError(503, "turnstile_unavailable");
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!response.ok) throw new ApiError(503, "turnstile_unavailable");
+  const raw = await readBoundedText(
+    response.body,
+    MAX_TURNSTILE_BYTES,
+    "turnstile_unavailable",
+    503
+  );
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    throw new ApiError(503, "turnstile_unavailable");
+  }
+  if (
+    payload?.success !== true ||
+    payload.hostname !== configured.hostname ||
+    payload.action !== TURNSTILE_ACTION
+  ) {
+    throw new ApiError(403, "turnstile_failed");
   }
 }
 
@@ -312,13 +442,22 @@ export async function handleScenarioRequest(context, options = {}) {
       throw new ApiError(415, "invalid_content_type");
     }
     const parsed = await readRequest(request);
+    const limits = scenarioAdmissionLimits(env);
     const actorAddress = trustedConnectingAddress(request);
     const safetyId = await safetyIdentifier(actorAddress, env);
-    const allowed = await consumeScenarioRateLimit(
+    await verifyTurnstile({
+      address: actorAddress,
+      env,
+      fetchImpl: options.turnstileFetchImpl ?? fetch,
+      request,
+      requestId,
+      timeoutMs: options.turnstileTimeoutMs ?? DEFAULT_TURNSTILE_TIMEOUT_MS
+    });
+    await consumeScenarioAdmission(
       env.SCENARIO_RATE_DB,
-      await rateIdentifier(actorAddress, env)
+      await rateIdentifier(actorAddress, env),
+      limits
     );
-    if (!allowed) throw new ApiError(429, "rate_limited", RATE_LIMIT_RETRY_SECONDS);
     const result = await callOpenAi(
       parsed,
       env,

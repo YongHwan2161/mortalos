@@ -23,6 +23,7 @@ for (const [name, version] of Object.entries({
   ajv: "8.20.0",
   esbuild: "0.28.1",
   playwright: "1.61.1",
+  "qrcode-generator": "1.4.4",
   wrangler: "4.111.0"
 })) {
   const declared = packageDocument.dependencies?.[name] ?? packageDocument.devDependencies?.[name];

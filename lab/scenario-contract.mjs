@@ -54,6 +54,20 @@ export const SCENARIO_REQUEST_FORMAT = REQUEST_FORMAT;
 export const SCENARIO_PROPOSAL_FORMAT = PROPOSAL_FORMAT;
 export const COMPILED_SCENARIO_FORMAT = COMPILED_FORMAT;
 
+export function createCuratedScenarioProposal(requestedKind) {
+  const selected = Object.entries(SCENARIO_CATALOG)
+    .find(([, scenario]) => scenario.kind === requestedKind);
+  if (!selected) throw new TypeError("unknown scenario kind");
+  const [mutation, scenario] = selected;
+  return Object.freeze({
+    format: PROPOSAL_FORMAT,
+    scenario_kind: scenario.kind,
+    mutation,
+    prediction: Object.freeze({ status: scenario.status, code: scenario.code }),
+    rationale: "Curated offline attack selected deterministically from the committed allowlist. The kernel remains the only verdict authority."
+  });
+}
+
 function exactObject(value, keys) {
   return value !== null && typeof value === "object" && !Array.isArray(value) &&
     Object.keys(value).sort().join("\n") === [...keys].sort().join("\n");

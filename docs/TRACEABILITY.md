@@ -162,6 +162,10 @@ A change to any invariant, message field, domain separator, validation precedenc
 | Browser storage, Service Worker, CSP, request, accessibility, and viewport boundary | `lab/index.html`, `scripts/serve-lab.mjs`, `scripts/verify-lab.mjs` | PASS |
 | Exact custom-page to accepted-API origin bridge; bounded preflight/CORS; attacker origins and extra methods/headers rejected | `lab/runtime-endpoints.mjs`, `functions/api/scenarios.js`, `test/scenario-api.test.mjs`, `scripts/verify-lab.mjs` | PASS; exact-main public preflight, valid GPT POST, fixed 25-call evaluation, and three-context Chromium accepted |
 | Static artifact third-party license preservation | `lab/THIRD_PARTY_LICENSES.txt`, `scripts/build-lab.mjs`, `scripts/verify-lab.mjs` | PASS |
+| v1 Genesis exact genome/initial-state binding | `src/state/engine.mjs`, `src/validator.mjs`, `schemas/genesis.schema.json`, `test/state-engine.test.mjs` | PASS |
+| v1 deterministic state/receipt bytes across JavaScript and independent Python | `test/vectors/state-v1.json`, `scripts/verify-state.mjs`, `r1/python/state_verify.py` | PASS |
+| v1 malformed/limit/tamper atomic rejection and 10,000 transitions | `test/state-engine.test.mjs`, stable `E_STATE_*` codes | PASS |
+| v1 actual Chromium Nurture and export/import reconstruction | `lab/live-incubator.mjs`, `lab/evidence-export.mjs`, `scripts/verify-lab.mjs` | PASS |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.
 

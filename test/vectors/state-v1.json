@@ -1,0 +1,37 @@
+{
+  "format": "mortalos-state-corpus/1",
+  "entries": [
+    {
+      "genome_base64url": "eyJlbmdpbmUiOiJtb3J0YWxvcy1zdGF0ZS8xIiwiZ2Vub21lIjoicHVsc2Utc2VlZC12MSJ9",
+      "id": "seed-00-step-1",
+      "input_base64url": "eyJhY3Rpb24iOiJudXJ0dXJlIiwiZm9ybWF0IjoibW9ydGFsb3Mtc3RhdGUtaW5wdXQvMSIsInN0ZXBzIjoxfQ",
+      "next_state_base64url": "eyJhdmF0YXJfc2VlZCI6IkFBQUFBQUFBQUFBQUFBQUFBQUFBQUEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjF9",
+      "receipt_base64url": "eyJlbmdpbmVfdmVyc2lvbiI6Im1vcnRhbG9zLXN0YXRlLzEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS1yZWNlaXB0LzEiLCJnZW5vbWVfaGFzaCI6InNoYTI1NjoxZXVDMEdhaDRiNVpoVkVlUU9KT1NSSF9SWloyZ2N0aXJWajVyY1ZJUFo0IiwiaW5wdXRfaGFzaCI6InNoYTI1NjpHbS1NUWZQbWlIVVIwcm1oWGkzcUtwdXYyeUlEd0VqaGdRNVNJSFRweTNjIiwibmV4dF9zdGF0ZV9oYXNoIjoic2hhMjU2OnM1Yk10Y0VwS001ektVSXg1TlUxS0pDZHR4WFNucTB0RU1rUUplaU5vclUiLCJwcmlvcl9zdGF0ZV9oYXNoIjoic2hhMjU2OkhQbktKbF96eTVJMmU3NWdqX21mYUxXMHBiYnRZdl9RT2Q5aW91eWZCMUEiLCJzdGVwX2NvdW50IjoxfQ",
+      "state_base64url": "eyJhdmF0YXJfc2VlZCI6IkFBQUFBQUFBQUFBQUFBQUFBQUFBQUEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjB9"
+    },
+    {
+      "genome_base64url": "eyJlbmdpbmUiOiJtb3J0YWxvcy1zdGF0ZS8xIiwiZ2Vub21lIjoicHVsc2Utc2VlZC12MSJ9",
+      "id": "seed-11-step-7",
+      "input_base64url": "eyJhY3Rpb24iOiJudXJ0dXJlIiwiZm9ybWF0IjoibW9ydGFsb3Mtc3RhdGUtaW5wdXQvMSIsInN0ZXBzIjo3fQ",
+      "next_state_base64url": "eyJhdmF0YXJfc2VlZCI6IkVSRVJFUkVSRVJFUkVSRVJFUkVSRVEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjd9",
+      "receipt_base64url": "eyJlbmdpbmVfdmVyc2lvbiI6Im1vcnRhbG9zLXN0YXRlLzEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS1yZWNlaXB0LzEiLCJnZW5vbWVfaGFzaCI6InNoYTI1NjoxZXVDMEdhaDRiNVpoVkVlUU9KT1NSSF9SWloyZ2N0aXJWajVyY1ZJUFo0IiwiaW5wdXRfaGFzaCI6InNoYTI1Njp3M24tVk9Lam1RTTMwUG9yOVRqMzJ4dDFCZWZ3V3dRUFVuMFZFU3pwcnJNIiwibmV4dF9zdGF0ZV9oYXNoIjoic2hhMjU2OlRNZUgwOFJWTjhaRHhFUEIxN2E1UnZ4T0RteXVtRFFBNDNCUDdybDljclUiLCJwcmlvcl9zdGF0ZV9oYXNoIjoic2hhMjU2OnVNbTJYNW1NYkVnLTg0ZlZObkJNMXZnM3dMc0dsaWZzaVc5MmZtUlBoaW8iLCJzdGVwX2NvdW50Ijo3fQ",
+      "state_base64url": "eyJhdmF0YXJfc2VlZCI6IkVSRVJFUkVSRVJFUkVSRVJFUkVSRVEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjB9"
+    },
+    {
+      "genome_base64url": "eyJlbmdpbmUiOiJtb3J0YWxvcy1zdGF0ZS8xIiwiZ2Vub21lIjoicHVsc2Utc2VlZC12MSJ9",
+      "id": "seed-7f-step-31",
+      "input_base64url": "eyJhY3Rpb24iOiJudXJ0dXJlIiwiZm9ybWF0IjoibW9ydGFsb3Mtc3RhdGUtaW5wdXQvMSIsInN0ZXBzIjozMX0",
+      "next_state_base64url": "eyJhdmF0YXJfc2VlZCI6ImYzOV9mMzlfZjM5X2YzOV9mMzlfZnciLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjMxfQ",
+      "receipt_base64url": "eyJlbmdpbmVfdmVyc2lvbiI6Im1vcnRhbG9zLXN0YXRlLzEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS1yZWNlaXB0LzEiLCJnZW5vbWVfaGFzaCI6InNoYTI1NjoxZXVDMEdhaDRiNVpoVkVlUU9KT1NSSF9SWloyZ2N0aXJWajVyY1ZJUFo0IiwiaW5wdXRfaGFzaCI6InNoYTI1NjoxMlhRakpzbVp2ZU9lb3BxRUZBOWhVZm0wSS03dGNvN2JCaVpKc05RajBjIiwibmV4dF9zdGF0ZV9oYXNoIjoic2hhMjU2OkhYWTRUMEQxSHVMM3VKSDlBenhmSTY1MzBheXBOaC1iRlM2dGJyUDZfMG8iLCJwcmlvcl9zdGF0ZV9oYXNoIjoic2hhMjU2OnhYNzkzSEQtWnJfOUlLS0MwQzRFQTJyMV9jTWhiUkdKSHBkbkJ0UEVZQWMiLCJzdGVwX2NvdW50IjozMX0",
+      "state_base64url": "eyJhdmF0YXJfc2VlZCI6ImYzOV9mMzlfZjM5X2YzOV9mMzlfZnciLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjB9"
+    },
+    {
+      "genome_base64url": "eyJlbmdpbmUiOiJtb3J0YWxvcy1zdGF0ZS8xIiwiZ2Vub21lIjoicHVsc2Utc2VlZC12MSJ9",
+      "id": "seed-ff-step-100",
+      "input_base64url": "eyJhY3Rpb24iOiJudXJ0dXJlIiwiZm9ybWF0IjoibW9ydGFsb3Mtc3RhdGUtaW5wdXQvMSIsInN0ZXBzIjoxMDB9",
+      "next_state_base64url": "eyJhdmF0YXJfc2VlZCI6Il9fX19fX19fX19fX19fX19fX19fX3ciLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjEwMH0",
+      "receipt_base64url": "eyJlbmdpbmVfdmVyc2lvbiI6Im1vcnRhbG9zLXN0YXRlLzEiLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS1yZWNlaXB0LzEiLCJnZW5vbWVfaGFzaCI6InNoYTI1NjoxZXVDMEdhaDRiNVpoVkVlUU9KT1NSSF9SWloyZ2N0aXJWajVyY1ZJUFo0IiwiaW5wdXRfaGFzaCI6InNoYTI1NjpLczlQN0dVR3g2MkJ1Z2VYR3VFVmE5bktaZm5pN2tSdzVMV3VDQm5idjNjIiwibmV4dF9zdGF0ZV9oYXNoIjoic2hhMjU2OkdvQXBLVzlGR0YwWlJsbFh0aEJWSWlxbkVBV1h1MmxfOEE5VnVSaE93czQiLCJwcmlvcl9zdGF0ZV9oYXNoIjoic2hhMjU2OjN2VDVzYjFYRlJ0YXUtdDdMX0YwcUx3QlpTNjhTRGMyRkVpTU9GcUFkajQiLCJzdGVwX2NvdW50IjoxMDB9",
+      "state_base64url": "eyJhdmF0YXJfc2VlZCI6Il9fX19fX19fX19fX19fX19fX19fX3ciLCJmb3JtYXQiOiJtb3J0YWxvcy1zdGF0ZS8xIiwicHVsc2VfY291bnQiOjB9"
+    }
+  ]
+}

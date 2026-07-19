@@ -5,34 +5,44 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Promote the accepted canonical domain
+### ACTIVE — Implement and release S0–S12 multi-browser digital-life candidate
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `61cdd01865d7382066fec04d5dc1be7b1a68c8ae`
-- Work branch: `agent/codex-protocol-kernel--canonical-domain`
-- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/wt-custom-origin`
-- Exact intended shared paths: `README.md`, `.github/workflows/deploy-lab.yml`,
-  `docs/README.md`, `docs/BUILD_WEEK_EVIDENCE.md`,
-  `docs/NORTH_STAR_ROADMAP.md`, `docs/ACCESS_ARCHITECTURE.md`, and
-  `docs/TRACEABILITY.md`.
-- Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
-  `agents/codex-protocol-kernel/MEMORY.md`, and
-  `agents/codex-protocol-kernel/WORKLOG.md`.
-- Contract affected: make `https://mortal-os.com/` the canonical judge and deploy-
-  verification URL only after its exact-source, CORS/GPT, fixed-scenario, and three-
-  context Chromium gates passed. Preserve `pages.dev` as fallback and leave protocol,
-  scenario, kernel, and model-authority semantics unchanged.
-- Required evidence: current public custom-host acceptance; Devpost public/required-
-  field readback; spec/link/governance/workflow checks; full exact-head Verify;
-  immutable independent review; expected-head merge; and exact-main custom deploy.
-- Expected handoff: one reviewed canonical-domain reconciliation PR from current `main`.
-  The author does not self-review, merge, or push directly to `main`.
+- Base: `8930992e5483c6b645af197348d5725a8648bd09`
+- Work branch: `agent/codex-protocol-kernel--multi-browser-bilingual-plan`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--multi-browser-bilingual-plan`
+- Exact intended shared areas: root/package/license notices; `.github/workflows/verify.yml`
+  and `deploy-lab.yml`; `docs/` current/normative set; `functions/api/scenarios.js`;
+  `lab/` UI, i18n, participant, storage, transport, evidence, endpoint, header, and
+  license files; `relay/`; `r1/javascript/` and `r1/python/`; `schemas/`; `scripts/`
+  build/deploy/spec/state/transport/quorum/UX/Lab verifiers; `src/` kernel/state/
+  transport; and matching `test/` suites/vectors.
+- Exact intended agent paths: `agents/codex-protocol-kernel/HANDOFF.md`, `MEMORY.md`,
+  and `WORKLOG.md`.
+- Contract affected: the site moves from an L0 single-browser/GPT-centered proof to
+  one bilingual state-bearing organism whose custody moves A→B without private-key
+  transfer; A loss after handoff permits B continuation, while premature loss stalls.
+  A/B/C `2-of-3` evidence covers every one-endpoint loss and repair. R1/state remain
+  local authority; relay, UI, Cloudflare, order, and optional GPT remain untrusted.
+- Cost boundary: production GPT is disabled and its secrets are not injected until a
+  confirmed Turnstile widget/secret exists. The deterministic main journey remains
+  fully available.
+- Required local evidence: license/spec/link/governance/conformance/property/i18n/
+  state/transport/relay/multi-browser/Lab/R1/build/UX/portable/singleton/H2 through
+  `npm test`; actual Chromium portable and Lab gates; coverage, audit, package,
+  secret, diff, and clean-clone checks.
+- Required release evidence: immutable independent review bound to the exact head,
+  expected-head merge, post-merge Verify, exact relay and Pages deployment, manifest
+  equality, English/Korean public A→B and quorum/negative acceptance, rollback
+  record, and Devpost/video readback.
+- Expected handoff: one immutable candidate PR from current `main`. The author does
+  not self-review, merge, or push directly to `main`.
 
 ## Closed intents
 
-All earlier Build Week runtime, D1, MIME, canonical-root, R1-A/R1-B, release-evidence,
-and submission intents are closed. Their immutable SHAs, review decisions, failures,
-and verification evidence remain in `WORKLOG.md` and Git history.
+All earlier Build Week runtime, D1, MIME, canonical-root, R1-A/R1-B, custom-domain,
+release-evidence, and submission intents are closed. Their immutable SHAs, review
+decisions, failures, and verification evidence remain in `WORKLOG.md` and Git history.
 
 ## HISTORICAL-AUDIT-ONLY: two-phase trusted-policy migration
 

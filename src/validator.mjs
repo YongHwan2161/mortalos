@@ -1,4 +1,4 @@
-import { equalBytes } from "./bytes.mjs";
+import { decodeBase64Url, equalBytes } from "./bytes.mjs";
 import {
   canonicalBytes,
   isJsonInputError,
@@ -50,6 +50,11 @@ import {
 } from "./primordials.mjs";
 import { rejection as reject } from "./rejection-codes.mjs";
 import { checkGenesisSchema, checkPulseSchema } from "./schema-validation.mjs";
+import {
+  StateTransitionError,
+  validateGenesisStateBinding,
+  verifyStateTransitionPayload
+} from "./state/engine.mjs";
 const acceptedContexts = createWeakSet();
 const latentContexts = createWeakSet();
 const mortalitySuccessorContexts = createWeakSet();
@@ -330,8 +335,15 @@ function validateGenesisDetailed(envelopeBytes) {
   if (approvalOrderFailure) return approvalOrderFailure;
 
   const { body, approvals } = envelope;
-  if (body.protocol_version !== "mortalos/0") {
+  if (body.protocol_version !== "mortalos/0" && body.protocol_version !== "mortalos/1") {
     return reject("E_VERSION_UNSUPPORTED", "/body/protocol_version", body.protocol_version);
+  }
+  if (
+    body.protocol_version === "mortalos/0" &&
+    (body.genome_base64url !== undefined || body.initial_state_base64url !== undefined)
+  ) {
+    const field = body.genome_base64url !== undefined ? "genome_base64url" : "initial_state_base64url";
+    return reject("E_SCHEMA_UNKNOWN_FIELD", `/body/${field}`, field);
   }
   if (body.hash_algorithm !== "sha-256") {
     return reject("E_HASH_ALGORITHM_UNSUPPORTED", "/body/hash_algorithm", body.hash_algorithm);
@@ -362,6 +374,35 @@ function validateGenesisDetailed(envelopeBytes) {
     const [field, prefix, length] = encodedFields[index];
     const failure = validateBinary(body[field], prefix, length, `/body/${field}`);
     if (failure) return failure;
+  }
+
+  let stateGenomeBase64url = null;
+  if (body.protocol_version === "mortalos/1") {
+    if (typeof body.genome_base64url !== "string") {
+      return reject("E_STATE_INITIAL_BINDING", "/body/genome_base64url", "required");
+    }
+    if (typeof body.initial_state_base64url !== "string") {
+      return reject("E_STATE_INITIAL_BINDING", "/body/initial_state_base64url", "required");
+    }
+    const genomeBytes = decodeBase64Url(body.genome_base64url);
+    const initialStateBytes = decodeBase64Url(body.initial_state_base64url);
+    if (!genomeBytes || !initialStateBytes) {
+      return reject("E_STATE_INITIAL_BINDING", "/body", "base64url");
+    }
+    try {
+      validateGenesisStateBinding({
+        expectedGenomeHash: body.genome_hash,
+        expectedInitialStateRoot: body.initial_state_root,
+        genomeBytes,
+        initialStateBytes
+      });
+      stateGenomeBase64url = body.genome_base64url;
+    } catch (error) {
+      if (error instanceof StateTransitionError) {
+        return reject(error.code, error.fieldPath, error.detail);
+      }
+      return reject("E_VALIDATOR_INTERNAL");
+    }
   }
 
   const expectedIds = arrayMap(body.initial_custodians, (entry) => entry.key_id);
@@ -396,7 +437,9 @@ function validateGenesisDetailed(envelopeBytes) {
     organism_id: organismId,
     object_hash: genesisParentHash(organismId),
     sequence: "0",
+    protocol_version: body.protocol_version,
     genome_hash: body.genome_hash,
+    state_genome_base64url: stateGenomeBase64url,
     next_custody_descriptor: descriptor(body.initial_custodians, body.initial_quorum),
     next_state_root: body.initial_state_root
   });
@@ -453,7 +496,7 @@ function validatePulseDetailed(
     if (failure) return failure;
   }
 
-  if (body.protocol_version !== "mortalos/0") {
+  if (body.protocol_version !== "mortalos/0" && body.protocol_version !== "mortalos/1") {
     return reject("E_VERSION_UNSUPPORTED", "/body/protocol_version", body.protocol_version);
   }
 
@@ -508,6 +551,9 @@ function validatePulseDetailed(
   if (parent.organism_id !== genesis.organism_id) {
     return reject("E_LINEAGE_UNKNOWN", "", "parent-organism-context");
   }
+  if (body.protocol_version !== genesis.protocol_version) {
+    return reject("E_VERSION_UNSUPPORTED", "/body/protocol_version", body.protocol_version);
+  }
 
   if (
     typeof body.sequence !== "string" ||
@@ -515,10 +561,11 @@ function validatePulseDetailed(
   ) {
     return reject("E_SEQUENCE_INVALID_FORMAT", "/body/sequence", safeDetail(body.sequence));
   }
-  if (
-    typeof body.event.kind !== "string" ||
-    (body.event.kind !== "heartbeat" && body.event.kind !== "membership-change")
-  ) {
+  const eventKindSupported =
+    body.event.kind === "heartbeat" ||
+    body.event.kind === "membership-change" ||
+    (body.protocol_version === "mortalos/1" && body.event.kind === "state-transition");
+  if (typeof body.event.kind !== "string" || !eventKindSupported) {
     return reject("E_EVENT_KIND_UNSUPPORTED", "/body/event/kind", safeDetail(body.event.kind));
   }
   if (opaquePayload && body.event.kind !== "membership-change") {
@@ -545,7 +592,7 @@ function validatePulseDetailed(
       body.current_custody_hash
     );
   }
-  if (body.state_root !== parent.next_state_root) {
+  if (body.event.kind !== "state-transition" && body.state_root !== parent.next_state_root) {
     return reject(
       body.event.kind === "heartbeat"
         ? "E_HEARTBEAT_STATE_CHANGED"
@@ -567,8 +614,28 @@ function validatePulseDetailed(
     if (!equalCanonical(currentDescriptor, nextDescriptor)) {
       return reject("E_HEARTBEAT_CUSTODY_CHANGED", "/body/next_custodians", "changed");
     }
-  } else if (equalCanonical(currentDescriptor, nextDescriptor)) {
+  } else if (body.event.kind === "membership-change" && equalCanonical(currentDescriptor, nextDescriptor)) {
     return reject("E_MEMBERSHIP_CUSTODY_UNCHANGED", "/body/next_custodians", "unchanged");
+  } else if (body.event.kind === "state-transition") {
+    if (!equalCanonical(currentDescriptor, nextDescriptor)) {
+      return reject("E_STATE_CUSTODY_CHANGED", "/body/next_custodians", "changed");
+    }
+    const genomeBytes = decodeBase64Url(genesis.state_genome_base64url);
+    if (!genomeBytes) return reject("E_STATE_GENOME_MISMATCH", "/body/genome_hash", "missing");
+    try {
+      verifyStateTransitionPayload({
+        expectedGenomeHash: genesis.genome_hash,
+        expectedNextStateRoot: body.state_root,
+        expectedPriorStateRoot: parent.next_state_root,
+        genomeBytes,
+        payload: payloadValue
+      });
+    } catch (error) {
+      if (error instanceof StateTransitionError) {
+        return reject(error.code, error.fieldPath, error.detail);
+      }
+      return reject("E_VALIDATOR_INTERNAL");
+    }
   }
 
   const currentById = createMap();
@@ -737,7 +804,9 @@ function validatePulseDetailed(
     object_hash: derivePulseHash(body),
     parent_hash: body.parent_hash,
     sequence: body.sequence,
+    protocol_version: body.protocol_version,
     genome_hash: body.genome_hash,
+    state_genome_base64url: genesis.state_genome_base64url,
     next_custody_descriptor: nextDescriptor,
     next_state_root: body.state_root
   };

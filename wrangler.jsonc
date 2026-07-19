@@ -3,12 +3,29 @@
   "name": "mortalos-lab-yonghwan2161",
   "pages_build_output_dir": "./dist/lab",
   "compatibility_date": "2026-07-17",
+  "compatibility_flags": ["nodejs_compat"],
   "placement": {
     "mode": "targeted",
     "region": "aws:us-east-1"
   },
   "vars": {
-    "ENVIRONMENT": "production"
+    "ENVIRONMENT": "production",
+    "GPT_DAILY_REQUEST_CAP": "50",
+    "GPT_GLOBAL_MINUTE_CAP": "5",
+    "GPT_SCENARIOS_ENABLED": "false",
+    "TURNSTILE_EXPECTED_HOSTNAME": "mortal-os.com"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    }
   },
   "d1_databases": [
     {

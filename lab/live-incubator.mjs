@@ -1,11 +1,24 @@
 import {
   canonicalBytes,
-  createLineage,
   custodyCommitment,
   derivePeerId,
   encodeBase64Url,
   eventPayloadHash
 } from "../src/index.mjs";
+import {
+  createInitialState,
+  createNurtureInput,
+  createStateTransitionPayload,
+  PULSE_SEED_V1_GENOME_BYTES,
+  stateGenomeHash,
+  stateRoot
+} from "../src/state/engine.mjs";
+import {
+  r1AppendCandidates,
+  r1EvaluateMortality,
+  r1ValidateGenesis,
+  r1VerifyCandidate
+} from "./r1-client.mjs";
 import { deriveSigningRequest } from "./signing-policy.mjs";
 
 const THRESHOLD = Object.freeze({ type: "threshold", threshold: 2 });
@@ -40,22 +53,36 @@ function assertResult(result, expectedStatus, operation) {
   return result;
 }
 
-export function createGenesisBody({ custodians, genomeHash, stateRoot, nonce }) {
-  return {
-    protocol_version: "mortalos/0",
+export function createGenesisBody({
+  custodians,
+  genomeHash,
+  genomeBytes = null,
+  initialQuorum = THRESHOLD,
+  initialStateBytes = null,
+  protocolVersion = "mortalos/0",
+  stateRoot: initialStateRoot,
+  nonce
+}) {
+  const body = {
+    protocol_version: protocolVersion,
     hash_algorithm: "sha-256",
     signature_algorithm: "ed25519",
     genome_hash: genomeHash,
-    initial_state_root: stateRoot,
+    initial_state_root: initialStateRoot,
     initial_custodians: sortByKeyId(custodians),
-    initial_quorum: clone(THRESHOLD),
+    initial_quorum: clone(initialQuorum),
     nonce
   };
+  if (protocolVersion === "mortalos/1") {
+    body.genome_base64url = encodeBase64Url(genomeBytes);
+    body.initial_state_base64url = encodeBase64Url(initialStateBytes);
+  }
+  return body;
 }
 
 export function createHeartbeatBody({ genesis, parent }) {
   return {
-    protocol_version: "mortalos/0",
+    protocol_version: genesis.protocol_version ?? "mortalos/0",
     organism_id: genesis.organism_id,
     sequence: (BigInt(parent.sequence) + 1n).toString(),
     parent_hash: parent.object_hash,
@@ -68,16 +95,46 @@ export function createHeartbeatBody({ genesis, parent }) {
   };
 }
 
+export function createStateTransitionBody({ genesis, parent, nextStateRoot, payload }) {
+  return {
+    protocol_version: "mortalos/1",
+    organism_id: genesis.organism_id,
+    sequence: (BigInt(parent.sequence) + 1n).toString(),
+    parent_hash: parent.object_hash,
+    genome_hash: genesis.genome_hash,
+    current_custody_hash: custodyCommitment(parent.next_custody_descriptor),
+    state_root: nextStateRoot,
+    event: { kind: "state-transition", payload_hash: eventPayloadHash(payload) },
+    next_custodians: clone(parent.next_custody_descriptor.custodians),
+    next_quorum: clone(parent.next_custody_descriptor.quorum)
+  };
+}
+
+export function createMembershipChangeBody({ genesis, parent, nextCustodians, nextQuorum, payload }) {
+  return {
+    protocol_version: genesis.protocol_version ?? "mortalos/0",
+    organism_id: genesis.organism_id,
+    sequence: (BigInt(parent.sequence) + 1n).toString(),
+    parent_hash: parent.object_hash,
+    genome_hash: genesis.genome_hash,
+    current_custody_hash: custodyCommitment(parent.next_custody_descriptor),
+    state_root: parent.next_state_root,
+    event: { kind: "membership-change", payload_hash: eventPayloadHash(payload) },
+    next_custodians: sortByKeyId(nextCustodians),
+    next_quorum: clone(nextQuorum)
+  };
+}
+
 export function genesisEnvelope(body, approvals) {
   return { kind: "mortalos.genesis", body, approvals: sortByKeyId(approvals) };
 }
 
-export function pulseEnvelope(body, approvals) {
+export function pulseEnvelope(body, approvals, acceptances = []) {
   return {
     kind: "mortalos.pulse",
     body,
     approvals: sortByKeyId(approvals),
-    acceptances: []
+    acceptances: sortByKeyId(acceptances)
   };
 }
 
@@ -187,7 +244,11 @@ class CustodianClient {
 
 export class BrowserIncubator {
   #clients = [];
-  #lineage = null;
+  #genesisEnvelope = null;
+  #genesisResult = null;
+  #head = null;
+  #genomeBytes = null;
+  #stateBytes = null;
   #pendingHeartbeat = null;
   #records = [];
   #retired = false;
@@ -195,9 +256,12 @@ export class BrowserIncubator {
   get publicState() {
     return {
       custodians: this.#clients.map((client) => ({ ...client.custodian, ...client.security })),
-      organism_id: this.#lineage?.genesis.organism_id ?? null,
-      head_hash: this.#lineage?.head?.object_hash ?? null,
-      sequence: this.#lineage?.head?.sequence ?? null,
+      organism_id: this.#genesisResult?.organism_id ?? null,
+      head_hash: this.#head?.object_hash ?? null,
+      sequence: this.#head?.sequence ?? null,
+      protocol_version: this.#genesisResult?.protocol_version ?? null,
+      state: this.#stateBytes ? JSON.parse(new TextDecoder().decode(this.#stateBytes)) : null,
+      state_root: this.#head?.next_state_root ?? null,
       retired: this.#retired,
       records: clone(this.#records)
     };
@@ -218,50 +282,63 @@ export class BrowserIncubator {
         throw new Error("custodian key IDs must be distinct");
       }
 
+      const initialStateBytes = createInitialState(globalThis.crypto.getRandomValues(new Uint8Array(16)));
       const body = createGenesisBody({
         custodians: this.#clients.map((client) => client.custodian),
-        genomeHash: randomTagged("sha256:", 32),
-        stateRoot: randomTagged("sha256:", 32),
+        genomeHash: stateGenomeHash(PULSE_SEED_V1_GENOME_BYTES),
+        genomeBytes: PULSE_SEED_V1_GENOME_BYTES,
+        initialStateBytes,
+        protocolVersion: "mortalos/1",
+        stateRoot: stateRoot(initialStateBytes),
         nonce: randomTagged("nonce:", 16)
       });
       const approvals = await Promise.all(
         this.#clients.map((client) => client.sign("genesis", body))
       );
       const envelope = genesisEnvelope(body, approvals);
-      const opened = assertResult(createLineage(canonicalBytes(envelope)), "accept", "Genesis");
-      this.#lineage = opened.lineage;
+      const opened = assertResult(r1ValidateGenesis(envelope).outcome, "accept", "Genesis");
+      this.#genesisEnvelope = envelope;
+      this.#genesisResult = opened;
+      this.#head = opened;
+      this.#genomeBytes = new Uint8Array(PULSE_SEED_V1_GENOME_BYTES);
+      this.#stateBytes = initialStateBytes;
       this.#records = [{ kind: "genesis", envelope }];
-      return { result: this.#lineage.genesis, state: this.publicState };
+      return { result: opened, state: this.publicState };
     } catch (error) {
       for (const client of created) client.terminate();
       this.#clients = [];
-      this.#lineage = null;
+      this.#genesisEnvelope = null;
+      this.#genesisResult = null;
+      this.#head = null;
+      this.#genomeBytes = null;
+      this.#stateBytes = null;
       this.#records = [];
       throw error;
     }
   }
 
   async tryOneSigner(signerIndex = 0) {
-    if (!this.#lineage?.head || this.#retired) throw new Error("a live lineage is required");
+    if (!this.#head || this.#retired) throw new Error("a live lineage is required");
     if (this.#pendingHeartbeat) throw new Error("a heartbeat is already pending");
-    const body = createHeartbeatBody({ genesis: this.#lineage.genesis, parent: this.#lineage.head });
+    const body = createHeartbeatBody({ genesis: this.#genesisResult, parent: this.#head });
     const bodyBytes = canonicalBytes(body);
-    const parentHash = this.#lineage.head.object_hash;
+    const parentHash = this.#head.object_hash;
     if (!Number.isInteger(signerIndex) || !this.#clients[signerIndex]) {
       throw new Error("one-signer index is invalid");
     }
     const approval = await this.#clients[signerIndex].sign("pulse", body);
     const envelope = pulseEnvelope(body, [approval]);
-    const result = this.#lineage.verifyCandidate({
-      envelopeBytes: canonicalBytes(envelope),
-      eventPayloadBytes: canonicalBytes({})
-    });
+    const result = r1VerifyCandidate(
+      this.#genesisEnvelope,
+      this.#records,
+      { envelope, payload: {} }
+    ).outcome.result;
     this.#pendingHeartbeat = { body, bodyBytes, approvals: [approval], parentHash, signerIndex };
     return result;
   }
 
   async completeHeartbeat(signerIndex = 1) {
-    if (!this.#pendingHeartbeat || !this.#lineage?.head || this.#retired) {
+    if (!this.#pendingHeartbeat || !this.#head || this.#retired) {
       throw new Error("run the one-signer check first");
     }
     const pending = this.#pendingHeartbeat;
@@ -273,19 +350,21 @@ export class BrowserIncubator {
       throw new Error("the second signer must be a different current custodian");
     }
     if (
-      pending.parentHash !== this.#lineage.head.object_hash ||
+      pending.parentHash !== this.#head.object_hash ||
       encodeBase64Url(canonicalBytes(pending.body)) !== encodeBase64Url(pending.bodyBytes)
     ) {
       throw new Error("pending heartbeat body changed before quorum completion");
     }
     const second = await this.#clients[signerIndex].sign("pulse", pending.body);
     const envelope = pulseEnvelope(pending.body, [...pending.approvals, second]);
-    const result = this.#lineage.append({
-      envelopeBytes: canonicalBytes(envelope),
-      eventPayloadBytes: canonicalBytes({})
-    });
+    const result = r1AppendCandidates(
+      this.#genesisEnvelope,
+      this.#records,
+      [{ envelope, payload: {} }]
+    ).outcome.results[0];
     assertResult(result, "accept", "heartbeat");
     this.#records.push({ kind: "pulse", envelope, payload: {} });
+    this.#head = result;
     this.#pendingHeartbeat = null;
     return result;
   }
@@ -293,31 +372,71 @@ export class BrowserIncubator {
   replayLast() {
     const last = this.#records.at(-1);
     if (!last || last.kind !== "pulse") throw new Error("an accepted heartbeat is required");
-    return this.#lineage.append({
-      envelopeBytes: canonicalBytes(last.envelope),
-      eventPayloadBytes: canonicalBytes(last.payload)
+    return r1AppendCandidates(
+      this.#genesisEnvelope,
+      this.#records,
+      [{ envelope: last.envelope, payload: last.payload }]
+    ).outcome.results[0];
+  }
+
+  async nurture(signerIndexes = [0, 1], steps = 1) {
+    if (!this.#head || !this.#stateBytes || this.#retired) throw new Error("a live v1 lineage is required");
+    if (this.#pendingHeartbeat) throw new Error("complete or reload the pending candidate before nurturing");
+    if (
+      !Array.isArray(signerIndexes) ||
+      signerIndexes.length !== 2 ||
+      signerIndexes[0] === signerIndexes[1] ||
+      signerIndexes.some((index) => !Number.isInteger(index) || !this.#clients[index])
+    ) {
+      throw new Error("nurture requires two distinct current custodians");
+    }
+    const transition = createStateTransitionPayload({
+      genomeBytes: this.#genomeBytes,
+      inputBytes: createNurtureInput(steps),
+      stateBytes: this.#stateBytes
     });
+    const body = createStateTransitionBody({
+      genesis: this.#genesisResult,
+      parent: this.#head,
+      nextStateRoot: stateRoot(transition.nextStateBytes),
+      payload: transition.payload
+    });
+    const approvals = await Promise.all(
+      signerIndexes.map((index) => this.#clients[index].sign("pulse", body))
+    );
+    const envelope = pulseEnvelope(body, approvals);
+    const result = r1AppendCandidates(
+      this.#genesisEnvelope,
+      this.#records,
+      [{ envelope, payload: transition.payload }]
+    ).outcome.results[0];
+    assertResult(result, "accept", "state transition");
+    this.#records.push({ kind: "pulse", envelope, payload: transition.payload });
+    this.#head = result;
+    this.#stateBytes = transition.nextStateBytes;
+    return { result, state: this.publicState };
   }
 
   async retire() {
-    if (!this.#lineage?.head || this.#retired) throw new Error("live custodians are required");
+    if (!this.#head || this.#retired) throw new Error("live custodians are required");
     if (this.#pendingHeartbeat) throw new Error("complete or reload the pending candidate before retirement");
     await Promise.allSettled(this.#clients.map((client) => client.destroy()));
     this.#retired = true;
-    const body = createHeartbeatBody({ genesis: this.#lineage.genesis, parent: this.#lineage.head });
-    const result = this.#lineage.verifyCandidate({
-      envelopeBytes: canonicalBytes(pulseEnvelope(body, [])),
-      eventPayloadBytes: canonicalBytes({})
-    });
+    const body = createHeartbeatBody({ genesis: this.#genesisResult, parent: this.#head });
+    const result = r1VerifyCandidate(
+      this.#genesisEnvelope,
+      this.#records,
+      { envelope: pulseEnvelope(body, []), payload: {} }
+    ).outcome.result;
     return {
       continuation: result,
-      mortality: this.#lineage.evaluateMortality({
+      mortality: r1EvaluateMortality(this.#genesisEnvelope, this.#records, {
         usableKeyIds: [],
         stateAvailable: true,
         pendingSuccessors: [],
         authorityLossIrreversible: false,
         latentEvidenceComplete: false
-      })
+      }).outcome.mortality
     };
   }
 

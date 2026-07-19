@@ -1,7 +1,7 @@
-# MortalOS v0 Threat Model
+# MortalOS v0/v1 Threat Model
 
 Status: **Normative for v0 and the Minimum Viable Life claim**  
-Protocol: `mortalos/0`
+Protocol: `mortalos/0`, state extension `mortalos/1`
 
 ## 1. Security objective
 
@@ -19,7 +19,7 @@ The system does not claim that all data copies can be deleted, that death can al
 | Lineage integrity | Every accepted Pulse has one accepted parent and obeys deterministic transition rules. |
 | Continuity authority | The current descriptor's quorum is required to advance; no single custodian key can advance when its threshold is greater than one. No-individual or no-domain control requires separate deployment evidence. |
 | Custody membership | Changes only through a Pulse authorized by the current custody descriptor, accepted by new custodians, and evidenced strongly enough to activate the next quorum. |
-| Declared state-root continuity | v0 authenticates and preserves one immutable declared `state_root`; it does not receive state bytes, derive the root, or execute the genome. Content binding and transition are R2 work. |
+| State continuity | v0 authenticates one immutable opaque root. v1 signs exact initial artifacts and accepts a changed root only when the bounded Pulse Seed v1 engine reproduces the exact next state and receipt. Availability remains observer-relative. |
 | Declared genome-hash continuity | v0 authenticates and preserves the opaque declared `genome_hash`; it does not receive artifact bytes or derive or verify their hash. An observer may independently bind an externally obtained artifact to the declaration. |
 | Private signing keys | Never intentionally serialized, logged, committed, or sent over the network. |
 | Mortality semantics | Loss of succession authority is not confused with deletion of all historical bytes, temporary state loss, or an incomplete pending-evidence observation. |
@@ -337,7 +337,19 @@ Resource contribution must be explicit and revocable in later participant-runtim
 | Zero infrastructure | Not claimed | Bootstrap/relay may exist. |
 | GPT cannot bypass validity | Required architecture property | Runtime integration and adversarial tests are planned for H4/P9. |
 
-## 15. Threat-model change control
+## 15. v1 state-specific boundaries
+
+- Genome, state, input, and receipt sidecars are public evidence, not capabilities.
+- v1 proves deterministic content transition, not storage durability,
+  retrievability, execution liveness, or global availability.
+- Only the bounded Pulse Seed v1 genome is executable. Arbitrary code, floating
+  point, clocks, randomness, network input, and host callbacks are outside the ABI.
+- A UI updates pulse count or avatar only after the same canonical Pulse is accepted.
+  A prepared receipt, relay hint, or animation never advances state.
+- Restart recovery replays signed evidence and state sidecars. A pending, corrupt,
+  or partially persisted candidate cannot become an accepted head.
+
+## 16. Threat-model change control
 
 Any implementation change that introduces one of the following requires a threat-model revision before merge:
 

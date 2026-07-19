@@ -1,4 +1,5 @@
 import { execFile, spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
@@ -20,7 +21,8 @@ function secretValues(environment, extra = []) {
     ...extra,
     environment.CLOUDFLARE_API_TOKEN,
     environment.OPENAI_API_KEY,
-    environment.SAFETY_IDENTIFIER_SECRET
+    environment.SAFETY_IDENTIFIER_SECRET,
+    environment.TURNSTILE_SECRET_KEY
   ].filter((value) => typeof value === "string" && value.length >= 8);
 }
 
@@ -129,6 +131,9 @@ export async function deployLab() {
   const commit = process.env.MORTALOS_SOURCE_COMMIT;
   const openAiKey = process.env.OPENAI_API_KEY;
   const safetyIdentifierSecret = process.env.SAFETY_IDENTIFIER_SECRET;
+  const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+  const config = JSON.parse(await readFile(resolve("wrangler.jsonc"), "utf8"));
+  const gptEnabled = config?.vars?.GPT_SCENARIOS_ENABLED === "true";
 
   if (!commit || !/^[0-9a-f]{40}$/.test(commit)) {
     throw new Error("MORTALOS_SOURCE_COMMIT must name the exact lowercase 40-character commit being deployed");
@@ -139,16 +144,24 @@ export async function deployLab() {
   if (!D1_DATABASE_NAME.test(database)) {
     throw new Error("MORTALOS_D1_DATABASE has an invalid Cloudflare D1 database name");
   }
-  if (typeof openAiKey !== "string" || openAiKey.length < 20 || openAiKey.length > 512 || /[\r\n]/.test(openAiKey)) {
+  if (gptEnabled && (typeof openAiKey !== "string" || openAiKey.length < 20 || openAiKey.length > 512 || /[\r\n]/.test(openAiKey))) {
     throw new Error("OPENAI_API_KEY must be supplied as a single-line deployment secret");
   }
   if (
-    typeof safetyIdentifierSecret !== "string" ||
+    gptEnabled && (typeof safetyIdentifierSecret !== "string" ||
     safetyIdentifierSecret.length < 32 ||
     safetyIdentifierSecret.length > 512 ||
-    /[\r\n]/.test(safetyIdentifierSecret)
+    /[\r\n]/.test(safetyIdentifierSecret))
   ) {
     throw new Error("SAFETY_IDENTIFIER_SECRET must be supplied as a 32+ character single-line deployment secret");
+  }
+  if (
+    gptEnabled && (typeof turnstileSecret !== "string" ||
+    turnstileSecret.length < 20 ||
+    turnstileSecret.length > 512 ||
+    /[\r\n]/.test(turnstileSecret))
+  ) {
+    throw new Error("TURNSTILE_SECRET_KEY must be supplied as a single-line deployment secret");
   }
 
   const wrangler = resolve("node_modules/wrangler/bin/wrangler.js");
@@ -191,15 +204,26 @@ export async function deployLab() {
     secretValues(environment)
   ));
   console.log("\nMortalOS Lab D1 rate-limit migration: PASS");
-  await putPagesSecret({ environment, name: "OPENAI_API_KEY", project, value: openAiKey, wrangler });
-  await putPagesSecret({
-    environment,
-    name: "SAFETY_IDENTIFIER_SECRET",
-    project,
-    value: safetyIdentifierSecret,
-    wrangler
-  });
-  console.log("MortalOS Lab runtime secrets: configured in Cloudflare Pages");
+  if (gptEnabled) {
+    await putPagesSecret({ environment, name: "OPENAI_API_KEY", project, value: openAiKey, wrangler });
+    await putPagesSecret({
+      environment,
+      name: "SAFETY_IDENTIFIER_SECRET",
+      project,
+      value: safetyIdentifierSecret,
+      wrangler
+    });
+    await putPagesSecret({
+      environment,
+      name: "TURNSTILE_SECRET_KEY",
+      project,
+      value: turnstileSecret,
+      wrangler
+    });
+    console.log("MortalOS Lab optional GPT: enabled with runtime secrets");
+  } else {
+    console.log("MortalOS Lab optional GPT: disabled; no model or Turnstile secret required");
+  }
   const deployment = await executeWrangler({
     args: [
       "pages", "deploy", "dist/lab",

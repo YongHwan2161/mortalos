@@ -9,7 +9,7 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run test:governance && npm run test:conformance && npm run test:properties && npm run test:lab && npm run test:r1 && npm run build:lab && npm run verify:portable && npm run verify:r1 && npm run verify:singleton && npm run verify:h2",
+    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run test:governance && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:transport && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:r1 && npm run verify:singleton && npm run verify:h2",
     "verify:license": "node scripts/verify-license.mjs",
     "verify:spec": "node scripts/verify-spec.mjs",
     "verify:links": "node scripts/verify-links.mjs",
@@ -20,31 +20,46 @@
     "test:conformance": "node --test test/bytes.test.mjs test/codec.test.mjs test/crypto.test.mjs test/schema-validation.test.mjs test/rejection-codes.test.mjs test/validator.test.mjs test/lineage.test.mjs test/mortality.test.mjs test/singleton.test.mjs test/process-determinism.test.mjs",
     "test:properties": "node --test test/properties.test.mjs",
     "test:lab": "node --test test/lab.test.mjs test/scenario-api.test.mjs",
+    "test:i18n": "node --test test/i18n.test.mjs",
     "test:scenarios": "node --test test/scenario-api.test.mjs",
     "test:r1": "node --test test/r1-wire.test.mjs",
+    "test:state": "node --test test/state-engine.test.mjs",
+    "test:transport": "node --test test/transport.test.mjs",
+    "test:multi-browser": "node --test test/multi-browser.test.mjs && node scripts/verify-quorum.mjs",
+    "verify:quorum": "node scripts/verify-quorum.mjs",
+    "test:relay": "node --test test/relay-contract.test.mjs && node scripts/run-relay-runtime-tests.mjs && wrangler deploy --dry-run --env \"\" --config relay/wrangler.jsonc --outdir dist/relay",
     "test:coverage": "node scripts/run-coverage.mjs",
     "verify:portable": "node scripts/verify-portable.mjs",
     "verify:r1": "node scripts/verify-r1.mjs",
+    "verify:state": "node scripts/verify-state.mjs",
+    "verify:transport": "node scripts/verify-transport.mjs",
+    "verify:ux": "node scripts/verify-ux.mjs",
     "test:chromium": "node scripts/verify-chromium.mjs",
     "build:lab": "node scripts/build-lab.mjs",
     "deploy:lab": "node scripts/deploy-lab.mjs",
     "dev:lab": "node scripts/serve-lab.mjs",
     "verify:lab": "node scripts/verify-lab.mjs",
     "verify:gpt-scenarios": "node scripts/verify-gpt-scenarios.mjs",
+    "verify:cost-controls": "node --test test/scenario-api.test.mjs",
     "verify:deployed-lab": "node scripts/verify-deployed-lab.mjs",
+    "verify:release": "node scripts/verify-lab.mjs",
     "verify:singleton": "node scripts/demo-singleton.mjs --verify",
     "demo:singleton": "node scripts/demo-singleton.mjs",
     "demo:trace": "node scripts/demo-trace.mjs",
     "verify:h2": "node scripts/demo-trace.mjs --verify"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.6",
     "ajv": "8.20.0",
+    "axe-core": "4.12.1",
     "esbuild": "0.28.1",
     "playwright": "1.61.1",
+    "vitest": "^4.1.10",
     "wrangler": "4.111.0"
   },
   "dependencies": {
     "@noble/curves": "2.2.0",
-    "@noble/hashes": "2.2.0"
+    "@noble/hashes": "2.2.0",
+    "qrcode-generator": "1.4.4"
   }
 }

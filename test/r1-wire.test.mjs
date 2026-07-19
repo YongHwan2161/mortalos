@@ -68,3 +68,36 @@ test("R1 mortality distinguishes incomplete evidence from qualified death", () =
   assert.equal(incomplete.outcome.mortality.status, "authority_unavailable_not_proven_dead");
   assert.equal(dead.outcome.mortality.status, "dead_under_v0_assumptions");
 });
+
+test("R1 candidate operations preserve accept, tamper, replay, fork, and halt semantics", () => {
+  const entries = new Map(buildR1Corpus().entries.map((entry) => [entry.id, entry]));
+  const outcome = (id) => parseJsonBytes(decodeBase64Url(entries.get(id).result)).outcome;
+  assert.equal(
+    outcome("candidate-verify-signature-tamper").result.code,
+    "E_APPROVAL_SIGNATURE_INVALID"
+  );
+  assert.equal(outcome("candidate-append-linear").results[0].status, "accept");
+  const forked = outcome("candidate-batch-replay-fork-halt");
+  assert.deepEqual(
+    forked.results.map((entry) => entry.code ?? entry.status),
+    ["accept", "E_REPLAY_STALE", "E_FORK_DETECTED", "E_LINEAGE_ALREADY_FORKED"]
+  );
+  assert.equal(forked.snapshot.status, "forked");
+  assert.equal(forked.snapshot.head_hash, null);
+});
+
+test("R1 candidate count ceiling is exact and +1 fails closed", () => {
+  const entries = new Map(buildR1Corpus().entries.map((entry) => [entry.id, entry]));
+  const base = parseJsonBytes(decodeBase64Url(entries.get("candidate-append-linear").operation));
+  const candidate = base.candidates[0];
+  const exact = parseJsonBytes(executeR1Operation(canonicalBytes({
+    ...base,
+    candidates: Array.from({ length: R1_LIMITS.candidate_records }, () => candidate)
+  })));
+  assert.equal(exact.outcome.status, "complete");
+  const over = parseJsonBytes(executeR1Operation(canonicalBytes({
+    ...base,
+    candidates: Array.from({ length: R1_LIMITS.candidate_records + 1 }, () => candidate)
+  })));
+  assert.equal(over.outcome.code, "R1_LIMIT");
+});

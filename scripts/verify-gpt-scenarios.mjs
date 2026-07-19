@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { handleScenarioRequest } from "../functions/api/scenarios.js";
-import { scenarioApiUrl } from "../lab/runtime-endpoints.mjs";
 import { SCENARIO_REQUEST_FORMAT } from "../lab/scenario-contract.mjs";
 import { compileScenario, runCompiledScenario } from "../lab/scenario-compiler.mjs";
 
@@ -38,11 +37,15 @@ const CASES = Object.freeze([
   hypothesis
 })));
 
-const remote = process.env.MORTALOS_LAB_URL ? new URL("/", process.env.MORTALOS_LAB_URL) : null;
-const concurrency = remote ? 1 : Number(process.env.MORTALOS_GPT_EVAL_CONCURRENCY ?? "4");
+assert.equal(
+  process.env.MORTALOS_LAB_URL,
+  undefined,
+  "remote batch evaluation is disabled because production Turnstile tokens are interactive and single-use"
+);
+const concurrency = Number(process.env.MORTALOS_GPT_EVAL_CONCURRENCY ?? "4");
 assert.ok(Number.isSafeInteger(concurrency) && concurrency >= 1 && concurrency <= 8, "eval concurrency must be 1..8");
-if (!remote) assert.match(process.env.OPENAI_API_KEY ?? "", /^\S{20,512}$/, "OPENAI_API_KEY is required");
-if (!remote) assert.match(
+assert.match(process.env.OPENAI_API_KEY ?? "", /^\S{20,512}$/, "OPENAI_API_KEY is required");
+assert.match(
   process.env.SAFETY_IDENTIFIER_SECRET ?? "",
   /^\S{32,512}$/,
   "SAFETY_IDENTIFIER_SECRET is required"
@@ -61,14 +64,6 @@ async function invoke(entry, index) {
     hypothesis: entry.hypothesis,
     scenario_kind: entry.scenario_kind
   };
-  if (remote) {
-    const response = await fetch(scenarioApiUrl(remote), {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: remote.origin },
-      body: JSON.stringify(body)
-    });
-    return { response, upstreamTrace: null };
-  }
   let upstreamTrace = null;
   const fetchImpl = async (url, init) => {
     const started = performance.now();
@@ -93,18 +88,33 @@ async function invoke(entry, index) {
       headers: {
         "cf-connecting-ip": `203.0.113.${(index % 200) + 1}`,
         "content-type": "application/json",
+        "x-mortalos-turnstile-token": `eval-token-${index}`,
         origin: "https://mortalos.eval"
       },
       body: JSON.stringify(body)
     }),
     env: {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      GPT_DAILY_REQUEST_CAP: "100",
+      GPT_GLOBAL_MINUTE_CAP: "100",
+      GPT_SCENARIOS_ENABLED: "true",
       SAFETY_IDENTIFIER_SECRET: process.env.SAFETY_IDENTIFIER_SECRET,
       SCENARIO_RATE_DB: {
-        prepare: () => ({ bind: () => ({ first: async () => ({ request_count: 1 }) }) })
-      }
+        prepare: () => ({ bind: (...keys) => ({ all: async () => ({
+          results: keys.map((actor_key) => ({ actor_key, request_count: 1 }))
+        }) }) })
+      },
+      TURNSTILE_EXPECTED_HOSTNAME: "mortal-os.com",
+      TURNSTILE_SECRET_KEY: `eval-turnstile-${"t".repeat(32)}`
     }
-  }, { fetchImpl });
+  }, {
+    fetchImpl,
+    turnstileFetchImpl: async () => new Response(JSON.stringify({
+      action: "mortalos_gpt_scenario",
+      hostname: "mortal-os.com",
+      success: true
+    }))
+  });
   return { response, upstreamTrace };
 }
 
@@ -120,7 +130,7 @@ async function evaluate(entry, index) {
     payload = JSON.parse(await response.text());
     if (response.ok) break;
     if (attempt < 3 && [429, 502, 504].includes(response.status)) {
-      await delay(remote && response.status === 429 ? 61_000 : attempt * 1_500);
+      await delay(attempt * 1_500);
       continue;
     }
     assert.fail(`${entry.id} API ${response.status}: ${payload.error ?? "unknown"}`);
@@ -153,7 +163,6 @@ async function worker() {
     const index = cursor;
     cursor += 1;
     results[index] = await evaluate(CASES[index], index);
-    if (remote && index < CASES.length - 1) await delay(6_500);
   }
 }
 await Promise.all(Array.from({ length: concurrency }, worker));
@@ -165,8 +174,7 @@ assert.equal(results.length, 25);
 const latency = results.map((entry) => entry.latency_ms).sort((left, right) => left - right);
 const p95 = latency[Math.ceil(latency.length * 0.95) - 1];
 assert.ok(p95 <= 15_000, `production-timeout evaluation p95 ${p95}ms exceeds 15000ms`);
-if (!remote) {
-  for (const result of results) {
+for (const result of results) {
     assert.deepEqual(result.upstream_trace && {
       endpoint: result.upstream_trace.endpoint,
       method: result.upstream_trace.method,
@@ -184,7 +192,6 @@ if (!remote) {
       status: 200,
       store: false
     });
-  }
 }
 
 const summary = {
@@ -201,7 +208,7 @@ const summary = {
   prediction_exact: predictionExact,
   target_selection: targetSelections,
   total: results.length,
-  upstream_traces: remote ? "available in Cloudflare invocation logs" : results.map((entry) => entry.upstream_trace)
+  upstream_traces: results.map((entry) => entry.upstream_trace)
 };
 console.log("MortalOS GPT-5.6 fixed scenario evaluation: PASS");
 console.log(JSON.stringify(summary));

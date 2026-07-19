@@ -82,7 +82,7 @@ function inspectEvidence(value, instancePath, errors) {
 }
 
 function inspectGenesisBody(value, instancePath, errors) {
-  const keys = [
+  const required = [
     "protocol_version",
     "hash_algorithm",
     "signature_algorithm",
@@ -92,7 +92,19 @@ function inspectGenesisBody(value, instancePath, errors) {
     "initial_quorum",
     "nonce"
   ];
-  if (!inspectObject(value, instancePath, keys, keys, errors)) return;
+  const allowed = [
+    "protocol_version",
+    "hash_algorithm",
+    "signature_algorithm",
+    "genome_hash",
+    "initial_state_root",
+    "initial_custodians",
+    "initial_quorum",
+    "nonce",
+    "genome_base64url",
+    "initial_state_base64url"
+  ];
+  if (!inspectObject(value, instancePath, required, allowed, errors)) return;
   inspectString(value.protocol_version, `${instancePath}/protocol_version`, errors);
   inspectString(value.hash_algorithm, `${instancePath}/hash_algorithm`, errors);
   inspectString(value.signature_algorithm, `${instancePath}/signature_algorithm`, errors);
@@ -101,6 +113,12 @@ function inspectGenesisBody(value, instancePath, errors) {
   inspectArray(value.initial_custodians, `${instancePath}/initial_custodians`, inspectCustodian, errors);
   inspectQuorum(value.initial_quorum, `${instancePath}/initial_quorum`, errors);
   inspectString(value.nonce, `${instancePath}/nonce`, errors);
+  if (objectHasOwn(value, "genome_base64url")) {
+    inspectString(value.genome_base64url, `${instancePath}/genome_base64url`, errors);
+  }
+  if (objectHasOwn(value, "initial_state_base64url")) {
+    inspectString(value.initial_state_base64url, `${instancePath}/initial_state_base64url`, errors);
+  }
 }
 
 function inspectEvent(value, instancePath, errors) {
