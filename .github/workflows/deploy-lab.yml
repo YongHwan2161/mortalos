@@ -18,10 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      MORTALOS_EXPECTED_COMMIT: ${{ github.sha }}
-      MORTALOS_LAB_URL: https://mortal-os.com
-      MORTALOS_DEPLOY_VERIFY_ATTEMPTS: 12
-      MORTALOS_DEPLOY_VERIFY_DELAY_MS: 5000
       MORTALOS_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - name: Check out reviewed main
@@ -68,4 +64,9 @@ jobs:
         run: npm run deploy:lab
 
       - name: Verify public artifact, relay, and bilingual judge path
+        env:
+          MORTALOS_EXPECTED_COMMIT: ${{ github.sha }}
+          MORTALOS_LAB_URL: https://mortal-os.com
+          MORTALOS_DEPLOY_VERIFY_ATTEMPTS: 12
+          MORTALOS_DEPLOY_VERIFY_DELAY_MS: 5000
         run: npm run verify:release

@@ -312,6 +312,26 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.ok(sourceVerification < relayDeployment);
   assert.ok(relayDeployment < staticDeployment);
   assert.ok(staticDeployment < publicVerification);
+  assert.match(deploymentWorkflow, /^      MORTALOS_SOURCE_COMMIT: \$\{\{ github\.sha \}\}$/m);
+  for (const remoteOnlyVariable of [
+    "MORTALOS_EXPECTED_COMMIT",
+    "MORTALOS_LAB_URL",
+    "MORTALOS_DEPLOY_VERIFY_ATTEMPTS",
+    "MORTALOS_DEPLOY_VERIFY_DELAY_MS"
+  ]) {
+    assert.doesNotMatch(deploymentWorkflow, new RegExp(`^      ${remoteOnlyVariable}:`, "m"));
+  }
+  const publicVerificationStep = deploymentWorkflow.slice(
+    deploymentWorkflow.lastIndexOf("- name: Verify public artifact, relay, and bilingual judge path")
+  );
+  assert.match(publicVerificationStep, /^          MORTALOS_EXPECTED_COMMIT: \$\{\{ github\.sha \}\}$/m);
+  assert.match(publicVerificationStep, /^          MORTALOS_LAB_URL: https:\/\/mortal-os\.com$/m);
+  assert.match(publicVerificationStep, /^          MORTALOS_DEPLOY_VERIFY_ATTEMPTS: 12$/m);
+  assert.match(publicVerificationStep, /^          MORTALOS_DEPLOY_VERIFY_DELAY_MS: 5000$/m);
+  assert.ok(
+    publicVerificationStep.indexOf("MORTALOS_LAB_URL") <
+      publicVerificationStep.indexOf("run: npm run verify:release")
+  );
   assert.doesNotMatch(deploymentWorkflow, /^      OPENAI_API_KEY:/m);
   assert.doesNotMatch(deploymentWorkflow, /^      SAFETY_IDENTIFIER_SECRET:/m);
   assert.doesNotMatch(deploymentWorkflow, /^      TURNSTILE_SECRET_KEY:/m);

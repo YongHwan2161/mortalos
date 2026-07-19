@@ -846,3 +846,20 @@ result, and reproducible verification.
 - Required next action: focused/full local verification, immutable PR/policy/Verify,
   independent expected-head review/merge, and a natural exact-main Deploy rerun. Do
   not bypass the reviewed workflow with a manual Cloudflare deployment.
+
+## 2026-07-19 KST — Public-verifier environment isolation correction
+
+- PR #24 passed immutable reviewer gate at head `fdfe7618…` and expected-head
+  squash-merged as `e47e438db0e751e5d1d9f01a90933095fbd67906`.
+- Natural Deploy `29696536158/1` confirmed the earlier Chromium-order correction,
+  then failed closed in pre-deploy `verify:ux`. Job-level `MORTALOS_LAB_URL` made
+  `npm test` navigate to the older accepted public site, where the new
+  `#advanced-evidence` contract was not yet present. Relay, Pages, and public
+  verification were skipped; no Cloudflare mutation occurred.
+- Correction branch `agent/codex-protocol-kernel--deploy-env-scope` retains
+  `MORTALOS_SOURCE_COMMIT` at job scope but confines public URL, expected commit, and
+  retry controls to the final post-deploy release-verification step. A Lab contract
+  test rejects future remote-environment leakage into pre-deploy source tests.
+- Required next action: focused validation, immutable PR/policy/Verify, independent
+  expected-head review/merge, natural exact-main Deploy, public acceptance, and
+  Devpost reconciliation. No manual deployment bypass.

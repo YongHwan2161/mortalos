@@ -5,7 +5,26 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Repair production deploy Chromium ordering
+### ACTIVE — Isolate public-verification environment from source tests
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `e47e438db0e751e5d1d9f01a90933095fbd67906`
+- Work branch: `agent/codex-protocol-kernel--deploy-env-scope`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--deploy-env-scope`
+- Exact shared paths: `.github/workflows/deploy-lab.yml` and `test/lab.test.mjs`.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md`, `MEMORY.md`, and
+  `WORKLOG.md`.
+- Incident: corrected Deploy `29696536158/1` installed Chromium first, then failed
+  closed in pre-deploy `verify:ux` because job-level `MORTALOS_LAB_URL` redirected
+  source tests to the older accepted public site. No Cloudflare mutation occurred.
+- Intended change: retain exact source binding at job scope, but expose the public
+  URL, expected commit, and retry controls only to the final post-deploy release
+  verifier. Add a regression contract for this environment boundary.
+- Required gates: focused/unit/spec/diff/secret checks, exact-head Verify and policy,
+  immutable review, expected-head merge, exact-main Deploy, public readback, and
+  Devpost reconciliation. No rerun or manual deployment bypass before correction.
+
+### HISTORICAL — Repair production deploy Chromium ordering
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `d20e66083cd79084667beab8bc8269fbac447828`

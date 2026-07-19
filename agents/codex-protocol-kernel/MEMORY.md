@@ -2,15 +2,15 @@
 
 Last reconciled: 2026-07-19 KST
 
-Branch: `agent/codex-protocol-kernel--deploy-chromium-order`
+Branch: `agent/codex-protocol-kernel--deploy-env-scope`
 
-Base: `d20e66083cd79084667beab8bc8269fbac447828`
+Base: `e47e438db0e751e5d1d9f01a90933095fbd67906`
 
 ## Verified merged/public state
 
-- Repository `main` is `d20e660…` after independently reviewed PR #23; public
-  manifest remains the accepted `8930992…` deployment because the first PR #23
-  Deploy run failed before any Cloudflare mutation.
+- Repository `main` is `e47e438…` after independently reviewed PR #24; public
+  manifest remains the accepted `8930992…` deployment because both corrective
+  Deploy runs failed before any Cloudflare mutation.
 - Post-merge Verify `29662790686` and deploy `29662790723` passed.
 - Canonical judge URL is `https://mortal-os.com/`; `pages.dev` is incident fallback.
 - Public accepted claim remains the earlier L0 single-browser/GPT guided proof until
@@ -63,6 +63,13 @@ Base: `d20e66083cd79084667beab8bc8269fbac447828`
 - The focused correction moves the sole Chromium install before `npm test` and adds
   a test that freezes install → source verify → relay → Pages → public verify order.
   Manual deployment remains forbidden.
+- PR #24 passed independent review and squash-merged as `e47e438…`. Its Deploy
+  `29696536158/1` proved Chromium ordering was fixed, then failed closed before any
+  Cloudflare mutation because job-level `MORTALOS_LAB_URL` made pre-deploy
+  `verify:ux` inspect the older public site instead of the just-built local Lab.
+- The current correction keeps only `MORTALOS_SOURCE_COMMIT` at job scope. Public
+  URL, expected commit, and retry controls are confined to the final post-deploy
+  release verifier, preventing source verification from depending on old production.
 
 ## Stable decisions
 
@@ -79,7 +86,7 @@ Base: `d20e66083cd79084667beab8bc8269fbac447828`
 
 ## Current priority
 
-1. Publish and independently review the minimal deploy-order correction.
+1. Publish and independently review the minimal deploy-environment correction.
 2. Merge only its expected head and require exact-main Deploy success.
 3. Verify relay, Pages manifest/source, and public EN/KO multi-browser acceptance.
 4. Promote the Devpost story or video only after public acceptance.
