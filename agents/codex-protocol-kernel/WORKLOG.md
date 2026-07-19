@@ -795,3 +795,36 @@ result, and reproducible verification.
 - Required next action remains immutable commit/push, exact-head CI and policy,
   complete fresh reviewer snapshot, expected-head merge, then exact production and
   Devpost readback. The author does not self-review or merge.
+
+## 2026-07-19 KST — PR #23 second fail-closed rate-policy remediation
+
+- The fresh reviewer snapshot at `a5f56c6ffbaed1146b04afeafb3aa1a6fdc7a549`
+  returned `FAIL` and was not merged. Exact-head Verify `29691408680/1` and policy
+  `29691433408/1` were green, but a normal A+B session produced 80 relay operations
+  in 12 seconds (about 399/min) against the Worker's 120/min room ceiling. The
+  persistent acceptance server had no rate counter and could not observe this P1.
+- Added `src/transport/relay-policy.mjs` as the common Worker/browser/local-acceptance
+  contract. Message polling is 1s, presence touch/read are 3s, and two active
+  endpoints budget 204 scheduled operations/minute plus a 48-operation interaction
+  allowance under the 300/min ceiling.
+- The local relay now enforces the same fixed-window ceiling and records admitted and
+  rejected operations. Runtime coverage prepares the live bucket at 299, proves the
+  300th valid duplicate remains accepted and the 301st is canonical `429`, while all
+  valid operation classes remain admitted through the same path.
+- `verify:persistent-handoff` now measures the first two-profile active interval for
+  12 seconds, requires 32–48 operations and zero local `429`, then completes all 20
+  A→B handoffs with A process closure and B-only sequence-2 continuation. Focused
+  relay, i18n, Lab, build, and two remediated 20/20 persistent runs passed; the
+  evidence-logging run measured 39 operations/12s with zero local `429`.
+- Required next action: complete the restarted full local gates, publish one new
+  immutable head, wait for exact-head Verify/policy, and require a completely fresh
+  reviewer snapshot before any merge, deploy, or Devpost change.
+- Final remediation-tree evidence: ordered `npm test` PASS in 1,591.2 seconds; full
+  `verify:lab` PASS in 375.7 seconds, including 20/20 persistent-profile handoffs and
+  a repeated 39 operations/12s measurement with zero local `429` responses.
+- Trusted-core coverage remained 94.70/92.31/95.22 and governance coverage
+  92.68/84.39/93.75. Chrome 149 reproduced byte-identical portable results and
+  10,000/10,000 adversarial rejects; dependency audit found zero vulnerabilities.
+  Package dry-run contained 138 files (346,964 bytes, 1,368,844 unpacked), and two
+  clean output directories reproduced seven assets at
+  `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME`.

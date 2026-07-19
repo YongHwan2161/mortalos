@@ -13,11 +13,11 @@ import {
   RELAY_LIMITS,
   RelayProtocolError
 } from "../src/transport/protocol.mjs";
+import { RELAY_RATE_POLICY } from "../src/transport/relay-policy.mjs";
 
 const DEFAULT_TTL_SECONDS = 86_400;
 const MAX_TTL_SECONDS = 604_800;
 const MIN_TTL_SECONDS = 3_600;
-const MAX_ROOM_REQUESTS_PER_MINUTE = 120;
 const MAX_ENDPOINT_ID = 64;
 const JSON_HEADERS = Object.freeze({
   "cache-control": "no-store, no-transform",
@@ -156,7 +156,7 @@ export class MortalOSRoom extends DurableObject {
       bucket
     ).one();
     this.ctx.storage.sql.exec("DELETE FROM rate_limits WHERE bucket < ?", bucket - 1);
-    return row.request_count <= MAX_ROOM_REQUESTS_PER_MINUTE;
+    return row.request_count <= RELAY_RATE_POLICY.room_requests_per_minute;
   }
 
   async #admitRoom(roomId, now) {

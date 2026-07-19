@@ -1,6 +1,6 @@
 # MortalOS multi-browser digital life and bilingual UX implementation plan
 
-상태: **ACTIVE EXECUTION SSOT — S0–S10 LOCAL PASS after reviewer remediation; S11 evidence reconciliation; S12 review/merge/production acceptance 대기**<br>
+상태: **ACTIVE EXECUTION SSOT — S0–S11 LOCAL PASS after two fail-closed reviewer remediation loops; S12 new-head review/merge/production acceptance 대기**<br>
 기준 소스: `8930992e5483c6b645af197348d5725a8648bd09` (`origin/main`, 2026-07-19 KST)<br>
 대회 제출 마감: **2026-07-22 09:00 KST**<br>
 대회용 변경 동결: **2026-07-21 18:00 KST**<br>
@@ -34,10 +34,10 @@ Canonical site: `https://mortal-os.com/`
 | S4 | LOCAL PASS | clean import/replay reconstructs identity/head/state and exposes no signing authority |
 | S5 | LOCAL PASS | `mortalos-state/1`, 10,000 deterministic transitions, JS/Python byte parity, limits/tamper/crash atomicity PASS |
 | S6 | LOCAL PASS | consent-gated non-extractable IndexedDB key, replay restore, authority removal, corrupt pending fail-closed PASS in Chromium |
-| S7 | LOCAL PASS / production deploy pending | transport schedules, Durable Object runtime/restart/TTL/WebSocket/CORS tests and Wrangler dry-run PASS; `relay.mortal-os.com` exact-main deployment pending |
-| S8 | LOCAL PASS | EN/KO actual Chromium A→B handoff, A close, same-ID B continuation, premature-loss stalled negative PASS |
+| S7 | LOCAL PASS / production deploy pending | one rate-policy SSOT budgets two active browsers at 204/min and 252/min with burst under a 300/min room cap; actual two-profile cadence measured 39/12s with zero 429, DO runtime/restart/TTL/WebSocket/CORS, 301st-request 429, and Wrangler dry-run PASS; exact-main deploy pending |
+| S8 | LOCAL PASS | EN/KO actual Chromium A→B handoff, A close, same-ID B continuation, premature-loss stalled negative and 20/20 persistent-profile repetition PASS |
 | S9 | LOCAL PASS | all complementary `2-of-3` losses, D repair, single-endpoint stall, out-of-order convergence/fork visibility; ten fresh Chromium runs PASS |
-| S10 | LOCAL PASS | one-protagonist UI, advanced disclosure, local QR, honest errors, stable state screenshots; latest full-suite median LCP 294.9ms, CLS 0, TBT proxy 35ms |
+| S10 | LOCAL PASS | one-protagonist UI, advanced disclosure, local QR, honest errors, stable state screenshots; latest full-suite median LCP 322.7ms, CLS 0, TBT proxy 29ms |
 | S11 | LOCAL PASS / final public readback pending | README/docs/release record and post-deploy Devpost/video package converge; current Devpost/video remain honestly at accepted production level until S12 public PASS |
 | S12 | HOLD | full candidate gates, immutable review, expected-head merge, post-merge CI, exact relay/Pages deploy, public EN/KO acceptance, Devpost/video readback required |
 
@@ -518,6 +518,11 @@ evidence와 signing proposal을 교환하게 한다.
   OpenAI 비용을 무제한 증가시키지 않음.
 - duplicate publish, range/presence read, presence write, WebSocket connect를 포함한
   모든 valid room operation이 같은 per-minute admission ceiling을 사용한다.
+- Worker, browser transport, local acceptance server가 같은 rate-policy SSOT를
+  사용한다. 두 active endpoint의 최대 주기 요청은 204/min, 48-operation burst를
+  더한 worst case는 252/min으로 300/min room ceiling보다 작아야 한다.
+- 두 실제 persistent Chromium profile을 12초간 동시에 유지한 계측은 48회
+  이하이고 local acceptance relay의 canonical `429`는 0건이어야 한다.
 - presence-only와 connect-only room도 alarm을 예약하고, 강제 expiry 뒤 metadata,
   presence, rate bucket, hibernated socket이 남지 않는다.
 - relay outage에서 기존 local evidence 검증/import는 계속되고 새 transition만
@@ -743,9 +748,9 @@ L2가 배포되지 않으면 기존 규정 충족 영상을 유지하고 descrip
 | `npm run test:i18n` | catalog/placeholder parity, first-paint locale, canonical result parity |
 | `npm run test:state` | JS/Python state/receipt golden, property, limits, recovery |
 | `npm run test:transport` | seeded reorder/drop/duplicate/partition/fork schedules |
-| `npm run test:relay` | DO persistence, every-operation admission, duplicate flood 429, presence/connect-only TTL, restart |
+| `npm run test:relay` | DO persistence, every-operation admission, 204+48<300 cadence budget, 301st operation 429, presence/connect-only TTL, restart |
 | `npm run test:multi-browser` | deterministic A→B handoff와 A/B/C quorum model/negative cases |
-| `npm run verify:persistent-handoff` | 두 persistent Chromium profile에서 20회 연속 A→B, A process close, B continuation |
+| `npm run verify:persistent-handoff` | 두 persistent Chromium profile에서 20회 연속 A→B, A process close, B continuation, 실제 12초 cadence ≤48 및 local 429=0 |
 | `npm run verify:ux` | a11y, keyboard, responsive, screenshots, performance budget |
 | `npm run verify:cost-controls` | actor/global cap, Turnstile, circuit breaker, GPT-off fallback |
 | `npm run verify:release` | exact source/manifest/routes/relay/multi-browser public acceptance; `MORTALOS_LAB_URL`과 exact commit 필요 |

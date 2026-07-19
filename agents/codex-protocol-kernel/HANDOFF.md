@@ -44,6 +44,13 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   exact 20-run two-persistent-profile Chromium gate, and remove pre-validation
   “verified” UI wording. The intended shared paths remain within the declaration
   above; the remediated head requires a completely fresh reviewer snapshot.
+- Second reviewer FAIL (snapshot `a5f56c6…`): exact production cadence was about
+  399/min for A+B against the 120/min room ceiling, while the local acceptance mock
+  had no rate counter. The new remediation makes `src/transport/relay-policy.mjs`
+  authoritative for Worker/browser/mock, budgets 204 scheduled + 48 burst operations
+  below a 300/min ceiling, tests the 300th/301st boundary, measures a real 12-second
+  two-profile window, and fails on any local `429`. This changed head again requires
+  a fully fresh immutable reviewer snapshot; neither earlier review may authorize it.
 
 ## Closed intents
 

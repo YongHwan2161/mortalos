@@ -35,9 +35,10 @@ async function firstPage(context) {
   return context.pages()[0] ?? context.newPage();
 }
 
-async function runHandoff({ launchOptions, locale, profileA, profileB, run, serverUrl }) {
+async function runHandoff({ launchOptions, locale, profileA, profileB, relayMetrics, run, serverUrl }) {
   let contextA = null;
   let contextB = null;
+  let cadenceOperations12s = null;
   const errors = [];
   try {
     contextA = await chromium.launchPersistentContext(profileA, launchOptions);
@@ -65,6 +66,18 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, run, serv
     assertParticipant(joined, { role: "B", sequence: "0", signingAuthority: false });
     assert.equal(joined.participant.organism_id, origin.participant.organism_id);
     assert.equal(joined.participant.head_hash, origin.participant.head_hash);
+
+    if (run === 1 && relayMetrics) {
+      const before = relayMetrics().find((entry) => entry.room_id === joinUrl.searchParams.get("room"));
+      assert.ok(before, "local relay metrics must include the active room");
+      await pageB.waitForTimeout(12_000);
+      const after = relayMetrics().find((entry) => entry.room_id === joinUrl.searchParams.get("room"));
+      assert.ok(after, "local relay metrics must retain the active room");
+      cadenceOperations12s = after.admitted - before.admitted;
+      assert.ok(cadenceOperations12s >= 32, `two-browser cadence unexpectedly idle: ${cadenceOperations12s}/12s`);
+      assert.ok(cadenceOperations12s <= 48, `two-browser cadence exceeds 240/min: ${cadenceOperations12s}/12s`);
+      assert.equal(after.rejected, 0, "production-equivalent local relay rejected normal two-browser cadence");
+    }
 
     await pageA.locator("#continuity-approve:enabled").waitFor({ timeout: 20_000 });
     await pageA.click("#continuity-approve");
@@ -125,6 +138,7 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, run, serv
     assert.notEqual(continued.participant.state_root, afterB.participant.state_root);
     assert.deepEqual(errors, []);
     return {
+      cadence_operations_12s: cadenceOperations12s,
       locale,
       organism_id: continued.participant.organism_id,
       post_handoff_head: afterB.participant.head_hash,
@@ -139,7 +153,7 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, run, serv
 
 const remoteUrl = process.env.MORTALOS_LAB_URL;
 const server = remoteUrl
-  ? { url: new URL("/", remoteUrl).href, close: async () => {} }
+  ? { url: new URL("/", remoteUrl).href, close: async () => {}, relayMetrics: null }
   : await (async () => {
       await buildLab();
       return startLabServer();
@@ -170,6 +184,7 @@ try {
       locale: run % 2 === 0 ? "ko" : "en",
       profileA,
       profileB,
+      relayMetrics: server.relayMetrics,
       run,
       serverUrl: server.url
     }));
@@ -178,7 +193,14 @@ try {
   assert.equal(traces.every((trace) => trace.sequence === "2"), true);
   assert.equal(new Set(traces.map((trace) => trace.organism_id)).size, RUNS);
   assert.deepEqual(new Set(traces.map((trace) => trace.locale)), new Set(["en", "ko"]));
+  if (server.relayMetrics) {
+    assert.equal(server.relayMetrics().reduce((sum, room) => sum + room.rejected, 0), 0);
+  }
   console.log(`MortalOS two persistent browser profiles / ${RUNS} consecutive A→B handoffs: PASS`);
+  const cadence = traces.find((trace) => trace.cadence_operations_12s !== null)?.cadence_operations_12s;
+  if (cadence !== undefined) {
+    console.log(`- measured two-browser relay cadence: ${cadence} operations/12s (<=48), zero local 429s`);
+  }
   console.log("- profile A Chromium process closed after accepted handoff in every run");
   console.log("- profile B continued the same organism at exact sequence 2 without A's key");
   console.log("- English/Korean pending proposal text remained unverified until local acceptance");

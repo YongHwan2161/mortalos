@@ -42,7 +42,17 @@ Base: `8930992e5483c6b645af197348d5725a8648bd09`
   each run and requiring B to continue the same identity at sequence 2. This is still
   candidate evidence and does not replace exact-head CI, a fresh review, or public
   remote acceptance.
-- S11 documents are being reconciled. S12 full candidate tests, immutable review,
+- The second PR #23 review snapshot at `a5f56c6…` failed closed on a new P1: normal
+  A+B browser cadence measured about 399/min against the 120/min room cap, and the
+  rate-less local mock did not expose it. The current unmerged tree has one shared
+  300/min policy, a 204/min two-endpoint schedule plus 48-operation burst allowance,
+  a rate-aware mock, exact 300th/301st boundary coverage, and actual two-profile
+  cadence acceptance at 39 operations/12s with zero local 429. It needs a new commit,
+  exact-head CI, and fresh review.
+- The final remediated local tree passed the complete ordered `npm test` in 1,591.2
+  seconds and `verify:lab` in 375.7 seconds; the latter repeated all 20 persistent
+  handoffs and the 39/12s zero-429 measurement.
+- S11 documents are reconciled. S12 full candidate tests, immutable review,
   expected-head merge, post-merge CI, exact relay/Pages deploy, public bilingual
   readback, and Devpost/video reconciliation remain.
 
@@ -61,8 +71,8 @@ Base: `8930992e5483c6b645af197348d5725a8648bd09`
 
 ## Current priority
 
-1. Complete S11 truth/claim audit and full local candidate gates.
-2. Publish one immutable branch head for independent review.
+1. Publish the fully verified remediation as one new immutable branch head.
+2. Require exact-head Verify/policy and a completely fresh independent review.
 3. Merge only the reviewed expected head, then deploy relay before Pages.
 4. Promote the Devpost story or video only after public EN/KO multi-browser acceptance.
 5. Keep the last accepted deployment and existing compliant video as rollback.

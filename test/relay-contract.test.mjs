@@ -1,6 +1,19 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { RELAY_RATE_POLICY, relayTwoBrowserRequestBudget } from "../src/transport/relay-policy.mjs";
+
+test("relay cadence keeps two active browsers plus an explicit burst below the shared room ceiling", () => {
+  const budget = relayTwoBrowserRequestBudget();
+  assert.deepEqual(budget, {
+    burst: 48,
+    ceiling: 300,
+    per_endpoint: 102,
+    steady_state: 204,
+    worst_case: 252
+  });
+  assert.ok(budget.worst_case < RELAY_RATE_POLICY.room_requests_per_minute);
+});
 
 test("relay Worker is room-sharded, SQLite-backed, bounded, hibernatable, and authority-neutral", async () => {
   const source = await readFile(new URL("../relay/worker.mjs", import.meta.url), "utf8");

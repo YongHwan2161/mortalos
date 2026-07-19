@@ -13,6 +13,7 @@ import {
   decodeRelayMessageBytes,
   RELAY_LIMITS
 } from "../src/transport/protocol.mjs";
+import { RELAY_RATE_POLICY } from "../src/transport/relay-policy.mjs";
 
 const root = fileURLToPath(new URL("../dist/lab", import.meta.url));
 export { LAB_CSP, LAB_SECURITY_HEADERS } from "./lab-contract.mjs";
@@ -93,8 +94,26 @@ export async function startLabServer({ host = "127.0.0.1", port = 0, directory =
       const relayRoute = url.pathname.match(/^\/v1\/rooms\/([A-Za-z0-9_-]{22})\/(messages|presence)$/);
       if (relayRoute) {
         const [, roomId, action] = relayRoute;
-        if (!relayRooms.has(roomId)) relayRooms.set(roomId, { frames: [], ids: new Map(), presence: new Map() });
+        if (!relayRooms.has(roomId)) relayRooms.set(roomId, {
+          frames: [],
+          ids: new Map(),
+          presence: new Map(),
+          rate: { admitted: 0, bucket: null, count: 0, rejected: 0 }
+        });
         const room = relayRooms.get(roomId);
+        const rateBucket = Math.floor(Date.now() / 60_000);
+        if (room.rate.bucket !== rateBucket) {
+          room.rate.bucket = rateBucket;
+          room.rate.count = 0;
+        }
+        room.rate.count += 1;
+        if (room.rate.count > RELAY_RATE_POLICY.room_requests_per_minute) {
+          room.rate.rejected += 1;
+          response.writeHead(429, { "Cache-Control": "no-store", "Content-Type": "application/json" })
+            .end('{"code":"RELAY_RATE","status":"reject"}');
+          return;
+        }
+        room.rate.admitted += 1;
         if (action === "messages" && request.method === "POST") {
           const chunks = [];
           let size = 0;
@@ -187,6 +206,11 @@ export async function startLabServer({ host = "127.0.0.1", port = 0, directory =
   return {
     url: `http://${host}:${address.port}`,
     requests,
+    relayMetrics: () => [...relayRooms.entries()].map(([room_id, room]) => ({
+      admitted: room.rate.admitted,
+      rejected: room.rate.rejected,
+      room_id
+    })),
     close: () => new Promise((resolveClose, reject) => server.close((error) => error ? reject(error) : resolveClose()))
   };
 }

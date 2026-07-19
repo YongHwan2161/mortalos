@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { canonicalBytes } from "../src/index.mjs";
 import { createRelayMessage } from "../src/transport/protocol.mjs";
+import { RELAY_RATE_POLICY } from "../src/transport/relay-policy.mjs";
 
 const ROOM = "BBBBBBBBBBBBBBBBBBBBBB";
 
@@ -75,15 +76,21 @@ describe("MortalOSRoom runtime", () => {
     const body = publicMessage();
     const floodStub = env.MORTALOS_ROOM.getByName(floodRoom);
     expect((await floodStub.publish(floodRoom, body)).duplicate).toBe(false);
-    for (let request = 0; request < 119; request += 1) {
-      const response = await relayRequest(floodPath, {
-        method: "POST",
-        body,
-        headers: { "content-type": "application/json" }
-      });
-      expect(response.status, `request ${request + 1}: ${await response.clone().text()}`)
-        .toBe(200);
-    }
+    await runInDurableObject(floodStub, async (_instance, state) => {
+      const bucket = Math.floor(Date.now() / 60_000);
+      state.storage.sql.exec("DELETE FROM rate_limits");
+      state.storage.sql.exec(
+        "INSERT INTO rate_limits(bucket, request_count) VALUES (?, ?)",
+        bucket,
+        RELAY_RATE_POLICY.room_requests_per_minute - 1
+      );
+    });
+    const admittedAtCeiling = await relayRequest(floodPath, {
+      method: "POST",
+      body,
+      headers: { "content-type": "application/json" }
+    });
+    expect(admittedAtCeiling.status).toBe(200);
     const limited = await relayRequest(floodPath, {
       method: "POST",
       body,

@@ -4,6 +4,7 @@ import {
   decodeRelayFrame,
   RELAY_LIMITS
 } from "../../src/transport/protocol.mjs";
+import { RELAY_RATE_POLICY } from "../../src/transport/relay-policy.mjs";
 
 export function createRoomId() {
   return encodeBase64Url(crypto.getRandomValues(new Uint8Array(16)));
@@ -98,7 +99,7 @@ export class HttpRelayTransport {
     return value;
   }
 
-  subscribe(handler, { intervalMs = 500, startAfter = 0 } = {}) {
+  subscribe(handler, { intervalMs = RELAY_RATE_POLICY.message_poll_interval_ms, startAfter = 0 } = {}) {
     if (this.#closed) throw new Error("transport closed");
     if (typeof handler !== "function") throw new TypeError("subscriber function required");
     this.#cursor = startAfter;
@@ -106,7 +107,9 @@ export class HttpRelayTransport {
       if (this.#closed || this.#polling) return;
       this.#polling = true;
       try {
-        if (Date.now() - this.#lastPresence >= 2_000) await this.touchPresence();
+        if (Date.now() - this.#lastPresence >= RELAY_RATE_POLICY.presence_touch_interval_ms) {
+          await this.touchPresence();
+        }
         for (const frame of await this.fetchRange(this.#cursor)) {
           if (frame.sequence !== this.#cursor + 1) throw new Error("relay subscription gap detected");
           await handler(frame);

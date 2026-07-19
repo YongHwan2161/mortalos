@@ -62,8 +62,10 @@ Implemented and focused-PASS:
   converge or surface a fork in Node and Chromium.
 - **Relay:** Durable Object SQLite, hibernating WebSocket, presence, bounded catch-up,
   strict CORS/schema/size limits, and restart persistence pass locally. Duplicate
-  publish, range/presence reads, presence writes, and connect share one 120/min room
-  ceiling; the 121st duplicate returns canonical `429`. Presence-only and
+  publish, range/presence reads, presence writes, and connect share one 300/min room
+  ceiling; the 301st duplicate returns canonical `429`. The browser cadence budget
+  is 204/min for two active endpoints and 252/min including an explicit 48-operation
+  burst allowance. Presence-only and
   connect-only rooms schedule and execute complete TTL cleanup.
 - **Two-browser L2:** English and Korean actual-Chromium runs create in A, join in B,
   accept one custody handoff, close A, and advance the same identity in B from
@@ -86,12 +88,11 @@ Implemented and focused-PASS:
   `/ko/`, localized first paint, catalog/placeholder parity, no locale-dependent
   protocol bytes, QR generated locally, and advanced evidence collapsed.
 - **UX/performance:** the latest full-suite three-run cold-cache gate produced median
-  LCP **400.4 ms**, CLS **0**, TBT proxy **27.0 ms**, and DOM interactive **261.4 ms**.
+  LCP **322.7 ms**, CLS **0**, TBT proxy **29.0 ms**, and DOM interactive **214.5 ms**.
   Stable screenshot
   hashes cover EN/KO idle, joining, alive, stalled, and forked states.
 
-The restarted full release sequence (`npm run verify:spec` followed by the complete
-ordered `npm test`) passed in **1,946.4 seconds**. The `npm test` portion included all
+The latest complete ordered `npm test` passed in **1,591.2 seconds**. It included all
 stage gates, portable 10,000/10,000 serialized adversarial rejection, four
 byte-identical JavaScript/Python state records, eleven R1 differential records,
 singleton, and the exact H2 trace.
@@ -100,8 +101,17 @@ The first immutable reviewer snapshot correctly returned `FAIL`: it found false
 clean-diff evidence, relay admission/TTL gaps, an unexecuted persistent-profile
 criterion, and pre-validation “verified” wording. The current candidate removes the
 whitespace, adds executable flood/idle-room and 20-profile gates, and labels the
-proposal as received/pending until local acceptance. A fresh reviewer snapshot is
-still mandatory.
+proposal as received/pending until local acceptance.
+
+The second immutable snapshot at `a5f56c6…` also correctly returned `FAIL` even though
+exact-head Verify and policy were green. It measured the actual A+B cadence at 80
+operations/12s (about 399/min) against a 120/min room ceiling and showed that the
+rate-less local relay mock hid the production failure. The remediation now imports
+one policy in Worker, browser, and mock; slows non-authoritative polling to a bounded
+204/min two-endpoint schedule; reserves 48 interaction operations; enforces a
+300/min ceiling and canonical 301st-operation `429`; measures an actual two-profile
+12-second window (39 operations in the remediated run); and requires zero mock
+rejections. A completely new immutable review snapshot is still mandatory.
 
 Candidate promotion still requires an immutable commit and clean-clone gate,
 independent review, expected-head merge, post-merge CI, exact-main relay and Pages
@@ -111,15 +121,15 @@ Final local release-gate readout:
 
 | Gate | Result |
 | --- | --- |
-| Ordered `npm test` | PASS within the restarted full release sequence, 1,946.4s total wrapper |
+| Ordered `npm test` | PASS on the final remediation tree, 1,591.2s |
 | Actual Chromium portable corpus | PASS, Chrome 149, byte-identical, 10,000/10,000 rejected |
-| Actual Chromium Lab | PASS, 564.7s, EN/KO/import/durable/A→B/a11y/responsive plus 20/20 two-persistent-profile handoffs |
+| Actual Chromium Lab | PASS, 375.7s, EN/KO/import/durable/A→B/a11y/responsive plus 20/20 two-persistent-profile handoffs and 39 operations/12s with zero local 429s |
 | Transport differential | PASS, 10,000 schedules / 30,000 recoveries, digest `sha256:TdZsm_fWivLD5SCYfBvMs_ytghOgYxeDGet_y6mrgdM` |
 | Trusted-core coverage | PASS, line 94.70%, branch 92.31%, function 95.22% |
 | Governance coverage | PASS, 30/30; line 92.68%, branch 84.39%, function 93.75% |
 | Dependency audit | PASS, zero vulnerabilities at `moderate` threshold |
-| Package dry run | PASS, 137 files; exact archive sizes belong in the immutable PR validation to avoid self-reference |
-| Build reproducibility | PASS, two clean output directories, seven exact assets, digest `sha256:ulw95QKMIrzn5-HSenNydlBLGW-wRY_woqVcWr_jils` |
+| Package dry run | PASS, 138 files, 346,964-byte archive, 1,368,844 bytes unpacked |
+| Build reproducibility | PASS, two clean output directories, seven exact assets, digest `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME` |
 | High-confidence secret scan | PASS, zero matches; private feedback value absent from repository |
 
 The clean-clone gate is performed from the immutable candidate commit immediately

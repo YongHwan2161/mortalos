@@ -92,7 +92,8 @@ npm run test:coverage
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below
-20.
+20. Its first run also measures two simultaneously active browsers for 12 seconds
+against the production-shared relay policy and requires zero local `429` responses.
 
 The fixed property corpus contains exactly 10,000 cases from seed `1297044052`.
 The expected H2 trace digest remains:

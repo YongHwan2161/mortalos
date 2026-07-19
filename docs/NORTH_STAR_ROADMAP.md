@@ -1,8 +1,8 @@
 # MortalOS North Star roadmap
 
-Status: **S0–S10 locally implemented and verified; S11 documentation candidate in
-progress; S12 review, merge, production relay/Pages deployment, and public readback
-remain promotion gates**
+Status: **S0–S11 locally implemented and verified after two fail-closed review
+remediations; S12 new-head review, merge, production relay/Pages deployment, and
+public readback remain promotion gates**
 
 Last synchronized: **2026-07-19 KST**
 
@@ -42,13 +42,10 @@ B advances the same `organism_id` and state.
 
 ## Current priority order
 
-1. **S11 — documentation/submission convergence:** keep README, site, Devpost, and
-   video at the same actually deployed claim level; retain the existing compliant
-   video until a new L2 production recording exists.
-2. **S12 — exact release:** full local gate, immutable independent review,
+1. **S12 — exact release:** full local gate, immutable independent review,
    expected-head merge, post-merge CI, relay deployment, Pages deployment, manifest
    equality, bilingual multi-browser Chromium acceptance, and Devpost readback.
-3. **After the deadline:** actual Firefox/WebKit durable-key promotion, independent
+2. **After the deadline:** actual Firefox/WebKit durable-key promotion, independent
    physical/administrative failure-domain trials, encrypted relay payloads, and a
    richer deterministic genome only as separate versioned work.
 

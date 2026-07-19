@@ -78,6 +78,11 @@ The Cloudflare Worker and Durable Object provide bounded room storage, presence,
 HTTP catch-up, WebSocket fan-out, TTL alarms, and strict origin/schema/size limits.
 Every valid room operation—including duplicate publish, range/presence reads,
 presence writes, and WebSocket connect—shares one per-room admission ceiling.
+The Worker, browser transport, and local acceptance server import one policy: two
+active endpoints consume at most 204 scheduled operations/minute, or 252 with the
+explicit 48-operation interaction burst, below the 300/min room ceiling. A real
+two-profile Chromium gate also measures a 12-second active window; the remediated
+candidate recorded 39 operations and no local `429`.
 Presence-only and connect-only rooms also schedule expiry alarms. They remain a
 delivery optimization only.
 

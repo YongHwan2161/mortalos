@@ -285,7 +285,7 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "S0–S10 locally implemented and verified",
+  "S0–S11 locally implemented and verified",
   "| Node/browser agreement | Required per review head |",
   "An old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"
@@ -478,8 +478,8 @@ assert(
 );
 
 for (const statement of [
-  "S0–S10 LOCAL PASS",
-  "S12 review/merge/production acceptance",
+  "S0–S11 LOCAL PASS",
+  "S12 new-head review/merge/production acceptance",
   "production GPT disabled",
   "English",
   "Korean"

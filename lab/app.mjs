@@ -14,6 +14,7 @@ import { DurableParticipant } from "./participant/durable-participant.mjs";
 import { LiveEndpointParticipant } from "./participant/live-endpoint.mjs";
 import { durableStoreExists } from "./storage/durable-store.mjs";
 import { createRoomId, HttpRelayTransport } from "./transport/http-relay.mjs";
+import { RELAY_RATE_POLICY } from "../src/transport/relay-policy.mjs";
 import {
   createRelayControlMessage,
   createRelayMessage,
@@ -348,7 +349,7 @@ function startContinuitySubscription(startAfter = 0) {
       } catch {
         byId("continuity-relay").textContent = t("continuityRelayUnavailable");
       }
-    }, 1_000);
+    }, RELAY_RATE_POLICY.presence_poll_interval_ms);
   }
 }
 
