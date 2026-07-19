@@ -5,7 +5,27 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Implement and release S0–S12 multi-browser digital-life candidate
+### ACTIVE — Repair production deploy Chromium ordering
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `d20e66083cd79084667beab8bc8269fbac447828`
+- Work branch: `agent/codex-protocol-kernel--deploy-chromium-order`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--deploy-chromium-order`
+- Exact shared paths: `.github/workflows/deploy-lab.yml` and `test/lab.test.mjs`.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md`, `MEMORY.md`, and
+  `WORKLOG.md`.
+- Incident: post-merge Deploy `29695521487/1` failed at `npm test` before any
+  Cloudflare mutation because Playwright Chromium was installed only after the test.
+- Intended change: install Chromium immediately after locked dependencies and before
+  exact-source verification; remove the later duplicate install step. Deployment
+  order remains verify → relay → Pages → exact public acceptance.
+- Required gates: workflow structure/unit assertions, spec/diff/secret checks,
+  exact-head Verify and Agent PR Policy, independent immutable review, expected-head
+  merge, then exact-main Deploy and public readback. No manual deployment bypass.
+- Rollback: no production mutation occurred in the failed run; current accepted
+  deployment remains live until the corrected exact-main workflow passes.
+
+### HISTORICAL — Implement and release S0–S12 multi-browser digital-life candidate
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `8930992e5483c6b645af197348d5725a8648bd09`

@@ -2,13 +2,15 @@
 
 Last reconciled: 2026-07-19 KST
 
-Branch: `agent/codex-protocol-kernel--multi-browser-bilingual-plan`
+Branch: `agent/codex-protocol-kernel--deploy-chromium-order`
 
-Base: `8930992e5483c6b645af197348d5725a8648bd09`
+Base: `d20e66083cd79084667beab8bc8269fbac447828`
 
 ## Verified merged/public state
 
-- Accepted `main` and public manifest source are `8930992…` through PR #22.
+- Repository `main` is `d20e660…` after independently reviewed PR #23; public
+  manifest remains the accepted `8930992…` deployment because the first PR #23
+  Deploy run failed before any Cloudflare mutation.
 - Post-merge Verify `29662790686` and deploy `29662790723` passed.
 - Canonical judge URL is `https://mortal-os.com/`; `pages.dev` is incident fallback.
 - Public accepted claim remains the earlier L0 single-browser/GPT guided proof until
@@ -18,7 +20,7 @@ Base: `8930992e5483c6b645af197348d5725a8648bd09`
   feedback field has been exact-read back; its value is not stored in repository
   artifacts.
 
-## Current unmerged candidate
+## Merged candidate awaiting corrected deployment
 
 - S0–S10 are implemented and focused-local PASS: optional GPT cost safety, English
   `/` and Korean `/ko/`, R1 wire-only Lab paths, evidence import/replay,
@@ -55,6 +57,12 @@ Base: `8930992e5483c6b645af197348d5725a8648bd09`
 - S11 documents are reconciled. S12 full candidate tests, immutable review,
   expected-head merge, post-merge CI, exact relay/Pages deploy, public bilingual
   readback, and Devpost/video reconciliation remain.
+- PR #23 passed immutable review at head `3aec0a6…` and squash-merged as
+  `d20e660…`. Post-merge Deploy `29695521487/1` failed before relay/Pages mutation:
+  `npm test` needed Chromium, but the workflow installed it only after that step.
+- The focused correction moves the sole Chromium install before `npm test` and adds
+  a test that freezes install → source verify → relay → Pages → public verify order.
+  Manual deployment remains forbidden.
 
 ## Stable decisions
 
@@ -71,10 +79,10 @@ Base: `8930992e5483c6b645af197348d5725a8648bd09`
 
 ## Current priority
 
-1. Publish the fully verified remediation as one new immutable branch head.
-2. Require exact-head Verify/policy and a completely fresh independent review.
-3. Merge only the reviewed expected head, then deploy relay before Pages.
-4. Promote the Devpost story or video only after public EN/KO multi-browser acceptance.
+1. Publish and independently review the minimal deploy-order correction.
+2. Merge only its expected head and require exact-main Deploy success.
+3. Verify relay, Pages manifest/source, and public EN/KO multi-browser acceptance.
+4. Promote the Devpost story or video only after public acceptance.
 5. Keep the last accepted deployment and existing compliant video as rollback.
 
 ## Memory maintenance

@@ -829,3 +829,20 @@ result, and reproducible verification.
   varied across checkout EOL/compression conditions and are deliberately not release
   invariants. Two clean output directories reproduced seven assets at
   `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME`.
+
+## 2026-07-19 KST — Post-merge deploy Chromium-order correction
+
+- PR #23 reviewer PASS attestation `5016543306` bound head `3aec0a6…`, latest
+  policy `29695018597/1`, and Verify `29694994415/1`; expected-head squash merge
+  produced main `d20e66083cd79084667beab8bc8269fbac447828`.
+- Deploy `29695521487/1` failed closed at pre-deploy `npm test`. The workflow had
+  installed Chromium only after source verification, so `verify-quorum.mjs` could
+  not launch Playwright. Relay migration, Pages deployment, and public verification
+  were skipped; production remained unchanged.
+- Correction branch `agent/codex-protocol-kernel--deploy-chromium-order` moves the
+  sole Chromium install immediately after `npm ci` and before `npm test`. A Lab
+  contract assertion requires exactly one install and freezes install → source
+  verify → relay → Pages → public verify order.
+- Required next action: focused/full local verification, immutable PR/policy/Verify,
+  independent expected-head review/merge, and a natural exact-main Deploy rerun. Do
+  not bypass the reviewed workflow with a manual Cloudflare deployment.
