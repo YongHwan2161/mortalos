@@ -15,18 +15,6 @@
     "GPT_SCENARIOS_ENABLED": "false",
     "TURNSTILE_EXPECTED_HOSTNAME": "mortal-os.com"
   },
-  "observability": {
-    "enabled": true,
-    "logs": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "invocation_logs": true
-    },
-    "traces": {
-      "enabled": true,
-      "head_sampling_rate": 0.1
-    }
-  },
   "d1_databases": [
     {
       "binding": "SCENARIO_RATE_DB",

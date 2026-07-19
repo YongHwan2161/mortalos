@@ -863,3 +863,26 @@ result, and reproducible verification.
 - Required next action: focused validation, immutable PR/policy/Verify, independent
   expected-head review/merge, natural exact-main Deploy, public acceptance, and
   Devpost reconciliation. No manual deployment bypass.
+
+## 2026-07-20 KST — Pages configuration validation correction
+
+- PR #25 passed policy `29696855759/1`, exact-head Verify `29696855730/1`, immutable
+  reviewer attestation `5016740789`, and expected-head squash merge as
+  `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`. Post-merge Verify
+  `29697373508/1` passed.
+- Natural Deploy `29697373574/2` passed exact-source verification and, after the
+  existing API token received `Workers Scripts:Edit` plus `Workers Routes:Edit`
+  limited to `mortal-os.com`, deployed the exact relay and Durable Object migration.
+  It then failed closed before Pages upload: Wrangler 4.111 reported that Pages
+  project configurations do not support the root `observability` key. Public
+  verification was skipped and the accepted Pages artifact remained unchanged.
+- Correction branch `agent/codex-protocol-kernel--pages-config-validation` removes
+  the unsupported block only from root Pages `wrangler.jsonc`; relay observability
+  remains in `relay/wrangler.jsonc`. The focused Lab regression requires Pages to
+  omit the key and relay to retain its explicit logging/tracing contract.
+- Focused evidence: clean `npm ci` with zero vulnerabilities; Lab 9/9; license,
+  specification, governance 30/30, Wrangler 4.111 Pages Functions compilation,
+  diff check, and high-confidence evidence-delta secret scan PASS. Required next
+  action is exact-head gates, immutable independent review, expected-head merge,
+  natural exact-main deploy, public EN/KO multi-browser acceptance, and Devpost
+  reconciliation. No manual deployment bypass.
