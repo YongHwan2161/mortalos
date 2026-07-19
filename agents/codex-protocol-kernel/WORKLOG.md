@@ -825,6 +825,8 @@ result, and reproducible verification.
 - Trusted-core coverage remained 94.70/92.31/95.22 and governance coverage
   92.68/84.39/93.75. Chrome 149 reproduced byte-identical portable results and
   10,000/10,000 adversarial rejects; dependency audit found zero vulnerabilities.
-  Package dry-run contained 138 files (346,964 bytes, 1,368,844 unpacked), and two
-  clean output directories reproduced seven assets at
+  Package dry-run contained a stable 138-file inventory. Windows worktree sizes were
+  346,964/1,368,844 archive/unpacked bytes, while the reviewer LF checkout observed
+  346,967/1,368,809; sizes are EOL/compression diagnostics rather than invariants.
+  Two clean output directories reproduced seven assets at
   `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME`.
