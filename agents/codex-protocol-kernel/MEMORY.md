@@ -1,16 +1,18 @@
 # Durable memory
 
-Last reconciled: 2026-07-19 KST
+Last reconciled: 2026-07-20 KST
 
-Branch: `agent/codex-protocol-kernel--deploy-env-scope`
+Branch: `agent/codex-protocol-kernel--pages-config-validation`
 
-Base: `e47e438db0e751e5d1d9f01a90933095fbd67906`
+Base: `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`
 
 ## Verified merged/public state
 
-- Repository `main` is `e47e438…` after independently reviewed PR #24; public
-  manifest remains the accepted `8930992…` deployment because both corrective
-  Deploy runs failed before any Cloudflare mutation.
+- Repository `main` is `7d0b5d2…` after independently reviewed PR #25. Its
+  exact-main Verify `29697373508/1` passed. Deploy `29697373574/2` passed source
+  verification and updated the relay/Durable Object, but Pages validation rejected
+  the Workers-only root `observability` key before upload; the public Pages manifest
+  therefore remains the accepted `8930992…` deployment.
 - Post-merge Verify `29662790686` and deploy `29662790723` passed.
 - Canonical judge URL is `https://mortal-os.com/`; `pages.dev` is incident fallback.
 - Public accepted claim remains the earlier L0 single-browser/GPT guided proof until
@@ -70,6 +72,13 @@ Base: `e47e438db0e751e5d1d9f01a90933095fbd67906`
 - The current correction keeps only `MORTALOS_SOURCE_COMMIT` at job scope. Public
   URL, expected commit, and retry controls are confined to the final post-deploy
   release verifier, preventing source verification from depending on old production.
+- PR #25 passed exact-head policy/Verify and immutable review, then merged as
+  `7d0b5d2…`. Its natural Deploy proved the environment correction and the repaired
+  Cloudflare token permissions: exact-source and relay/Durable Object deployment
+  passed. Pages then failed closed because root `wrangler.jsonc` contained the
+  unsupported Workers-only `observability` key. The current minimal candidate removes
+  that key only from Pages and freezes the Pages/relay observability boundary in a
+  focused regression.
 
 ## Stable decisions
 
@@ -86,8 +95,8 @@ Base: `e47e438db0e751e5d1d9f01a90933095fbd67906`
 
 ## Current priority
 
-1. Publish and independently review the minimal deploy-environment correction.
-2. Merge only its expected head and require exact-main Deploy success.
+1. Publish and independently review the minimal Pages-config correction.
+2. Merge only its expected head and require natural exact-main Deploy success.
 3. Verify relay, Pages manifest/source, and public EN/KO multi-browser acceptance.
 4. Promote the Devpost story or video only after public acceptance.
 5. Keep the last accepted deployment and existing compliant video as rollback.

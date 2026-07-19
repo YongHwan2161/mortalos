@@ -5,7 +5,28 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Isolate public-verification environment from source tests
+### ACTIVE — Reject unsupported Pages deployment configuration
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`
+- Work branch: `agent/codex-protocol-kernel--pages-config-validation`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--pages-config-validation`
+- Exact shared paths: `wrangler.jsonc` and `test/lab.test.mjs`.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md`, `MEMORY.md`, and
+  `WORKLOG.md`.
+- Incident: exact-main Deploy `29697373574/2` passed exact-source verification and
+  deployed the relay/Durable Object, then failed closed before Pages upload because
+  Wrangler 4.111 rejects the Workers-only root `observability` key in a Pages
+  project configuration. The public Pages artifact and acceptance remained old.
+- Intended change: remove only the unsupported Pages `observability` block, retain
+  relay observability in `relay/wrangler.jsonc`, and freeze the Pages/Worker config
+  boundary with a regression assertion. Wrangler exposes no Pages-deploy dry-run,
+  so the source regression must explicitly reject the unsupported key.
+- Required gates: focused Lab/config tests, spec/diff/secret checks, exact-head
+  Verify and policy, immutable review, expected-head merge, natural exact-main
+  Deploy, public manifest/relay/EN-KO acceptance, and Devpost reconciliation.
+
+### HISTORICAL — Isolate public-verification environment from source tests
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `e47e438db0e751e5d1d9f01a90933095fbd67906`

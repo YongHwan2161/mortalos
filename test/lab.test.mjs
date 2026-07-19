@@ -528,7 +528,11 @@ test("H3B Cloudflare project discovery is idempotent and fails closed on schema 
 
 test("H3B Pages deployment uses the provisioned D1 database and a strict migration", async () => {
   const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
+  const relayConfig = JSON.parse(
+    await readFile(new URL("../relay/wrangler.jsonc", import.meta.url), "utf8")
+  );
   assert.equal("ratelimits" in config, false);
+  assert.equal("observability" in config, false);
   assert.deepEqual(config.compatibility_flags, ["nodejs_compat"]);
   assert.deepEqual(config.placement, { mode: "targeted", region: "aws:us-east-1" });
   assert.deepEqual(config.vars, {
@@ -538,7 +542,7 @@ test("H3B Pages deployment uses the provisioned D1 database and a strict migrati
     GPT_SCENARIOS_ENABLED: "false",
     TURNSTILE_EXPECTED_HOSTNAME: "mortal-os.com"
   });
-  assert.deepEqual(config.observability, {
+  assert.deepEqual(relayConfig.observability, {
     enabled: true,
     logs: { enabled: true, head_sampling_rate: 1, invocation_logs: true },
     traces: { enabled: true, head_sampling_rate: 0.1 }
