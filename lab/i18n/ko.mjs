@@ -32,7 +32,7 @@ export const messages = Object.freeze({
   continuityNoIdentity: "아직 organism 없음",
   continuityOriginOffline: "브라우저 A 오프라인 · 브라우저 B가 계속할 수 있음",
   continuityOriginLostBeforeHandoff: "Handoff 전에 브라우저 A 종료 · B는 죽은 것이 아니라 읽기 전용으로 정지",
-  continuityProposalObserved: "A가 서명한 handoff body 검증 완료 · B가 보관권을 수락할 수 있음",
+  continuityProposalObserved: "A가 서명한 handoff 제안 수신 · B가 보관권 수락 전에 로컬 검증 예정",
   continuityProposalSent: "A가 정확한 handoff body에 서명함 · B 수락 대기 중",
   continuityQuorum: "1 중 1",
   continuityReady: "브라우저 A에서 생성할 준비 완료",

@@ -19,6 +19,10 @@ test("English and Korean runtime catalogs have exact keys and placeholder parity
   }
   assert.equal(createTranslator("en")("gptFallback", { message: "offline" }).includes("offline"), true);
   assert.equal(createTranslator("ko")("gptFallback", { message: "offline" }).includes("offline"), true);
+  assert.match(enMessages.continuityProposalObserved, /verify locally before accepting/i);
+  assert.doesNotMatch(enMessages.continuityProposalObserved, /\bverified\b/i);
+  assert.match(koMessages.continuityProposalObserved, /로컬 검증 예정/);
+  assert.doesNotMatch(koMessages.continuityProposalObserved, /검증 완료/);
   assert.throws(() => createTranslator("ko")("missing"), /missing i18n message/);
 });
 

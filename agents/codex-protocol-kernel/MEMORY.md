@@ -34,6 +34,14 @@ Base: `8930992e5483c6b645af197348d5725a8648bd09`
 - Relay code and Durable Object migration are locally verified but not production-
   accepted. `relay.mortal-os.com` is not a claim until exact-main deployment and the
   remote multi-browser gate pass.
+- The first PR #23 review snapshot failed closed. Its four findings are remediated in
+  the current unmerged tree: clean diff evidence; every-operation room admission and
+  presence/connect-only TTL alarms; an executable 20-run two-persistent-profile
+  Chromium gate; and pending/unverified wording before local handoff acceptance.
+- The new persistent gate passed 20/20 twice locally, closing A's browser process in
+  each run and requiring B to continue the same identity at sequence 2. This is still
+  candidate evidence and does not replace exact-head CI, a fresh review, or public
+  remote acceptance.
 - S11 documents are being reconciled. S12 full candidate tests, immutable review,
   expected-head merge, post-merge CI, exact relay/Pages deploy, public bilingual
   readback, and Devpost/video reconciliation remain.

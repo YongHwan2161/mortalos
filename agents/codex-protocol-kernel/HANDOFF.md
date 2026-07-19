@@ -37,6 +37,13 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   record, and Devpost/video readback.
 - Expected handoff: one immutable candidate PR from current `main`. The author does
   not self-review, merge, or push directly to `main`.
+- Reviewer FAIL remediation (PR #23 snapshot `da3d691…`): remove the false
+  clean-diff evidence, make every valid relay request subject to the per-room
+  admission ceiling (including duplicates, range/presence reads and connect), bind
+  room/presence TTL to actual alarms, add flood and idle-room runtime tests, add the
+  exact 20-run two-persistent-profile Chromium gate, and remove pre-validation
+  “verified” UI wording. The intended shared paths remain within the declaration
+  above; the remediated head requires a completely fresh reviewer snapshot.
 
 ## Closed intents
 

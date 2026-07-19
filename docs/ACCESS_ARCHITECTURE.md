@@ -76,7 +76,10 @@ deletes the key while retaining public evidence read-only.
 
 The Cloudflare Worker and Durable Object provide bounded room storage, presence,
 HTTP catch-up, WebSocket fan-out, TTL alarms, and strict origin/schema/size limits.
-They are a delivery optimization only.
+Every valid room operation—including duplicate publish, range/presence reads,
+presence writes, and WebSocket connect—shares one per-room admission ceiling.
+Presence-only and connect-only rooms also schedule expiry alarms. They remain a
+delivery optimization only.
 
 The relay must not:
 
@@ -101,8 +104,9 @@ validation or erase already held evidence.
   and an independently written Python verifier.
 - The virtual transport runs seeded duplicate, reorder, drop, partition, reconnect,
   and fork schedules in Node and Chromium.
-- Actual Chromium demonstrates A→B succession in English and Korean plus ten isolated
-  three-endpoint `2-of-3` loss/repair runs.
+- Actual Chromium demonstrates A→B succession in English and Korean, 20 consecutive
+  handoffs across two distinct persistent user-data profiles with A's process closed
+  after acceptance, plus ten isolated three-endpoint `2-of-3` loss/repair runs.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
 or ambient-random dependency. All portable corpus results must remain byte-identical

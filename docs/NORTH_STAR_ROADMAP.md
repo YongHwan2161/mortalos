@@ -35,7 +35,7 @@ B advances the same `organism_id` and state.
 | --- | --- | --- |
 | L0 | Single-browser three-key logical quorum | Never describe as independent distribution. |
 | L1 | Canonical evidence export/import and read-only replay | Import confers no signing authority. |
-| L2 | Actual Chromium A→B succession and A-before-handoff stalled negative | Public claim only after exact production relay/Pages run. |
+| L2 | Actual Chromium A→B succession, 20 consecutive runs in two persistent profiles, and A-before-handoff stalled negative | Public claim only after exact production relay/Pages run. |
 | L3 | All three complementary `2-of-3` loss pairs plus D repair, repeated in ten isolated Chromium runs | Browser profiles prove isolation, not three people or organizations. |
 | L4 | Deterministic state/receipt bytes agree in JavaScript and independent Python; tamper and limits fail atomically | Not an arbitrary autonomous-agent runtime. |
 | L5 | Mortality remains observer-relative and explicitly bounded | Never claim globally complete death. |
@@ -90,7 +90,7 @@ Additional invariants:
 | H3A MortalOS Lab | Three non-extractable Worker keys; logical `2-of-3`; one physical failure domain |
 | Additional H3B exact-deployment criteria | source SHA, aggregate/file digests, MIME, headers, API policy, clean Chromium |
 | R1/state | canonical JS/Python byte equality and stable tamper rejection |
-| Multi-browser | EN/KO A→B continuation plus three-pair quorum loss/repair |
+| Multi-browser | EN/KO A→B, 20-run two-persistent-profile continuation, plus three-pair quorum loss/repair |
 | Performance | cold-cache median LCP ≤2.5s, CLS ≤0.1, TBT proxy ≤200ms |
 
 ## Stop and rollback rules

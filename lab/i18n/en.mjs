@@ -32,7 +32,7 @@ export const messages = Object.freeze({
   continuityNoIdentity: "No organism yet",
   continuityOriginOffline: "Browser A offline · Browser B can continue",
   continuityOriginLostBeforeHandoff: "Browser A closed before handoff · B remains read-only, not dead",
-  continuityProposalObserved: "A's signed handoff body verified · B may accept custody",
+  continuityProposalObserved: "A's signed handoff proposal received · B will verify locally before accepting custody",
   continuityProposalSent: "A signed the exact handoff body · waiting for B acceptance",
   continuityQuorum: "1 of 1",
   continuityReady: "Ready to create in Browser A",

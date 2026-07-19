@@ -81,6 +81,7 @@ npm run test:state
 npm run test:transport
 npm run test:relay
 npm run test:multi-browser
+npm run verify:persistent-handoff
 npm run verify:ux
 npm run verify:state
 npm run verify:transport
@@ -88,6 +89,10 @@ npm run verify:cost-controls
 npm run test:chromium
 npm run test:coverage
 ```
+
+`verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
+focused command above runs that gate alone; it refuses a configured run count below
+20.
 
 The fixed property corpus contains exactly 10,000 cases from seed `1297044052`.
 The expected H2 trace digest remains:

@@ -156,11 +156,17 @@ export class MortalOSRoom extends DurableObject {
       bucket
     ).one();
     this.ctx.storage.sql.exec("DELETE FROM rate_limits WHERE bucket < ?", bucket - 1);
-    if (row.request_count > MAX_ROOM_REQUESTS_PER_MINUTE) {
-      const error = new Error("room rate ceiling reached");
-      error.code = "RELAY_RATE";
-      throw error;
+    return row.request_count <= MAX_ROOM_REQUESTS_PER_MINUTE;
+  }
+
+  async #admitRoom(roomId, now) {
+    if (!this.#admit(now)) return null;
+    const expiresAt = this.#ensureRoom(roomId, now);
+    const currentAlarm = await this.ctx.storage.getAlarm();
+    if (currentAlarm === null || expiresAt < currentAlarm) {
+      await this.ctx.storage.setAlarm(expiresAt);
     }
+    return expiresAt;
   }
 
   async publish(roomId, messageBytes) {
@@ -168,6 +174,8 @@ export class MortalOSRoom extends DurableObject {
     const opened = decodeRelayMessageBytes(
       messageBytes instanceof Uint8Array ? messageBytes : new Uint8Array(messageBytes)
     );
+    const expiresAt = await this.#admitRoom(roomId, now);
+    if (expiresAt === null) return { rate_limited: true };
     const duplicate = this.ctx.storage.sql.exec(
       "SELECT sequence, message_base64url FROM messages WHERE message_id = ?",
       opened.message_id
@@ -175,10 +183,10 @@ export class MortalOSRoom extends DurableObject {
     if (duplicate) {
       return {
         duplicate: true,
-        frame: createRelayFrame(duplicate.sequence, decodeBase64Url(duplicate.message_base64url))
+        frame: createRelayFrame(duplicate.sequence, decodeBase64Url(duplicate.message_base64url)),
+        rate_limited: false
       };
     }
-    this.#admit(now);
     const usage = this.ctx.storage.sql.exec(
       "SELECT COUNT(*) AS count, COALESCE(SUM(length(message_base64url)), 0) AS encoded_bytes FROM messages"
     ).one();
@@ -189,7 +197,6 @@ export class MortalOSRoom extends DurableObject {
     ) {
       throw new RelayProtocolError("RELAY_LIMIT", "room storage ceiling reached");
     }
-    const expiresAt = this.#ensureRoom(roomId, now);
     const inserted = this.ctx.storage.sql.exec(
       `INSERT INTO messages(message_id, message_base64url, received_at, expires_at)
        VALUES (?, ?, ?, ?) RETURNING sequence`,
@@ -198,9 +205,11 @@ export class MortalOSRoom extends DurableObject {
       now,
       expiresAt
     ).one();
-    const currentAlarm = await this.ctx.storage.getAlarm();
-    if (currentAlarm === null || expiresAt < currentAlarm) await this.ctx.storage.setAlarm(expiresAt);
-    return { duplicate: false, frame: createRelayFrame(inserted.sequence, opened.bytes) };
+    return {
+      duplicate: false,
+      frame: createRelayFrame(inserted.sequence, opened.bytes),
+      rate_limited: false
+    };
   }
 
   async fetchRange(roomId, after = 0, limit = RELAY_LIMITS.range_limit) {
@@ -208,9 +217,10 @@ export class MortalOSRoom extends DurableObject {
     if (!Number.isSafeInteger(after) || after < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > RELAY_LIMITS.range_limit) {
       throw new RelayProtocolError("RELAY_SCHEMA", "invalid range");
     }
-    const room = this.ctx.storage.sql.exec("SELECT room_id FROM room_metadata LIMIT 1").toArray()[0];
-    if (room && room.room_id !== roomId) throw new RelayProtocolError("RELAY_ROOM", "room mismatch");
-    return this.ctx.storage.sql.exec(
+    if (await this.#admitRoom(roomId, Date.now()) === null) {
+      return { frames: [], rate_limited: true };
+    }
+    const frames = this.ctx.storage.sql.exec(
       `SELECT sequence, message_id, message_base64url FROM messages
        WHERE sequence > ? ORDER BY sequence LIMIT ?`,
       after,
@@ -221,11 +231,15 @@ export class MortalOSRoom extends DurableObject {
       message_id: row.message_id,
       sequence: row.sequence
     }));
+    return { frames, rate_limited: false };
   }
 
   async presence(roomId) {
     assertRoomId(roomId);
     const now = Date.now();
+    if (await this.#admitRoom(roomId, now) === null) {
+      return { endpoints: [], rate_limited: true };
+    }
     this.ctx.storage.sql.exec("DELETE FROM presence WHERE expires_at <= ?", now);
     const endpoints = new Set(this.ctx.storage.sql.exec(
       "SELECT endpoint_id FROM presence ORDER BY endpoint_id"
@@ -234,7 +248,7 @@ export class MortalOSRoom extends DurableObject {
       const endpointId = socket.deserializeAttachment()?.endpoint_id;
       if (typeof endpointId === "string") endpoints.add(endpointId);
     }
-    return [...endpoints].sort();
+    return { endpoints: [...endpoints].sort(), rate_limited: false };
   }
 
   async touchPresence(roomId, endpointId) {
@@ -243,7 +257,7 @@ export class MortalOSRoom extends DurableObject {
       throw new RelayProtocolError("RELAY_SCHEMA", "invalid endpoint ID");
     }
     const now = Date.now();
-    this.#ensureRoom(roomId, now);
+    if (await this.#admitRoom(roomId, now) === null) return { rate_limited: true };
     this.ctx.storage.sql.exec("DELETE FROM presence WHERE expires_at <= ?", now);
     const count = this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM presence").one().count;
     const exists = this.ctx.storage.sql.exec(
@@ -257,19 +271,33 @@ export class MortalOSRoom extends DurableObject {
       endpointId,
       now + 15_000
     );
-    return { endpoint_id: endpointId, expires_at: now + 15_000 };
+    return { endpoint_id: endpointId, expires_at: now + 15_000, rate_limited: false };
   }
 
-  async connect(roomId, endpointId) {
+  async #openSocket(roomId, endpointId) {
     assertRoomId(roomId);
     if (typeof endpointId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(endpointId)) {
       throw new RelayProtocolError("RELAY_SCHEMA", "invalid endpoint ID");
     }
-    this.#ensureRoom(roomId, Date.now());
+    if (await this.#admitRoom(roomId, Date.now()) === null) {
+      return responseJson({ code: "RELAY_RATE", status: "reject" }, 429);
+    }
     const pair = new WebSocketPair();
     pair[1].serializeAttachment({ endpoint_id: endpointId, room_id: roomId });
     this.ctx.acceptWebSocket(pair[1]);
     return new Response(null, { status: 101, webSocket: pair[0] });
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (
+      request.method !== "GET" ||
+      url.pathname !== "/__mortalos/connect" ||
+      request.headers.get("upgrade")?.toLowerCase() !== "websocket"
+    ) {
+      return responseJson({ code: "RELAY_METHOD", status: "reject" }, 405);
+    }
+    return this.#openSocket(url.searchParams.get("room"), url.searchParams.get("endpoint"));
   }
 
   async webSocketMessage(socket, message) {
@@ -289,6 +317,10 @@ export class MortalOSRoom extends DurableObject {
       if (!publicBytes) throw new RelayProtocolError("RELAY_PARSE", "invalid publish bytes");
       const attachment = socket.deserializeAttachment();
       const result = await this.publish(attachment.room_id, publicBytes);
+      if (result.rate_limited) {
+        socket.send(new TextDecoder().decode(canonicalBytes({ code: "RELAY_RATE", status: "reject" })));
+        return;
+      }
       const response = new TextDecoder().decode(canonicalBytes(result.frame));
       for (const peer of this.ctx.getWebSockets()) {
         try { peer.send(response); } catch { /* disconnected peers disappear from getWebSockets */ }
@@ -301,19 +333,43 @@ export class MortalOSRoom extends DurableObject {
     }
   }
 
+  async webSocketClose(_socket, _code, _reason, _wasClean) {
+    // Hibernatable sockets are already removed from getWebSockets() by the runtime.
+  }
+
+  async webSocketError(socket) {
+    try { socket.close(1011, "relay socket error"); } catch { /* socket is already gone */ }
+  }
+
   async alarm() {
     const now = Date.now();
     this.ctx.storage.sql.exec("DELETE FROM messages WHERE expires_at <= ?", now);
     this.ctx.storage.sql.exec("DELETE FROM rate_limits WHERE bucket < ?", Math.floor(now / 60_000) - 1);
     this.ctx.storage.sql.exec("DELETE FROM presence WHERE expires_at <= ?", now);
-    const next = this.ctx.storage.sql.exec("SELECT MIN(expires_at) AS expires_at FROM messages").one().expires_at;
-    if (next === null) {
+    const roomExpiry = this.ctx.storage.sql.exec(
+      "SELECT expires_at FROM room_metadata LIMIT 1"
+    ).toArray()[0]?.expires_at ?? null;
+    if (roomExpiry !== null && roomExpiry <= now) {
+      this.ctx.storage.sql.exec("DELETE FROM messages");
+      this.ctx.storage.sql.exec("DELETE FROM presence");
+      this.ctx.storage.sql.exec("DELETE FROM rate_limits");
       this.ctx.storage.sql.exec("DELETE FROM room_metadata");
       for (const socket of this.ctx.getWebSockets()) socket.close(1001, "room expired");
       await this.ctx.storage.deleteAlarm();
-    } else {
-      await this.ctx.storage.setAlarm(next);
+      return;
     }
+    const deadlines = [
+      roomExpiry,
+      this.ctx.storage.sql.exec("SELECT MIN(expires_at) AS expires_at FROM messages").one().expires_at,
+      this.ctx.storage.sql.exec("SELECT MIN(expires_at) AS expires_at FROM presence").one().expires_at
+    ].filter((value) => value !== null && value > now);
+    if (deadlines.length === 0) {
+      this.ctx.storage.sql.exec("DELETE FROM room_metadata");
+      for (const socket of this.ctx.getWebSockets()) socket.close(1001, "room expired");
+      await this.ctx.storage.deleteAlarm();
+      return;
+    }
+    await this.ctx.storage.setAlarm(Math.min(...deadlines));
   }
 }
 
@@ -351,7 +407,17 @@ export default {
         }
         const opened = decodeRelayMessageBytes(await requestBytes(request));
         const result = await stub.publish(roomId, opened.bytes);
-        return responseJson(result, result.duplicate ? 200 : 201, origin);
+        if (result.rate_limited) {
+          return responseJson({ code: "RELAY_RATE", status: "reject" }, 429, origin);
+        }
+        const frame = {
+          format: result.frame.format,
+          message_base64url: result.frame.message_base64url,
+          message_id: result.frame.message_id,
+          sequence: result.frame.sequence
+        };
+        const duplicate = result.duplicate === true;
+        return responseJson({ duplicate, frame }, duplicate ? 200 : 201, origin);
       }
       if (route.action === "messages" && request.method === "GET") {
         const url = new URL(request.url);
@@ -365,10 +431,24 @@ export default {
         if (!Number.isSafeInteger(after) || !Number.isSafeInteger(limit) || limit > RELAY_LIMITS.range_limit) {
           throw new RelayProtocolError("RELAY_SCHEMA", "invalid range");
         }
-        return responseJson({ frames: await stub.fetchRange(roomId, after, limit) }, 200, origin);
+        const result = await stub.fetchRange(roomId, after, limit);
+        if (result.rate_limited) {
+          return responseJson({ code: "RELAY_RATE", status: "reject" }, 429, origin);
+        }
+        const frames = result.frames.map((frame) => ({
+          format: frame.format,
+          message_base64url: frame.message_base64url,
+          message_id: frame.message_id,
+          sequence: frame.sequence
+        }));
+        return responseJson({ frames }, 200, origin);
       }
       if (route.action === "presence" && request.method === "GET") {
-        return responseJson({ endpoints: await stub.presence(roomId) }, 200, origin);
+        const result = await stub.presence(roomId);
+        if (result.rate_limited) {
+          return responseJson({ code: "RELAY_RATE", status: "reject" }, 429, origin);
+        }
+        return responseJson({ endpoints: [...result.endpoints] }, 200, origin);
       }
       if (route.action === "presence" && request.method === "POST") {
         if (request.headers.get("content-type") !== "application/json") {
@@ -383,15 +463,32 @@ export default {
         ) {
           throw new RelayProtocolError("RELAY_SCHEMA", "invalid presence update");
         }
-        return responseJson(await stub.touchPresence(roomId, value.endpoint_id), 200, origin);
+        const touched = await stub.touchPresence(roomId, value.endpoint_id);
+        if (touched.rate_limited) {
+          return responseJson({ code: "RELAY_RATE", status: "reject" }, 429, origin);
+        }
+        return responseJson({ endpoint_id: touched.endpoint_id, expires_at: touched.expires_at }, 200, origin);
       }
       if (route.action === "connect" && request.method === "GET" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
         const endpointId = new URL(request.url).searchParams.get("endpoint");
         if (!endpointId || endpointId.length > MAX_ENDPOINT_ID) throw new RelayProtocolError("RELAY_SCHEMA", "endpoint required");
-        return stub.connect(roomId, endpointId);
+        const internalUrl = new URL("https://mortalos-relay.invalid/__mortalos/connect");
+        internalUrl.searchParams.set("endpoint", endpointId);
+        internalUrl.searchParams.set("room", roomId);
+        const connected = await stub.fetch(new Request(internalUrl, { headers: { upgrade: "websocket" } }));
+        if (connected.status === 429) {
+          return responseJson({ code: "RELAY_RATE", status: "reject" }, 429, origin);
+        }
+        return connected;
       }
       return responseJson({ code: "RELAY_METHOD", status: "reject" }, 405, origin, { allow: "GET, POST, OPTIONS" });
     } catch (error) {
+      if (!(error instanceof RelayProtocolError) && error?.code !== "RELAY_RATE") {
+        console.error("MortalOS relay unavailable", {
+          message: error instanceof Error ? error.message : "unknown failure",
+          name: error instanceof Error ? error.name : typeof error
+        });
+      }
       return failure(error, origin);
     }
   }

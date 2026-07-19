@@ -37,7 +37,7 @@ describe("MortalOSRoom runtime", () => {
     const duplicate = await stub.publish(ROOM, bytes);
     expect(duplicate.duplicate).toBe(true);
     expect(duplicate.frame).toEqual(first.frame);
-    expect(await stub.fetchRange(ROOM, 0, 128)).toEqual([first.frame]);
+    expect((await stub.fetchRange(ROOM, 0, 128)).frames).toEqual([first.frame]);
 
     await runInDurableObject(stub, async (_instance, state) => {
       const tables = state.storage.sql.exec(
@@ -53,7 +53,7 @@ describe("MortalOSRoom runtime", () => {
     });
 
     await evictDurableObject(stub);
-    expect(await stub.fetchRange(ROOM, 0, 128)).toEqual([first.frame]);
+    expect((await stub.fetchRange(ROOM, 0, 128)).frames).toEqual([first.frame]);
   });
 
   it("alarm expiry removes durable messages and survives an explicit runtime restart", async () => {
@@ -66,7 +66,77 @@ describe("MortalOSRoom runtime", () => {
     });
     await evictDurableObject(stub);
     expect(await runDurableObjectAlarm(stub)).toBe(true);
-    expect(await stub.fetchRange(room, 0, 128)).toEqual([]);
+    expect((await stub.fetchRange(room, 0, 128)).frames).toEqual([]);
+  });
+
+  it("admits every valid room operation and returns canonical 429 for duplicate floods", async () => {
+    const floodRoom = "DDDDDDDDDDDDDDDDDDDDDD";
+    const floodPath = `/v1/rooms/${floodRoom}/messages`;
+    const body = publicMessage();
+    const floodStub = env.MORTALOS_ROOM.getByName(floodRoom);
+    expect((await floodStub.publish(floodRoom, body)).duplicate).toBe(false);
+    for (let request = 0; request < 119; request += 1) {
+      const response = await relayRequest(floodPath, {
+        method: "POST",
+        body,
+        headers: { "content-type": "application/json" }
+      });
+      expect(response.status, `request ${request + 1}: ${await response.clone().text()}`)
+        .toBe(200);
+    }
+    const limited = await relayRequest(floodPath, {
+      method: "POST",
+      body,
+      headers: { "content-type": "application/json" }
+    });
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("access-control-allow-origin")).toBe("https://mortal-os.com");
+    expect(await limited.text()).toBe('{"code":"RELAY_RATE","status":"reject"}');
+
+    const operationRoom = "EEEEEEEEEEEEEEEEEEEEEE";
+    const stub = env.MORTALOS_ROOM.getByName(operationRoom);
+    expect((await stub.fetchRange(operationRoom, 0, 128)).frames).toEqual([]);
+    expect((await stub.presence(operationRoom)).endpoints).toEqual([]);
+    await stub.touchPresence(operationRoom, "endpoint-a");
+    const connection = await relayRequest(`/v1/rooms/${operationRoom}/connect?endpoint=endpoint-b`, {
+      headers: { upgrade: "websocket" }
+    });
+    expect(connection.status).toBe(101);
+    await runInDurableObject(stub, async (_instance, state) => {
+      expect(state.storage.sql.exec(
+        "SELECT request_count FROM rate_limits"
+      ).one().request_count).toBe(4);
+      expect(await state.storage.getAlarm()).not.toBeNull();
+    });
+  }, 30_000);
+
+  it("schedules and executes TTL cleanup for presence-only and connect-only rooms", async () => {
+    for (const [room, operation] of [
+      ["FFFFFFFFFFFFFFFFFFFFFF", async (stub, roomId) => stub.touchPresence(roomId, "presence-only")],
+      ["GGGGGGGGGGGGGGGGGGGGGG", async (_stub, roomId) => {
+        const response = await relayRequest(`/v1/rooms/${roomId}/connect?endpoint=connect-only`, {
+          headers: { upgrade: "websocket" }
+        });
+        expect(response.status).toBe(101);
+      }]
+    ]) {
+      const stub = env.MORTALOS_ROOM.getByName(room);
+      await operation(stub, room);
+      await runInDurableObject(stub, async (_instance, state) => {
+        expect(await state.storage.getAlarm()).not.toBeNull();
+        expect(state.storage.sql.exec("SELECT COUNT(*) AS count FROM room_metadata").one().count).toBe(1);
+        state.storage.sql.exec("UPDATE room_metadata SET expires_at = 0");
+        await state.storage.setAlarm(Date.now() + 60_000);
+      });
+      await evictDurableObject(stub);
+      expect(await runDurableObjectAlarm(stub)).toBe(true);
+      await runInDurableObject(stub, async (_instance, state) => {
+        expect(state.storage.sql.exec("SELECT COUNT(*) AS count FROM room_metadata").one().count).toBe(0);
+        expect(state.storage.sql.exec("SELECT COUNT(*) AS count FROM presence").one().count).toBe(0);
+        expect(state.storage.sql.exec("SELECT COUNT(*) AS count FROM rate_limits").one().count).toBe(0);
+        expect(await state.storage.getAlarm()).toBeNull();
+      });
+    }
   });
 
   it("ingress enforces exact origin, media type, canonical schema, size, and range ceilings", async () => {

@@ -61,12 +61,19 @@ Implemented and focused-PASS:
 - **Transport:** seeded duplicate/reorder/drop/partition/reconnect/fork schedules
   converge or surface a fork in Node and Chromium.
 - **Relay:** Durable Object SQLite, hibernating WebSocket, presence, bounded catch-up,
-  TTL alarm, strict CORS/schema/size limits, restart persistence, and dry-run compile
-  pass locally.
+  strict CORS/schema/size limits, and restart persistence pass locally. Duplicate
+  publish, range/presence reads, presence writes, and connect share one 120/min room
+  ceiling; the 121st duplicate returns canonical `429`. Presence-only and
+  connect-only rooms schedule and execute complete TTL cleanup.
 - **Two-browser L2:** English and Korean actual-Chromium runs create in A, join in B,
   accept one custody handoff, close A, and advance the same identity in B from
   sequence 1 to 2. Public relay data contains neither private-key material nor a
   verdict field.
+- **Persistent-profile L2 repetition:** two distinct persistent Chromium user-data
+  directories completed 20/20 consecutive A→B handoffs. Each run closed profile A's
+  browser process after acceptance; profile B continued the same `organism_id` at
+  sequence 2 without A's key. Pending EN/KO proposal text did not claim verification
+  before B's local accept path ran.
 - **Premature-loss negative:** A closes before accepted handoff; B remains read-only
   and `stalled`, with no authority or death claim.
 - **Three-endpoint L3:** all three complementary loss pairs continue; B+C repair A
@@ -79,14 +86,22 @@ Implemented and focused-PASS:
   `/ko/`, localized first paint, catalog/placeholder parity, no locale-dependent
   protocol bytes, QR generated locally, and advanced evidence collapsed.
 - **UX/performance:** the latest full-suite three-run cold-cache gate produced median
-  LCP **294.9 ms**, CLS **0**, TBT proxy **35 ms**, and DOM interactive **166.2 ms**.
+  LCP **400.4 ms**, CLS **0**, TBT proxy **27.0 ms**, and DOM interactive **261.4 ms**.
   Stable screenshot
   hashes cover EN/KO idle, joining, alive, stalled, and forked states.
 
-The complete ordered `npm test` candidate chain passed in **1,475.8 seconds**, including
-all new stage gates, portable 10,000/10,000 serialized adversarial rejection, four
+The restarted full release sequence (`npm run verify:spec` followed by the complete
+ordered `npm test`) passed in **1,946.4 seconds**. The `npm test` portion included all
+stage gates, portable 10,000/10,000 serialized adversarial rejection, four
 byte-identical JavaScript/Python state records, eleven R1 differential records,
 singleton, and the exact H2 trace.
+
+The first immutable reviewer snapshot correctly returned `FAIL`: it found false
+clean-diff evidence, relay admission/TTL gaps, an unexecuted persistent-profile
+criterion, and pre-validation “verified” wording. The current candidate removes the
+whitespace, adds executable flood/idle-room and 20-profile gates, and labels the
+proposal as received/pending until local acceptance. A fresh reviewer snapshot is
+still mandatory.
 
 Candidate promotion still requires an immutable commit and clean-clone gate,
 independent review, expected-head merge, post-merge CI, exact-main relay and Pages
@@ -96,15 +111,15 @@ Final local release-gate readout:
 
 | Gate | Result |
 | --- | --- |
-| Ordered `npm test` | PASS, 1,475.8s |
+| Ordered `npm test` | PASS within the restarted full release sequence, 1,946.4s total wrapper |
 | Actual Chromium portable corpus | PASS, Chrome 149, byte-identical, 10,000/10,000 rejected |
-| Actual Chromium Lab | PASS, 129.8s, all EN/KO/import/durable/A→B/a11y/responsive/request gates |
+| Actual Chromium Lab | PASS, 564.7s, EN/KO/import/durable/A→B/a11y/responsive plus 20/20 two-persistent-profile handoffs |
 | Transport differential | PASS, 10,000 schedules / 30,000 recoveries, digest `sha256:TdZsm_fWivLD5SCYfBvMs_ytghOgYxeDGet_y6mrgdM` |
-| Trusted-core coverage | PASS, line 94.70%, branch 92.23%, function 95.22% |
+| Trusted-core coverage | PASS, line 94.70%, branch 92.31%, function 95.22% |
 | Governance coverage | PASS, 30/30; line 92.68%, branch 84.39%, function 93.75% |
 | Dependency audit | PASS, zero vulnerabilities at `moderate` threshold |
-| Package dry run | PASS, 136 files, 340,831-byte package / 1,340,694-byte unpacked |
-| Build reproducibility | PASS, two clean output directories, seven exact assets, digest `sha256:PCrTkHQi5mCwkOONcI17zT6m14ToxM7Epts3Mik0D4Q` |
+| Package dry run | PASS, 137 files; exact archive sizes belong in the immutable PR validation to avoid self-reference |
+| Build reproducibility | PASS, two clean output directories, seven exact assets, digest `sha256:ulw95QKMIrzn5-HSenNydlBLGW-wRY_woqVcWr_jils` |
 | High-confidence secret scan | PASS, zero matches; private feedback value absent from repository |
 
 The clean-clone gate is performed from the immutable candidate commit immediately

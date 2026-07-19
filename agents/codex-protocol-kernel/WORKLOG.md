@@ -766,3 +766,32 @@ result, and reproducible verification.
   portable 10,000/10,000 rejection, four state and eleven R1 JS/Python differential
   records, singleton, and H2. Coverage/audit/package/secret/clean-clone and external
   release gates remain separate.
+
+## 2026-07-19 KST — PR #23 independent-review remediation
+
+- Reviewer snapshot `da3d69182d74bd0ba5a0fea4a09e6ca738976440` correctly
+  returned `FAIL` and was not merged. It found trailing whitespace contradicting the
+  PR validation, per-room admission and idle-room alarm gaps, no execution of the
+  exact 20-run persistent-profile S8 criterion, and UI wording that called a relay
+  proposal verified before local acceptance.
+- Relay admission now covers duplicate publish, range/presence reads, presence
+  writes, and WebSocket connect. The 121st same-room duplicate returns canonical
+  `429`; presence-only and connect-only rooms schedule alarms and remove metadata,
+  presence, rate buckets, and sockets at expiry. The ingress also avoids the reserved
+  `Fetcher.connect` name, normalizes DO RPC results before canonical encoding, and
+  implements hibernated socket close/error handlers.
+- `verify:persistent-handoff` launches two distinct persistent Chromium user-data
+  profiles, refuses fewer than 20 runs, closes A's browser process after every
+  accepted handoff, and requires B to advance the same identity to sequence 2.
+  English and Korean pending copy remains explicitly unverified until B accepts.
+- Focused relay runtime passed 5/5 without uncaught runtime errors. The persistent
+  profile gate passed 20/20 alone in 1,134.9 seconds and again inside the complete
+  Lab command, where ordinary Lab plus the 20-run gate passed in 564.7 seconds.
+- The restarted full release sequence (`verify:spec` then `npm test`) passed in
+  1,946.4 seconds. Chromium portable 10,000/10,000, transport 10,000/30,000 with
+  digest `sha256:TdZsm_fWivLD5SCYfBvMs_ytghOgYxeDGet_y6mrgdM`, trusted-core
+  coverage 94.70/92.31/95.22, governance coverage 92.68/84.39/93.75, and moderate
+  dependency audit with zero vulnerabilities passed.
+- Required next action remains immutable commit/push, exact-head CI and policy,
+  complete fresh reviewer snapshot, expected-head merge, then exact production and
+  Devpost readback. The author does not self-review or merge.
