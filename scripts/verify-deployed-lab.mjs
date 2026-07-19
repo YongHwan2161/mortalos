@@ -12,6 +12,14 @@ function digest(bytes) {
   return `sha256:${encodeBase64Url(createHash("sha256").update(bytes).digest())}`;
 }
 
+function deployedAssetUrl(assetPath, origin) {
+  if (assetPath === "index.html") return new URL("/", origin);
+  if (assetPath.endsWith("/index.html")) {
+    return new URL(assetPath.slice(0, -"index.html".length), origin);
+  }
+  return new URL(assetPath, origin);
+}
+
 async function verifyOnce({ url, expectedCommit }) {
   const origin = new URL(url);
   assert.equal(origin.protocol, "https:", "deployed Lab must use HTTPS");
@@ -53,9 +61,7 @@ async function verifyOnce({ url, expectedCommit }) {
     assert.equal(remote.source_commit, expectedCommit);
 
     for (const asset of remote.files) {
-      const assetUrl = asset.path === "index.html"
-        ? new URL("/", origin)
-        : new URL(asset.path, origin);
+      const assetUrl = deployedAssetUrl(asset.path, origin);
       const assetResponse = await fetch(assetUrl, {
         cache: "no-store",
         redirect: "error"

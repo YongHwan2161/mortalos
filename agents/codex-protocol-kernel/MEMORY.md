@@ -2,17 +2,19 @@
 
 Last reconciled: 2026-07-20 KST
 
-Branch: `agent/codex-protocol-kernel--pages-config-validation`
+Branch: `agent/codex-protocol-kernel--canonical-locale-route`
 
-Base: `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`
+Base: `44771ae83e2d7450ff9cad654e7a0fae6d144c9e`
 
 ## Verified merged/public state
 
-- Repository `main` is `7d0b5d2…` after independently reviewed PR #25. Its
-  exact-main Verify `29697373508/1` passed. Deploy `29697373574/2` passed source
-  verification and updated the relay/Durable Object, but Pages validation rejected
-  the Workers-only root `observability` key before upload; the public Pages manifest
-  therefore remains the accepted `8930992…` deployment.
+- Repository `main` is `44771ae…` after independently reviewed PR #26. Official
+  Deploy `29698934167/1` passed source, relay/Durable Object, and Pages upload. The
+  public seven-asset manifest is exact at main with digest
+  `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME`, but final acceptance failed on
+  a verifier false-negative: Cloudflare redirects `ko/index.html` to canonical
+  `/ko/`, while the verifier rejected the non-canonical request before comparing the
+  exact localized bytes.
 - Post-merge Verify `29662790686` and deploy `29662790723` passed.
 - Canonical judge URL is `https://mortal-os.com/`; `pages.dev` is incident fallback.
 - Public accepted claim remains the earlier L0 single-browser/GPT guided proof until
@@ -35,9 +37,8 @@ Base: `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`
 - GPT is non-authoritative and no longer part of the main journey. Production config
   is disabled until an explicitly confirmed Turnstile widget/secret exists; deployment
   does not inject OpenAI/Turnstile secrets while disabled.
-- Relay code and Durable Object migration are locally verified but not production-
-  accepted. `relay.mortal-os.com` is not a claim until exact-main deployment and the
-  remote multi-browser gate pass.
+- Relay code and Durable Object migration are deployed at exact main, but complete
+  production acceptance remains open until the remote multi-browser gate passes.
 - The first PR #23 review snapshot failed closed. Its four findings are remediated in
   the current unmerged tree: clean diff evidence; every-operation room admission and
   presence/connect-only TTL alarms; an executable 20-run two-persistent-profile
@@ -79,6 +80,11 @@ Base: `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`
   unsupported Workers-only `observability` key. The current minimal candidate removes
   that key only from Pages and freezes the Pages/relay observability boundary in a
   focused regression.
+- PR #26 passed policy `29698402179/1`, Verify `29698363683/1`, immutable review,
+  and expected-head merge as `44771ae…`. Its official Deploy proved the Pages config
+  repair and published the exact artifact. The current candidate maps both root and
+  nested manifest index files to Cloudflare's canonical directory routes while
+  preserving strict byte/header/MIME/digest comparison and redirect rejection.
 
 ## Stable decisions
 
@@ -95,8 +101,8 @@ Base: `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`
 
 ## Current priority
 
-1. Publish and independently review the minimal Pages-config correction.
-2. Merge only its expected head and require natural exact-main Deploy success.
+1. Publish and independently review the canonical localized-index verifier repair.
+2. Merge only its expected head and require official exact-main Deploy success.
 3. Verify relay, Pages manifest/source, and public EN/KO multi-browser acceptance.
 4. Promote the Devpost story or video only after public acceptance.
 5. Keep the last accepted deployment and existing compliant video as rollback.

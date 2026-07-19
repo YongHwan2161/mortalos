@@ -886,3 +886,31 @@ result, and reproducible verification.
   action is exact-head gates, immutable independent review, expected-head merge,
   natural exact-main deploy, public EN/KO multi-browser acceptance, and Devpost
   reconciliation. No manual deployment bypass.
+
+## 2026-07-20 KST — Canonical localized-index verification correction
+
+- PR #26 passed body-bound policy `29698402179/1`, exact-head Verify
+  `29698363683/1`, immutable reviewer attestation `5016895518`, and expected-head
+  squash merge as `44771ae83e2d7450ff9cad654e7a0fae6d144c9e` with reviewed-tree
+  equality. GitHub did not create the normal push check suite, so the repository's
+  official `workflow_dispatch` path launched exact-main Deploy `29698934167/1`.
+- That run passed exact-source verification, relay/Durable Object deployment, and
+  Pages upload. Live readback shows source commit `44771ae…`, seven exact assets, and
+  digest `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME`. Final acceptance then
+  failed because the verifier requested `ko/index.html` with redirects forbidden;
+  Cloudflare correctly returns `308 Location: /ko/`. The other six canonical asset
+  requests returned 200 with their exact media types.
+- Correction branch `agent/codex-protocol-kernel--canonical-locale-route` maps root
+  and nested `*/index.html` manifest entries to canonical directory URLs, while
+  still comparing the returned bytes, MIME, headers, and digest with the exact local
+  index file. The mock now exposes the real nested redirect and requires `/ko/` to
+  be requested instead of `/ko/index.html`; a mutated localized index is still
+  rejected through that canonical route.
+- Focused evidence: clean `npm ci` with zero vulnerabilities; Lab 9/9; license,
+  specification, governance 30/30, diff/secret checks, and direct H3B verification
+  of the live seven-asset `44771ae…` deployment and `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME`
+  digest PASS.
+- Required next action: focused and exact-head gates, immutable independent review,
+  expected-head merge, official exact-main Deploy, full public EN/KO multi-browser
+  acceptance, and Devpost reconciliation. No verifier relaxation or redirect-follow
+  bypass is permitted.
