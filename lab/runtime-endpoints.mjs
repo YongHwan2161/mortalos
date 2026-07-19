@@ -1,5 +1,6 @@
 export const MORTALOS_PRIMARY_ORIGIN = "https://mortal-os.com";
 export const MORTALOS_SAFE_API_ORIGIN = "https://mortalos-lab-yonghwan2161.pages.dev";
+export const MORTALOS_RELAY_ORIGIN = "https://relay.mortal-os.com";
 export const MORTALOS_SCENARIO_PATH = "/api/scenarios";
 
 export function scenarioApiUrl(pageUrl) {

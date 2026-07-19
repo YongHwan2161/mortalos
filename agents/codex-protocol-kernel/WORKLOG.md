@@ -649,7 +649,7 @@ result, and reproducible verification.
 - Devpost: refreshed live requirements, project description, answers 27949/27951,
   and all required answers. Submission `1080076` remained `Submitted` with original
   non-null `submitted_at`, Individual/Korea/Developer Tools, the public 2:37 video,
-  and exact Session ID `019f6b83-d606-70b0-a712-20c22deaac63`.
+  and exact private feedback-field readback (value intentionally omitted from the repository).
 - Local verification: full `npm test` PASS in 1,397.4 seconds; governance 30/30;
   conformance 76/76; property 10,000; Lab/API 17/17; portable and actual Chromium
   byte equality with 10,000/10,000 rejects; R1 5/5 plus eight JS/Python records;
@@ -718,3 +718,114 @@ result, and reproducible verification.
   traceability, and agent ledgers so the accepted custom host is canonical and
   `pages.dev` is explicitly only the incident fallback. No protocol or model-authority
   semantics change.
+
+## 2026-07-19 KST — Multi-browser plan S0 accepted baseline
+
+- Base/branch: exact `origin/main` and task HEAD both
+  `8930992e5483c6b645af197348d5725a8648bd09` on
+  `agent/codex-protocol-kernel--multi-browser-bilingual-plan`.
+- Full local `npm test` exited 0 in 1,235 seconds: license/spec/links/governance,
+  conformance, 10,000-case properties, Lab/API, R1, build, portable Node/browser
+  10,000/10,000, JS/Python differential, singleton, and H2 all passed.
+- Actual Chromium differential passed with byte-identical committed/browser results
+  and 10,000/10,000 adversarial rejects. Three-context Lab acceptance passed all
+  quorum pairs, storage absence, evidence replay, responsive/accessibility, GPT
+  witness, and corpus gates.
+- Public `https://mortal-os.com/` exact-source verification passed with six assets,
+  aggregate digest `sha256:HYNcJotcdxxFCItMhI7_RP6_3oqpwTFsqcbS83xMD3A`, and
+  source commit `8930992e5483c6b645af197348d5725a8648bd09`.
+- Claim audit remains L0: one browser controls three logical keys and one failure
+  domain. No persistence, remote custody succession, state transition, or independent
+  endpoint resilience is currently claimed.
+
+## 2026-07-19 KST — Multi-browser S1–S11 local release candidate
+
+- Implemented optional GPT cost controls with atomic actor/global-minute/global-day
+  admission, circuit breaker, Turnstile boundary, and deterministic fallback. The
+  production flag is disabled and the workflow injects no model/Turnstile secret
+  until an external widget is explicitly confirmed.
+- Added English `/` and Korean `/ko/`, localized first paint/catalog parity, R1
+  wire-only UI paths, public evidence import/replay, `mortalos-state/1` JavaScript/
+  Python parity, consent-gated durable participant storage, deterministic virtual
+  transport, and a Cloudflare Durable Object relay.
+- Actual Chromium proves EN/KO A→B custody handoff, A closure, and same-identity B
+  continuation. Node tests cover all complementary `2-of-3` endpoint losses and D
+  repair; ten isolated Chromium quorum runs passed with trace digest
+  `sha256:oCaFctzCFMgqRExG26PlZLvVh4nuosXpk65ghKxvSKU`.
+- Reworked the site around one protagonist and one primary journey; advanced evidence
+  is collapsed, QR generation is local, premature loss is visibly stalled, and
+  deterministic screenshots/performance gates passed. The final full-suite cold-
+  cache medians were LCP 294.9ms, CLS 0, and TBT proxy 35ms.
+- Reconciled README, docs map, short North Star, access/incubator profiles, release
+  evidence, Devpost copy package, and 2:30 video script. Private feedback-field data
+  is not duplicated in repository artifacts.
+- Remaining: full candidate suite/coverage/audit/package/secret checks, immutable
+  independent review, expected-head merge, post-merge CI, exact relay/Pages deploy,
+  public bilingual multi-browser acceptance, and Devpost/video final readback.
+- Full ordered `npm test` then passed in 1,475.8 seconds with all new stage gates,
+  portable 10,000/10,000 rejection, four state and eleven R1 JS/Python differential
+  records, singleton, and H2. Coverage/audit/package/secret/clean-clone and external
+  release gates remain separate.
+
+## 2026-07-19 KST — PR #23 independent-review remediation
+
+- Reviewer snapshot `da3d69182d74bd0ba5a0fea4a09e6ca738976440` correctly
+  returned `FAIL` and was not merged. It found trailing whitespace contradicting the
+  PR validation, per-room admission and idle-room alarm gaps, no execution of the
+  exact 20-run persistent-profile S8 criterion, and UI wording that called a relay
+  proposal verified before local acceptance.
+- Relay admission now covers duplicate publish, range/presence reads, presence
+  writes, and WebSocket connect. The 121st same-room duplicate returns canonical
+  `429`; presence-only and connect-only rooms schedule alarms and remove metadata,
+  presence, rate buckets, and sockets at expiry. The ingress also avoids the reserved
+  `Fetcher.connect` name, normalizes DO RPC results before canonical encoding, and
+  implements hibernated socket close/error handlers.
+- `verify:persistent-handoff` launches two distinct persistent Chromium user-data
+  profiles, refuses fewer than 20 runs, closes A's browser process after every
+  accepted handoff, and requires B to advance the same identity to sequence 2.
+  English and Korean pending copy remains explicitly unverified until B accepts.
+- Focused relay runtime passed 5/5 without uncaught runtime errors. The persistent
+  profile gate passed 20/20 alone in 1,134.9 seconds and again inside the complete
+  Lab command, where ordinary Lab plus the 20-run gate passed in 564.7 seconds.
+- The restarted full release sequence (`verify:spec` then `npm test`) passed in
+  1,946.4 seconds. Chromium portable 10,000/10,000, transport 10,000/30,000 with
+  digest `sha256:TdZsm_fWivLD5SCYfBvMs_ytghOgYxeDGet_y6mrgdM`, trusted-core
+  coverage 94.70/92.31/95.22, governance coverage 92.68/84.39/93.75, and moderate
+  dependency audit with zero vulnerabilities passed.
+- Required next action remains immutable commit/push, exact-head CI and policy,
+  complete fresh reviewer snapshot, expected-head merge, then exact production and
+  Devpost readback. The author does not self-review or merge.
+
+## 2026-07-19 KST — PR #23 second fail-closed rate-policy remediation
+
+- The fresh reviewer snapshot at `a5f56c6ffbaed1146b04afeafb3aa1a6fdc7a549`
+  returned `FAIL` and was not merged. Exact-head Verify `29691408680/1` and policy
+  `29691433408/1` were green, but a normal A+B session produced 80 relay operations
+  in 12 seconds (about 399/min) against the Worker's 120/min room ceiling. The
+  persistent acceptance server had no rate counter and could not observe this P1.
+- Added `src/transport/relay-policy.mjs` as the common Worker/browser/local-acceptance
+  contract. Message polling is 1s, presence touch/read are 3s, and two active
+  endpoints budget 204 scheduled operations/minute plus a 48-operation interaction
+  allowance under the 300/min ceiling.
+- The local relay now enforces the same fixed-window ceiling and records admitted and
+  rejected operations. Runtime coverage prepares the live bucket at 299, proves the
+  300th valid duplicate remains accepted and the 301st is canonical `429`, while all
+  valid operation classes remain admitted through the same path.
+- `verify:persistent-handoff` now measures the first two-profile active interval for
+  12 seconds, requires 32–48 operations and zero local `429`, then completes all 20
+  A→B handoffs with A process closure and B-only sequence-2 continuation. Focused
+  relay, i18n, Lab, build, and two remediated 20/20 persistent runs passed; the
+  evidence-logging run measured 39 operations/12s with zero local `429`.
+- Required next action: complete the restarted full local gates, publish one new
+  immutable head, wait for exact-head Verify/policy, and require a completely fresh
+  reviewer snapshot before any merge, deploy, or Devpost change.
+- Final remediation-tree evidence: ordered `npm test` PASS in 1,591.2 seconds; full
+  `verify:lab` PASS in 375.7 seconds, including 20/20 persistent-profile handoffs and
+  a repeated 39 operations/12s measurement with zero local `429` responses.
+- Trusted-core coverage remained 94.70/92.31/95.22 and governance coverage
+  92.68/84.39/93.75. Chrome 149 reproduced byte-identical portable results and
+  10,000/10,000 adversarial rejects; dependency audit found zero vulnerabilities.
+  Package dry-run contained a stable 138-file inventory. Archive/unpacked sizes
+  varied across checkout EOL/compression conditions and are deliberately not release
+  invariants. Two clean output directories reproduced seven assets at
+  `sha256:BXGfiKgl2rK_tpXyOZWr_9baW1xqK2UomjGOq4fd3ME`.

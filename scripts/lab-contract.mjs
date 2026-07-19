@@ -1,5 +1,5 @@
 import { extname } from "node:path";
-import { MORTALOS_SAFE_API_ORIGIN } from "../lab/runtime-endpoints.mjs";
+import { MORTALOS_RELAY_ORIGIN, MORTALOS_SAFE_API_ORIGIN } from "../lab/runtime-endpoints.mjs";
 
 const mediaTypes = Object.freeze({
   ".css": "text/css",
@@ -11,10 +11,11 @@ const mediaTypes = Object.freeze({
 
 export const LAB_CSP = [
   "default-src 'none'",
-  "script-src 'self'",
+  "script-src 'self' https://challenges.cloudflare.com",
   "style-src 'self'",
   "worker-src 'self'",
-  `connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN}`,
+  `connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN} ${MORTALOS_RELAY_ORIGIN} https://challenges.cloudflare.com`,
+  "frame-src https://challenges.cloudflare.com",
   "img-src 'none'",
   "font-src 'none'",
   "object-src 'none'",

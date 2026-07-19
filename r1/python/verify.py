@@ -210,9 +210,11 @@ def validate_genesis(raw: bytes) -> Accepted | dict[str, Any]:
             "custodian_key_ids": sorted(by_id),
             "genome_hash": body["genome_hash"],
             "kind": "genesis",
+            "next_custody_descriptor": descriptor(custodians, quorum),
             "next_state_root": body["initial_state_root"],
             "object_hash": "sha256:" + b64e(organism_raw),
             "organism_id": organism_id,
+            "protocol_version": body["protocol_version"],
             "sequence": "0",
             "status": "accept",
             "threshold": quorum["threshold"],
@@ -291,10 +293,12 @@ def validate_pulse(raw_envelope: bytes, raw_payload: bytes, parent: Accepted) ->
             "custodian_key_ids": sorted(next_by_id),
             "genome_hash": body["genome_hash"],
             "kind": "pulse",
+            "next_custody_descriptor": descriptor(next_custodians, next_quorum),
             "next_state_root": body["state_root"],
             "object_hash": pulse_hash,
             "organism_id": body["organism_id"],
             "parent_hash": body["parent_hash"],
+            "protocol_version": body["protocol_version"],
             "sequence": body["sequence"],
             "status": "accept",
             "threshold": next_quorum["threshold"],
@@ -311,44 +315,109 @@ def decode_record(record: Any) -> tuple[bytes, bytes]:
     return artifact(record["envelope"], "/history/envelope"), artifact(record["payload"], "/history/payload")
 
 
-def replay(operation: dict[str, Any]) -> tuple[dict[str, Any], Accepted | None]:
+@dataclass
+class ReplayState:
+    genesis: Accepted
+    accepted: dict[str, Accepted]
+    children: dict[str, set[str]]
+    approval_ids: dict[str, set[str]]
+    head: Accepted | None
+    fork_points: set[str]
+    forked: bool = False
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "accepted_objects": len(self.accepted),
+            "fork_points": [
+                {"child_hashes": sorted(self.children.get(parent, set())), "parent_hash": parent}
+                for parent in sorted(self.fork_points)
+            ],
+            "genesis_hash": self.genesis.public["object_hash"],
+            "head_hash": None if self.forked or self.head is None else self.head.public["object_hash"],
+            "organism_id": self.genesis.public["organism_id"],
+            "status": "forked" if self.forked else "linear",
+        }
+
+
+def verify_candidate(record: Any, state: ReplayState) -> Accepted | dict[str, Any]:
+    envelope_raw, payload_raw = decode_record(record)
+    try:
+        envelope = parse_canonical(envelope_raw, "envelope")
+        parent_hash = envelope.get("body", {}).get("parent_hash")
+    except (R1Failure, AttributeError):
+        parent_hash = None
+    parent = state.accepted.get(parent_hash)
+    if parent is None:
+        return rejection("E_PARENT_UNKNOWN", "/body/parent_hash", str(parent_hash))
+    return validate_pulse(envelope_raw, payload_raw, parent)
+
+
+def append_candidate(record: Any, state: ReplayState) -> dict[str, Any]:
+    envelope_raw, payload_raw = decode_record(record)
+    envelope = parse_canonical(envelope_raw, "envelope")
+    parent_hash = envelope.get("body", {}).get("parent_hash")
+    parent = state.accepted.get(parent_hash)
+    if parent is None:
+        return rejection("E_PARENT_UNKNOWN", "/body/parent_hash", str(parent_hash))
+    result = validate_pulse(envelope_raw, payload_raw, parent)
+    if not isinstance(result, Accepted):
+        return result
+    object_hash = result.public["object_hash"]
+    if object_hash in state.accepted:
+        return rejection("E_REPLAY_STALE", "/body", object_hash)
+    if state.forked:
+        return rejection("E_LINEAGE_ALREADY_FORKED", "", ",".join(sorted(state.fork_points)))
+    approvals = {entry["key_id"] for entry in envelope["approvals"]}
+    state.accepted[object_hash] = result
+    state.approval_ids[object_hash] = approvals
+    children = state.children.setdefault(parent_hash, set())
+    children.add(object_hash)
+    if len(children) > 1:
+        equivocating: set[str] = set()
+        for child_hash in children:
+            if child_hash != object_hash:
+                equivocating |= approvals & state.approval_ids.get(child_hash, set())
+        state.forked = True
+        state.head = None
+        state.fork_points.add(parent_hash)
+        return {
+            "child_hashes": sorted(children),
+            "code": "E_FORK_DETECTED",
+            "equivocating_key_ids": sorted(equivocating),
+            "parent_hash": parent_hash,
+            "status": "forked",
+        }
+    state.head = result
+    return result.public
+
+
+def replay(operation: dict[str, Any]) -> tuple[dict[str, Any], ReplayState | None]:
     genesis = validate_genesis(artifact(operation["genesis_envelope"], "/genesis_envelope"))
     if not isinstance(genesis, Accepted):
         return {"status": "genesis_rejected", "genesis": genesis}, None
-    accepted: dict[str, Accepted] = {genesis.public["object_hash"]: genesis}
-    head = genesis
+    state = ReplayState(
+        genesis=genesis,
+        accepted={genesis.public["object_hash"]: genesis},
+        children={},
+        approval_ids={},
+        head=genesis,
+        fork_points=set(),
+    )
     steps: list[dict[str, Any]] = []
     terminal: dict[str, Any] | None = None
     for record in operation["history"]:
-        envelope_raw, payload_raw = decode_record(record)
-        envelope = parse_canonical(envelope_raw, "envelope")
-        object_hash = tagged_hash("sha256:", DOMAINS["PULSE_ID"], canonical(envelope["body"]))
-        if object_hash in accepted:
-            terminal = rejection("E_REPLAY_STALE", "/body", object_hash)
-            steps.append(terminal)
-            break
-        result = validate_pulse(envelope_raw, payload_raw, head)
-        if not isinstance(result, Accepted):
+        result = append_candidate(record, state)
+        if result.get("status") != "accept":
             terminal = result
             steps.append(result)
             break
-        accepted[result.public["object_hash"]] = result
-        head = result
-        steps.append(result.public)
-    snapshot = {
-        "accepted_objects": len(accepted),
-        "fork_points": [],
-        "genesis_hash": genesis.public["object_hash"],
-        "head_hash": head.public["object_hash"],
-        "organism_id": genesis.public["organism_id"],
-        "status": "linear",
-    }
+        steps.append(result)
     return {
-        "snapshot": snapshot,
+        "snapshot": state.snapshot(),
         "status": "terminated" if terminal else "complete",
         "steps": steps,
         "terminal": terminal,
-    }, head
+    }, state
 
 
 def outcome(operation: dict[str, Any]) -> dict[str, Any]:
@@ -363,9 +432,10 @@ def outcome(operation: dict[str, Any]) -> dict[str, Any]:
         return replayed
     if name == "evaluate_mortality":
         require_keys(operation, {"format", "genesis_envelope", "history", "observation", "operation"}, "/")
-        replayed, head = replay(operation)
-        if head is None or replayed["status"] != "complete":
+        replayed, state = replay(operation)
+        if state is None or state.head is None or replayed["status"] != "complete":
             return {"status": "history_terminated", "terminal": replayed.get("terminal"), "snapshot": replayed.get("snapshot")}
+        head = state.head
         observation = require_keys(
             operation["observation"],
             {"authority_loss_irreversible", "latent_evidence_complete", "pending", "state_available", "usable_key_ids"},
@@ -393,6 +463,30 @@ def outcome(operation: dict[str, Any]) -> dict[str, Any]:
             "usable_keys": usable,
         }
         return {"mortality": mortality, "snapshot": replayed["snapshot"], "status": "complete"}
+    if name == "verify_candidate":
+        require_keys(operation, {"candidate", "format", "genesis_envelope", "history", "operation"}, "/")
+        replayed, state = replay(operation)
+        if state is None:
+            return {"status": "genesis_rejected", "genesis": replayed.get("genesis")}
+        if replayed["status"] != "complete":
+            return {"status": "history_terminated", "terminal": replayed.get("terminal"), "snapshot": replayed.get("snapshot")}
+        result = verify_candidate(operation["candidate"], state)
+        return {
+            "result": result.public if isinstance(result, Accepted) else result,
+            "snapshot": state.snapshot(),
+            "status": "complete",
+        }
+    if name == "append_candidates":
+        require_keys(operation, {"candidates", "format", "genesis_envelope", "history", "operation"}, "/")
+        replayed, state = replay(operation)
+        if state is None:
+            return {"status": "genesis_rejected", "genesis": replayed.get("genesis")}
+        if replayed["status"] != "complete":
+            return {"status": "history_terminated", "terminal": replayed.get("terminal"), "snapshot": replayed.get("snapshot")}
+        if not isinstance(operation["candidates"], list) or len(operation["candidates"]) > 128:
+            raise R1Failure("R1_LIMIT", "/candidates")
+        results = [append_candidate(record, state) for record in operation["candidates"]]
+        return {"results": results, "snapshot": state.snapshot(), "status": "complete"}
     raise R1Failure("R1_OPERATION", "/operation")
 
 

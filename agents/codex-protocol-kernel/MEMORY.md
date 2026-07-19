@@ -2,70 +2,83 @@
 
 Last reconciled: 2026-07-19 KST
 
-Branch: `agent/codex-protocol-kernel--canonical-domain`
+Branch: `agent/codex-protocol-kernel--multi-browser-bilingual-plan`
 
-Current base: `61cdd01865d7382066fec04d5dc1be7b1a68c8ae`
+Base: `8930992e5483c6b645af197348d5725a8648bd09`
 
-## Verified merged state
+## Verified merged/public state
 
-- MortalOS is a portable lifecycle/evidence kernel plus exact-source Cloudflare
-  Pages falsification Lab, not yet an OS, participant network, state-bearing digital
-  life, or ownerless model runtime.
-- P0/H3A/H3B, the bounded GPT-5.6 witness, the four-action judge path, and R1-A/R1-B
-  are merged. R1-C remains the next protocol implementation layer.
-- Accepted runtime `main` is `61cdd01865d7382066fec04d5dc1be7b1a68c8ae`
-  through PR #21. Post-merge Verify `29660983347` and deploy `29660983299` passed
-  with aggregate asset digest
-  `sha256:HYNcJotcdxxFCItMhI7_RP6_3oqpwTFsqcbS83xMD3A`.
-- The verified zero-install canonical judge URL is `https://mortal-os.com/`.
-- Devpost submission `1080076` is `Submitted`; its non-null submission time is
-  `2026-07-18T10:25:36.990-04:00`. The public narrated video is
-  `https://youtu.be/kR-TPuwoNaI` and the required Session ID is
-  `019f6b83-d606-70b0-a712-20c22deaac63`.
-- The entrant is an `Individual` in `Korea Republic of`. Official live requirements
-  do not impose a three-developer or three-tester gate.
+- Accepted `main` and public manifest source are `8930992…` through PR #22.
+- Post-merge Verify `29662790686` and deploy `29662790723` passed.
+- Canonical judge URL is `https://mortal-os.com/`; `pages.dev` is incident fallback.
+- Public accepted claim remains the earlier L0 single-browser/GPT guided proof until
+  the current candidate passes review, merge, relay/Pages deploy, and public readback.
+- Devpost submission `1080076` remains `Submitted`, Individual, Korea Republic of,
+  with non-null `submitted_at` and the public 2:37 video. The required private
+  feedback field has been exact-read back; its value is not stored in repository
+  artifacts.
 
-## Current canonical-domain boundary
+## Current unmerged candidate
 
-- `mortal-os.com` is registered, attached to the Pages project, `Active`, SSL-enabled,
-  and serves exact accepted static bytes with `no-store, no-transform`, strict CSP,
-  six valid asset digests, and no injected analytics beacon.
-- Direct custom-host inference previously reached HKG and returned Cloudflare
-  plaintext `502`; Smart and targeted placement did not clear it. PR #20 routes only
-  the exact `mortal-os.com` page origin to the accepted `pages.dev` API and permits
-  only that pair through bounded CSP/CORS/preflight. Every other origin fails closed.
-- Public acceptance passed: preflight `204`, valid GPT POST `200` with `gpt-5.6-sol`,
-  fixed 25/25 scenario/kernel/offline replay, exact manifest/six assets, and three
-  clean custom-host Chromium contexts.
-- Devpost public story, Try-it-out link, judge instructions, and installation answer
-  prefer `mortal-os.com`; status remains `Submitted`. `pages.dev` is incident fallback.
+- S0–S10 are implemented and focused-local PASS: optional GPT cost safety, English
+  `/` and Korean `/ko/`, R1 wire-only Lab paths, evidence import/replay,
+  deterministic JS/Python state, consent-gated durable participant, transport and
+  Durable Object relay, two-browser succession, three-endpoint quorum repair, and
+  one-protagonist UX.
+- Actual Chromium proves EN/KO A→B handoff, A close, same-ID B continuation, and ten
+  isolated three-endpoint loss/repair runs. Isolated profiles are not proof of three
+  people or physical/administrative domains.
+- GPT is non-authoritative and no longer part of the main journey. Production config
+  is disabled until an explicitly confirmed Turnstile widget/secret exists; deployment
+  does not inject OpenAI/Turnstile secrets while disabled.
+- Relay code and Durable Object migration are locally verified but not production-
+  accepted. `relay.mortal-os.com` is not a claim until exact-main deployment and the
+  remote multi-browser gate pass.
+- The first PR #23 review snapshot failed closed. Its four findings are remediated in
+  the current unmerged tree: clean diff evidence; every-operation room admission and
+  presence/connect-only TTL alarms; an executable 20-run two-persistent-profile
+  Chromium gate; and pending/unverified wording before local handoff acceptance.
+- The new persistent gate passed 20/20 twice locally, closing A's browser process in
+  each run and requiring B to continue the same identity at sequence 2. This is still
+  candidate evidence and does not replace exact-head CI, a fresh review, or public
+  remote acceptance.
+- The second PR #23 review snapshot at `a5f56c6…` failed closed on a new P1: normal
+  A+B browser cadence measured about 399/min against the 120/min room cap, and the
+  rate-less local mock did not expose it. The current unmerged tree has one shared
+  300/min policy, a 204/min two-endpoint schedule plus 48-operation burst allowance,
+  a rate-aware mock, exact 300th/301st boundary coverage, and actual two-profile
+  cadence acceptance at 39 operations/12s with zero local 429. It needs a new commit,
+  exact-head CI, and fresh review.
+- The final remediated local tree passed the complete ordered `npm test` in 1,591.2
+  seconds and `verify:lab` in 375.7 seconds; the latter repeated all 20 persistent
+  handoffs and the 39/12s zero-429 measurement.
+- S11 documents are reconciled. S12 full candidate tests, immutable review,
+  expected-head merge, post-merge CI, exact relay/Pages deploy, public bilingual
+  readback, and Devpost/video reconciliation remain.
 
-## Stable design decisions
+## Stable decisions
 
 1. Creation is a protocol operation, not a browser privilege.
-2. Silence, process exit, key loss, and browser closure are not global death.
-3. Logical key count and independent failure-domain count are different claims.
-4. UI, transport, storage, hosting, and model output may carry evidence but never
-   decide validity.
-5. Every source SHA needs its own immutable review, full Verify, exact-main deploy,
+2. UI, storage, relay, Cloudflare, event order, and GPT never decide validity.
+3. Importing evidence gives observation, not signing authority.
+4. Each endpoint generates its own non-extractable key; private keys never cross the
+   relay or join link.
+5. Silence, process exit, key loss, and browser closure are not global death.
+6. A valid sibling race is visible as a fork; last-write-wins is forbidden.
+7. Every source SHA needs its own immutable review, full Verify, exact-main deploy,
    and public readback; an old green run does not cover a new SHA.
-6. Protocol order is independent-verifier registration → R1-A JavaScript wire/golden
-   → R1-B Python differential → R1-C consumers → R2 deterministic state → R3
-   availability → R4 network embodiment.
-7. `reviewer-merge-gate`, not the author, decides whether a PR may merge.
+8. The author does not self-review, merge, or push directly to `main`.
 
-## Current priorities
+## Current priority
 
-1. Merge the canonical-domain documentation/workflow reconciliation only after
-   exact-head and immutable-review gates, then verify exact-main custom deployment.
-2. Freeze submission-facing changes by 2026-07-21 18:00 KST.
-3. Attempt one bounded R1-C vertical slice only if it cannot endanger the accepted
-   release. R2 and networking remain conditional/post-submission work.
+1. Publish the fully verified remediation as one new immutable branch head.
+2. Require exact-head Verify/policy and a completely fresh independent review.
+3. Merge only the reviewed expected head, then deploy relay before Pages.
+4. Promote the Devpost story or video only after public EN/KO multi-browser acceptance.
+5. Keep the last accepted deployment and existing compliant video as rollback.
 
 ## Memory maintenance
 
-- Store only verified merged facts or explicitly labeled candidate evidence.
-- Replace stale current-state statements; leave historical detail in `WORKLOG.md` and
-  Git history.
-- Never store credentials, personal data beyond submission-required public facts,
-  generated dependencies, disposable logs, or hidden reasoning.
+- Store merged facts or explicitly labeled candidate evidence only.
+- Never store credentials, private submission-field values, generated dependencies,
+  disposable logs, or hidden reasoning.

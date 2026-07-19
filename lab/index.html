@@ -5,53 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; connect-src 'self' https://mortalos-lab-yonghwan2161.pages.dev; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-    <title>MortalOS Lab — lifecycle protocol workbench</title>
-    <link rel="stylesheet" href="./styles.css">
-    <script type="module" src="./app.js"></script>
+    <meta name="description" content="Create one verifiable digital life in Browser A, move custody to Browser B, close A, and continue the same identity with locally verified evidence.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; worker-src 'self'; connect-src 'self' https://mortalos-lab-yonghwan2161.pages.dev https://relay.mortal-os.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta name="mortalos-turnstile-site-key" content="">
+    <link rel="canonical" href="https://mortal-os.com/">
+    <link rel="alternate" hreflang="en" href="https://mortal-os.com/">
+    <link rel="alternate" hreflang="ko" href="https://mortal-os.com/ko/">
+    <link rel="alternate" hreflang="x-default" href="https://mortal-os.com/">
+    <title>MortalOS — create once, continue elsewhere</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#guided-proof">Skip to the 90-second proof</a>
+    <a class="skip-link" href="#continuity-proof">Skip to the 90-second proof</a>
     <header class="hero">
-      <div class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>MortalOS / deterministic lifecycle proof</div>
-      <h1>Ask GPT to break it. Let the kernel decide.</h1>
-      <p class="lede">GPT‑5.6 proposes a bounded adversarial test. MortalOS compiles only its allowlisted choice, runs the existing deterministic kernel, and proves the same verdict again with GPT completely offline.</p>
-      <p><a id="hero-proof-link" class="button primary hero-cta" href="#guided-proof">Run the 90-second proof</a></p>
+      <nav class="language-nav" aria-label="Language"><a class="language-switch" href="/ko/" lang="ko" hreflang="ko">한국어</a></nav>
+      <div class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>MortalOS / cross-browser continuity proof</div>
+      <h1>Create once. Continue elsewhere.</h1>
+      <p class="lede">Move one state-bearing identity from Browser A to Browser B without moving either private key. Close A; B proves continuity locally.</p>
+      <p><a id="hero-proof-link" class="button hero-cta" href="#continuity-proof">Run the 90-second proof</a></p>
       <div class="hero-chips" aria-label="Proof boundary summary">
-        <span>Backend authority: none</span>
-        <span>Logical custodians: 3</span>
-        <span>Failure domains: 1</span>
+        <span>2 independent browsers</span>
+        <span>2 non-extractable keys</span>
+        <span>Relay is never the judge</span>
       </div>
     </header>
 
     <main>
-      <section class="boundary panel" aria-labelledby="boundary-title">
-        <div>
-          <p class="section-number">00 / proof boundary</p>
-          <h2 id="boundary-title">What this build proves</h2>
+      <section id="continuity-proof" class="panel continuity-panel" aria-labelledby="continuity-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">01 / main proof · two browsers</p>
+            <h2 id="continuity-title">Create once. Continue elsewhere.</h2>
+          </div>
+          <span id="continuity-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Ready to create in Browser A</span>
         </div>
+        <p class="section-copy">Browser B creates its own non-extractable key. Browser A authorizes one canonical custody handoff; no private key crosses the relay.</p>
+
+        <div class="continuity-layout">
+          <article class="continuity-life-card" aria-label="Cross-browser Life Card">
+            <div id="continuity-avatar" class="state-avatar" aria-hidden="true"><i></i></div>
+            <div class="continuity-life-copy">
+              <span id="continuity-role" class="role-chip">Browser A · origin</span>
+              <strong id="continuity-identity">No organism yet</strong>
+              <p id="continuity-stage">Create one state-bearing organism to generate a private 128-bit room link.</p>
+            </div>
+            <dl class="continuity-metrics">
+              <div><dt>Sequence</dt><dd id="continuity-sequence">—</dd></div>
+              <div><dt>State</dt><dd id="continuity-state">Pulse count 0</dd></div>
+              <div><dt>Quorum</dt><dd id="continuity-quorum">1 of 1</dd></div>
+              <div><dt>Custody</dt><dd id="continuity-custody">Not assigned</dd></div>
+              <div><dt>Endpoint health</dt><dd id="continuity-health">A ready · B absent</dd></div>
+            </dl>
+          </article>
+
+          <div class="continuity-actions">
+            <button id="continuity-create" class="button primary" type="button">Create in Browser A</button>
+            <button id="continuity-join" class="button primary" type="button" hidden>Join in Browser B</button>
+            <button id="continuity-approve" class="button" type="button" disabled>Approve A → B handoff</button>
+            <button id="continuity-accept" class="button" type="button" disabled>Accept custody in B</button>
+            <button id="continuity-continue" class="button" type="button" disabled>Continue in Browser B</button>
+            <button id="continuity-remove-a" class="button danger" type="button" disabled>Remove Browser A authority</button>
+          </div>
+        </div>
+
+        <div id="continuity-join-panel" class="join-panel" hidden>
+          <div>
+            <strong>Open this private room link in Browser B</strong>
+            <p>The secret stays out of logs and screenshots. Scan the QR or copy the link directly into Browser B.</p>
+          </div>
+          <div id="continuity-qr" class="join-qr" role="img" aria-label="Private Browser B join QR code"></div>
+          <div class="join-controls">
+            <a id="continuity-join-link" class="join-link" rel="noreferrer">Private join link ready</a>
+            <button id="continuity-copy" class="button" type="button">Copy join link</button>
+          </div>
+        </div>
+
+        <ol class="continuity-timeline" aria-label="Custody succession timeline">
+          <li id="continuity-step-create" data-state="pending"><span>1</span><strong>Create</strong><small>A owns one non-extractable key</small></li>
+          <li id="continuity-step-join" data-state="pending"><span>2</span><strong>Join</strong><small>B creates a different key</small></li>
+          <li id="continuity-step-handoff" data-state="pending"><span>3</span><strong>Handoff</strong><small>Both sign the exact body</small></li>
+          <li id="continuity-step-offline" data-state="pending"><span>4</span><strong>Close A</strong><small>A is no longer a custodian</small></li>
+          <li id="continuity-step-continue" data-state="pending"><span>5</span><strong>Continue in B</strong><small>Same identity, new state root</small></li>
+        </ol>
+        <details class="continuity-technical">
+          <summary>Inspect canonical evidence</summary>
+          <dl>
+            <div><dt>Full identity</dt><dd><code id="continuity-full-identity">—</code></dd></div>
+            <div><dt>Accepted head</dt><dd><code id="continuity-head">—</code></dd></div>
+            <div><dt>State root</dt><dd><code id="continuity-state-root">—</code></dd></div>
+            <div><dt>Relay</dt><dd id="continuity-relay">Disconnected</dd></div>
+          </dl>
+        </details>
+        <details id="continuity-error-details" class="continuity-error" hidden>
+          <summary>Technical error code</summary>
+          <code id="continuity-error-code">—</code>
+        </details>
+        <p class="warning"><strong>Authority boundary:</strong> The relay stores and forwards public canonical messages. Each browser verifies locally; relay sequence and presence are never a validity verdict.</p>
+      </section>
+
+      <details class="proof-boundary">
+        <summary>What this proof does—and does not—claim</summary>
         <div class="boundary-grid">
           <article>
             <h3>It proves</h3>
-            <p>Real non-extractable WebCrypto keys can co-sign canonical evidence that the existing MortalOS kernel accepts or rejects.</p>
+            <p>Two separate browser contexts use different non-extractable keys to authorize one canonical handoff. After A closes, B advances the same identity and deterministic state.</p>
           </article>
           <article>
             <h3>It does not prove</h3>
-            <p>Three Workers are not three independent operators. v0 has no mutable state execution, participant transport, or globally provable death.</p>
+            <p>The relay is not an authority, a room link is not authentication, and no finite observation is a globally complete death certificate.</p>
           </article>
         </div>
-        <p class="warning"><strong>Persistent disclosure:</strong> 3 logical custodians / 1 physical and administrative failure domain. This page can command quorum.</p>
-      </section>
+      </details>
+
+      <details id="advanced-evidence" class="advanced-workbench">
+        <summary>Open advanced evidence and falsification workbench</summary>
+        <div class="advanced-workbench-content">
 
       <section id="guided-proof" class="panel guided-panel" aria-labelledby="guided-title">
         <div class="section-heading">
           <div>
-            <p class="section-number">01 / judge path · about 90 seconds</p>
-            <h2 id="guided-title">Model proposes. Canonical bytes bind. Kernel decides.</h2>
+            <p class="section-number">02 / advanced · falsification workbench</p>
+            <h2 id="guided-title">Canonical bytes bind. The kernel decides.</h2>
           </div>
           <span id="guided-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Ready</span>
         </div>
-        <p class="section-copy">The model never receives a secret or a signing capability. Its free-form text is display-only; one allowlisted mutation enum becomes canonical input to the same kernel used everywhere else.</p>
+        <p class="section-copy">The primary proof is local and deterministic. An optional model may choose one allowlisted mutation, but never receives a secret or signing capability and never decides validity.</p>
 
         <ol class="guided-steps">
           <li class="guided-step">
@@ -66,7 +145,7 @@
           <li class="guided-step">
             <div class="step-marker" aria-hidden="true">2</div>
             <div>
-              <h3>Ask GPT‑5.6 for one bounded falsification</h3>
+              <h3>Run one bounded falsification</h3>
               <div class="scenario-inputs">
                 <label for="scenario-kind">Invariant
                   <select id="scenario-kind">
@@ -79,28 +158,37 @@
                   <textarea id="scenario-hypothesis" maxlength="280" rows="3">Can authenticated but conflicting evidence create two authoritative heads?</textarea>
                 </label>
               </div>
-              <button id="ask-gpt" class="button" type="button" disabled>Ask GPT, compile, and run kernel</button>
+              <div class="actions scenario-actions">
+                <button id="run-local-attack" class="button primary" type="button" disabled>Run curated offline attack</button>
+                <button id="enable-gpt" class="button" type="button" disabled>Enable optional GPT‑5.6</button>
+                <button id="ask-gpt" class="button" type="button" disabled hidden>Ask GPT, compile, and run kernel</button>
+              </div>
+              <div id="turnstile-panel" class="optional-panel" hidden>
+                <p><strong>Optional network witness.</strong> Complete the anti-abuse check to make one capped API request. The proof does not depend on it.</p>
+                <div id="turnstile-widget" aria-label="Cloudflare Turnstile anti-abuse check"></div>
+                <p id="turnstile-status" class="model-note" role="status" aria-live="polite">Loading anti-abuse check…</p>
+              </div>
               <strong id="gpt-proposal" class="step-result" aria-live="polite">Waiting for baseline</strong>
             </div>
           </li>
           <li class="guided-step">
             <div class="step-marker" aria-hidden="true">3</div>
             <div>
-              <h3>Compare the untrusted prediction with kernel truth</h3>
+              <h3>Compare the untrusted proposal with kernel truth</h3>
               <div class="guided-results">
-                <div class="result-row"><span>Model prediction</span><strong id="model-prediction">—</strong></div>
+                <div class="result-row"><span>Proposal prediction</span><strong id="model-prediction">—</strong></div>
                 <div class="result-row"><span>Kernel actual</span><strong id="kernel-actual">—</strong></div>
                 <div class="result-row"><span>Canonical input digest</span><strong id="compiled-digest">—</strong></div>
               </div>
-              <p id="scenario-rationale" class="model-note">No model text yet.</p>
+              <p id="scenario-rationale" class="model-note">No proposal yet.</p>
             </div>
           </li>
           <li class="guided-step">
             <div class="step-marker" aria-hidden="true">4</div>
             <div>
-              <h3>Turn GPT off and replay the exact bytes</h3>
-              <p>No second API call. The compiled digest and kernel result must remain identical.</p>
-              <button id="replay-without-gpt" class="button" type="button" disabled>Replay without GPT</button>
+              <h3>Replay the exact bytes with every network dependency off</h3>
+              <p>No API call. The compiled digest and kernel result must remain identical.</p>
+              <button id="replay-without-gpt" class="button" type="button" disabled>Replay fully offline</button>
               <strong id="offline-replay" class="step-result" aria-live="polite">Not run</strong>
             </div>
           </li>
@@ -119,7 +207,7 @@
             <a id="public-repository-link" class="button">Inspect the public repository</a>
           </div>
         </section>
-        <p class="warning"><strong>Authority boundary:</strong> GPT‑5.6 may be wrong. Only the actual kernel result is authoritative, and a mismatch is shown rather than repaired or hidden.</p>
+        <p class="warning"><strong>Authority boundary:</strong> A curated proposal or GPT‑5.6 may be wrong. Only the actual kernel result is authoritative, and a mismatch is shown rather than repaired or hidden.</p>
       </section>
 
       <section id="live-lab" class="panel" aria-labelledby="live-title">
@@ -137,6 +225,7 @@
           <button id="try-one" class="button" type="button" disabled>Try one signature</button>
           <button id="complete-quorum" class="button" type="button" disabled>Add second signature</button>
           <button id="replay-live" class="button" type="button" disabled>Replay accepted pulse</button>
+          <button id="nurture-live" class="button" type="button" disabled>Nurture +1</button>
         </div>
         <div class="signer-controls" aria-label="Heartbeat signer selection">
           <label for="first-signer">First signer
@@ -154,6 +243,15 @@
             </select>
           </label>
           <p>The second signer must be different; all three 2-key combinations are valid.</p>
+        </div>
+
+        <div class="state-card" aria-label="Deterministic organism state">
+          <div id="state-avatar" class="state-avatar" aria-hidden="true"><i></i></div>
+          <div>
+            <span>Pulse Seed v1</span>
+            <strong id="state-pulse-count">Pulse count 0</strong>
+            <p>The same canonical state bytes always render the same avatar.</p>
+          </div>
         </div>
 
         <div class="metrics" aria-label="Live organism metrics">
@@ -178,7 +276,7 @@
           <article class="verdict-card">
             <span>Two-key candidate</span>
             <strong id="two-key-verdict">Not run</strong>
-            <p>Acceptance must come from <code>Lineage.append()</code>.</p>
+            <p>Acceptance must come from <code>canonical R1 result bytes</code>.</p>
           </article>
           <article class="verdict-card">
             <span>Replay attempt</span>
@@ -204,6 +302,62 @@
           </div>
           <button id="export-live" class="button" type="button" disabled>Export evidence</button>
         </div>
+
+        <div class="import-panel">
+          <div>
+            <h3>Verify on another browser</h3>
+            <p id="import-help">Import a canonical public bundle. Verification is local and read-only; no signing key is transferred.</p>
+          </div>
+          <div id="import-drop" class="import-drop" role="button" tabindex="0" aria-describedby="import-help import-limit">
+            <strong>Drop evidence here</strong>
+            <span>or choose a JSON file</span>
+            <span id="import-limit">Maximum 2 MiB · canonical JSON only</span>
+          </div>
+          <input id="import-file" class="visually-hidden" type="file" accept="application/json,.json" aria-label="Evidence JSON file">
+          <p id="import-status" class="status neutral" role="status" aria-live="polite" data-state="idle">No imported proof</p>
+          <article id="imported-life-card" class="imported-life-card" hidden>
+            <div class="import-mode">
+              <strong>Verified proof</strong>
+              <span>No signing authority</span>
+            </div>
+            <dl>
+              <div><dt>Identity</dt><dd><code id="import-identity">—</code></dd></div>
+              <div><dt>Head</dt><dd><code id="import-head">—</code></dd></div>
+              <div><dt>Sequence</dt><dd id="import-sequence">—</dd></div>
+              <div><dt>Accepted objects</dt><dd id="import-objects">—</dd></div>
+            </dl>
+            <button id="import-continue" class="button" type="button" disabled>Continue organism</button>
+            <p>Disabled: this browser has public evidence but none of the current private signing keys.</p>
+          </article>
+        </div>
+
+        <div class="durable-panel">
+          <div>
+            <h3>Durable Participant</h3>
+            <p>Optional and consent-gated. Stores one non-extractable browser key, public evidence, and schema metadata in IndexedDB.</p>
+          </div>
+          <label class="consent-row"><input id="durable-consent" type="checkbox"> I understand this browser will retain local signing authority until removal or expiry.</label>
+          <label for="durable-expiry">Authority expiry
+            <select id="durable-expiry">
+              <option value="1">1 day</option>
+              <option value="7" selected>7 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button id="enable-durable" class="button" type="button" disabled>Enable durable participant</button>
+            <button id="nurture-durable" class="button" type="button" disabled>Nurture durable state</button>
+            <button id="remove-durable-authority" class="button danger" type="button" disabled>Remove local authority</button>
+          </div>
+          <p id="durable-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Ephemeral mode · nothing stored</p>
+          <dl id="durable-details" class="durable-details" hidden>
+            <div><dt>Identity</dt><dd><code id="durable-identity">—</code></dd></div>
+            <div><dt>Sequence</dt><dd id="durable-sequence">—</dd></div>
+            <div><dt>State</dt><dd id="durable-state">—</dd></div>
+            <div><dt>Stored items</dt><dd id="durable-storage">—</dd></div>
+          </dl>
+          <p class="durable-disclosure">Private key bytes are never exported. English/Korean locale remains URL-only and is not stored.</p>
+        </div>
       </section>
 
       <section class="panel" aria-labelledby="reference-title">
@@ -215,7 +369,7 @@
           <span id="reference-status" class="status neutral" role="status" aria-live="polite">Not run</span>
         </div>
         <p class="section-copy">This is a committed, pre-signed public fixture—not the random organism above. Every experiment starts from raw evidence in a fresh lineage and asks the kernel again. Its mortality card is a closed local experiment whose pending-evidence inventory is explicitly complete; it is not a global death certificate.</p>
-        <div class="timeline" aria-label="Reference custody timeline">
+        <div class="timeline" aria-label="Reference custody timeline" role="region" tabindex="0">
           <span>A · B · C</span><i aria-hidden="true">→</i><span>B · C · D</span><i aria-hidden="true">→</i><span>C · D · E</span><i aria-hidden="true">→</i><span>D · E · F</span>
         </div>
         <button id="run-reference" class="button primary" type="button">Run reference experiments</button>
@@ -247,11 +401,13 @@
           <li>Lab ready. No organism or private key exists yet.</li>
         </ol>
       </section>
+        </div>
+      </details>
     </main>
 
     <footer>
-      <p>MortalOS Lab · deterministic kernel + untrusted GPT‑5.6 witness · protocol <code>mortalos/0</code></p>
-      <p>Browser first, never browser-only. <a href="./THIRD_PARTY_LICENSES.txt">Third-party licenses</a></p>
+      <p>MortalOS · deterministic state + cross-browser custody · protocol <code>mortalos/1</code></p>
+      <p>Browser first, never browser-only. <a href="/THIRD_PARTY_LICENSES.txt">Third-party licenses</a></p>
     </footer>
     <noscript>This Lab requires JavaScript to run the portable validation kernel.</noscript>
   </body>

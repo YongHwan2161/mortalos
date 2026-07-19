@@ -1,4 +1,4 @@
-# MortalOS v0 Rejection Codes
+# MortalOS v0/v1 Rejection Codes
 
 Status: **Normative and executable**
 
@@ -40,7 +40,7 @@ Reject {
 
 | Code | Condition |
 |---|---|
-| `E_VERSION_UNSUPPORTED` | `protocol_version` is not `mortalos/0`. |
+| `E_VERSION_UNSUPPORTED` | `protocol_version` is neither `mortalos/0` nor `mortalos/1`, or a Pulse version differs from its Genesis. |
 | `E_HASH_ALGORITHM_UNSUPPORTED` | Genesis hash algorithm is not `sha-256`. |
 | `E_SIGNATURE_ALGORITHM_UNSUPPORTED` | Genesis signature algorithm is not `ed25519`. |
 
@@ -54,6 +54,14 @@ Reject {
 | `E_GENOME_HASH_MISMATCH` | Pulse genome hash differs from Genesis. |
 | `E_CURRENT_CUSTODY_HASH_MISMATCH` | Pulse custody commitment differs from the parent-effective descriptor. |
 | `E_STATE_ROOT_ENCODING` | State root is not a valid v0 SHA-256 encoding. |
+| `E_STATE_GENOME_MISMATCH` | A v1 built-in genome byte artifact does not match the declared genome hash or supported Pulse Seed v1 genome. |
+| `E_STATE_INITIAL_BINDING` | A v1 Genesis omits, malforms, or mismatches its exact genome/initial-state sidecars or begins with a nonzero pulse count. |
+| `E_STATE_INPUT_INVALID` | A v1 state, input, transition payload, or artifact is malformed, noncanonical, wrong-versioned, or unsupported. |
+| `E_STATE_LIMIT_EXCEEDED` | A v1 state/input/receipt byte, step, or pulse-count ceiling is exceeded; no transition is committed. |
+| `E_STATE_PRIOR_ROOT_MISMATCH` | The transition's prior state bytes do not hash to the accepted parent state root. |
+| `E_STATE_NEXT_ROOT_MISMATCH` | Deterministic next-state bytes differ from the supplied sidecar or declared next state root. |
+| `E_STATE_RECEIPT_MISMATCH` | The supplied v1 receipt bytes differ from the deterministic engine receipt. |
+| `E_STATE_CUSTODY_CHANGED` | A `state-transition` attempts to change custody or quorum. |
 | `E_EVENT_PAYLOAD_HASH_ENCODING` | Event payload hash is not a valid v0 SHA-256 encoding. |
 | `E_CUSTODIAN_COUNT_RANGE` | Custodian count is outside 1 through 16. |
 | `E_CUSTODIAN_DUPLICATE_KEY` | Two custodians declare the same public key. |
@@ -80,7 +88,7 @@ There is no public operation that replaces a recognized head with an ancestor, s
 
 | Code | Condition |
 |---|---|
-| `E_EVENT_KIND_UNSUPPORTED` | Event kind is not `heartbeat` or `membership-change`. |
+| `E_EVENT_KIND_UNSUPPORTED` | Event kind is not `heartbeat` or `membership-change`, nor `state-transition` for a v1 lineage. |
 | `E_EVENT_PAYLOAD_REQUIRED` | Exact event-payload sidecar bytes are absent. |
 | `E_EVENT_PAYLOAD_INVALID` | Payload bytes are not a canonical I-JSON object or contain duplicate properties. |
 | `E_EVENT_PAYLOAD_MISMATCH` | `payload_hash` does not commit to the supplied complete payload. |

@@ -44,9 +44,7 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SAFETY_IDENTIFIER_SECRET: ${{ secrets.SAFETY_IDENTIFIER_SECRET }}
-        run: test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN" && test -n "$OPENAI_API_KEY" && test -n "$SAFETY_IDENTIFIER_SECRET"
+        run: test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
 
       - name: Install locked dependencies
         run: npm ci
@@ -54,16 +52,20 @@ jobs:
       - name: Verify exact source before deployment
         run: npm test
 
+      - name: Deploy exact relay artifact and Durable Object migration
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy --config relay/wrangler.jsonc
+
       - name: Deploy exact static artifact
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SAFETY_IDENTIFIER_SECRET: ${{ secrets.SAFETY_IDENTIFIER_SECRET }}
         run: npm run deploy:lab
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Verify public artifact and judge path
-        run: npm run verify:lab
+      - name: Verify public artifact, relay, and bilingual judge path
+        run: npm run verify:release

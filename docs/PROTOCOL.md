@@ -674,3 +674,45 @@ The repository reference implementation is in [`src/`](../src/), including [`lin
 - [`TRACEABILITY.md`](TRACEABILITY.md)
 - [`genesis.schema.json`](../schemas/genesis.schema.json)
 - [`pulse.schema.json`](../schemas/pulse.schema.json)
+
+## 14. Versioned deterministic state extension (`mortalos/1`)
+
+`mortalos/1` preserves every v0 identity, custody, signature, replay, and fork rule
+but adds exact state artifacts. A version may never change inside a lineage. v0
+continues to reject `state-transition`, preserves an opaque immutable state root, and
+rejects v1 Genesis sidecars as unknown fields.
+
+### 14.1 Pulse Seed v1 engine
+
+The sole built-in genome is canonical `{"engine":"mortalos-state/1","genome":"pulse-seed-v1"}`.
+State is the bounded canonical object `avatar_seed`, `format`, and integer
+`pulse_count`. Input is canonical `mortalos-state-input/1` with action `nurture` and
+`steps` from 1 through 100. The pure ABI is
+`genome_bytes + state_bytes + input_bytes -> next_state_bytes + receipt_bytes`.
+State, input, and genome hashes use the respective domain strings
+`MORTALOS/STATE/1/{STATE|INPUT|GENOME}\0` followed by exact bytes and SHA-256.
+
+The canonical receipt binds `engine_version`, `genome_hash`, `prior_state_hash`,
+`input_hash`, `next_state_hash`, and `step_count`. State and receipt are limited to
+4,096 bytes, input to 1,024 bytes, one transition to 100 steps, and pulse count to
+1,000,000. An exceeded or malformed input produces no partial state or lineage
+commit.
+
+### 14.2 Genesis and transition binding
+
+A v1 Genesis includes required `genome_base64url` and
+`initial_state_base64url` body sidecars. They MUST be canonical, match the declared
+`genome_hash` and `initial_state_root`, select Pulse Seed v1, and start at pulse count
+zero. Because the signed Genesis body contains the sidecars, identity commits to the
+exact artifacts.
+
+A v1 `state-transition` Pulse keeps custody exactly unchanged. Its canonical event
+payload is `mortalos-state-transition/1` and carries base64url exact prior state,
+input, next state, and receipt bytes. The payload hash, parent root, declared next
+root, deterministic execution output, and receipt MUST all agree before signatures
+can advance the accepted graph. Heartbeat and membership-change retain the v0
+state-root-invariance rules in both versions.
+
+The committed corpus [`state-v1.json`](../test/vectors/state-v1.json), independent
+Python verifier, 10,000-case property gate, R1 wire adapter, and actual Chromium Lab
+are normative release evidence for this extension.

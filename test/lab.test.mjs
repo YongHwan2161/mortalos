@@ -15,6 +15,8 @@ import {
 import {
   createEvidenceBundle,
   evidenceDigest,
+  importEvidenceBundleBytes,
+  LAB_EVIDENCE_MAX_BYTES,
   replayEvidenceBundle
 } from "../lab/evidence-export.mjs";
 import {
@@ -23,7 +25,7 @@ import {
   genesisEnvelope,
   pulseEnvelope
 } from "../lab/live-incubator.mjs";
-import { MORTALOS_SAFE_API_ORIGIN } from "../lab/runtime-endpoints.mjs";
+import { MORTALOS_RELAY_ORIGIN, MORTALOS_SAFE_API_ORIGIN } from "../lab/runtime-endpoints.mjs";
 import { summarizePortableCorpus } from "../lab/corpus-summary.mjs";
 import { runReferenceProof } from "../lab/reference-engine.mjs";
 import { buildLab } from "../scripts/build-lab.mjs";
@@ -135,6 +137,40 @@ test("experimental Lab evidence contains canonical public bytes and replays from
   tampered.records[0].envelope_base64url = `${encoded.slice(0, -1)}${encoded.endsWith("A") ? "B" : "A"}`;
   assert.throws(() => replayEvidenceBundle(tampered), /digest mismatch/);
   assert.throws(() => replayEvidenceBundle({ ...bundle, private_key: "forbidden" }), /allowlisted/);
+
+  const imported = importEvidenceBundleBytes(canonicalBytes(bundle));
+  assert.equal(imported.replay.organism_id, opened.lineage.genesis.organism_id);
+  assert.equal(imported.replay.head_hash, opened.lineage.head.object_hash);
+  assert.equal(imported.replay.sequence, "1");
+
+  const recalculate = (value) => ({ ...value, digest: evidenceDigest(value) });
+  const flipLast = (value) => `${value.slice(0, -1)}${value.endsWith("A") ? "B" : "A"}`;
+  const tamperedEnvelope = structuredClone(bundle);
+  tamperedEnvelope.records[1].envelope_base64url = flipLast(tamperedEnvelope.records[1].envelope_base64url);
+  assert.throws(
+    () => importEvidenceBundleBytes(canonicalBytes(recalculate(tamperedEnvelope))),
+    /rejected|canonical|JSON/
+  );
+  const tamperedPayload = structuredClone(bundle);
+  tamperedPayload.records[1].event_payload_base64url = flipLast(tamperedPayload.records[1].event_payload_base64url);
+  assert.throws(
+    () => importEvidenceBundleBytes(canonicalBytes(recalculate(tamperedPayload))),
+    /rejected|canonical|JSON/
+  );
+  const unknown = recalculate({ ...bundle, format: "mortalos-lab-evidence/99" });
+  assert.throws(() => importEvidenceBundleBytes(canonicalBytes(unknown)), /unsupported/);
+  assert.throws(
+    () => importEvidenceBundleBytes(new TextEncoder().encode('{"a":1,"a":2}')),
+    /strict JSON/
+  );
+  assert.throws(
+    () => importEvidenceBundleBytes(new TextEncoder().encode(JSON.stringify(bundle, null, 2))),
+    /not canonical/
+  );
+  assert.throws(
+    () => importEvidenceBundleBytes(new Uint8Array(LAB_EVIDENCE_MAX_BYTES + 1)),
+    /2 MiB/
+  );
 });
 
 test("reference Lab derives lifecycle, mutation, fork, mortality, resurrection, and clone outcomes from the kernel", async () => {
@@ -197,6 +233,7 @@ test("browser Lab source fails closed and contains no persistence or copied vali
     "custodian-worker.mjs",
     "evidence-export.mjs",
     "live-incubator.mjs",
+    "r1-client.mjs",
     "reference-engine.mjs",
     "runtime-endpoints.mjs",
     "signing-policy.mjs"
@@ -205,12 +242,26 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   const combined = sources.join("\n");
   assert.doesNotMatch(combined, /\b(?:localStorage|sessionStorage|indexedDB|serviceWorker|caches\s*\.)\b/);
   assert.doesNotMatch(combined, /\bE_[A-Z0-9_]+\b/);
+  assert.doesNotMatch(combined, /\bcreateLineage\b|\.verifyCandidate\(|\.evaluateMortality\(/);
   const custodianSource = await readFile(new URL("../lab/custodian-worker.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(custodianSource, /@noble|privateKey\s*:/);
   assert.doesNotMatch(custodianSource, /request\.(?:context|message)/);
   assert.match(custodianSource, /deriveSigningRequest\(request\.operation, request\.body\)/);
   assert.match(combined, /generateKey\([\s\S]*?false,[\s\S]*?\["sign", "verify"\]/);
   assert.match(combined, /exportKey\("pkcs8", generated\.privateKey\)/);
+
+  const durableSource = await readFile(new URL("../lab/participant/durable-participant.mjs", import.meta.url), "utf8");
+  const durableStoreSource = await readFile(new URL("../lab/storage/durable-store.mjs", import.meta.url), "utf8");
+  const appSource = await readFile(new URL("../lab/app.mjs", import.meta.url), "utf8");
+  assert.match(durableSource, /generateKey\(\{ name: "Ed25519" \}, false, \["sign", "verify"\]\)/);
+  assert.match(durableSource, /initialQuorum: \{ type: "threshold", threshold: 1 \}/);
+  assert.match(durableSource, /exportKey\("pkcs8", privateKey\)/);
+  assert.match(durableSource, /pending !== null/);
+  assert.match(durableStoreSource, /database\.transaction\(STORES, "readwrite", \{ durability: "strict" \}\)/);
+  assert.match(durableStoreSource, /event\.oldVersion !== 0/);
+  assert.doesNotMatch(durableStoreSource, /request\.oldVersion/);
+  assert.match(durableStoreSource, /objectStore\("keys"\)\.delete\("active"\)/);
+  assert.match(appSource, /if \(!byId\("durable-consent"\)\.checked\) throw/);
 
   const serverSource = await readFile(new URL("../scripts/serve-lab.mjs", import.meta.url), "utf8");
   assert.match(serverSource, /LAB_SECURITY_HEADERS, labContentType.*lab-contract\.mjs/);
@@ -236,19 +287,23 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(deploymentSource, /const branch = "main"/);
 
   const gptVerifierSource = await readFile(new URL("../scripts/verify-gpt-scenarios.mjs", import.meta.url), "utf8");
-  assert.match(gptVerifierSource, /fetch\(scenarioApiUrl\(remote\)/);
-  assert.doesNotMatch(gptVerifierSource, /new URL\("api\/scenarios", remote\)/);
+  assert.match(gptVerifierSource, /remote batch evaluation is disabled/);
+  assert.doesNotMatch(gptVerifierSource, /fetch\(scenarioApiUrl/);
 
   const deploymentWorkflow = await readFile(new URL("../.github/workflows/deploy-lab.yml", import.meta.url), "utf8");
   assert.match(deploymentWorkflow, /test "\$GITHUB_REF" = "refs\/heads\/main"/);
   assert.match(deploymentWorkflow, /test "\$\(git rev-parse HEAD\)" = "\$GITHUB_SHA"/);
   assert.doesNotMatch(deploymentWorkflow, /^      CLOUDFLARE_(?:ACCOUNT_ID|API_TOKEN):/m);
-  assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_ACCOUNT_ID:/gm) ?? []).length, 2);
-  assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_API_TOKEN:/gm) ?? []).length, 2);
-  assert.equal((deploymentWorkflow.match(/^          OPENAI_API_KEY:/gm) ?? []).length, 2);
-  assert.equal((deploymentWorkflow.match(/^          SAFETY_IDENTIFIER_SECRET:/gm) ?? []).length, 2);
+  assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_ACCOUNT_ID:/gm) ?? []).length, 3);
+  assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_API_TOKEN:/gm) ?? []).length, 3);
+  assert.equal((deploymentWorkflow.match(/^          OPENAI_API_KEY:/gm) ?? []).length, 0);
+  assert.equal((deploymentWorkflow.match(/^          SAFETY_IDENTIFIER_SECRET:/gm) ?? []).length, 0);
+  assert.equal((deploymentWorkflow.match(/^          TURNSTILE_SECRET_KEY:/gm) ?? []).length, 0);
+  assert.match(deploymentWorkflow, /wrangler deploy --config relay\/wrangler\.jsonc/);
+  assert.match(deploymentWorkflow, /npm run verify:release/);
   assert.doesNotMatch(deploymentWorkflow, /^      OPENAI_API_KEY:/m);
   assert.doesNotMatch(deploymentWorkflow, /^      SAFETY_IDENTIFIER_SECRET:/m);
+  assert.doesNotMatch(deploymentWorkflow, /^      TURNSTILE_SECRET_KEY:/m);
   for (const workflow of [
     deploymentWorkflow,
     await readFile(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8")
@@ -265,18 +320,30 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   const html = await readFile(new URL("../lab/index.html", import.meta.url), "utf8");
   assert.match(html, new RegExp(`connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN.replaceAll(".", "\\.")}`));
   assert.match(html, /worker-src 'self'/);
-  assert.deepEqual(html.match(/https?:\/\/[^"'\s;]+/g) ?? [], [MORTALOS_SAFE_API_ORIGIN]);
+  assert.deepEqual(
+    [...new Set(html.match(/https?:\/\/[^"'\s;]+/g) ?? [])].sort(),
+    [
+      "https://challenges.cloudflare.com",
+      "https://mortal-os.com/",
+      "https://mortal-os.com/ko/",
+      MORTALOS_RELAY_ORIGIN,
+      MORTALOS_SAFE_API_ORIGIN
+    ].sort()
+  );
   assert.match(html, /THIRD_PARTY_LICENSES\.txt/);
   assert.match(html, /pending-evidence inventory is explicitly complete/);
 
   const liveSource = await readFile(new URL("../lab/live-incubator.mjs", import.meta.url), "utf8");
   assert.match(liveSource, /authorityLossIrreversible:\s*false,\s*latentEvidenceComplete:\s*false/);
+  assert.match(liveSource, /r1ValidateGenesis|r1VerifyCandidate|r1AppendCandidates|r1EvaluateMortality/);
   const referenceSource = await readFile(new URL("../lab/reference-engine.mjs", import.meta.url), "utf8");
   assert.match(referenceSource, /authorityLossIrreversible:\s*true,\s*latentEvidenceComplete:\s*true/);
+  assert.match(referenceSource, /r1ValidateGenesis|r1VerifyCandidate|r1AppendCandidates|r1EvaluateMortality/);
 
   const bundledLicenses = await readFile(new URL("../lab/THIRD_PARTY_LICENSES.txt", import.meta.url), "utf8");
   assert.match(bundledLicenses, /@noble\/curves 2\.2\.0/);
   assert.match(bundledLicenses, /@noble\/hashes 2\.2\.0/);
+  assert.match(bundledLicenses, /qrcode-generator 1\.4\.4/);
   assert.match(bundledLicenses, /Permission is hereby granted, free of charge/);
 });
 
@@ -431,7 +498,20 @@ test("H3B Cloudflare project discovery is idempotent and fails closed on schema 
 test("H3B Pages deployment uses the provisioned D1 database and a strict migration", async () => {
   const config = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
   assert.equal("ratelimits" in config, false);
+  assert.deepEqual(config.compatibility_flags, ["nodejs_compat"]);
   assert.deepEqual(config.placement, { mode: "targeted", region: "aws:us-east-1" });
+  assert.deepEqual(config.vars, {
+    ENVIRONMENT: "production",
+    GPT_DAILY_REQUEST_CAP: "50",
+    GPT_GLOBAL_MINUTE_CAP: "5",
+    GPT_SCENARIOS_ENABLED: "false",
+    TURNSTILE_EXPECTED_HOSTNAME: "mortal-os.com"
+  });
+  assert.deepEqual(config.observability, {
+    enabled: true,
+    logs: { enabled: true, head_sampling_rate: 1, invocation_logs: true },
+    traces: { enabled: true, head_sampling_rate: 0.1 }
+  });
   assert.deepEqual(config.d1_databases, [{
     binding: "SCENARIO_RATE_DB",
     database_name: "mortalos-lab-rate-limit",
@@ -450,6 +530,9 @@ test("H3B Pages deployment uses the provisioned D1 database and a strict migrati
 
   const deployment = await readFile(new URL("../scripts/deploy-lab.mjs", import.meta.url), "utf8");
   assert.match(deployment, /"d1", "migrations", "apply", database, "--remote"/);
+  assert.match(deployment, /name: "TURNSTILE_SECRET_KEY"/);
+  assert.match(deployment, /process\.env\.TURNSTILE_SECRET_KEY/);
+  assert.match(deployment, /if \(gptEnabled\)/);
   assert.doesNotMatch(deployment, /process\.(?:stdout|stderr)\.write\(deployment\.(?:stdout|stderr)\)/);
   const secret = "test-secret-value-that-must-not-escape";
   const diagnostic = sanitizeWranglerDiagnostic(

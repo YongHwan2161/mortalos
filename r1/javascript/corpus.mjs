@@ -6,9 +6,10 @@ import {
 } from "../../src/index.mjs";
 import { executeR1Operation, R1_OPERATION_FORMAT } from "./wire.mjs";
 
-const vector = JSON.parse(
-  await readFile(new URL("../../test/vectors/lifecycle.json", import.meta.url), "utf8")
-);
+const [vector, fork] = await Promise.all([
+  readFile(new URL("../../test/vectors/lifecycle.json", import.meta.url), "utf8").then(JSON.parse),
+  readFile(new URL("../../test/vectors/fork.json", import.meta.url), "utf8").then(JSON.parse)
+]);
 
 function artifact(value) {
   return encodeBase64Url(canonicalBytes(value));
@@ -37,6 +38,8 @@ export function buildR1Corpus() {
   invalidBirth.approvals = [];
   const replayHistory = [...history, history.at(-1)];
   const finalCustodian = vector.actors.F.key_id;
+  const signatureTamper = structuredClone(vector.steps[0]);
+  signatureTamper.envelope.approvals[0].signature = `ed25519:${encodeBase64Url(new Uint8Array(64))}`;
 
   const entries = [
     withResult("genesis-accept", operationBytes({
@@ -60,6 +63,32 @@ export function buildR1Corpus() {
       genesis_envelope: birth,
       history: replayHistory,
       operation: "replay_lineage"
+    })),
+    withResult("candidate-verify-signature-tamper", operationBytes({
+      candidate: record(signatureTamper),
+      format: R1_OPERATION_FORMAT,
+      genesis_envelope: birth,
+      history: [],
+      operation: "verify_candidate"
+    })),
+    withResult("candidate-append-linear", operationBytes({
+      candidates: [record(vector.steps[0])],
+      format: R1_OPERATION_FORMAT,
+      genesis_envelope: birth,
+      history: [],
+      operation: "append_candidates"
+    })),
+    withResult("candidate-batch-replay-fork-halt", operationBytes({
+      candidates: [
+        record(fork.first),
+        record(fork.first),
+        record(fork.sibling),
+        record(fork.post_fork)
+      ],
+      format: R1_OPERATION_FORMAT,
+      genesis_envelope: artifact(fork.genesis),
+      history: [],
+      operation: "append_candidates"
     })),
     withResult("mortality-incomplete-not-dead", operationBytes({
       format: R1_OPERATION_FORMAT,

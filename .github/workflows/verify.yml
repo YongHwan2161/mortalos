@@ -27,17 +27,20 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Install Chromium for browser verification
+        run: npx playwright install --with-deps chromium
+
       - name: Run repository verification
         run: npm test
-
-      - name: Install Chromium for differential verification
-        run: npx playwright install --with-deps chromium
 
       - name: Compare Chromium with the committed portable corpus
         run: npm run test:chromium
 
       - name: Run MortalOS Lab browser acceptance gate
         run: npm run verify:lab
+
+      - name: Compare virtual transport schedules in Node and Chromium
+        run: npm run verify:transport
 
       - name: Enforce validator branch coverage
         run: npm run test:coverage

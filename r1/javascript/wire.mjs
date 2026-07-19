@@ -12,6 +12,7 @@ import {
 export const R1_OPERATION_FORMAT = "mortalos-r1-operation/1";
 export const R1_RESULT_FORMAT = "mortalos-r1-result/1";
 export const R1_LIMITS = Object.freeze({
+  candidate_records: 128,
   operation_bytes: 2 * 1024 * 1024,
   history_records: 128,
   pending_records: 128,
@@ -25,6 +26,7 @@ const RESULT_FIELDS = Object.freeze([
   "organism_id",
   "object_hash",
   "sequence",
+  "protocol_version",
   "genome_hash",
   "next_state_root",
   "field_path",
@@ -40,7 +42,9 @@ const RESULT_FIELDS = Object.freeze([
   "state_viable",
   "latent_successors",
   "latent_evidence_complete",
-  "pending_body_hashes"
+  "pending_body_hashes",
+  "fork_points",
+  "next_custody_descriptor"
 ]);
 
 class R1Error extends Error {
@@ -104,6 +108,13 @@ function decodePending(value) {
     throw new R1Error("R1_LIMIT", "/observation/pending");
   }
   return value.map((record, index) => decodeRecord(record, `/observation/pending/${index}`));
+}
+
+function decodeCandidates(value) {
+  if (!Array.isArray(value) || value.length > R1_LIMITS.candidate_records) {
+    throw new R1Error("R1_LIMIT", "/candidates");
+  }
+  return value.map((record, index) => decodeRecord(record, `/candidates/${index}`));
 }
 
 function decisionView(result) {
@@ -210,6 +221,52 @@ function mortalityOperation(operation) {
   };
 }
 
+function verifyCandidateOperation(operation) {
+  requireKeys(
+    operation,
+    ["candidate", "format", "genesis_envelope", "history", "operation"],
+    "/"
+  );
+  const replay = lineageFrom(operation);
+  if (replay.failure) return { status: "genesis_rejected", genesis: replay.failure };
+  if (replay.terminal) {
+    return {
+      status: "history_terminated",
+      terminal: replay.terminal,
+      snapshot: replay.lineage.snapshot()
+    };
+  }
+  return {
+    status: "complete",
+    result: decisionView(replay.lineage.verifyCandidate(decodeRecord(operation.candidate, "/candidate"))),
+    snapshot: replay.lineage.snapshot()
+  };
+}
+
+function appendCandidatesOperation(operation) {
+  requireKeys(
+    operation,
+    ["candidates", "format", "genesis_envelope", "history", "operation"],
+    "/"
+  );
+  const replay = lineageFrom(operation);
+  if (replay.failure) return { status: "genesis_rejected", genesis: replay.failure };
+  if (replay.terminal) {
+    return {
+      status: "history_terminated",
+      terminal: replay.terminal,
+      snapshot: replay.lineage.snapshot()
+    };
+  }
+  const results = decodeCandidates(operation.candidates)
+    .map((candidate) => decisionView(replay.lineage.append(candidate)));
+  return {
+    status: "complete",
+    results,
+    snapshot: replay.lineage.snapshot()
+  };
+}
+
 function resultEnvelope(operationBytes, operation, outcome) {
   return {
     format: R1_RESULT_FORMAT,
@@ -272,6 +329,8 @@ export function executeR1Operation(operationBytes) {
     if (operationName === "validate_genesis") outcome = validateGenesisOperation(operation);
     else if (operationName === "replay_lineage") outcome = replayLineageOperation(operation);
     else if (operationName === "evaluate_mortality") outcome = mortalityOperation(operation);
+    else if (operationName === "verify_candidate") outcome = verifyCandidateOperation(operation);
+    else if (operationName === "append_candidates") outcome = appendCandidatesOperation(operation);
     else throw new R1Error("R1_OPERATION", "/operation");
     return canonicalBytes(resultEnvelope(document.bytes, operationName, outcome));
   } catch (error) {

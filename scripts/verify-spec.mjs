@@ -35,6 +35,8 @@ const paths = {
   incubator: "docs/SINGLE_BROWSER_INCUBATOR.md",
   accessArchitecture: "docs/ACCESS_ARCHITECTURE.md",
   docsIndex: "docs/README.md",
+  implementationPlan: "docs/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
+  browserCompatibility: "docs/BROWSER_PARTICIPANT_COMPATIBILITY.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
@@ -283,9 +285,9 @@ for (const statement of portableGateStatements) {
 }
 
 for (const statement of [
-  "P0/H3A/H3B/R1-A/R1-B/GPT/guided path merged",
+  "S0–S11 locally implemented and verified",
   "| Node/browser agreement | Required per review head |",
-  "an old green run does not cover a new SHA",
+  "An old green run does not cover a new SHA",
   "| CLI bootstrap proof | Verified proof only |"
 ]) {
   assert(
@@ -310,7 +312,10 @@ for (const statement of [
   "three logical custodian slots but one physical failure domain",
   "public evidence alone cannot create the next valid Pulse"
 ]) {
-  assert(text.incubator.includes(statement), `Incubator profile is missing: ${statement}`);
+  assert(
+    text.incubator.replace(/\s+/g, " ").includes(statement),
+    `Incubator profile is missing: ${statement}`
+  );
 }
 
 for (const statement of [
@@ -441,12 +446,12 @@ for (const [name, artifact] of Object.entries({
 }
 
 const orderedGateStatement =
-  "independent-verifier registration → R1-A JavaScript wire/golden → " +
-  "R1-B Python differential → R1-C Lab wire consumption → R2 deterministic state → " +
-  "R3 availability → R4 network embodiment";
+  "R1-C wire-only Lab → deterministic state → durable endpoint → " +
+  "transport-neutral runtime → Durable Object relay → two-browser succession → " +
+  "three-endpoint 2-of-3 repair";
 for (const [name, artifact] of Object.entries({
   readme: text.readme,
-  roadmap: text.roadmap
+  accessArchitecture: text.accessArchitecture
 })) {
   assert(
     artifact.includes(orderedGateStatement),
@@ -454,14 +459,10 @@ for (const [name, artifact] of Object.entries({
   );
 }
 
-const remainingGateStatement =
-  "R1-C Lab wire consumption → R2 deterministic state → R3 availability → " +
-  "R4 network embodiment";
 assert(
-  text.accessArchitecture.includes(remainingGateStatement) &&
-    text.accessArchitecture.includes("R1-A has frozen") &&
+  text.accessArchitecture.includes("R1-A has frozen") &&
     text.accessArchitecture.includes("R1-B independently reproduces"),
-  "accessArchitecture does not distinguish merged R1-A/R1-B from the remaining gate order"
+  "accessArchitecture does not preserve independent R1-A/R1-B provenance"
 );
 
 for (const statement of [
@@ -472,8 +473,25 @@ for (const statement of [
   assert(text.protocol.includes(statement), `Protocol omits mortality/R1 boundary: ${statement}`);
 }
 assert(
-  text.roadmap.includes("one-browser logical quorum is presented as ownerless distribution"),
+  text.roadmap.includes("Never describe as independent distribution"),
   "Submission claims omit the independent-distribution qualification"
+);
+
+for (const statement of [
+  "S0–S11 LOCAL PASS",
+  "S12 new-head review/merge/production acceptance",
+  "production GPT disabled",
+  "English",
+  "Korean"
+]) {
+  assert(
+    text.implementationPlan.includes(statement),
+    `Implementation SSOT is missing current status: ${statement}`
+  );
+}
+assert(
+  !/Session ID\s+`[0-9a-f-]{36}`/i.test(text.releaseEvidence),
+  "Release evidence must not duplicate the private feedback Session ID"
 );
 
 const currentDocLinks = [
@@ -486,7 +504,9 @@ const currentDocLinks = [
   "TRACEABILITY.md",
   "SINGLE_BROWSER_INCUBATOR.md",
   "BUILD_WEEK_EVIDENCE.md",
-  "AGENT_COLLABORATION.md"
+  "AGENT_COLLABORATION.md",
+  "MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
+  "BROWSER_PARTICIPANT_COMPATIBILITY.md"
 ];
 for (const fileName of currentDocLinks) {
   assert(text.readme.includes(`docs/${fileName}`), `README does not link current document: ${fileName}`);
@@ -507,7 +527,10 @@ const removedLegacyDocs = [
 const existingDocs = new Set(await readdir(new URL("docs/", ROOT)));
 for (const fileName of removedLegacyDocs) {
   assert(!existingDocs.has(fileName), `Legacy document must remain removed: ${fileName}`);
-  assert(!text.readme.includes(fileName), `README still references legacy document: ${fileName}`);
+  assert(
+    !text.readme.includes(`docs/${fileName}`),
+    `README still references legacy document: ${fileName}`
+  );
 }
 
 const markdownPaths = [
