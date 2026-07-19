@@ -301,6 +301,17 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.equal((deploymentWorkflow.match(/^          TURNSTILE_SECRET_KEY:/gm) ?? []).length, 0);
   assert.match(deploymentWorkflow, /wrangler deploy --config relay\/wrangler\.jsonc/);
   assert.match(deploymentWorkflow, /npm run verify:release/);
+  const chromiumInstall = deploymentWorkflow.indexOf("npx playwright install --with-deps chromium");
+  const sourceVerification = deploymentWorkflow.indexOf("run: npm test");
+  const relayDeployment = deploymentWorkflow.indexOf("npx wrangler deploy --config relay/wrangler.jsonc");
+  const staticDeployment = deploymentWorkflow.indexOf("run: npm run deploy:lab");
+  const publicVerification = deploymentWorkflow.indexOf("run: npm run verify:release");
+  assert.ok(chromiumInstall > 0);
+  assert.equal(deploymentWorkflow.indexOf("npx playwright install --with-deps chromium", chromiumInstall + 1), -1);
+  assert.ok(chromiumInstall < sourceVerification);
+  assert.ok(sourceVerification < relayDeployment);
+  assert.ok(relayDeployment < staticDeployment);
+  assert.ok(staticDeployment < publicVerification);
   assert.doesNotMatch(deploymentWorkflow, /^      OPENAI_API_KEY:/m);
   assert.doesNotMatch(deploymentWorkflow, /^      SAFETY_IDENTIFIER_SECRET:/m);
   assert.doesNotMatch(deploymentWorkflow, /^      TURNSTILE_SECRET_KEY:/m);
