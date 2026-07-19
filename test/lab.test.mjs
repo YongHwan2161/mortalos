@@ -455,10 +455,15 @@ test("H3B remote verifier rejects any deployed byte or contract substitution", a
   globalThis.fetch = async (url) => {
     const pathname = new URL(url).pathname;
     requestedPaths.push(pathname);
-    if (pathname === "/index.html") {
-      return new Response(null, { status: 308, headers: { location: "/" } });
+    if (pathname.endsWith("/index.html")) {
+      const canonical = pathname.slice(0, -"index.html".length);
+      return new Response(null, { status: 308, headers: { location: canonical } });
     }
-    const path = pathname.slice(1) || "index.html";
+    const path = pathname === "/"
+      ? "index.html"
+      : pathname.endsWith("/")
+        ? `${pathname.slice(1)}index.html`
+        : pathname.slice(1);
     const bytes = new Uint8Array(await readFile(resolve(directory, path)));
     if (path === tamperedPath) bytes[0] ^= 1;
     return new Response(bytes, {
@@ -480,11 +485,17 @@ test("H3B remote verifier rejects any deployed byte or contract substitution", a
       source_commit: sourceCommit
     });
     assert.equal(requestedPaths.includes("/index.html"), false);
+    assert.equal(requestedPaths.includes("/ko/index.html"), false);
     assert.ok(
       requestedPaths.filter((path) => path === "/").length >= 2,
       "manifest index.html bytes must be verified at the canonical root"
     );
-    tamperedPath = manifest.files[0].path;
+    assert.ok(
+      requestedPaths.includes("/ko/"),
+      "nested index bytes must be verified at the canonical directory route"
+    );
+    tamperedPath = manifest.files.find((asset) => asset.path.endsWith("/index.html"))?.path;
+    assert.equal(tamperedPath, "ko/index.html");
     await assert.rejects(verifyDeployedLab({
       url: "https://mortalos.example/",
       expectedCommit: sourceCommit

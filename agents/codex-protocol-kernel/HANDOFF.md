@@ -5,7 +5,28 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Reject unsupported Pages deployment configuration
+### ACTIVE — Verify localized index assets at canonical directory routes
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `44771ae83e2d7450ff9cad654e7a0fae6d144c9e`
+- Work branch: `agent/codex-protocol-kernel--canonical-locale-route`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--canonical-locale-route`
+- Exact shared paths: `scripts/verify-deployed-lab.mjs` and `test/lab.test.mjs`.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md`, `MEMORY.md`, and
+  `WORKLOG.md`.
+- Incident: exact-main Deploy `29698934167/1` passed source, relay, and Pages upload.
+  The exact seven-asset public manifest is live, but final acceptance failed because
+  Cloudflare canonically redirects `ko/index.html` to `/ko/` while the verifier used
+  `redirect: error` on the non-canonical file route.
+- Intended change: resolve root and nested `*/index.html` manifest entries through
+  their canonical directory URLs while continuing to compare their response bytes,
+  MIME, headers, and digest with the exact built index files. Keep redirects rejected
+  on every request actually made by the verifier.
+- Required gates: focused remote-verifier/config tests, spec/diff/secret checks,
+  exact-head Verify and policy, immutable review, expected-head merge, official
+  exact-main Deploy, public manifest/relay/EN-KO acceptance, and Devpost reconciliation.
+
+### HISTORICAL — Reject unsupported Pages deployment configuration
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `7d0b5d272b5e4ab5819ab89d6a628af9e82baec2`
