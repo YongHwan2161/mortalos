@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { resolveWindowsWorkerdBinary } from "../scripts/resolve-workerd-binary.mjs";
 import { RELAY_RATE_POLICY, relayTwoBrowserRequestBudget } from "../src/transport/relay-policy.mjs";
 
 test("relay cadence keeps two active browsers plus an explicit burst below the shared room ceiling", () => {
@@ -31,4 +34,57 @@ test("relay Worker is room-sharded, SQLite-backed, bounded, hibernatable, and au
   assert.equal(config.routes[0].pattern, "relay.mortal-os.com");
   assert.equal(config.env.preview.name, "mortalos-relay-preview");
   assert.notEqual(config.env.preview.vars.ALLOWED_ORIGIN, config.vars.ALLOWED_ORIGIN);
+});
+
+test("Windows workerd resolution prefers the pool-local compatible binary when both layouts exist", async () => {
+  const root = await mkdtemp(join(tmpdir(), "mortalos-workerd-layout-"));
+  const nested = join(
+    root,
+    "node_modules",
+    "@cloudflare",
+    "vitest-pool-workers",
+    "node_modules",
+    "@cloudflare",
+    "workerd-windows-64",
+    "bin",
+    "workerd.exe"
+  );
+  const hoisted = join(
+    root,
+    "node_modules",
+    "@cloudflare",
+    "workerd-windows-64",
+    "bin",
+    "workerd.exe"
+  );
+  try {
+    await mkdir(join(nested, ".."), { recursive: true });
+    await mkdir(join(hoisted, ".."), { recursive: true });
+    await writeFile(nested, "pool-local");
+    await writeFile(hoisted, "hoisted");
+    assert.equal(await resolveWindowsWorkerdBinary(root), nested);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("Windows workerd resolution falls back to the hoisted binary and rejects a missing install", async () => {
+  const root = await mkdtemp(join(tmpdir(), "mortalos-workerd-layout-"));
+  const hoisted = join(
+    root,
+    "node_modules",
+    "@cloudflare",
+    "workerd-windows-64",
+    "bin",
+    "workerd.exe"
+  );
+  try {
+    await mkdir(join(hoisted, ".."), { recursive: true });
+    await writeFile(hoisted, "hoisted");
+    assert.equal(await resolveWindowsWorkerdBinary(root), hoisted);
+    await rm(hoisted, { force: true });
+    await assert.rejects(resolveWindowsWorkerdBinary(root), /installed workerd Windows binary was not found/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

@@ -914,3 +914,46 @@ result, and reproducible verification.
   expected-head merge, official exact-main Deploy, full public EN/KO multi-browser
   acceptance, and Devpost reconciliation. No verifier relaxation or redirect-follow
   bypass is permitted.
+
+## 2026-07-25 KST — Current dependency advisory remediation
+
+- Fresh `origin/main` base:
+  `03fc3ab07ea086642027deebe282a90d804c4991`.
+- Current registry audit reports five high-severity findings:
+  `GHSA-v2hh-gcrm-f6hx` through `fast-uri`,
+  `GHSA-f88m-g3jw-g9cj` through `sharp`, plus affected `miniflare`,
+  `wrangler`, and `@cloudflare/vitest-pool-workers` package ranges.
+- Minimal remediation scope is the direct development dependency update from
+  `wrangler` 4.111.0 to 4.114.0 and
+  `@cloudflare/vitest-pool-workers` 0.18.6 to 0.18.8, with the generated lockfile
+  delta plus the matching locked-version license assertion and third-party notice.
+  No force fix, override, ignore entry, runtime feature, or deployment mutation is
+  authorized.
+- Required evidence: current audit zero high/critical, full repository verification,
+  exact-head CI/policy, immutable independent review, expected-head merge, and
+  post-merge Verify.
+- The upgraded dependency graph hoists `@cloudflare/workerd-windows-64` to the root
+  instead of retaining the older pool-local copy. The Windows runtime-test launcher
+  now resolves either valid installed layout and still fails closed when neither
+  binary exists.
+- Exact candidate validation: `npm ci`, `npm test`, `npm run test:chromium`,
+  `npm run verify:lab`, `npm run verify:transport`, `npm run test:coverage`,
+  `npm audit --audit-level=moderate`, and `git diff --check` all PASS. Coverage is
+  94.70% lines, 92.31% branches, and 95.22% functions; audit is zero findings.
+- The first full run failed at the old pool-local Windows workerd path after every
+  preceding license/spec/link/governance/conformance/property/state/transport gate
+  passed. The launcher compatibility correction was applied and the complete suite
+  was rerun from the start to PASS; the earlier narrowed run is not used as release
+  evidence.
+- Independent review of head `50063ab1e655bf884dd73da2fa2b19ac31dab0da`
+  reproduced an old-graph compatibility defect: root workerd 1.20260710.1 was
+  selected ahead of pool-local 1.20260714.1 and could not satisfy compatibility date
+  2026-07-19. The remediation now prefers the pool-local binary and uses the hoisted
+  root only as fallback. Two filesystem regression tests cover both-present
+  precedence, hoisted-only fallback, and missing-install failure.
+- The first complete rerun after that correction reached the relay runtime after
+  conformance 76/76 and the seeded 10,000-case property suite passed, then hit one
+  90-second Vitest pool startup timeout. An immediate focused relay rerun passed
+  contract 4/4, runtime 5/5, and Wrangler dry-run. The interrupted full run is not
+  claimed as exact-head PASS; remote Verify and a fresh local full rerun remain
+  required for the changed head.

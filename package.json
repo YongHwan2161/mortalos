@@ -50,13 +50,13 @@
     "verify:h2": "node scripts/demo-trace.mjs --verify"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.18.6",
+    "@cloudflare/vitest-pool-workers": "^0.18.8",
     "ajv": "8.20.0",
     "axe-core": "4.12.1",
     "esbuild": "0.28.1",
     "playwright": "1.61.1",
     "vitest": "^4.1.10",
-    "wrangler": "4.111.0"
+    "wrangler": "4.114.0"
   },
   "dependencies": {
     "@noble/curves": "2.2.0",
