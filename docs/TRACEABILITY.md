@@ -9,8 +9,10 @@ visual Lab are executable. Every changed review head must rerun the gate, and th
 latest successful Verify run is the exact-head publication evidence. The H3B static
 deployment contract and exact-source public Pages release are executable and
 verified. The bounded `mortalos/1` state runtime is executable and cross-language
-verified; R3 state availability/recovery and one unified durable participant network
-remain open.
+verified. The S1 candidate routes live, durable-reload, handoff, quorum, catch-up,
+fork, snapshot, and availability behavior through one Participant Core with a
+static adapter boundary. Crash-safe durable quorum and R3 state
+availability/recovery remain open.
 
 ## 1. Test ID convention
 

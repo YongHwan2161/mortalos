@@ -1,31 +1,15 @@
 import {
   canonicalBytes,
-  decodeBase64Url,
-  derivePeerId,
-  encodeBase64Url,
-  genesisApprovalMessage,
-  pulseApprovalMessage
+  encodeBase64Url
 } from "../../src/index.mjs";
 import {
-  createInitialState,
-  createNurtureInput,
-  createStateTransitionPayload,
-  PULSE_SEED_V1_GENOME_BYTES,
-  stateGenomeHash,
-  stateRoot
+  createInitialState
 } from "../../src/state/engine.mjs";
 import {
   createEvidenceBundle,
   importEvidenceBundleBytes,
   publicRecordsFromEvidenceBundle
 } from "../evidence-export.mjs";
-import {
-  createGenesisBody,
-  createStateTransitionBody,
-  genesisEnvelope,
-  pulseEnvelope
-} from "../live-incubator.mjs";
-import { r1AppendCandidates, r1ReplayLineage, r1ValidateGenesis } from "../r1-client.mjs";
 import {
   DURABLE_STORE_VERSION,
   openDurableStore,
@@ -34,6 +18,17 @@ import {
   updateDurableEvidence,
   writeDurableSnapshot
 } from "../storage/durable-store.mjs";
+import {
+  assembleParticipantGenesis,
+  createParticipantGenesisBody,
+  genesisSigningRequest,
+  ParticipantCore
+} from "./core.mjs";
+import {
+  custodianFromPublicKeyBytes,
+  signBytes,
+  assertNonExtractableSigningKey
+} from "./webcrypto-key-store.mjs";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -48,51 +43,46 @@ function assertKeys(value, expected, label) {
   }
 }
 
-function publicCustodian(raw) {
-  const public_key = `ed25519:${encodeBase64Url(raw)}`;
-  return { key_id: derivePeerId(public_key), public_key };
+function randomNonce(prefix) {
+  return `${prefix}${encodeBase64Url(crypto.getRandomValues(new Uint8Array(16)))}`;
 }
 
-async function approval(keyId, privateKey, message) {
-  const signature = await crypto.subtle.sign("Ed25519", privateKey, message);
-  return { key_id: keyId, signature: `ed25519:${encodeBase64Url(new Uint8Array(signature))}` };
-}
-
-async function privateExportRejected(privateKey) {
-  try {
-    await crypto.subtle.exportKey("pkcs8", privateKey);
-    return false;
-  } catch {
-    return true;
-  }
+function bundleRecords(records) {
+  return records.map((record, index) => index === 0
+    ? { kind: "genesis", envelope: clone(record.envelope) }
+    : { kind: "pulse", envelope: clone(record.envelope), payload: clone(record.payload) });
 }
 
 export class DurableParticipant {
+  #core = new ParticipantCore("durable");
   #database = null;
+  #digest = null;
   #keyRecord = null;
   #meta = null;
-  #records = [];
-  #replay = null;
 
   static supported() {
     return Boolean(globalThis.indexedDB && globalThis.crypto?.subtle && globalThis.CryptoKey);
   }
 
   get publicState() {
+    const snapshot = this.#core.snapshot({
+      keyCount: this.#keyRecord ? 1 : 0,
+      keyId: this.#keyRecord?.key_id ?? null
+    });
     return {
       available: DurableParticipant.supported(),
       authority_removed: this.#meta?.authority_removed ?? false,
-      configured: Boolean(this.#replay),
-      digest: this.#replay?.digest ?? null,
+      configured: this.#core.initialized,
+      digest: this.#digest,
       expires_at: this.#meta?.expires_at ?? null,
-      head_hash: this.#replay?.head_hash ?? null,
-      organism_id: this.#replay?.organism_id ?? null,
+      head_hash: snapshot.head_hash,
+      organism_id: snapshot.organism_id,
       private_export_rejected: this.#keyRecord?.private_export_rejected ?? null,
-      pulse_count: this.#replay?.state?.pulse_count ?? null,
-      sequence: this.#replay?.sequence ?? null,
-      signing_authority: Boolean(this.#keyRecord && !this.#meta?.authority_removed),
-      state_root: this.#replay?.state_root ?? null,
-      storage: this.#replay ? ["IndexedDB CryptoKey", "public evidence", "schema metadata"] : []
+      pulse_count: snapshot.pulse_count,
+      sequence: snapshot.sequence,
+      signing_authority: snapshot.current_custodian && !this.#meta?.authority_removed,
+      state_root: snapshot.state_root,
+      storage: this.#core.initialized ? ["IndexedDB CryptoKey", "public evidence", "schema metadata"] : []
     };
   }
 
@@ -117,11 +107,11 @@ export class DurableParticipant {
     ) {
       throw new Error("Durable Participant metadata is unsupported or corrupt");
     }
+
     const imported = importEvidenceBundleBytes(canonicalBytes(snapshot.evidence.bundle));
     const records = publicRecordsFromEvidenceBundle(imported.bundle);
-    const genesis = records[0].envelope;
-    const replay = r1ReplayLineage(genesis, records).outcome;
-    if (replay.status !== "complete") throw new Error("Durable Participant evidence did not replay completely");
+    const core = new ParticipantCore("durable");
+    core.openGenesis(records[0], records.slice(1));
 
     if (!snapshot.meta.authority_removed && snapshot.meta.expires_at <= Date.now()) {
       snapshot = {
@@ -131,43 +121,35 @@ export class DurableParticipant {
       };
       await removeDurableAuthority(await this.#databaseHandle(), snapshot.meta);
     }
+
     let keyRecord = null;
     if (snapshot.keys) {
-      assertKeys(
-        snapshot.keys,
-        ["id", "key_id", "private_key", "public_key_raw"],
-        "durable key"
-      );
+      assertKeys(snapshot.keys, ["id", "key_id", "private_key", "public_key_raw"], "durable key");
       if (
         snapshot.keys.id !== "active" ||
         !(snapshot.keys.private_key instanceof CryptoKey) ||
-        snapshot.keys.private_key.type !== "private" ||
-        snapshot.keys.private_key.extractable !== false ||
-        snapshot.keys.private_key.algorithm?.name !== "Ed25519" ||
-        !snapshot.keys.private_key.usages.includes("sign") ||
         !(snapshot.keys.public_key_raw instanceof ArrayBuffer)
       ) {
         throw new Error("Durable Participant key is corrupt or extractable");
       }
-      const custodian = publicCustodian(new Uint8Array(snapshot.keys.public_key_raw));
+      await assertNonExtractableSigningKey(snapshot.keys.private_key);
+      const custodian = custodianFromPublicKeyBytes(new Uint8Array(snapshot.keys.public_key_raw));
       if (custodian.key_id !== snapshot.keys.key_id) throw new Error("Durable Participant key metadata mismatch");
-      const head = replay.steps.at(-1) ?? r1ValidateGenesis(genesis).outcome;
-      if (!head.next_custody_descriptor.custodians.some((entry) => entry.key_id === snapshot.keys.key_id)) {
+      if (!core.snapshot({ keyCount: 1, keyId: snapshot.keys.key_id }).current_custodian) {
         throw new Error("Durable Participant key is not a current custodian");
       }
       keyRecord = {
         ...snapshot.keys,
-        private_export_rejected: await privateExportRejected(snapshot.keys.private_key)
+        private_export_rejected: true
       };
-      if (!keyRecord.private_export_rejected) throw new Error("Durable Participant private export succeeded");
     } else if (!snapshot.meta.authority_removed) {
       throw new Error("Durable Participant current authority is missing");
     }
 
+    this.#core = core;
+    this.#digest = imported.bundle.digest;
     this.#keyRecord = keyRecord;
     this.#meta = clone(snapshot.meta);
-    this.#records = records;
-    this.#replay = clone(imported.replay);
     return this.publicState;
   }
 
@@ -181,30 +163,27 @@ export class DurableParticipant {
     if (existing.evidence || existing.keys || existing.meta) {
       throw new Error("Durable Participant already exists; restore or remove it first");
     }
-    const generated = await crypto.subtle.generateKey({ name: "Ed25519" }, false, ["sign", "verify"]);
-    if (generated.privateKey.extractable) throw new Error("browser created an extractable private key");
-    const publicRaw = new Uint8Array(await crypto.subtle.exportKey("raw", generated.publicKey));
-    const custodian = publicCustodian(publicRaw);
-    const initialStateBytes = createInitialState(crypto.getRandomValues(new Uint8Array(16)));
-    const body = createGenesisBody({
-      custodians: [custodian],
-      genomeHash: stateGenomeHash(PULSE_SEED_V1_GENOME_BYTES),
-      genomeBytes: PULSE_SEED_V1_GENOME_BYTES,
-      initialQuorum: { type: "threshold", threshold: 1 },
-      initialStateBytes,
-      protocolVersion: "mortalos/1",
-      stateRoot: stateRoot(initialStateBytes),
-      nonce: `nonce:${encodeBase64Url(crypto.getRandomValues(new Uint8Array(16)))}`
-    });
-    const envelope = genesisEnvelope(body, [
-      await approval(custodian.key_id, generated.privateKey, genesisApprovalMessage(body))
-    ]);
-    const accepted = r1ValidateGenesis(envelope).outcome;
-    if (accepted.status !== "accept") throw new Error(`Durable Genesis rejected: ${accepted.code}`);
-    const bundle = createEvidenceBundle([{ kind: "genesis", envelope }]);
     if (!Number.isInteger(ttlDays) || ttlDays < 1 || ttlDays > 30) {
       throw new Error("Durable Participant expiry must be 1 through 30 days");
     }
+
+    const generated = await crypto.subtle.generateKey({ name: "Ed25519" }, false, ["sign", "verify"]);
+    await assertNonExtractableSigningKey(generated.privateKey);
+    const publicRaw = new Uint8Array(await crypto.subtle.exportKey("raw", generated.publicKey));
+    const custodian = custodianFromPublicKeyBytes(publicRaw);
+    const body = createParticipantGenesisBody({
+      custodians: [custodian],
+      initialQuorum: { type: "threshold", threshold: 1 },
+      initialStateBytes: createInitialState(crypto.getRandomValues(new Uint8Array(16))),
+      nonce: randomNonce("nonce:")
+    });
+    const approval = await signBytes(
+      custodian.key_id,
+      generated.privateKey,
+      genesisSigningRequest(body, custodian.key_id).message
+    );
+    const genesisRecord = assembleParticipantGenesis(body, [approval]);
+    const bundle = createEvidenceBundle(bundleRecords([genesisRecord]));
     const snapshot = {
       evidence: { id: "active", bundle },
       keys: {
@@ -226,45 +205,31 @@ export class DurableParticipant {
   }
 
   async nurture(steps = 1) {
-    if (!this.#replay) await this.restore();
-    if (!this.#keyRecord || this.#meta.authority_removed) throw new Error("local durable signing authority is unavailable");
-    const genesis = this.#records[0].envelope;
-    const current = r1ReplayLineage(genesis, this.#records).outcome;
-    if (current.status !== "complete") throw new Error("durable evidence replay terminated");
-    const head = current.steps.at(-1) ?? r1ValidateGenesis(genesis).outcome;
-    const stateBytes = decodeBase64Url(this.#replay.state_base64url);
-    if (!stateBytes) throw new Error("durable state encoding is corrupt");
-    const transition = createStateTransitionPayload({
-      genomeBytes: PULSE_SEED_V1_GENOME_BYTES,
-      inputBytes: createNurtureInput(steps),
-      stateBytes
-    });
-    const body = createStateTransitionBody({
-      genesis: r1ValidateGenesis(genesis).outcome,
-      parent: head,
-      nextStateRoot: stateRoot(transition.nextStateBytes),
-      payload: transition.payload
-    });
-    const envelope = pulseEnvelope(body, [
-      await approval(this.#keyRecord.key_id, this.#keyRecord.private_key, pulseApprovalMessage(body))
-    ]);
-    const result = r1AppendCandidates(genesis, this.#records, [{ envelope, payload: transition.payload }])
-      .outcome.results[0];
-    if (result.status !== "accept") throw new Error(`Durable transition rejected: ${result.code}`);
-    const nextRecords = [...this.#records, { kind: "pulse", envelope, payload: transition.payload }];
-    const bundle = createEvidenceBundle(nextRecords);
+    if (!this.#core.initialized) await this.restore();
+    if (!this.#keyRecord || this.#meta.authority_removed) {
+      throw new Error("local durable signing authority is unavailable");
+    }
+    const proposal = this.#core.createStateProposal(steps);
+    const request = this.#core.approvalRequest(proposal, this.#keyRecord.key_id);
+    const approval = await signBytes(this.#keyRecord.key_id, this.#keyRecord.private_key, request.message);
+    this.#core.commitProposal(proposal, [approval]);
+    const bundle = createEvidenceBundle(bundleRecords(this.#core.records));
     const evidence = { id: "active", bundle };
     await updateDurableEvidence(await this.#databaseHandle(), evidence, this.#meta);
-    return this.#acceptSnapshot({ evidence, keys: {
-      id: "active",
-      key_id: this.#keyRecord.key_id,
-      private_key: this.#keyRecord.private_key,
-      public_key_raw: this.#keyRecord.public_key_raw
-    }, meta: this.#meta });
+    return this.#acceptSnapshot({
+      evidence,
+      keys: {
+        id: "active",
+        key_id: this.#keyRecord.key_id,
+        private_key: this.#keyRecord.private_key,
+        public_key_raw: this.#keyRecord.public_key_raw
+      },
+      meta: this.#meta
+    });
   }
 
   async removeAuthority() {
-    if (!this.#replay) await this.restore();
+    if (!this.#core.initialized) await this.restore();
     const meta = { ...this.#meta, authority_removed: true, pending: null };
     await removeDurableAuthority(await this.#databaseHandle(), meta);
     this.#keyRecord = null;

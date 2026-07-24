@@ -34,6 +34,9 @@ The system does not claim that all data copies can be deleted, that death can al
 The following are trusted for the v0 claim:
 
 - the deterministic protocol validator implementation;
+- the deterministic Participant Core for candidate construction, signing requests,
+  sign-once reservation, append/head recognition, catch-up, fork projection, and
+  public participant snapshots;
 - the accepted-object graph and its non-forgeable validation-capability boundary;
 - standards-conforming SHA-256 and Ed25519 implementations;
 - correct RFC 8785 canonicalization;

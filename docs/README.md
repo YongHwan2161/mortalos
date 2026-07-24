@@ -26,6 +26,7 @@ or global availability. R3 recovery remains planned work.
 
 ## Architecture and compatibility
 
+- [Unified Participant Core](PARTICIPANT_CORE.md)
 - [Endpoint-neutral access architecture](ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](BROWSER_PARTICIPANT_COMPATIBILITY.md)
 
@@ -46,7 +47,9 @@ deadlines, submission paths, or promotion status as current authority.
 The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
 `2-of-3` loss/repair, and consent-gated single-participant durability within the
-qualifications in the claim matrix.
+qualifications in the claim matrix. One Participant Core now implements those
+participant paths on the S1 candidate; promotion still requires immutable review,
+merge, and post-merge evidence.
 
 It does not yet promote crash-safe durable quorum, R3 resource recovery,
 confidential replicated state, independent failure domains, a public SDK/CLI,
