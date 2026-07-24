@@ -12,7 +12,8 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 - Work branch: `agent/codex-protocol-kernel--dependency-advisory-remediation`
 - Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--dependency-advisory-remediation`
 - Exact shared paths: `package.json`, `package-lock.json`, `THIRD_PARTY_NOTICES.md`,
-  `scripts/verify-license.mjs`, and `scripts/run-relay-runtime-tests.mjs`.
+  `scripts/verify-license.mjs`, `scripts/run-relay-runtime-tests.mjs`,
+  `scripts/resolve-workerd-binary.mjs`, and `test/relay-contract.test.mjs`.
 - Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
 - Incident: the current registry audit reports five high-severity findings through
   `wrangler`, `miniflare`, `sharp`, `fast-uri`, and
@@ -21,7 +22,8 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   dependencies to their current non-major remediated releases and regenerate the
   lockfile without `audit fix --force`, overrides, or ignored advisories. Keep the
   Windows relay runner compatible with both npm's former nested and current hoisted
-  platform-binary layouts.
+  platform-binary layouts, preferring the pool-local binary when both versions exist
+  because it is coupled to the pool's Miniflare compatibility date.
 - Required gates: zero high/critical audit, full repository Verify command set,
   exact-head policy and Verify, immutable independent review, expected-head merge,
   and post-merge Verify.

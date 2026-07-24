@@ -945,3 +945,15 @@ result, and reproducible verification.
   passed. The launcher compatibility correction was applied and the complete suite
   was rerun from the start to PASS; the earlier narrowed run is not used as release
   evidence.
+- Independent review of head `50063ab1e655bf884dd73da2fa2b19ac31dab0da`
+  reproduced an old-graph compatibility defect: root workerd 1.20260710.1 was
+  selected ahead of pool-local 1.20260714.1 and could not satisfy compatibility date
+  2026-07-19. The remediation now prefers the pool-local binary and uses the hoisted
+  root only as fallback. Two filesystem regression tests cover both-present
+  precedence, hoisted-only fallback, and missing-install failure.
+- The first complete rerun after that correction reached the relay runtime after
+  conformance 76/76 and the seeded 10,000-case property suite passed, then hit one
+  90-second Vitest pool startup timeout. An immediate focused relay rerun passed
+  contract 4/4, runtime 5/5, and Wrangler dry-run. The interrupted full run is not
+  claimed as exact-head PASS; remote Verify and a fresh local full rerun remain
+  required for the changed head.

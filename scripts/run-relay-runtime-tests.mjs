@@ -3,6 +3,7 @@ import { copyFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveWindowsWorkerdBinary } from "./resolve-workerd-binary.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const vitest = resolve(root, "node_modules", "vitest", "vitest.mjs");
@@ -10,29 +11,7 @@ let temporaryWorkerd = null;
 const env = { ...process.env };
 
 if (process.platform === "win32") {
-  const workerdRelativePath = ["@cloudflare", "workerd-windows-64", "bin", "workerd.exe"];
-  const candidates = [
-    resolve(root, "node_modules", ...workerdRelativePath),
-    resolve(
-      root,
-      "node_modules",
-      "@cloudflare",
-      "vitest-pool-workers",
-      "node_modules",
-      ...workerdRelativePath
-    )
-  ];
-  let source = null;
-  for (const candidate of candidates) {
-    try {
-      await stat(candidate);
-      source = candidate;
-      break;
-    } catch (error) {
-      if (error?.code !== "ENOENT") throw error;
-    }
-  }
-  if (!source) throw new Error("installed workerd Windows binary was not found");
+  const source = await resolveWindowsWorkerdBinary(root);
   temporaryWorkerd = resolve(tmpdir(), `mortalos-workerd-${process.pid}.exe`);
   const sourceStat = await stat(source);
   await copyFile(source, temporaryWorkerd);
