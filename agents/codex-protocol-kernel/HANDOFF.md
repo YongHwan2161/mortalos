@@ -5,28 +5,30 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Remediate current dependency advisories
+### ACTIVE — Define the post-hackathon North Star implementation plan
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `03fc3ab07ea086642027deebe282a90d804c4991`
-- Work branch: `agent/codex-protocol-kernel--dependency-advisory-remediation`
-- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--dependency-advisory-remediation`
-- Exact shared paths: `package.json`, `package-lock.json`, `THIRD_PARTY_NOTICES.md`,
-  `scripts/verify-license.mjs`, `scripts/run-relay-runtime-tests.mjs`,
-  `scripts/resolve-workerd-binary.mjs`, and `test/relay-contract.test.mjs`.
+- Base: `079e37dfdea8ce94998533979546b65cc09709d6`
+- Work branch: `agent/codex-protocol-kernel--post-hackathon-north-star-plan`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--post-hackathon-north-star-plan`
+- Exact shared path: `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`.
 - Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
-- Incident: the current registry audit reports five high-severity findings through
-  `wrangler`, `miniflare`, `sharp`, `fast-uri`, and
-  `@cloudflare/vitest-pool-workers`, so the mandatory Verify audit cannot pass.
-- Intended change: upgrade only the affected direct Cloudflare development
-  dependencies to their current non-major remediated releases and regenerate the
-  lockfile without `audit fix --force`, overrides, or ignored advisories. Keep the
-  Windows relay runner compatible with both npm's former nested and current hoisted
-  platform-binary layouts, preferring the pool-local binary when both versions exist
-  because it is coupled to the pool's Miniflare compatibility date.
-- Required gates: zero high/critical audit, full repository Verify command set,
-  exact-head policy and Verify, immutable independent review, expected-head merge,
-  and post-merge Verify.
+- Intended change: replace contest-oriented prioritization with a plan-only,
+  gate-driven S0–S8 roadmap for one unified participant runtime, crash-safe durable
+  quorum, verifiable state recovery, confidentiality, SDK/CLI productization, one
+  bounded real-resource vertical, independent failure-domain evidence, and later
+  adversarial/browser expansion.
+- Required gates: document-structure audit, exact S0–S8 stage count, mandatory
+  goal/deliverable/PASS/HOLD sections, link/spec/governance checks, and
+  `git diff --check`. No runtime or production change is authorized by this task.
+
+### HISTORICAL — Remediate current dependency advisories
+
+- Branch `agent/codex-protocol-kernel--dependency-advisory-remediation` upgraded
+  Wrangler and the Cloudflare Vitest pool, preserved old/new Windows workerd layouts,
+  and restored the mandatory zero-advisory Verify baseline.
+- PR #29 passed independent expected-head review and squash-merged as
+  `079e37dfdea8ce94998533979546b65cc09709d6`.
 
 ### HISTORICAL — Verify localized index assets at canonical directory routes
 

@@ -957,3 +957,27 @@ result, and reproducible verification.
   contract 4/4, runtime 5/5, and Wrangler dry-run. The interrupted full run is not
   claimed as exact-head PASS; remote Verify and a fresh local full rerun remain
   required for the changed head.
+
+## 2026-07-25 KST — Post-hackathon North Star implementation plan
+
+- Created task branch
+  `agent/codex-protocol-kernel--post-hackathon-north-star-plan` from exact
+  `origin/main` `03fc3ab07ea086642027deebe282a90d804c4991`, then rebased its
+  plan-only commit onto dependency-remediated main
+  `079e37dfdea8ce94998533979546b65cc09709d6`.
+- Added plan-only
+  `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`. It defines a gate-driven
+  S0–S8 sequence: baseline reset, one Participant Core, crash-safe durable quorum,
+  R3 state recovery, confidential state, SDK/CLI, one bounded Continuity Capsule,
+  independent failure-domain burn-in, and later adversarial custody/browser parity.
+- Structural audit passed: exactly nine ordered S0–S8 sections, every stage contains
+  Goal / Implementation scope and deliverables / Strict PASS criteria / HOLD /
+  rollback, and the plan contains 92 strict checklist items.
+- Repository document gates passed: links, specification, governance `30/30`, and
+  `git diff --check`.
+- Planning-time `npm ci` succeeded. The original base audit reported five
+  high-severity findings; prerequisite PR #29 remediated them without force fixes,
+  overrides, or ignores, and the rebased plan now records the zero-finding main
+  baseline while preserving the before/after evidence.
+- This task changes no kernel, runtime, deployment, package lock, or production
+  state. Next implementation authority begins with a separate focused S0 PR only.
