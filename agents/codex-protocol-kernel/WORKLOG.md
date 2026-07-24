@@ -1009,3 +1009,18 @@ result, and reproducible verification.
 - Remaining promotion gates: immutable exact-head reviewer PASS, expected-head
   squash merge, and successful post-merge Verify. S0 remains candidate until all
   three close.
+- PR #38 initially reached policy PASS after correcting the PR-body risk delimiter,
+  but independent review rejected head
+  `80744c34df744e4e2996a1372e70f219b99ee640`: the receipt validator read artifact
+  and lock digests but did not semantically verify `package_digests`, source/base
+  provenance, or structured result counts. That snapshot was revoked and its
+  still-running Verify was cancelled before approval or merge.
+- The corrected validator now reads package, lock, and artifact bytes from the
+  exact recorded source commit, proves that commit is a direct child of the
+  recorded main baseline, checks the source freeze timestamp, requires an exact
+  unique command inventory, and binds protocol/storage/crypto versions, seeds,
+  topology scope, tracking issues, active documents, limitations, and every
+  numerical result. Verify now uses full Git history. Five negative-evidence tests
+  mutate package/artifact digests, source/base lineage, result counts, commands,
+  timestamps, and inventories; every mutation fails closed while the committed
+  receipt passes.

@@ -9,11 +9,12 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run test:governance && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:transport && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:r1 && npm run verify:singleton && npm run verify:h2",
+    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run test:governance && npm run test:baseline-receipt && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:transport && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:r1 && npm run verify:singleton && npm run verify:h2",
     "verify:license": "node scripts/verify-license.mjs",
     "verify:spec": "node scripts/verify-spec.mjs",
     "verify:links": "node scripts/verify-links.mjs",
     "test:governance": "node --test test/agent-governance.test.mjs",
+    "test:baseline-receipt": "node --test test/baseline-receipt.test.mjs",
     "test:governance:coverage": "node --test --experimental-test-coverage --test-coverage-include=scripts/create-agent-worktree.mjs --test-coverage-include=scripts/verify-agent-pr.mjs --test-coverage-lines=90 --test-coverage-branches=75 --test-coverage-functions=90 test/agent-governance.test.mjs",
     "verify:agent-pr": "node scripts/verify-agent-pr.mjs",
     "agent:worktree": "node scripts/create-agent-worktree.mjs",
