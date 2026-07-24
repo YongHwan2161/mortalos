@@ -914,3 +914,34 @@ result, and reproducible verification.
   expected-head merge, official exact-main Deploy, full public EN/KO multi-browser
   acceptance, and Devpost reconciliation. No verifier relaxation or redirect-follow
   bypass is permitted.
+
+## 2026-07-25 KST — Current dependency advisory remediation
+
+- Fresh `origin/main` base:
+  `03fc3ab07ea086642027deebe282a90d804c4991`.
+- Current registry audit reports five high-severity findings:
+  `GHSA-v2hh-gcrm-f6hx` through `fast-uri`,
+  `GHSA-f88m-g3jw-g9cj` through `sharp`, plus affected `miniflare`,
+  `wrangler`, and `@cloudflare/vitest-pool-workers` package ranges.
+- Minimal remediation scope is the direct development dependency update from
+  `wrangler` 4.111.0 to 4.114.0 and
+  `@cloudflare/vitest-pool-workers` 0.18.6 to 0.18.8, with the generated lockfile
+  delta plus the matching locked-version license assertion and third-party notice.
+  No force fix, override, ignore entry, runtime feature, or deployment mutation is
+  authorized.
+- Required evidence: current audit zero high/critical, full repository verification,
+  exact-head CI/policy, immutable independent review, expected-head merge, and
+  post-merge Verify.
+- The upgraded dependency graph hoists `@cloudflare/workerd-windows-64` to the root
+  instead of retaining the older pool-local copy. The Windows runtime-test launcher
+  now resolves either valid installed layout and still fails closed when neither
+  binary exists.
+- Exact candidate validation: `npm ci`, `npm test`, `npm run test:chromium`,
+  `npm run verify:lab`, `npm run verify:transport`, `npm run test:coverage`,
+  `npm audit --audit-level=moderate`, and `git diff --check` all PASS. Coverage is
+  94.70% lines, 92.31% branches, and 95.22% functions; audit is zero findings.
+- The first full run failed at the old pool-local Windows workerd path after every
+  preceding license/spec/link/governance/conformance/property/state/transport gate
+  passed. The launcher compatibility correction was applied and the complete suite
+  was rerun from the start to PASS; the earlier narrowed run is not used as release
+  evidence.

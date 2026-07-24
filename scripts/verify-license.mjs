@@ -24,7 +24,7 @@ for (const [name, version] of Object.entries({
   esbuild: "0.28.1",
   playwright: "1.61.1",
   "qrcode-generator": "1.4.4",
-  wrangler: "4.111.0"
+  wrangler: "4.114.0"
 })) {
   const declared = packageDocument.dependencies?.[name] ?? packageDocument.devDependencies?.[name];
   if (declared !== version) throw new Error(`direct dependency version mismatch: ${name}`);

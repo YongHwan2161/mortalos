@@ -5,7 +5,28 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Verify localized index assets at canonical directory routes
+### ACTIVE — Remediate current dependency advisories
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `03fc3ab07ea086642027deebe282a90d804c4991`
+- Work branch: `agent/codex-protocol-kernel--dependency-advisory-remediation`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--dependency-advisory-remediation`
+- Exact shared paths: `package.json`, `package-lock.json`, `THIRD_PARTY_NOTICES.md`,
+  `scripts/verify-license.mjs`, and `scripts/run-relay-runtime-tests.mjs`.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
+- Incident: the current registry audit reports five high-severity findings through
+  `wrangler`, `miniflare`, `sharp`, `fast-uri`, and
+  `@cloudflare/vitest-pool-workers`, so the mandatory Verify audit cannot pass.
+- Intended change: upgrade only the affected direct Cloudflare development
+  dependencies to their current non-major remediated releases and regenerate the
+  lockfile without `audit fix --force`, overrides, or ignored advisories. Keep the
+  Windows relay runner compatible with both npm's former nested and current hoisted
+  platform-binary layouts.
+- Required gates: zero high/critical audit, full repository Verify command set,
+  exact-head policy and Verify, immutable independent review, expected-head merge,
+  and post-merge Verify.
+
+### HISTORICAL — Verify localized index assets at canonical directory routes
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `44771ae83e2d7450ff9cad654e7a0fae6d144c9e`
