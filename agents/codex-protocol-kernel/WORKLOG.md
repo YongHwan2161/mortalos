@@ -1024,3 +1024,11 @@ result, and reproducible verification.
   mutate package/artifact digests, source/base lineage, result counts, commands,
   timestamps, and inventories; every mutation fails closed while the committed
   receipt passes.
+- The first complete run on the provenance-corrected local head passed the new
+  receipt tests, conformance 76/76, properties 10,000/10,000, state and transport,
+  relay runtime, and isolated quorum, then failed at an existing Lab workflow
+  assertion because it required `persist-credentials` to be the first checkout
+  option. The assertion now continues to pin checkout/setup action SHAs and
+  credentials isolation while additionally requiring `fetch-depth: 0` on Verify.
+  This interrupted run is not used as exact-head release evidence; the corrected
+  head requires a full rerun from the start.
