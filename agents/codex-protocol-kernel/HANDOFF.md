@@ -5,22 +5,36 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Define the post-hackathon North Star implementation plan
+### ACTIVE — Implement S0 post-hackathon baseline reset
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `079e37dfdea8ce94998533979546b65cc09709d6`
-- Work branch: `agent/codex-protocol-kernel--post-hackathon-north-star-plan`
-- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--post-hackathon-north-star-plan`
-- Exact shared path: `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`.
+- Base: `7fd24209f6a4956d4710931fe53d9d4ca2a86b64`
+- Work branch: `agent/codex-protocol-kernel--s0-baseline-reset`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--s0-baseline-reset`
+- Exact shared paths: root `README.md`; current and historical `docs/`; S0 receipt
+  schema/validator/fixture and matching package/test files.
 - Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
-- Intended change: replace contest-oriented prioritization with a plan-only,
-  gate-driven S0–S8 roadmap for one unified participant runtime, crash-safe durable
-  quorum, verifiable state recovery, confidentiality, SDK/CLI productization, one
-  bounded real-resource vertical, independent failure-domain evidence, and later
-  adversarial/browser expansion.
-- Required gates: document-structure audit, exact S0–S8 stage count, mandatory
-  goal/deliverable/PASS/HOLD sections, link/spec/governance checks, and
-  `git diff --check`. No runtime or production change is authorized by this task.
+- Intended change: replace active contest/judge priorities with one post-hackathon
+  North Star and claim matrix, archive historical evidence without deleting it,
+  reconcile v0/v1 state and availability wording, track S1–S8 issues/milestone, and
+  capture a complete machine-validated baseline receipt.
+- Required gates: clean exact-main source, zero dependency audit, active-doc
+  inventory, full test/Chromium/Lab/transport/coverage gates, receipt digest
+  readback, immutable independent review, expected-head merge, and post-merge
+  exact-main Verify. No Participant Core refactor or production deploy is in scope.
+- Candidate source commit:
+  `03ec496e9732c8d9f6861836bfce3c22f3fa6531`. Exact-source `npm test`,
+  Chromium, Lab plus 20/20 persistent handoffs, 10,000 transport schedules,
+  coverage, and audit gates PASS. The S0 receipt now reads back its frozen
+  artifact and package digests directly from that Git commit, verifies its direct
+  parent is the recorded main baseline, and checks the structured results. The
+  Verify workflow fetches full history and enforces the receipt. Independent
+  immutable review, expected-head merge, and post-merge Verify remain required.
+
+### HISTORICAL — Define the post-hackathon North Star implementation plan
+
+- PR #28 merged the plan-only S0–S8 SSOT as
+  `7fd24209f6a4956d4710931fe53d9d4ca2a86b64`.
 
 ### HISTORICAL — Remediate current dependency advisories
 

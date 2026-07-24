@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mortal-os.com/schemas/baseline-receipt.schema.json",
+  "title": "MortalOS stage evidence receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "stage",
+    "status",
+    "source_commit",
+    "base_commit",
+    "dependency_lock_digest",
+    "protocol_versions",
+    "state_versions",
+    "storage_schema_versions",
+    "crypto_versions",
+    "package_digests",
+    "topology_digest",
+    "commands",
+    "environment",
+    "seeds",
+    "started_at",
+    "completed_at",
+    "results",
+    "failures",
+    "artifact_digests",
+    "review_snapshot"
+  ],
+  "properties": {
+    "format": { "const": "mortalos-stage-receipt/1" },
+    "stage": { "const": "S0" },
+    "status": { "enum": ["PASS", "HOLD"] },
+    "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "base_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "dependency_lock_digest": { "$ref": "#/$defs/digest" },
+    "protocol_versions": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },
+    "state_versions": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },
+    "storage_schema_versions": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },
+    "crypto_versions": { "type": "array", "items": { "type": "string" }, "minItems": 1, "uniqueItems": true },
+    "package_digests": { "type": "object", "additionalProperties": { "$ref": "#/$defs/digest" }, "minProperties": 1 },
+    "topology_digest": { "$ref": "#/$defs/digestOrNotApplicable" },
+    "commands": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "status"],
+        "properties": {
+          "command": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["PASS", "HOLD"] },
+          "summary": { "type": "string" }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" }
+        ]
+      },
+      "minProperties": 1
+    },
+    "seeds": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" }
+        ]
+      }
+    },
+    "started_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$" },
+    "completed_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$" },
+    "results": { "type": "object", "minProperties": 1 },
+    "failures": { "type": "array", "items": { "type": "string" } },
+    "artifact_digests": { "type": "object", "additionalProperties": { "$ref": "#/$defs/digest" }, "minProperties": 1 },
+    "review_snapshot": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "digestOrNotApplicable": {
+      "oneOf": [
+        { "$ref": "#/$defs/digest" },
+        { "type": "string", "pattern": "^not_applicable: .+" }
+      ]
+    }
+  }
+}

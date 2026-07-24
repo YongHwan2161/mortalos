@@ -1,6 +1,6 @@
 # MortalOS post-hackathon North Star implementation plan
 
-Status: **PLAN ONLY — S0–S8 are not implemented or promoted by this document**
+Status: **ACTIVE IMPLEMENTATION SSOT — S0 candidate in progress**
 
 Plan authority date: **2026-07-25 KST**
 
@@ -76,7 +76,7 @@ They must be refreshed at S0.
 | Product surface | A bilingual Lab exposes continuity, guided falsification, durability, corpus, and diagnostics. | Three participant implementations and a large Lab controller are not a stable SDK or one coherent product path. |
 | Distribution | Source exports exist internally. | The package remains private `0.0.0` with no supported CLI/package contract. |
 | Dependency health | Prerequisite PR #29 upgraded `wrangler` and `@cloudflare/vitest-pool-workers`, preserved both Windows workerd layouts, and restored the 2026-07-25 audit to zero findings. The before snapshot contained five high-severity findings through `wrangler`, `miniflare`, `sharp`, `fast-uri`, and the pool package. | S0 must bind the before/after advisory evidence and exact lockfile digest into the baseline receipt; any new high/critical finding returns the stage to HOLD. |
-| Documentation | Protocol, threat model, traceability, release evidence, and contest roadmaps exist. | Active roadmaps still contain deadline, judge, Devpost, and already-completed promotion language. |
+| Documentation | Protocol, threat model, traceability, a current roadmap/claim matrix, and an explicitly historical contest archive exist. | S0 remains unpromoted until exact receipt, issue tracking, review, and post-merge evidence pass. |
 
 ### 2.1 Most fundamental implementation decision
 
@@ -159,7 +159,7 @@ S7 burn-in. Estimates are planning ranges, never acceptance evidence.
 
 Priority: **P0**
 
-Status: **PLANNED**
+Status: **IMPLEMENTATION CANDIDATE — not promoted**
 
 ### Goal
 

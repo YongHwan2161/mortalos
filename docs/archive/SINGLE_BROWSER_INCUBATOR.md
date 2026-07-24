@@ -1,5 +1,8 @@
 # Single-browser incubator and profile boundary
 
+> Historical profile — retained for the original single-browser experiment and
+> regression context. It is not a current product roadmap or release instruction.
+
 Status: **legacy L0 profile retained as advanced evidence; L2/L3 candidate uses
 isolated browser participants and must pass exact production acceptance before public
 promotion**

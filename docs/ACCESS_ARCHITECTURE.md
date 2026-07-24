@@ -138,7 +138,7 @@ The source sequence is now:
 
 The publication sequence remains:
 
-`immutable independent review → expected-head merge → post-merge Verify → relay deploy → exact-main Pages deploy → public EN/KO multi-browser readback → Devpost reconciliation`
+`immutable independent review → expected-head merge → post-merge Verify → exact-main deploy → public EN/KO multi-browser readback`
 
 Reopen this architecture decision if any endpoint accepts evidence rejected by another
 conforming endpoint, requires a browser-only signed value, treats relay/GPT/UI output

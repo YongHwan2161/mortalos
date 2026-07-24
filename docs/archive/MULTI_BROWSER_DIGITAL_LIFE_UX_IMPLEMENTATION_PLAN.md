@@ -1,5 +1,10 @@
 # MortalOS multi-browser digital life and bilingual UX implementation plan
 
+> Historical implementation record — the S0–S12 contest-era program is complete
+> and no longer sets current priority. Use
+> [`../POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`](../POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md)
+> as the active implementation SSOT.
+
 상태: **ACTIVE EXECUTION SSOT — S0–S11 LOCAL PASS after two fail-closed reviewer remediation loops; S12 new-head review/merge/production acceptance 대기**<br>
 기준 소스: `8930992e5483c6b645af197348d5725a8648bd09` (`origin/main`, 2026-07-19 KST)<br>
 대회 제출 마감: **2026-07-22 09:00 KST**<br>

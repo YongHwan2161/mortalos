@@ -981,3 +981,66 @@ result, and reproducible verification.
   baseline while preserving the before/after evidence.
 - This task changes no kernel, runtime, deployment, package lock, or production
   state. Next implementation authority begins with a separate focused S0 PR only.
+
+## 2026-07-25 KST — S0 post-hackathon baseline reset
+
+- Fresh implementation base:
+  `7fd24209f6a4956d4710931fe53d9d4ca2a86b64`.
+- Scope is limited to S0: one active North Star and claim matrix, historical contest
+  archive map, v0/v1 documentation reconciliation, S1–S8 tracking, and one complete
+  machine-validated baseline receipt. S1 runtime convergence is explicitly excluded.
+- Required evidence is exact-source full verification, Chromium, Lab persistent
+  handoff, transport differential, coverage, zero dependency audit, receipt digest
+  readback, independent review, expected-head merge, and post-merge Verify.
+- Frozen candidate source:
+  `03ec496e9732c8d9f6861836bfce3c22f3fa6531`. Exact-source validation passed:
+  `npm ci`; full `npm test`; actual Chromium with 10,000/10,000 adversarial
+  rejections; Lab acceptance plus 20/20 persistent A-to-B handoffs; 10,000
+  transport schedules and 30,000 endpoint recoveries; coverage at 94.70% lines,
+  92.31% branches, and 95.22% functions; and dependency audit with zero findings.
+- Baseline receipt creation initially failed closed because strict Ajv rejects the
+  JSON Schema union-type array syntax. The schema now expresses scalar unions with
+  `anyOf`; the transport base64url digest was also decoded to its exact hex value.
+  The corrected `npm run verify:baseline` reads back all ten frozen artifact
+  digests, the active-document inventory, and the known-limitations ledger and
+  PASSes with receipt digest
+  `sha256:50fda9cd7b9353e9e72ff1d7a06ab442cd00f4dc75d1cdbb01896da73a298a90`.
+  The Verify workflow now enforces this receipt on every PR and main push.
+- Remaining promotion gates: immutable exact-head reviewer PASS, expected-head
+  squash merge, and successful post-merge Verify. S0 remains candidate until all
+  three close.
+- PR #38 initially reached policy PASS after correcting the PR-body risk delimiter,
+  but independent review rejected head
+  `80744c34df744e4e2996a1372e70f219b99ee640`: the receipt validator read artifact
+  and lock digests but did not semantically verify `package_digests`, source/base
+  provenance, or structured result counts. That snapshot was revoked and its
+  still-running Verify was cancelled before approval or merge.
+- The corrected validator now reads package, lock, and artifact bytes from the
+  exact recorded source commit, proves that commit is a direct child of the
+  recorded main baseline, checks the source freeze timestamp, requires an exact
+  unique command inventory, and binds protocol/storage/crypto versions, seeds,
+  topology scope, tracking issues, active documents, limitations, and every
+  numerical result. Verify now uses full Git history. Five negative-evidence tests
+  mutate package/artifact digests, source/base lineage, result counts, commands,
+  timestamps, and inventories; every mutation fails closed while the committed
+  receipt passes.
+- The first complete run on the provenance-corrected local head passed the new
+  receipt tests, conformance 76/76, properties 10,000/10,000, state and transport,
+  relay runtime, and isolated quorum, then failed at an existing Lab workflow
+  assertion because it required `persist-credentials` to be the first checkout
+  option. The assertion now continues to pin checkout/setup action SHAs and
+  credentials isolation while additionally requiring `fetch-depth: 0` on Verify.
+  This interrupted run is not used as exact-head release evidence; the corrected
+  head requires a full rerun from the start.
+- The next exact head `9a2213fe72b91bdc5bbbef32f791c15be9ab6fb3`
+  passed the complete local gate set, but independent same-cardinality negative
+  reproduction found six more receipt substitutions that preserved schema shape:
+  package path, active-document entry, limitation prose, non-property seeds,
+  topology explanation, and environment values. The reviewer published a second
+  SHA-bound BLOCK and no merge occurred; its remote Verify was cancelled.
+- The receipt contract now pins the exact package/artifact inventories, active
+  documents, limitation statements, all environment values, all seeds, topology
+  scope, and complete command records. It also reads back the exact committed
+  receipt digest after semantic verification, so any otherwise-unmodeled byte
+  change fails closed. The formal negative suite is now 12/12 and includes all six
+  reviewer substitutions plus an unmodeled timestamp mutation.

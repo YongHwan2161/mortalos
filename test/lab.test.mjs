@@ -335,18 +335,23 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.doesNotMatch(deploymentWorkflow, /^      OPENAI_API_KEY:/m);
   assert.doesNotMatch(deploymentWorkflow, /^      SAFETY_IDENTIFIER_SECRET:/m);
   assert.doesNotMatch(deploymentWorkflow, /^      TURNSTILE_SECRET_KEY:/m);
-  for (const workflow of [
-    deploymentWorkflow,
-    await readFile(new URL("../.github/workflows/verify.yml", import.meta.url), "utf8")
-  ]) {
+  const verificationWorkflow = await readFile(
+    new URL("../.github/workflows/verify.yml", import.meta.url),
+    "utf8"
+  );
+  for (const workflow of [deploymentWorkflow, verificationWorkflow]) {
     const actions = [...workflow.matchAll(/^\s+uses:\s+(actions\/(?:checkout|setup-node)@[0-9a-f]+)(?:\s+#.*)?$/gm)]
       .map((match) => match[1]);
     assert.deepEqual(actions, [
       "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
       "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
     ]);
-    assert.match(workflow, /uses: actions\/checkout@[0-9a-f]+ # v4\.3\.1\n        with:\n          persist-credentials: false/);
+    assert.match(workflow, /uses: actions\/checkout@[0-9a-f]+ # v4\.3\.1[\s\S]{0,160}persist-credentials: false/);
   }
+  assert.match(
+    verificationWorkflow,
+    /uses: actions\/checkout@[0-9a-f]+ # v4\.3\.1\n        with:\n          fetch-depth: 0\n          persist-credentials: false/
+  );
 
   const html = await readFile(new URL("../lab/index.html", import.meta.url), "utf8");
   assert.match(html, new RegExp(`connect-src 'self' ${MORTALOS_SAFE_API_ORIGIN.replaceAll(".", "\\.")}`));

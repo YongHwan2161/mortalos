@@ -200,7 +200,10 @@ A valid next Pulse can eventually be produced only if:
 4. all newly added custodians accept a membership handoff, if any; and
 5. the environment schedules sufficient computation.
 
-MortalOS v0 has no state-transition event. Recoverable logical state is necessary for operational life but is not proven by a heartbeat or membership change.
+MortalOS v0 has no state-transition event. `mortalos/1` adds the bounded
+deterministic transition defined in Protocol section 14, but neither version treats
+a heartbeat, membership change, state root, or transition receipt as proof that the
+resource bytes remain retrievable. R3 availability and recovery remain separate.
 
 If these conditions do not hold, stalling is correct behavior. Safety takes precedence over availability.
 
