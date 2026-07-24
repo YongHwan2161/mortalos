@@ -22,6 +22,12 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   inventory, full test/Chromium/Lab/transport/coverage gates, receipt digest
   readback, immutable independent review, expected-head merge, and post-merge
   exact-main Verify. No Participant Core refactor or production deploy is in scope.
+- Candidate source commit:
+  `03ec496e9732c8d9f6861836bfce3c22f3fa6531`. Exact-source `npm test`,
+  Chromium, Lab plus 20/20 persistent handoffs, 10,000 transport schedules,
+  coverage, and audit gates PASS. The S0 receipt now reads back its frozen
+  artifact digests and is enforced by the Verify workflow. Independent immutable
+  review, expected-head merge, and post-merge Verify remain required.
 
 ### HISTORICAL — Define the post-hackathon North Star implementation plan
 

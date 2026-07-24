@@ -45,5 +45,8 @@ jobs:
       - name: Enforce validator branch coverage
         run: npm run test:coverage
 
+      - name: Verify the S0 baseline receipt
+        run: npm run verify:baseline
+
       - name: Audit production and development dependencies
         run: npm audit --audit-level=moderate

@@ -992,3 +992,20 @@ result, and reproducible verification.
 - Required evidence is exact-source full verification, Chromium, Lab persistent
   handoff, transport differential, coverage, zero dependency audit, receipt digest
   readback, independent review, expected-head merge, and post-merge Verify.
+- Frozen candidate source:
+  `03ec496e9732c8d9f6861836bfce3c22f3fa6531`. Exact-source validation passed:
+  `npm ci`; full `npm test`; actual Chromium with 10,000/10,000 adversarial
+  rejections; Lab acceptance plus 20/20 persistent A-to-B handoffs; 10,000
+  transport schedules and 30,000 endpoint recoveries; coverage at 94.70% lines,
+  92.31% branches, and 95.22% functions; and dependency audit with zero findings.
+- Baseline receipt creation initially failed closed because strict Ajv rejects the
+  JSON Schema union-type array syntax. The schema now expresses scalar unions with
+  `anyOf`; the transport base64url digest was also decoded to its exact hex value.
+  The corrected `npm run verify:baseline` reads back all ten frozen artifact
+  digests, the active-document inventory, and the known-limitations ledger and
+  PASSes with receipt digest
+  `sha256:50fda9cd7b9353e9e72ff1d7a06ab442cd00f4dc75d1cdbb01896da73a298a90`.
+  The Verify workflow now enforces this receipt on every PR and main push.
+- Remaining promotion gates: immutable exact-head reviewer PASS, expected-head
+  squash merge, and successful post-merge Verify. S0 remains candidate until all
+  three close.

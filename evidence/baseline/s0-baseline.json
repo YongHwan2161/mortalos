@@ -1,0 +1,162 @@
+{
+  "format": "mortalos-stage-receipt/1",
+  "stage": "S0",
+  "status": "PASS",
+  "source_commit": "03ec496e9732c8d9f6861836bfce3c22f3fa6531",
+  "base_commit": "7fd24209f6a4956d4710931fe53d9d4ca2a86b64",
+  "dependency_lock_digest": "sha256:c69b887d03595e6f734849129fd73ab0f2898ec81f848b65463d1bf7ba4b9298",
+  "protocol_versions": [
+    "mortalos/0",
+    "mortalos/1"
+  ],
+  "state_versions": [
+    "mortalos-state/1"
+  ],
+  "storage_schema_versions": [
+    "durable-participant/1",
+    "relay-sqlite/v1"
+  ],
+  "crypto_versions": [
+    "Ed25519",
+    "SHA-256"
+  ],
+  "package_digests": {
+    "package.json": "sha256:95b36475a3115f78490603909dfe0b3aa4bf0593d7eb0114b19d8ffda48cdacb"
+  },
+  "topology_digest": "not_applicable: S0 records the local baseline; independent failure-domain topology begins at S7",
+  "commands": [
+    {
+      "command": "npm ci",
+      "status": "PASS",
+      "summary": "Clean lockfile install completed on the frozen candidate source."
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "summary": "Protocol, state, relay, two-browser, UX, portable, differential, singleton, and H2 gates passed."
+    },
+    {
+      "command": "npm run verify:lab",
+      "status": "PASS",
+      "summary": "Local Chromium acceptance and 20 consecutive persistent A-to-B handoffs passed."
+    },
+    {
+      "command": "npm run test:chromium",
+      "status": "PASS",
+      "summary": "Committed and Chromium corpus results were byte-identical; 10,000 adversarial cases were rejected."
+    },
+    {
+      "command": "npm run verify:transport",
+      "status": "PASS",
+      "summary": "10,000 seeded schedules and 30,000 endpoint recoveries matched in Node and Chromium."
+    },
+    {
+      "command": "npm run test:coverage",
+      "status": "PASS",
+      "summary": "75 tests: 73 passed, 2 intentionally skipped; line 94.70%, branch 92.31%, function 95.22%."
+    },
+    {
+      "command": "npm audit --audit-level=moderate",
+      "status": "PASS",
+      "summary": "Found 0 vulnerabilities."
+    },
+    {
+      "command": "npm run verify:baseline",
+      "status": "PASS",
+      "summary": "Receipt schema, source metadata, lock digest, artifact digests, required commands, and temporal bounds read back exactly."
+    }
+  ],
+  "environment": {
+    "os": "Windows",
+    "architecture": "x64",
+    "node": "v22.12.0",
+    "npm": "10.9.0",
+    "chromium": "149.0.7827.55",
+    "timezone": "Asia/Seoul",
+    "cross_origin_isolated_lab": true
+  },
+  "seeds": {
+    "property_corpus": 1297044052,
+    "transport_schedule": "deterministic committed transport corpus",
+    "quorum_trials": "deterministic clean-context combinations"
+  },
+  "started_at": "2026-07-24T18:30:04.000Z",
+  "completed_at": "2026-07-24T18:55:33.427Z",
+  "results": {
+    "protocol_conformance": {
+      "passed": 76,
+      "failed": 0
+    },
+    "property_cases": {
+      "accepted_or_rejected_as_expected": 10000,
+      "failed": 0
+    },
+    "portable_adversarial_cases": {
+      "rejected": 10000,
+      "total": 10000
+    },
+    "transport": {
+      "seeded_schedules": 10000,
+      "endpoint_recoveries": 30000,
+      "node_chromium_result_digest": "sha256:4dd66c9bf7d68af2c3e520987c1bccb3fcad8213a063178319eb7fcba9ab81d3"
+    },
+    "persistent_handoffs": {
+      "passed": 20,
+      "total": 20,
+      "local_rate_limit_failures": 0
+    },
+    "coverage_percent": {
+      "lines": 94.7,
+      "branches": 92.31,
+      "functions": 95.22
+    },
+    "dependency_vulnerabilities": {
+      "moderate_or_higher": 0,
+      "total": 0
+    },
+    "active_document_inventory": [
+      "README.md",
+      "docs/README.md",
+      "docs/NORTH_STAR_ROADMAP.md",
+      "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md",
+      "docs/CLAIM_MATRIX.md",
+      "docs/STAGE_TRACKING.md",
+      "docs/PROTOCOL.md",
+      "docs/THREAT_MODEL.md",
+      "docs/TRACEABILITY.md"
+    ],
+    "known_limitations": [
+      "v0 and v1 still use separate participant execution paths; S1 will create one Participant Core.",
+      "Durable quorum commit is not yet crash-safe across participants; S2 owns prepare/commit recovery.",
+      "R3 state availability, encrypted state, SDK/CLI, and Continuity Capsule work remain unimplemented.",
+      "The current hosted relay and UI share a Cloudflare administrative and infrastructure failure domain; independent topology is deferred to S7."
+    ],
+    "tracking": {
+      "milestone": 1,
+      "stage_issues": [
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37
+      ]
+    }
+  },
+  "failures": [],
+  "artifact_digests": {
+    "README.md": "sha256:0c22b4369114addd0ecf74b6e3906aeec5116f9ba558c609fb258ae5b0e49ad6",
+    "docs/README.md": "sha256:7155ea3658fd8de59a7b445dcbe0c2d9b8151e05ef6962acad3ff98ab4f77904",
+    "docs/NORTH_STAR_ROADMAP.md": "sha256:28c3081d4716b401ea72b8135bcd37c76db06e68f2bcd9a74764977fd9fd7f42",
+    "docs/CLAIM_MATRIX.md": "sha256:e45f50f08739b2834d359d2995835a8392aff49a52f3a38f08bb88b87703c2c1",
+    "docs/STAGE_TRACKING.md": "sha256:6a202264abeabea77d76b33f048745a3b1626f0c8f024b77d72a5157e88e0a22",
+    "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md": "sha256:8ddcc60b8637108fb8fc975545df3cf9d3bc83d02f1de6d7222a88865b7eedde",
+    "docs/PROTOCOL.md": "sha256:e2ae858b12de8519e283217bcc462ef7eea6dfd311ae7a9f3a6cad452a84dec8",
+    "docs/THREAT_MODEL.md": "sha256:38cd95aee26ea24c176595e7b87bf36ca803203ff95cac871d87e304e0b7afeb",
+    "docs/TRACEABILITY.md": "sha256:f323778169081c08779a1d3da92fb92388afbd7864bef458a9f1060574424d65",
+    "docs/archive/README.md": "sha256:159305deabb3a38e6325ecf13de659b0a328dce8ae3f89063237e20f0fe14c26"
+  },
+  "review_snapshot": "pending: reviewer-merge-gate immutable-head review"
+}
