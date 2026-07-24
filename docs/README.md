@@ -1,49 +1,54 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-07-19 KST**
+Last synchronized: **2026-07-25 KST**
 
-This directory keeps one execution SSOT, one release record, and the normative or
-operational documents needed to reproduce the product. Superseded checklists,
-status snapshots, and demo scripts remain in Git history.
+## Current authority
 
-## Start here
+- [North Star roadmap](NORTH_STAR_ROADMAP.md) — short current direction and stage order.
+- [Post-hackathon North Star implementation plan](POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md) — sole detailed S0–S8 execution SSOT, strict PASS/HOLD gates, and Definition of Done.
+- [Current claim matrix](CLAIM_MATRIX.md) — implemented, exact-head verified, physically verified, promoted, and explicitly unclaimed behavior.
+- [Stage tracking](STAGE_TRACKING.md) — S1–S8 issues, owner, milestone, and required receipt paths.
 
-- [Multi-browser implementation and verification SSOT](MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md) — S0–S12 goals, exact status, strict gates, HOLD rules, and release Definition of Done.
-- [Build Week release evidence](BUILD_WEEK_EVIDENCE.md) — last accepted production release, current local candidate, Devpost/video state, and rollback boundary.
-- [North Star roadmap](NORTH_STAR_ROADMAP.md) — the short product direction and remaining promotion gates.
+Exactly one active roadmap and one detailed implementation SSOT exist. Historical
+plans cannot promote a current claim.
 
-## Architecture and compatibility
-
-- [Endpoint-neutral access architecture](ACCESS_ARCHITECTURE.md)
-- [Browser participant compatibility](BROWSER_PARTICIPANT_COMPATIBILITY.md)
-- [Single-browser incubator and legacy L0 profile](SINGLE_BROWSER_INCUBATOR.md)
-
-## Normative protocol set
+## Normative protocol and evidence boundaries
 
 - [Protocol](PROTOCOL.md)
 - [Threat model](THREAT_MODEL.md)
 - [Rejection codes](REJECTION_CODES.md)
 - [Requirements traceability](TRACEABILITY.md)
 
+`mortalos/0` preserves an opaque declared state root and has no state-transition
+event. `mortalos/1` binds exact bounded state artifacts and deterministic
+transitions, but still does not prove resource retrievability, storage durability,
+or global availability. R3 recovery remains planned work.
+
+## Architecture and compatibility
+
+- [Endpoint-neutral access architecture](ACCESS_ARCHITECTURE.md)
+- [Browser participant compatibility](BROWSER_PARTICIPANT_COMPATIBILITY.md)
+
 ## Governance
 
 - [Agent collaboration and merge protocol](AGENT_COLLABORATION.md)
 - [Repository contribution guide](../CONTRIBUTING.md)
 
+## Historical records
+
+- [Historical documentation archive](archive/README.md)
+
+The archive preserves release and experiment evidence without treating old
+deadlines, submission paths, or promotion status as current authority.
+
 ## Current claim boundary
 
-The source tree contains a locally verified L2/L3/L4 release candidate: canonical
-A→B browser succession, complementary-pair `2-of-3` resilience and repair, and a
-deterministic cross-language state engine. These become public claims only when the
-exact merged commit passes production relay, manifest, English/Korean, and clean-
-Chromium acceptance.
+The repository promotes portable lifecycle validation, deterministic v1 state
+transition, read-only evidence replay, Chromium A→B succession, logical Chromium
+`2-of-3` loss/repair, and consent-gated single-participant durability within the
+qualifications in the claim matrix.
 
-MortalOS is not a general-purpose OS, a globally complete death oracle, an ownerless
-model runtime, or proof that isolated browser profiles are separate people or
-administrative domains. GPT-5.6 is optional and non-authoritative. The canonical
-judge URL is <https://mortal-os.com/>; `/ko/` is the Korean route and `pages.dev` is
-incident fallback only.
-
-The OpenAI Build Week rules allow an individual entrant. Three developers or three
-first-time testers are not submission requirements; automated conformance and
-isolated-browser evidence are the reproducible gates.
+It does not yet promote crash-safe durable quorum, R3 resource recovery,
+confidential replicated state, independent failure domains, a public SDK/CLI,
+Byzantine/Sybil resistance, global death, or Firefox/WebKit durable parity. GPT is
+optional and non-authoritative.

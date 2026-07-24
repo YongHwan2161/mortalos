@@ -47,7 +47,8 @@
     "verify:singleton": "node scripts/demo-singleton.mjs --verify",
     "demo:singleton": "node scripts/demo-singleton.mjs",
     "demo:trace": "node scripts/demo-trace.mjs",
-    "verify:h2": "node scripts/demo-trace.mjs --verify"
+    "verify:h2": "node scripts/demo-trace.mjs --verify",
+    "verify:baseline": "node scripts/verify-baseline-receipt.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.8",

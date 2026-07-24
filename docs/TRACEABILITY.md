@@ -1,14 +1,16 @@
-# MortalOS v0 Requirements Traceability
+# MortalOS v0/v1 requirements traceability
 
-Status: **Normative v0 baseline with hardened portable core and exact-head verification requirements**
+Status: **Normative v0 lifecycle plus v1 deterministic-state baseline with exact-head verification requirements**
 
 This document maps every foundational invariant to protocol requirements, rejection
 codes, and automated or planned tests. Transition, lineage, mortality, singleton,
 Node/browser-target portability, actual Chromium, H2 evidence, and the H3A local
 visual Lab are executable. Every changed review head must rerun the gate, and the
 latest successful Verify run is the exact-head publication evidence. The H3B static
-deployment contract and exact-source public Pages release are executable and verified;
-a deterministic state runtime, state availability, and participant network remain open.
+deployment contract and exact-source public Pages release are executable and
+verified. The bounded `mortalos/1` state runtime is executable and cross-language
+verified; R3 state availability/recovery and one unified durable participant network
+remain open.
 
 ## 1. Test ID convention
 

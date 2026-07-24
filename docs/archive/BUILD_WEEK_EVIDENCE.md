@@ -1,5 +1,10 @@
 # Build Week release evidence
 
+> Historical record — frozen after the 2026 Build Week submission. This file is
+> discoverable evidence, not current development or release authority. Use
+> [`../POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`](../POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md)
+> for current priorities.
+
 Last synchronized: **2026-07-19 KST**
 
 This is the external-release record. It separates the last accepted production

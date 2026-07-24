@@ -981,3 +981,14 @@ result, and reproducible verification.
   baseline while preserving the before/after evidence.
 - This task changes no kernel, runtime, deployment, package lock, or production
   state. Next implementation authority begins with a separate focused S0 PR only.
+
+## 2026-07-25 KST — S0 post-hackathon baseline reset
+
+- Fresh implementation base:
+  `7fd24209f6a4956d4710931fe53d9d4ca2a86b64`.
+- Scope is limited to S0: one active North Star and claim matrix, historical contest
+  archive map, v0/v1 documentation reconciliation, S1–S8 tracking, and one complete
+  machine-validated baseline receipt. S1 runtime convergence is explicitly excluded.
+- Required evidence is exact-source full verification, Chromium, Lab persistent
+  handoff, transport differential, coverage, zero dependency audit, receipt digest
+  readback, independent review, expected-head merge, and post-merge Verify.

@@ -7,8 +7,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const documents = [
   "README.md",
   "docs/README.md",
-  "docs/BUILD_WEEK_EVIDENCE.md",
-  "docs/NORTH_STAR_ROADMAP.md"
+  "docs/CLAIM_MATRIX.md",
+  "docs/STAGE_TRACKING.md",
+  "docs/NORTH_STAR_ROADMAP.md",
+  "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md",
+  "docs/archive/README.md",
+  "docs/archive/BUILD_WEEK_EVIDENCE.md",
+  "docs/archive/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
+  "docs/archive/SINGLE_BROWSER_INCUBATOR.md"
 ];
 const external = new Set();
 let localCount = 0;

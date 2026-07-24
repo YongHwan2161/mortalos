@@ -6,18 +6,18 @@ MortalOS is an endpoint-neutral lifecycle protocol and falsification Lab for dig
 resources that must survive process and key rotation without trusting a browser,
 relay, host, UI, or model as the source of truth.
 
-- Live judge URL: [mortal-os.com](https://mortal-os.com/)
+- Live protocol Lab: [mortal-os.com](https://mortal-os.com/)
 - Korean experience: [mortal-os.com/ko/](https://mortal-os.com/ko/)
 - Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos)
-- Exact release evidence: [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md)
+- Current North Star: [post-hackathon roadmap](docs/NORTH_STAR_ROADMAP.md)
 
-The repository now contains a locally verified multi-browser release candidate. A
-claim becomes a **public production claim only after the exact merged commit passes
-deployment, manifest, relay, and clean-Chromium readback**. Until then, the last
-accepted public release remains the rollback baseline recorded in the release
-evidence.
+The repository contains a promoted multi-browser baseline and a stricter next
+program: converge its separate participant implementations into one crash-safe,
+recoverable participant core. The [claim matrix](docs/CLAIM_MATRIX.md) distinguishes
+implemented, exact-head verified, physically verified, promoted, and explicitly
+unclaimed behavior.
 
-## 90-second judge path
+## Guided two-browser proof
 
 1. In Browser A, choose **Create in this browser**.
 2. Open the locally generated join QR or copied link in a clean Browser B profile.
@@ -32,7 +32,7 @@ fixture, corpus replay, raw bytes, durable storage, and protocol diagnostics rem
 available under **Advanced evidence**, but none is required to complete the main
 proof.
 
-## What this release candidate proves
+## What the current promoted baseline proves
 
 | Claim | Evidence |
 | --- | --- |
@@ -70,8 +70,8 @@ npm run dev:lab
 ```
 
 Open the printed URL in two isolated browser profiles. The local server supplies a
-deterministic relay and model fixture, so the main proof requires no Cloudflare or
-OpenAI credential.
+deterministic relay and model fixture, so the proof requires no Cloudflare or OpenAI
+credential.
 
 Focused gates:
 
@@ -160,16 +160,17 @@ out of band; a failed candidate preserves or restores the last accepted deployme
 ## Documentation
 
 - [Documentation map](docs/README.md)
-- [Multi-browser implementation and verification SSOT](docs/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md)
 - [North Star roadmap](docs/NORTH_STAR_ROADMAP.md)
-- [Build Week release evidence](docs/BUILD_WEEK_EVIDENCE.md)
+- [Post-hackathon implementation SSOT](docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md)
+- [Current claim matrix](docs/CLAIM_MATRIX.md)
+- [S1–S8 stage tracking](docs/STAGE_TRACKING.md)
 - [Endpoint-neutral architecture](docs/ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](docs/BROWSER_PARTICIPANT_COMPATIBILITY.md)
 - [Protocol](docs/PROTOCOL.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Rejection codes](docs/REJECTION_CODES.md)
 - [Traceability](docs/TRACEABILITY.md)
-- [Single-browser legacy/incubator profile](docs/SINGLE_BROWSER_INCUBATOR.md)
+- [Historical documentation archive](docs/archive/README.md)
 - [Agent collaboration and merge protocol](docs/AGENT_COLLABORATION.md)
 
 MortalOS is licensed under the [Apache License 2.0](LICENSE). Direct dependency

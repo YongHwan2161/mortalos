@@ -31,11 +31,14 @@ const paths = {
   rejectionCodes: "docs/REJECTION_CODES.md",
   traceability: "docs/TRACEABILITY.md",
   roadmap: "docs/NORTH_STAR_ROADMAP.md",
-  releaseEvidence: "docs/BUILD_WEEK_EVIDENCE.md",
-  incubator: "docs/SINGLE_BROWSER_INCUBATOR.md",
+  releaseEvidence: "docs/archive/BUILD_WEEK_EVIDENCE.md",
+  incubator: "docs/archive/SINGLE_BROWSER_INCUBATOR.md",
   accessArchitecture: "docs/ACCESS_ARCHITECTURE.md",
   docsIndex: "docs/README.md",
-  implementationPlan: "docs/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
+  postImplementationPlan: "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md",
+  claimMatrix: "docs/CLAIM_MATRIX.md",
+  stageTracking: "docs/STAGE_TRACKING.md",
+  implementationPlan: "docs/archive/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
   browserCompatibility: "docs/BROWSER_PARTICIPANT_COMPATIBILITY.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
@@ -281,29 +284,36 @@ const portableGateStatements = [
   "Any cross-runtime mismatch reopens the earliest portable gate"
 ];
 for (const statement of portableGateStatements) {
-  assert(text.roadmap.includes(statement), `North Star roadmap lost C1 evidence: ${statement}`);
-}
-
-for (const statement of [
-  "S0–S11 locally implemented and verified",
-  "| Node/browser agreement | Required per review head |",
-  "An old green run does not cover a new SHA",
-  "| CLI bootstrap proof | Verified proof only |"
-]) {
   assert(
-    text.roadmap.includes(statement) || text.releaseEvidence.includes(statement),
-    `Current roadmap/evidence is missing: ${statement}`
+    text.roadmap.includes(statement) ||
+      text.releaseEvidence.includes(statement) ||
+      text.implementationPlan.includes(statement),
+    `Current or historical verification authority lost C1 evidence: ${statement}`
   );
 }
 
 for (const statement of [
-  "H3A MortalOS Lab",
-  "Additional H3B exact-deployment criteria",
-  "Three non-extractable Worker keys"
+  "S0 — baseline reset:",
+  "S1 — Unified Participant Core:",
+  "An old green run does not cover a new SHA",
+  "Crash-safe durable `2-of-3` cold recovery"
 ]) {
   assert(
-    text.roadmap.includes(statement) || text.releaseEvidence.includes(statement),
-    `H3 status evidence is missing: ${statement}`
+    text.roadmap.includes(statement) ||
+      text.postImplementationPlan.includes(statement) ||
+      text.claimMatrix.includes(statement),
+    `Current roadmap, plan, or claim matrix is missing: ${statement}`
+  );
+}
+
+for (const statement of [
+  "A→B browser custody succession",
+  "Logical browser `2-of-3` loss and D repair",
+  "Profiles are not evidence of separate people"
+]) {
+  assert(
+    text.claimMatrix.includes(statement),
+    `Current browser claim boundary is missing: ${statement}`
   );
 }
 
@@ -473,20 +483,20 @@ for (const statement of [
   assert(text.protocol.includes(statement), `Protocol omits mortality/R1 boundary: ${statement}`);
 }
 assert(
-  text.roadmap.includes("Never describe as independent distribution"),
-  "Submission claims omit the independent-distribution qualification"
+  text.claimMatrix.includes("Physically verified") &&
+    text.claimMatrix.includes("separate people"),
+  "Current claims omit the independent-distribution qualification"
 );
 
 for (const statement of [
-  "S0–S11 LOCAL PASS",
-  "S12 new-head review/merge/production acceptance",
-  "production GPT disabled",
-  "English",
-  "Korean"
+  "ACTIVE IMPLEMENTATION SSOT",
+  "## 6. S0 — Post-hackathon baseline reset",
+  "## 14. S8 — Adversarial custody and browser parity",
+  "GPT/model product features"
 ]) {
   assert(
-    text.implementationPlan.includes(statement),
-    `Implementation SSOT is missing current status: ${statement}`
+    text.postImplementationPlan.includes(statement),
+    `Post-hackathon implementation SSOT is missing: ${statement}`
   );
 }
 assert(
@@ -497,19 +507,30 @@ assert(
 const currentDocLinks = [
   "README.md",
   "NORTH_STAR_ROADMAP.md",
+  "POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md",
+  "CLAIM_MATRIX.md",
+  "STAGE_TRACKING.md",
   "ACCESS_ARCHITECTURE.md",
   "PROTOCOL.md",
   "THREAT_MODEL.md",
   "REJECTION_CODES.md",
   "TRACEABILITY.md",
-  "SINGLE_BROWSER_INCUBATOR.md",
-  "BUILD_WEEK_EVIDENCE.md",
   "AGENT_COLLABORATION.md",
-  "MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
+  "archive/README.md",
   "BROWSER_PARTICIPANT_COMPATIBILITY.md"
 ];
 for (const fileName of currentDocLinks) {
   assert(text.readme.includes(`docs/${fileName}`), `README does not link current document: ${fileName}`);
+}
+
+for (let stage = 1; stage <= 8; stage += 1) {
+  const issue = 29 + stage;
+  assert(text.stageTracking.includes(`| S${stage} `), `Stage tracking is missing S${stage}`);
+  assert(text.stageTracking.includes(`/issues/${issue}`), `Stage tracking is missing issue #${issue}`);
+  assert(
+    text.stageTracking.includes(`evidence/stages/s${stage}-`),
+    `Stage tracking is missing the S${stage} receipt path`
+  );
 }
 
 const removedLegacyDocs = [
