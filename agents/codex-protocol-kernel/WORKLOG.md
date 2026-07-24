@@ -1032,3 +1032,15 @@ result, and reproducible verification.
   credentials isolation while additionally requiring `fetch-depth: 0` on Verify.
   This interrupted run is not used as exact-head release evidence; the corrected
   head requires a full rerun from the start.
+- The next exact head `9a2213fe72b91bdc5bbbef32f791c15be9ab6fb3`
+  passed the complete local gate set, but independent same-cardinality negative
+  reproduction found six more receipt substitutions that preserved schema shape:
+  package path, active-document entry, limitation prose, non-property seeds,
+  topology explanation, and environment values. The reviewer published a second
+  SHA-bound BLOCK and no merge occurred; its remote Verify was cancelled.
+- The receipt contract now pins the exact package/artifact inventories, active
+  documents, limitation statements, all environment values, all seeds, topology
+  scope, and complete command records. It also reads back the exact committed
+  receipt digest after semantic verification, so any otherwise-unmodeled byte
+  change fails closed. The formal negative suite is now 12/12 and includes all six
+  reviewer substitutions plus an unmodeled timestamp mutation.

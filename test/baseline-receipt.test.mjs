@@ -80,3 +80,80 @@ test("temporal and inventory substitutions fail closed", async () => {
     })
   );
 });
+
+test("same-cardinality package inventory substitution fails closed", async () => {
+  const substituted = structuredClone(receipt);
+  substituted.package_digests = {
+    "README.md": receipt.artifact_digests["README.md"]
+  };
+  await assert.rejects(
+    verifyBaselineReceipt({ receiptOverride: substituted }),
+    /package digest inventory mismatch/
+  );
+});
+
+test("same-cardinality active-document substitution fails closed", async () => {
+  const substituted = structuredClone(receipt);
+  substituted.results.active_document_inventory = substituted.results.active_document_inventory
+    .map((path) => path === "docs/PROTOCOL.md" ? "docs/archive/README.md" : path);
+  await assert.rejects(verifyBaselineReceipt({ receiptOverride: substituted }));
+});
+
+test("arbitrary known-limitations substitution fails closed", async () => {
+  const substituted = structuredClone(receipt);
+  substituted.results.known_limitations = [
+    "arbitrary replacement limitation one with sufficient characters",
+    "arbitrary replacement limitation two with sufficient characters",
+    "arbitrary replacement limitation three with sufficient characters",
+    "arbitrary replacement limitation four with sufficient characters"
+  ];
+  await assert.rejects(verifyBaselineReceipt({ receiptOverride: substituted }));
+});
+
+test("transport and quorum seed substitution fails closed", async () => {
+  const substituted = structuredClone(receipt);
+  substituted.seeds.transport_schedule = "another deterministic-looking transport corpus";
+  substituted.seeds.quorum_trials = "another deterministic-looking quorum corpus";
+  await assert.rejects(
+    verifyBaselineReceipt({ receiptOverride: substituted }),
+    /baseline seeds mismatch/
+  );
+});
+
+test("topology scope substitution fails closed", async () => {
+  await assert.rejects(
+    verifyBaselineReceipt({
+      receiptOverride: mutate(
+        ["topology_digest"],
+        "not_applicable: S0 uses a different but schema-valid topology explanation"
+      )
+    }),
+    /baseline topology scope mismatch/
+  );
+});
+
+test("environment substitution fails closed", async () => {
+  const substituted = structuredClone(receipt);
+  substituted.environment = {
+    os: "Linux",
+    architecture: "arm64",
+    node: "v22.99.0",
+    npm: "10.99.0",
+    chromium: "999.0.0.0",
+    timezone: "UTC",
+    cross_origin_isolated_lab: false
+  };
+  await assert.rejects(
+    verifyBaselineReceipt({ receiptOverride: substituted }),
+    /baseline environment mismatch/
+  );
+});
+
+test("any otherwise-unmodeled receipt-byte drift fails the frozen digest", async () => {
+  const substituted = structuredClone(receipt);
+  substituted.completed_at = "2026-07-24T18:55:34.427Z";
+  await assert.rejects(
+    verifyBaselineReceipt({ receiptOverride: substituted }),
+    /committed baseline receipt digest mismatch/
+  );
+});
