@@ -52,5 +52,8 @@ jobs:
       - name: Verify the S0 baseline receipt
         run: npm run verify:baseline
 
+      - name: Verify the S1 Participant Core receipt
+        run: npm run verify:s1
+
       - name: Audit production and development dependencies
         run: npm audit --audit-level=moderate

@@ -1095,6 +1095,32 @@ result, and reproducible verification.
   commit directly descended from S0 main, followed by a machine-validated receipt
   commit, changed-head verification, independent review, expected-head merge, and
   post-merge Verify.
+- Froze the source implementation as
+  `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`, whose direct parent is the S0
+  squash merge `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`. The worktree was clean before
+  the exact-source release chain began.
+- Re-ran the complete release chain on that immutable source. `npm test`,
+  `npm run verify:lab`, `npm run test:chromium`,
+  `npm run verify:transport`, `npm run test:coverage`, and
+  `npm audit --audit-level=moderate` all completed with exit code zero. This exact
+  run records conformance 76/76, property cases 10,000/10,000, state transitions
+  10,000, isolated Chromium quorum 10 runs, persistent handoff 20/20 at 37 relay
+  operations per 12 seconds with zero local 429s, portable and Chromium
+  adversarial rejection 10,000/10,000, transport 10,000 schedules / 30,000
+  recoveries, repository coverage 94.70% lines / 92.31% branches / 95.22%
+  functions, and zero dependency vulnerabilities.
+- Added the strict S1 receipt schema, validator, and 11-test negative suite.
+  `evidence/stages/s1-participant-core.json` binds the immutable source and parent,
+  the exact 24-file source diff and every Git-object digest, participant contract
+  versions, complete command records, environment, seeds, behavioral matrix,
+  negative outcomes, quantitative evidence, remaining limitations, and frozen
+  receipt bytes. Receipt digest:
+  `sha256:c34d8457f9a25cb1d76ef90d8d581c2864721e646c3b6aeb97218f5dc908b7b3`.
+- The committed-receipt candidate passes `npm run test:s1-receipt` 11/11,
+  `npm run verify:s1`, `npm run verify:spec`, and `npm run verify:links`.
+  Promotion remains HOLD until a descendant evidence commit is independently
+  reviewed at an immutable head, expected-head merged, post-merge Verify succeeds,
+  and the production deployment is verified.
 - PR #39 first reached clean policy and Verify on head
   `07aa025356909e5f65c87162f7f86f2bbe13f958`, but independent
   `reviewer-merge-gate` reproduction BLOCKed the snapshot before attestation or
@@ -1110,11 +1136,15 @@ result, and reproducible verification.
   outside the frozen receipt. The corrected source is the direct child of S0;
   the receipt descendant binds its new source SHA and all changed Git-object
   digests. A fresh detached exact-source install and complete release chain
-  passed: core 10/10 at 100.00/94.80/100.00 coverage, conformance 76/76,
+  passed: core 10/10 at 100.00/94.83/100.00 coverage, conformance 76/76,
   properties 10,000/10,000, multi-browser 7/7, isolated quorum 10 runs, Lab,
   persistent handoff 20/20 at 38 operations per 12 seconds and zero local 429s,
   Chromium and portable 10,000/10,000, transport 10,000/30,000, repository
-  coverage 94.70/92.23/95.22, and zero vulnerabilities.
+  coverage 94.70/92.31/95.22, and zero vulnerabilities.
+- The replacement exact-source run began at
+  `2026-07-25T00:31:38.5986126Z` and completed at
+  `2026-07-25T00:57:28.4493734Z`; no result from the superseded source was used
+  as evidence for `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`.
 - Replacement head `5bbbb8578a282063362a37276caeb2dd5a443bc7` passed current
   Policy `30135536623/1` and Verify `30135488202/1`, but a fresh independent
   review again BLOCKed it without attestation or merge. After a valid sibling

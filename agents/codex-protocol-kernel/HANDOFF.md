@@ -30,14 +30,23 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   sign-once, append, recognized head, catch-up/fork, state/custody projection, and
   availability. BrowserIncubator, Live, Durable, and Quorum are adapters; a static
   test prohibits their direct low-level validation/signing imports.
-- Exact local evidence on the uncommitted source candidate: `npm test` PASS from
-  the beginning; Participant Core coverage 100.00% lines / 94.19% branches /
+- Frozen source commit:
+  `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`, a direct child of S0 main
+  `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`. Exact local evidence on that
+  immutable source: `npm test` PASS from
+  the beginning; Participant Core coverage 100.00% lines / 94.83% branches /
   100.00% functions; two Node runs and Chromium agree on 10,000 x 12 schedules at
   `sha256:tECHi0pIS7pbOKPEdX1NYweTxCRPrPiNmASrAz0-1zo`; full conformance 76/76;
   properties 10,000/10,000; isolated Chromium quorum PASS; Lab plus 20/20
   persistent A-to-B handoffs PASS; transport 10,000 schedules / 30,000 recoveries
-  PASS; repository coverage 94.70% lines / 92.23% branches / 95.22% functions;
+  PASS; repository coverage 94.70% lines / 92.31% branches / 95.22% functions;
   dependency audit zero findings.
+- Exact receipt:
+  `evidence/stages/s1-participant-core.json`,
+  `sha256:c34d8457f9a25cb1d76ef90d8d581c2864721e646c3b6aeb97218f5dc908b7b3`.
+  Its 11-test negative suite and direct validator pass; it binds the exact
+  source/base lineage, all 24 changed source paths and Git-object digests,
+  contracts, commands, numerical outcomes, limitations, environment, and bytes.
 - PR #39 review of the superseded head `07aa025356909e5f65c87162f7f86f2bbe13f958`
   correctly BLOCKed a silent rollback: `sync([])` or a prefix response replaced
   local evidence and could reduce sequence 2 to 0 or 1. No attestation or merge

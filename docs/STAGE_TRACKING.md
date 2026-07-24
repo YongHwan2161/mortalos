@@ -29,5 +29,7 @@ Anything less is **HOLD**.
 
 S1 is implemented on
 `agent/codex-protocol-kernel--s1-unified-participant-core`. Its promotion remains
-**HOLD** until the exact receipt, immutable-head review, expected-head merge, and
-post-merge Verify all pass. S2 has not started.
+**HOLD**. The exact source-bound receipt at
+`evidence/stages/s1-participant-core.json` passes locally; immutable-head review,
+expected-head merge, post-merge Verify, and production deployment still must pass.
+S2 has not started.
