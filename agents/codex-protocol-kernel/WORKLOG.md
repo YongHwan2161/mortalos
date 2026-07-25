@@ -1345,3 +1345,11 @@ result, and reproducible verification.
 - Promotion remains HOLD until this correction passes exact-head policy and Verify,
   independent immutable review, expected-head merge, and exact-main Verify plus
   Deploy.
+- PR #42 head `e6dff823f5f089c527ab82e1ed3e779fef1924a2` passed policy
+  `30180258137` but exact-head Verify `30180258092` failed the synthetic squash
+  test. The helper used `git write-tree`, which reads the mutable index. The local
+  pre-commit run therefore synthesized the unchanged main tree, while CI's clean
+  checkout synthesized the PR head and correctly detected the changed HANDOFF
+  digest. The replacement helper resolves an explicit committed tree: the found
+  promotion commit in promotion mode, or committed HEAD in candidate mode. No
+  uncommitted or staged index state can influence the synthetic receipt proof.

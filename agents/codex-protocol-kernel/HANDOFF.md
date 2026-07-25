@@ -23,7 +23,10 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 - Notes: PR #41 correctly promoted S2 to main at `55db1a9b`, but both post-merge
   workflows failed before deployment because the first receipt test asserted
   `candidate` unconditionally even though `verifyS2Receipt()` correctly returned
-  `promotion`. This task changes no runtime, receipt, schema, or evidence bytes.
+  `promotion`. PR #42 run `30180258092` then exposed that the synthetic promotion
+  helper also depended on the mutable Git index; it must instead derive its tree
+  from the exact existing promotion commit or committed candidate HEAD. This task
+  changes no runtime, receipt, schema, or evidence bytes.
 
 ### ACTIVE — Implement S2 crash-safe durable quorum
 

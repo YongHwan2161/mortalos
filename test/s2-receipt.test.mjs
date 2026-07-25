@@ -37,8 +37,8 @@ function gitSucceeds(args) {
   }
 }
 
-function syntheticPromotionCommit() {
-  const tree = git(["write-tree"]);
+function syntheticPromotionCommit(treeish) {
+  const tree = git(["rev-parse", `${treeish}^{tree}`]);
   return git(
     ["commit-tree", tree, "-p", receipt.base_commit],
     {
@@ -86,7 +86,8 @@ test("the committed S2 receipt binds the exact source snapshot and strict result
 });
 
 test("a synthetic direct-parent squash is permanently verifiable without source ancestry", async () => {
-  const promotionCommit = syntheticPromotionCommit();
+  const repositoryResult = await verifyS2Receipt();
+  const promotionCommit = syntheticPromotionCommit(repositoryResult.promotionCommit ?? "HEAD");
   const result = await verifyS2Receipt({ promotionCommitOverride: promotionCommit });
   assert.equal(result.mode, "promotion");
   assert.equal(result.promotionCommit, promotionCommit);
