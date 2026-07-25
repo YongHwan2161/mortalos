@@ -48,7 +48,7 @@ function syntheticPromotionCommit() {
 async function rejectsMutation(path, value) {
   await assert.rejects(
     verifyS2Receipt({ receiptOverride: mutate(path, value) }),
-    /committed S2 receipt digest mismatch|must be equal to constant/
+    /committed S2 receipt digest mismatch|source commit mismatch|base commit mismatch|must be equal to constant/
   );
 }
 
