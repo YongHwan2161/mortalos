@@ -5,7 +5,70 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Implement S0 post-hackathon baseline reset
+### ACTIVE — Implement S1 Unified Participant Core
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`
+- Work branch: `agent/codex-protocol-kernel--s1-unified-participant-core`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--s1-unified-participant-core`
+- Exact shared paths: participant core/contracts/adapters under `lab/participant/`;
+  participant tests/verifiers and matching package/workflow/docs/evidence files.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
+- Intended change: move candidate construction, signing requests, sign-once policy,
+  candidate verification, append/head recognition, catch-up/fork exposure, state
+  projection, availability classification, and deterministic snapshots into one
+  pure Participant Core. Live, Durable, and Quorum paths retain only key,
+  persistence, transport, clock/consent, and UI adaptation.
+- Required gates: every existing participant scenario through the same core;
+  10,000 deterministic schedules on two runs and Node/browser parity; distinct
+  stable negative outcomes; static forbidden-import boundary; core coverage at
+  least 95/90/95; full existing repository/Chromium/Lab/transport/coverage/audit;
+  immutable independent review, expected-head merge, and post-merge Verify.
+- Excluded: S2 crash-safe prepare/commit storage, S3 recovery protocol, encrypted
+  state, SDK/CLI, Capsule, independent provider topology, or production deployment.
+- Candidate implementation: one `ParticipantCore` now owns construction,
+  sign-once, append, recognized head, catch-up/fork, state/custody projection, and
+  availability. BrowserIncubator, Live, Durable, and Quorum are adapters; a static
+  test prohibits their direct low-level validation/signing imports.
+- Frozen source commit:
+  `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`, a direct child of S0 main
+  `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`. Exact local evidence on that
+  immutable source: `npm test` PASS from
+  the beginning; Participant Core coverage 100.00% lines / 94.83% branches /
+  100.00% functions; two Node runs and Chromium agree on 10,000 x 12 schedules at
+  `sha256:tECHi0pIS7pbOKPEdX1NYweTxCRPrPiNmASrAz0-1zo`; full conformance 76/76;
+  properties 10,000/10,000; isolated Chromium quorum PASS; Lab plus 20/20
+  persistent A-to-B handoffs PASS; transport 10,000 schedules / 30,000 recoveries
+  PASS; repository coverage 94.70% lines / 92.31% branches / 95.22% functions;
+  dependency audit zero findings.
+- Exact receipt:
+  `evidence/stages/s1-participant-core.json`,
+  `sha256:c34d8457f9a25cb1d76ef90d8d581c2864721e646c3b6aeb97218f5dc908b7b3`.
+  Its 11-test negative suite and direct validator pass; it binds the exact
+  source/base lineage, all 24 changed source paths and Git-object digests,
+  contracts, commands, numerical outcomes, limitations, environment, and bytes.
+- PR #39 review of the superseded head `07aa025356909e5f65c87162f7f86f2bbe13f958`
+  correctly BLOCKed a silent rollback: `sync([])` or a prefix response replaced
+  local evidence and could reduce sequence 2 to 0 or 1. No attestation or merge
+  occurred. The corrected core monotonically unions received and recognized
+  evidence; empty, prefix, duplicate, reordered, stale-peer, and post-fork
+  incomplete responses now preserve the head or visible fork. Focused regression,
+  coverage, model parity, and the complete exact-source release chain pass.
+- Replacement head `5bbbb8578a282063362a37276caeb2dd5a443bc7` also remained
+  BLOCKED without attestation or merge. Independent adversarial replay found that
+  once aggregate R1 status was forked, catch-up skipped every failed candidate:
+  post-fork corrupt evidence was retained and could reduce `fork_points` from one
+  to zero. Remediation now permits only replay-stale, fork-detecting, and
+  already-forked non-accept results during valid fork reconstruction. Corrupt,
+  malformed, and below-quorum peer evidence fails before mutation and preserves
+  the prior record set and fork snapshot.
+- Required next action: rerun focused gates, rebuild the frozen source/evidence
+  history and receipt, rerun the complete exact-source and changed-head chains,
+  update PR #39, obtain a new immutable independent review, merge only the
+  expected head, then require post-merge Verify and production deployment. No S2
+  work may begin before those gates close.
+
+### HISTORICAL — Implement S0 post-hackathon baseline reset
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `7fd24209f6a4956d4710931fe53d9d4ca2a86b64`
@@ -30,6 +93,9 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   parent is the recorded main baseline, and checks the structured results. The
   Verify workflow fetches full history and enforces the receipt. Independent
   immutable review, expected-head merge, and post-merge Verify remain required.
+- PR #38 independently PASSed and squash-merged as
+  `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`; post-merge Verify
+  `30124569468/1` succeeded.
 
 ### HISTORICAL — Define the post-hackathon North Star implementation plan
 

@@ -1,6 +1,6 @@
 # MortalOS post-hackathon North Star implementation plan
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S0 candidate in progress**
+Status: **ACTIVE IMPLEMENTATION SSOT — S1 candidate in progress**
 
 Plan authority date: **2026-07-25 KST**
 
@@ -159,7 +159,7 @@ S7 burn-in. Estimates are planning ranges, never acceptance evidence.
 
 Priority: **P0**
 
-Status: **IMPLEMENTATION CANDIDATE — not promoted**
+Status: **PROMOTED — PR #38 merged; post-merge Verify 30124569468/1 passed**
 
 ### Goal
 
@@ -226,7 +226,7 @@ runtime refactoring starts.
 
 Priority: **P0 — first runtime change**
 
-Status: **PLANNED**
+Status: **IMPLEMENTED CANDIDATE — promotion pending exact receipt, independent review, merge, and post-merge Verify**
 
 ### Goal
 

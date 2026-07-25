@@ -1044,3 +1044,118 @@ result, and reproducible verification.
   receipt digest after semantic verification, so any otherwise-unmodeled byte
   change fails closed. The formal negative suite is now 12/12 and includes all six
   reviewer substitutions plus an unmodeled timestamp mutation.
+
+## 2026-07-25 KST — S1 Unified Participant Core
+
+- Fresh implementation base:
+  `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`, the independently reviewed S0
+  squash merge with post-merge Verify `30124569468/1` SUCCESS.
+- Current architecture has three authoritative participant implementations:
+  `LiveEndpointParticipant`, `DurableParticipant`, and
+  `QuorumEndpointParticipant`. Each currently constructs bodies or envelopes,
+  validates candidates, appends records, and derives a head; Durable and Live also
+  duplicate state-transition construction, while only Quorum owns a sign-once
+  journal. This is the exact S1 root defect.
+- S1 will introduce one versioned deterministic operation/snapshot contract and
+  explicit key/evidence/state/sign-once/transport ports. All acceptance, recognized
+  head, proposal, signature-request, append, fork, catch-up, and availability
+  branches move into the core. Adapters may expose storage/UI projections but may
+  not import candidate builders, signing-message constructors, or validation
+  capabilities.
+- Required promotion evidence is the complete S1 strict matrix from
+  `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`; no narrowed unit-only
+  success or parallel authoritative legacy path is sufficient.
+- Added versioned operation/snapshot/port contracts, internal protocol-object
+  construction primitives, WebCrypto key adapter, deterministic model, and one
+  `ParticipantCore`. Replaced the independent authority branches in the live
+  incubator, Live endpoint, Durable reload path, and Quorum endpoint with core
+  calls. The core uses R1 append semantics—not candidate shape validation alone—
+  so a stale completed sibling becomes visible fork evidence instead of advancing
+  a second recognized head.
+- Added a source-boundary gate that rejects direct `r1-client`,
+  `protocol-objects`, validator/lineage, or signing-message imports from adapters
+  and UI. The core-only gate passes at 100.00% lines, 94.19% branches, and 100.00%
+  functions, above the S1 95/90/95 threshold.
+- Added a 10,000-seed participant model corpus with stable outcomes for missing
+  state, insufficient quorum, duplicate signature, transport outage, conflicting
+  tuple, stale parent, corrupt evidence, and append. Two Node executions and
+  actual Chromium serialize 8,338,152 exact JSON bytes to
+  `sha256:tECHi0pIS7pbOKPEdX1NYweTxCRPrPiNmASrAz0-1zo`.
+- Focused integration passed: participant tests 10/10, existing multi-browser
+  tests 7/7, isolated Chromium quorum 10 runs, Lab source/API 23/23, full local Lab
+  acceptance, and 20/20 persistent English/Korean A-to-B handoffs with profile A
+  closed and zero relay 429s.
+- Fresh full `npm test` passed from the beginning, including conformance 76/76,
+  property corpus 10,000/10,000, state 10,000 transitions, relay runtime 5/5,
+  R1 7/7, UX, portable 10,000/10,000, state/R1 Python differential, singleton, and
+  H2. Separate actual Chromium, transport differential, repository coverage, and
+  dependency audit passed. Repository coverage is 94.70% lines, 92.23% branches,
+  and 95.22% functions; audit reports zero vulnerabilities.
+- S1 remains an implementation candidate. The next immutable boundary is a source
+  commit directly descended from S0 main, followed by a machine-validated receipt
+  commit, changed-head verification, independent review, expected-head merge, and
+  post-merge Verify.
+- Froze the source implementation as
+  `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`, whose direct parent is the S0
+  squash merge `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`. The worktree was clean before
+  the exact-source release chain began.
+- Re-ran the complete release chain on that immutable source. `npm test`,
+  `npm run verify:lab`, `npm run test:chromium`,
+  `npm run verify:transport`, `npm run test:coverage`, and
+  `npm audit --audit-level=moderate` all completed with exit code zero. This exact
+  run records conformance 76/76, property cases 10,000/10,000, state transitions
+  10,000, isolated Chromium quorum 10 runs, persistent handoff 20/20 at 37 relay
+  operations per 12 seconds with zero local 429s, portable and Chromium
+  adversarial rejection 10,000/10,000, transport 10,000 schedules / 30,000
+  recoveries, repository coverage 94.70% lines / 92.31% branches / 95.22%
+  functions, and zero dependency vulnerabilities.
+- Added the strict S1 receipt schema, validator, and 11-test negative suite.
+  `evidence/stages/s1-participant-core.json` binds the immutable source and parent,
+  the exact 24-file source diff and every Git-object digest, participant contract
+  versions, complete command records, environment, seeds, behavioral matrix,
+  negative outcomes, quantitative evidence, remaining limitations, and frozen
+  receipt bytes. Receipt digest:
+  `sha256:c34d8457f9a25cb1d76ef90d8d581c2864721e646c3b6aeb97218f5dc908b7b3`.
+- The committed-receipt candidate passes `npm run test:s1-receipt` 11/11,
+  `npm run verify:s1`, `npm run verify:spec`, and `npm run verify:links`.
+  Promotion remains HOLD until a descendant evidence commit is independently
+  reviewed at an immutable head, expected-head merged, post-merge Verify succeeds,
+  and the production deployment is verified.
+- PR #39 first reached clean policy and Verify on head
+  `07aa025356909e5f65c87162f7f86f2bbe13f958`, but independent
+  `reviewer-merge-gate` reproduction BLOCKed the snapshot before attestation or
+  merge. `ParticipantCore.sync()` validated only the incoming set and replaced
+  all local Pulse records, so sequence 2 silently fell to 0 after `sync([])` and
+  to 1 after a prefix response.
+- Corrected catch-up to monotonically union recognized and received evidence
+  before deterministic sorting, deduplication, and R1 replay. Added explicit
+  empty, prefix, duplicate, reordered, stale-peer, and post-fork incomplete
+  response regressions. The recognized head no longer decreases, and an exposed
+  fork cannot be hidden by a later incomplete peer response.
+- Rebuilt the two-commit source/evidence history instead of leaving the repair
+  outside the frozen receipt. The corrected source is the direct child of S0;
+  the receipt descendant binds its new source SHA and all changed Git-object
+  digests. A fresh detached exact-source install and complete release chain
+  passed: core 10/10 at 100.00/94.83/100.00 coverage, conformance 76/76,
+  properties 10,000/10,000, multi-browser 7/7, isolated quorum 10 runs, Lab,
+  persistent handoff 20/20 at 38 operations per 12 seconds and zero local 429s,
+  Chromium and portable 10,000/10,000, transport 10,000/30,000, repository
+  coverage 94.70/92.31/95.22, and zero vulnerabilities.
+- The replacement exact-source run began at
+  `2026-07-25T00:31:38.5986126Z` and completed at
+  `2026-07-25T00:57:28.4493734Z`; no result from the superseded source was used
+  as evidence for `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`.
+- Replacement head `5bbbb8578a282063362a37276caeb2dd5a443bc7` passed current
+  Policy `30135536623/1` and Verify `30135488202/1`, but a fresh independent
+  review again BLOCKed it without attestation or merge. After a valid sibling
+  fork was visible, a peer-supplied corrupt record was incorrectly retained
+  because `sync()` treated aggregate `forked` as permission to skip all failed
+  candidate results. The poisoned history then projected `stalled` and erased
+  the known fork point.
+- Catch-up now allowlists only `E_FORK_DETECTED`, `E_LINEAGE_ALREADY_FORKED`, and
+  `E_REPLAY_STALE` as compatible non-accept outcomes in a valid fork
+  reconstruction. Post-fork corrupt payload, malformed envelope, and
+  below-quorum regressions each require their stable rejection code and verify
+  that both records and the prior fork snapshot remain byte-equivalent after the
+  failed sync. The source receipt and immutable review evidence must be rebuilt
+  again before promotion.

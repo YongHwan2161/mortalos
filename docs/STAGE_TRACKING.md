@@ -24,3 +24,12 @@ state is coordination metadata, not promotion evidence.
 Promotion requires all strict stage criteria, an exact machine-validated receipt,
 independent immutable-head review, expected-head merge, and post-merge evidence.
 Anything less is **HOLD**.
+
+## Current candidate
+
+S1 is implemented on
+`agent/codex-protocol-kernel--s1-unified-participant-core`. Its promotion remains
+**HOLD**. The exact source-bound receipt at
+`evidence/stages/s1-participant-core.json` passes locally; immutable-head review,
+expected-head merge, post-merge Verify, and production deployment still must pass.
+S2 has not started.

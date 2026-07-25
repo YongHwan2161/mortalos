@@ -34,6 +34,9 @@ jobs:
       - name: Run repository verification
         run: npm test
 
+      - name: Compare 10,000 Participant Core schedules in Node and Chromium
+        run: npm run verify:participant-core
+
       - name: Compare Chromium with the committed portable corpus
         run: npm run test:chromium
 
@@ -48,6 +51,9 @@ jobs:
 
       - name: Verify the S0 baseline receipt
         run: npm run verify:baseline
+
+      - name: Verify the S1 Participant Core receipt
+        run: npm run verify:s1
 
       - name: Audit production and development dependencies
         run: npm audit --audit-level=moderate

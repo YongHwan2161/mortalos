@@ -251,11 +251,12 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(combined, /exportKey\("pkcs8", generated\.privateKey\)/);
 
   const durableSource = await readFile(new URL("../lab/participant/durable-participant.mjs", import.meta.url), "utf8");
+  const keyStoreSource = await readFile(new URL("../lab/participant/webcrypto-key-store.mjs", import.meta.url), "utf8");
   const durableStoreSource = await readFile(new URL("../lab/storage/durable-store.mjs", import.meta.url), "utf8");
   const appSource = await readFile(new URL("../lab/app.mjs", import.meta.url), "utf8");
   assert.match(durableSource, /generateKey\(\{ name: "Ed25519" \}, false, \["sign", "verify"\]\)/);
   assert.match(durableSource, /initialQuorum: \{ type: "threshold", threshold: 1 \}/);
-  assert.match(durableSource, /exportKey\("pkcs8", privateKey\)/);
+  assert.match(keyStoreSource, /exportKey\("pkcs8", privateKey\)/);
   assert.match(durableSource, /pending !== null/);
   assert.match(durableStoreSource, /database\.transaction\(STORES, "readwrite", \{ durability: "strict" \}\)/);
   assert.match(durableStoreSource, /event\.oldVersion !== 0/);
@@ -370,8 +371,9 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(html, /pending-evidence inventory is explicitly complete/);
 
   const liveSource = await readFile(new URL("../lab/live-incubator.mjs", import.meta.url), "utf8");
-  assert.match(liveSource, /authorityLossIrreversible:\s*false,\s*latentEvidenceComplete:\s*false/);
-  assert.match(liveSource, /r1ValidateGenesis|r1VerifyCandidate|r1AppendCandidates|r1EvaluateMortality/);
+  assert.match(liveSource, /ParticipantCore/);
+  assert.doesNotMatch(liveSource, /r1ValidateGenesis|r1VerifyCandidate|r1AppendCandidates|r1EvaluateMortality/);
+  assert.doesNotMatch(liveSource, /from "\.\/participant\/protocol-objects\.mjs"/);
   const referenceSource = await readFile(new URL("../lab/reference-engine.mjs", import.meta.url), "utf8");
   assert.match(referenceSource, /authorityLossIrreversible:\s*true,\s*latentEvidenceComplete:\s*true/);
   assert.match(referenceSource, /r1ValidateGenesis|r1VerifyCandidate|r1AppendCandidates|r1EvaluateMortality/);
