@@ -19,7 +19,10 @@ MortalOS exposes two deliberately different browser modes.
   structured-cloned key, canonical public evidence, state references, sign-once
   journal, recoverable pending operation, replay-derived cache, migration, and
   expiry/authority metadata. Each replacement is a consecutive expected-revision
-  compare-and-swap inside one strict transaction. Locale remains URL-only.
+  compare-and-swap inside one strict transaction. Successful v1 migration retires
+  the legacy `evidence`, `keys`, and `meta` stores in that same version-change
+  transaction, so no parallel sign-capable key path remains. Locale remains
+  URL-only.
 - Restore never trusts stored head or verdict fields. It imports canonical evidence,
   replays it through R1, verifies the stored key against current custody, and only
   then exposes signing authority.

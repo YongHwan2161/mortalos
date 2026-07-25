@@ -19,6 +19,21 @@ function seed(value) {
   return new Uint8Array(16).fill(value);
 }
 
+function indexedDbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.addEventListener("success", () => resolve(request.result), { once: true });
+    request.addEventListener("error", () => reject(request.error), { once: true });
+  });
+}
+
+function indexedDbTransaction(transaction) {
+  return new Promise((resolve, reject) => {
+    transaction.addEventListener("complete", resolve, { once: true });
+    transaction.addEventListener("abort", () => reject(transaction.error), { once: true });
+    transaction.addEventListener("error", () => reject(transaction.error), { once: true });
+  });
+}
+
 function endpoint(id, databaseName) {
   const store = new IndexedDbDurableStore({ databaseName, endpointId: id });
   return {
@@ -375,6 +390,38 @@ async function createVersionOneDatabase(databaseName, snapshot) {
   });
 }
 
+async function inspectMigratedDatabase(databaseName) {
+  const database = await indexedDbRequest(indexedDB.open(databaseName));
+  const storeNames = Array.from(database.objectStoreNames);
+  const readableStores = ["participant", "keys"].filter((name) => storeNames.includes(name));
+  const records = {};
+  if (readableStores.length > 0) {
+    const transaction = database.transaction(readableStores, "readonly");
+    const done = indexedDbTransaction(transaction);
+    await Promise.all(readableStores.map(async (name) => {
+      records[name] = await indexedDbRequest(transaction.objectStore(name).get("active"));
+    }));
+    await done;
+  }
+  database.close();
+  let legacyRawSigning = false;
+  if (records.keys?.private_key) {
+    try {
+      await signBytes(records.keys.private_key, new Uint8Array([1, 2, 3]));
+      legacyRawSigning = true;
+    } catch {
+      legacyRawSigning = false;
+    }
+  }
+  return {
+    legacy_key_present: Boolean(records.keys?.private_key),
+    legacy_raw_signing: legacyRawSigning,
+    participant_key_present: Boolean(records.participant?.key),
+    participant_status: records.participant?.policy?.status ?? null,
+    store_names: storeNames
+  };
+}
+
 async function rejectedVersionOneMigration(databaseName, endpointId, snapshot) {
   await createVersionOneDatabase(databaseName, snapshot);
   let failedClosed = false;
@@ -398,7 +445,12 @@ async function rejectedVersionOneMigration(databaseName, endpointId, snapshot) {
     }, { once: true });
     request.addEventListener("error", () => reject(request.error), { once: true });
   });
-  return { failed_closed: failedClosed, retained_version: retainedVersion };
+  const retained = await inspectMigratedDatabase(databaseName);
+  return {
+    failed_closed: failedClosed,
+    retained,
+    retained_version: retainedVersion
+  };
 }
 
 async function verifyVersionOneMigration() {
@@ -449,13 +501,37 @@ async function verifyVersionOneMigration() {
     clock: () => 1_800_000_000_001
   });
   await migrated.restore();
+  const afterMigration = await inspectMigratedDatabase(validName);
+  await migrated.removeAuthority();
+  const removedState = {
+    key_present: Boolean(migrated.document.key),
+    status: migrated.document.policy.status
+  };
+  migratedStore.close();
+  const afterRemoval = await inspectMigratedDatabase(validName);
   const valid = {
+    after_migration: afterMigration,
+    after_removal: afterRemoval,
     from_schema: migrated.document.migration.from_schema,
     organism_id: migrated.publicState.organism_id,
+    removed_state: removedState,
     schema_version: migrated.document.schema_version,
     signing_authority: migrated.publicState.signing_authority
   };
-  migratedStore.close();
+
+  const emptyName = "mortalos-s2-migration-empty";
+  await createVersionOneDatabase(emptyName, {});
+  const emptyStore = new IndexedDbDurableStore({
+    databaseName: emptyName,
+    endpointId: "empty",
+    migrationClock: () => 1_800_000_000_001
+  });
+  const emptyDocument = await emptyStore.read();
+  emptyStore.close();
+  const empty = {
+    document_absent: emptyDocument === null,
+    inspection: await inspectMigratedDatabase(emptyName)
+  };
 
   const commonEvidence = {
     bundle: createEvidenceBundle(bundleRecords(legacy.records)),
@@ -515,6 +591,7 @@ async function verifyVersionOneMigration() {
   return {
     active_without_key: activeWithoutKey,
     corrupt,
+    empty,
     removed_with_key: removedWithKey,
     valid
   };

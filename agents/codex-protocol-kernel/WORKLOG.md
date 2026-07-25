@@ -1291,3 +1291,31 @@ result, and reproducible verification.
   snapshot, exact-head CI, and review decision. A new frozen source, rebuilt S2
   receipt, complete exact-head gates, and fresh immutable review are required
   before expected-head merge.
+
+### PR #41 third independent review BLOCK and legacy-store retirement
+
+- Exact head `f51a6867d7f5450d89ce6e8b39e3c5098b7db609` passed local
+  exact-head `npm test`, policy `30171963307/1`, and Verify `30171939595/1`.
+  Independent reviewer comment `5080410491` confirmed all prior P1s closed but
+  found a new authority bypass: successful v1-to-v2 migration copied the
+  non-extractable key into `participant` without deleting legacy `keys/active`.
+- After `removeAuthority()`, the v2 document was removed/null-key but the legacy
+  key remained usable by same-origin WebCrypto signing. This contradicted both
+  the one-document storage contract and atomic key-removal claim.
+- The replacement version-change transaction reads and validates all legacy
+  records, schedules the v2 document write, and deletes `evidence`, `keys`, and
+  `meta` stores atomically. Any read, validation, write, or schema-deletion failure
+  aborts the transaction and retains the complete version-1 database.
+- Actual Chromium regression must prove a successful database contains only the
+  `participant` store and that post-removal state is `removed` with no participant
+  key, no legacy key, and no raw signing path. Existing invalid-migration cases
+  must still abort at version 1 unchanged.
+- The focused replacement run passed Node durability 8/8 and actual Chromium with
+  reduced 1/1 handoff plus 1/1 per A/B/C loss matrix. The browser inspection proved
+  valid and empty v1 upgrades expose only `participant`, invalid v1 upgrades retain
+  exactly `evidence`, `keys`, and `meta` at version 1, and removal leaves neither a
+  participant key nor a legacy raw-signing path.
+- Because these source and evidence bytes differ from `f51a686`, the previous S2
+  receipt, schema, verifier, and receipt tests were removed from the source
+  candidate. They may be rebuilt only after the replacement source commit passes
+  the complete uninterrupted release chain.

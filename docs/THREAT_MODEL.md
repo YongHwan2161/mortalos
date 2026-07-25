@@ -379,7 +379,9 @@ Resource contribution must be explicit and revocable in later participant-runtim
   not erase previously released signatures, public evidence, browser backups, or
   hidden copies.
 - Legacy removal metadata and key presence must agree. `removed + key` and
-  `active + no key` abort migration and retain the version-1 database.
+  `active + no key` abort migration and retain the version-1 database. Successful
+  migration atomically creates the v2 participant document and deletes every
+  legacy store; authority removal cannot leave a second raw-signing key behind.
 - Node's memory durable store proves failure semantics only. It is not a production
   Node key store or hardware-backed custody claim.
 - The `100/100` Chromium matrices use separately persisted profiles/databases on one

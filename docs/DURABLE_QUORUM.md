@@ -84,7 +84,10 @@ IndexedDB schema `1` migrates to schema `2` only when the complete legacy key,
 evidence, metadata, and empty pending marker validate. Failed migration aborts the
 upgrade transaction, leaving the only version-1 copy unchanged. In particular,
 `authority_removed = true` with a retained key and active authority without a key
-are inconsistent snapshots and cannot migrate.
+are inconsistent snapshots and cannot migrate. A successful version-change
+transaction writes the v2 participant document and deletes all legacy `evidence`,
+`keys`, and `meta` stores atomically. Later authority removal therefore cannot
+leave a second sign-capable legacy key path.
 
 ## Local adapter error vocabulary
 
@@ -124,7 +127,8 @@ The gate covers:
 - unknown/corrupt schema, key, evidence, journal, state, custody, and migration
   rejection;
 - explicit renewal, expiry, and atomic authority removal;
-- actual Chromium IndexedDB migration and non-destructive corrupt,
+- actual Chromium IndexedDB migration with atomic legacy-store retirement and no
+  sign-capable legacy key after removal, plus non-destructive corrupt,
   removed-plus-key, and active-keyless migration failure;
 - reached-expiry same-process and cold-restart clock rollback rejection, rejection
   of null/stale/equal renewal, and explicit strictly-future renewal;

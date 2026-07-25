@@ -58,6 +58,18 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   and equal renewals must return `E_DURABLE_POLICY`, leave authority expired, and
   be proven in Node plus actual IndexedDB. This source change invalidates the prior
   receipt, PR-body snapshot, exact-head CI, and review decision.
+- Exact head `f51a6867d7f5450d89ce6e8b39e3c5098b7db609` closed all prior
+  P1s and passed policy `30171963307/1` plus Verify `30171939595/1`, but
+  independent reviewer comment `5080410491` correctly BLOCKed promotion because
+  successful v1 migration left the legacy `keys/active` signing key beside the v2
+  document. After v2 authority removal, same-origin code could still sign through
+  that orphaned non-extractable key.
+- The next replacement must atomically create the v2 participant document and
+  delete every legacy object store within the same version-change transaction.
+  Failed migrations must retain the complete v1 database, while successful
+  migration followed by removal must expose only the `participant` store, a
+  removed/null-key document, no legacy key, and no raw signing path. A fresh source,
+  receipt, CI snapshot, and independent review are mandatory.
 
 ### ACTIVE — S1 receipt post-squash portability correction
 

@@ -96,15 +96,36 @@ try {
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyVersionOneMigration());
   assert.equal(migration.valid.schema_version, 2);
   assert.equal(migration.valid.from_schema, 1);
-  assert.equal(migration.valid.signing_authority, true);
+  assert.equal(migration.valid.signing_authority, false);
   assert.match(migration.valid.organism_id, /^mortalos:/);
-  for (const rejected of [
-    migration.corrupt,
-    migration.removed_with_key,
-    migration.active_without_key
+  assert.deepEqual(migration.valid.after_migration.store_names, ["participant"]);
+  assert.equal(migration.valid.after_migration.participant_key_present, true);
+  assert.equal(migration.valid.after_migration.legacy_key_present, false);
+  assert.equal(migration.valid.after_migration.legacy_raw_signing, false);
+  assert.deepEqual(migration.valid.removed_state, {
+    key_present: false,
+    status: "removed"
+  });
+  assert.deepEqual(migration.valid.after_removal.store_names, ["participant"]);
+  assert.equal(migration.valid.after_removal.participant_status, "removed");
+  assert.equal(migration.valid.after_removal.participant_key_present, false);
+  assert.equal(migration.valid.after_removal.legacy_key_present, false);
+  assert.equal(migration.valid.after_removal.legacy_raw_signing, false);
+  assert.equal(migration.empty.document_absent, true);
+  assert.deepEqual(migration.empty.inspection.store_names, ["participant"]);
+  assert.equal(migration.empty.inspection.legacy_key_present, false);
+  assert.equal(migration.empty.inspection.legacy_raw_signing, false);
+  for (const [rejected, keyPresent] of [
+    [migration.corrupt, true],
+    [migration.removed_with_key, true],
+    [migration.active_without_key, false]
   ]) {
     assert.equal(rejected.failed_closed, true);
     assert.equal(rejected.retained_version, 1);
+    assert.deepEqual(rejected.retained.store_names, ["evidence", "keys", "meta"]);
+    assert.equal(rejected.retained.participant_status, null);
+    assert.equal(rejected.retained.participant_key_present, false);
+    assert.equal(rejected.retained.legacy_key_present, keyPresent);
   }
   for (let run = 0; run < trials; run += 1) {
     const recovered = await page.evaluate((value) =>
@@ -141,7 +162,8 @@ try {
   console.log("- same-revision IndexedDB writers use CAS before signing; stale signer calls: 0");
   console.log("- reached expiry survives clock rollback; null/stale renewal is rejected before future renewal");
   console.log(`- A/B/C loss, cold pair restart, transition, D repair, and next transition: ${lossTrials}/${lossTrials} each`);
-  console.log("- schema v1→v2 migration succeeded; corrupt/removed+key/active-keyless v1 copies stayed at version 1");
+  console.log("- valid v1→v2 migration atomically removed legacy stores; removal left no sign-capable legacy key");
+  console.log("- corrupt/removed+key/active-keyless v1 copies stayed at version 1");
 } finally {
   await server.close();
   await rm(temporaryRoot, { force: true, recursive: true });

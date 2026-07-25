@@ -51,6 +51,9 @@ function scheduleLegacyMigration(request, completedAt, endpointId) {
       try {
         const migrated = migrateLegacyDurableSnapshot(legacy, { completedAt, endpointId });
         if (migrated) target.put(migrated);
+        for (const name of LEGACY_STORES) {
+          request.result.deleteObjectStore(name);
+        }
       } catch {
         transaction.abort();
       }

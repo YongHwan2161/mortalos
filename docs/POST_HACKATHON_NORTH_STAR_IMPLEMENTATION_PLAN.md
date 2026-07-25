@@ -1,11 +1,14 @@
 # MortalOS post-hackathon North Star implementation plan
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S1 candidate in progress**
+Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1 promoted; S2 remediation HOLD**
 
 Plan authority date: **2026-07-25 KST**
 
-Planning base: `origin/main`
+Initial planning base: `origin/main`
 `079e37dfdea8ce94998533979546b65cc09709d6`
+
+Last reconciled main base: `origin/main`
+`d0a9ba0f7e4f1a3a17cb7d4af04a9c1113a09ec4`
 
 Owner: `codex-protocol-kernel`
 
@@ -137,6 +140,36 @@ Each stage has exactly one of these states:
 
 `PARTIAL PASS` is not a promotion state. Optional exploratory evidence may be
 recorded, but it cannot satisfy a strict gate.
+
+### 4.1 Per-stage execution and promotion contract
+
+Every S0–S8 stage is an independently reviewable release unit. A stage may move to
+`PROMOTED` only in this exact order:
+
+1. start from a freshly fetched `origin/main` in a dedicated stage branch/worktree;
+2. bind the stage issue, owner, intended paths, threat boundary, and rollback target;
+3. implement only that stage's deliverables and its negative/fault-injection tests;
+4. freeze one source commit and run every stage-specific and inherited regression
+   gate on that exact source;
+5. generate and machine-validate the stage receipt, including negative receipt
+   mutations that prove stale, incomplete, or altered evidence fails closed;
+6. freeze the final PR head and require all mandatory GitHub checks to pass on that
+   exact head;
+7. obtain an independent immutable-snapshot review that binds the PR body, base,
+   head, changed-file set, policy run, receipt, and unresolved findings;
+8. merge only the reviewed expected head;
+9. run the complete post-merge exact-main Verify and, where runtime or public
+   behavior changed, Deploy plus public/readback acceptance; and
+10. update the claim matrix, stage tracking, and this SSOT only after all earlier
+    gates pass.
+
+The stage result is **PASS** only when every strict criterion and every applicable
+step above passes. One failure, skipped runtime, stale receipt, changed head,
+unresolved review finding, failed deployment, or missing readback makes the result
+**HOLD**. On HOLD, preserve the last promoted main/deployment, invalidate the
+candidate receipt and review snapshot, repair in the same stage, and repeat from the
+earliest affected gate. Later-stage implementation must not be used to conceal or
+bypass an earlier HOLD.
 
 ## 5. Priority and critical path
 
@@ -310,8 +343,8 @@ inject a recognized head.
 
 Priority: **P0**
 
-Status: **IMPLEMENTED CANDIDATE — promotion pending exact receipt, independent
-review, merge, post-merge Verify, and Deploy**
+Status: **HOLD — candidate remediation in progress; promotion requires a replacement
+exact receipt, independent review, merge, post-merge Verify, and Deploy**
 
 ### Goal
 
@@ -356,6 +389,8 @@ storage failure without double-signing, inventing a head, or losing accepted sta
   and actual IndexedDB.
 - [ ] Unknown schema, corrupt key handle, missing evidence, key/custody mismatch,
   partial journal, state mismatch, and failed migration all fail closed.
+- [ ] Successful v1 migration creates the v2 document and retires every legacy
+  store atomically; after authority removal no legacy key can perform raw signing.
 - [ ] Authority removal atomically prevents future signing while retaining
   read-only public evidence.
 - [ ] Expiry and renewal are explicit policy operations; no hard-coded 30-day
@@ -885,17 +920,26 @@ The post-hackathon North Star program is complete only when:
 
 If any item is missing, the status is **HOLD**, not “mostly complete.”
 
-## 21. First authorized implementation slice after plan approval
+## 21. Current execution frontier
 
-The first implementation PR should contain S0 only:
+S0 and S1 are promoted. S2 is the sole authorized implementation frontier and
+remains HOLD until all of the following occur:
 
-1. current baseline receipt;
-2. post-hackathon North Star/claim matrix;
-3. v0/v1 documentation reconciliation;
-4. historical documentation map;
-5. S1–S8 tracked milestones; and
-6. no Participant Core refactor.
+1. successful v1→v2 migration atomically creates the v2 participant document and
+   deletes every legacy object store in the same version-change transaction;
+2. a failed migration retains the complete v1 database without a partial v2 write;
+3. authority removal leaves no legacy or v2 sign-capable key and no raw signing
+   path;
+4. the frozen replacement source passes the complete S2 fault matrix, Node/browser
+   parity, actual Chromium, full repository regression, coverage, and zero-finding
+   dependency audit;
+5. a replacement receipt binds the exact source, migration/deletion proof, commands,
+   environment, artifact digests, and negative receipt mutations;
+6. the final PR head passes mandatory policy/Verify checks and a fresh independent
+   immutable-snapshot review; and
+7. only the reviewed expected head merges, followed by exact-main Verify, Deploy,
+   and receipt/public readback where applicable.
 
-S1 begins from the merged, independently reviewed S0 baseline. Combining S0 and S1
-would make claim cleanup, architectural movement, and regression diagnosis one
-unreviewable unit and is therefore prohibited.
+S3 may begin only after S2 is `PROMOTED`. S3 must not be combined with S2 remediation:
+doing so would blur the signing-authority boundary with the later state-availability
+boundary and make failure attribution non-deterministic.
