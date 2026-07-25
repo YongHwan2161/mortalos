@@ -1177,6 +1177,13 @@ result, and reproducible verification.
   and reads package lock plus every promoted artifact from the permanent main
   commit. Any source, base, promotion, path, digest, result, interval, review, or
   receipt-byte substitution still fails closed.
+- A deliberate depth-1 clone proved that neither the base nor promotion object is
+  available without history. `Verify` already sets `fetch-depth: 0`; Deploy did
+  not. Deploy now uses the same full-history, no-persisted-credentials checkout
+  contract, and a regression test requires both workflows to retain it. The
+  fresh-clone acceptance therefore begins at depth 1, proves the obsolete source
+  object is absent, fetches full main history, and verifies only the reachable
+  base/promotion chain.
 - Local validation passed: receipt negative suite 11/11, direct `verify:s1`,
   full `npm test`, core coverage 100.00/94.83/100.00, Participant Core
   Node/Chromium 10,000-schedule parity, conformance 76/76, properties

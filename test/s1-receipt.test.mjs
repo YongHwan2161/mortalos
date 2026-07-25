@@ -23,6 +23,14 @@ test("the committed S1 receipt is bound to its exact promoted snapshot and resul
   assert.equal(result.artifactCount, 24);
 });
 
+test("Verify and Deploy retain full main history without persisted credentials", async () => {
+  const checkout = /uses: actions\/checkout@[^\r\n]+\r?\n\s+with:\r?\n\s+fetch-depth: 0\r?\n\s+persist-credentials: false/u;
+  for (const workflow of ["verify.yml", "deploy-lab.yml"]) {
+    const source = await readFile(new URL(`../.github/workflows/${workflow}`, import.meta.url), "utf8");
+    assert.match(source, checkout, `${workflow} checkout must retain receipt history`);
+  }
+});
+
 test("source, baseline, and promotion lineage substitutions fail closed", async () => {
   await assert.rejects(
     verifyS1Receipt({ receiptOverride: mutate(["source_commit"], receipt.base_commit) }),
