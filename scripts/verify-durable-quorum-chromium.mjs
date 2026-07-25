@@ -88,6 +88,9 @@ try {
   assert.equal(expiry.persisted_status, "expired");
   assert.equal(expiry.rollback_authority, false);
   assert.equal(expiry.rollback_code, "E_DURABLE_EXPIRED");
+  assert.equal(expiry.null_renewal_code, "E_DURABLE_POLICY");
+  assert.equal(expiry.stale_renewal_code, "E_DURABLE_POLICY");
+  assert.equal(expiry.status_after_rejected_renewals, "expired");
   assert.equal(expiry.renewed_authority, true);
   const migration = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyVersionOneMigration());
@@ -136,7 +139,7 @@ try {
   console.log("- target browser process fully closed between accepted handoff and recovery");
   console.log("- non-extractable IndexedDB CryptoKey, canonical evidence replay, and same-identity continuation");
   console.log("- same-revision IndexedDB writers use CAS before signing; stale signer calls: 0");
-  console.log("- reached expiry survives same-process and cold-restart clock rollback until explicit renewal");
+  console.log("- reached expiry survives clock rollback; null/stale renewal is rejected before future renewal");
   console.log(`- A/B/C loss, cold pair restart, transition, D repair, and next transition: ${lossTrials}/${lossTrials} each`);
   console.log("- schema v1→v2 migration succeeded; corrupt/removed+key/active-keyless v1 copies stayed at version 1");
 } finally {

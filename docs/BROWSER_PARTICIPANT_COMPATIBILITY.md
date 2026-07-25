@@ -29,8 +29,10 @@ MortalOS exposes two deliberately different browser modes.
   blanket rejection.
 - Removing authority atomically deletes the key while retaining public history in a
   read-only state. Reaching expiry persists an expired-policy latch, so same-process
-  and cold-restart clock rollback cannot restore signing. Explicit renewal is the
-  only way to set a later expiry; explicit removal deletes the key.
+  and cold-restart clock rollback cannot restore signing. Explicit renewal requires
+  a non-null expiry strictly beyond the persisted observation high-water mark;
+  null, stale, and equal renewals are rejected without clearing the expired state.
+  Explicit removal deletes the key.
 
 ## Browser downgrade behavior
 

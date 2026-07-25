@@ -76,8 +76,10 @@ Restore fails closed on unknown schema, partial journal, missing commissioned
 evidence, key/custody mismatch, extractable key material, state mismatch, or invalid
 replay. Valid pending work is recovered. Reaching expiry disables signing until an
 expired-policy latch is durably committed. Clock rollback cannot clear the latch;
-explicit versioned renewal may set a new future expiry, while explicit removal
-deletes the key and retains public evidence read-only.
+explicit versioned renewal must set a non-null expiry strictly beyond the persisted
+observation high-water mark. Null, stale, and equal renewals fail closed and retain
+the expired state, while explicit removal deletes the key and retains public
+evidence read-only.
 
 ## Relay boundary
 

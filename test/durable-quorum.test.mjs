@@ -160,6 +160,16 @@ test("authority removal and renewal are explicit atomic policy operations", asyn
     () => coldRollback.approveProposal(proposal),
     (error) => error.code === "E_DURABLE_EXPIRED"
   );
+  await assert.rejects(
+    () => coldRollback.renewAuthority(null),
+    (error) => error.code === "E_DURABLE_POLICY"
+  );
+  await assert.rejects(
+    () => coldRollback.renewAuthority(1_900_000_000_001),
+    (error) => error.code === "E_DURABLE_POLICY"
+  );
+  assert.equal(coldRollback.document.policy.status, "expired");
+  assert.equal(coldRollback.publicState.signing_authority, false);
   await coldRollback.renewAuthority(1_900_000_000_100);
   assert.equal(coldRollback.publicState.signing_authority, true);
   now = 1_900_000_000_101;

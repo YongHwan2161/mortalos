@@ -361,7 +361,9 @@ storage failure without double-signing, inventing a head, or losing accepted sta
 - [ ] Expiry and renewal are explicit policy operations; no hard-coded 30-day
   product lifetime remains.
 - [ ] Once expiry is observed, same-process and cold-restart clock rollback cannot
-  reactivate signing without an explicit versioned renewal.
+  reactivate signing. Renewal must use a non-null expiry strictly beyond the
+  persisted observation high-water mark; null, stale, and equal renewals are
+  rejected while authority remains expired.
 - [ ] The complete durable-quorum suite passes in clean Chromium and Node test
   adapters on the exact head.
 

@@ -322,15 +322,31 @@ async function verifyExpiryRollbackLatch() {
     rollbackCode = error.code;
   }
   const persistedStatus = rollback.document.policy.status;
+  let nullRenewalCode = null;
+  try {
+    await rollback.renewAuthority(null);
+  } catch (error) {
+    nullRenewalCode = error.code;
+  }
+  let staleRenewalCode = null;
+  try {
+    await rollback.renewAuthority(now + 1);
+  } catch (error) {
+    staleRenewalCode = error.code;
+  }
+  const statusAfterRejectedRenewals = rollback.document.policy.status;
   await rollback.renewAuthority(now + 1_000);
   const renewedAuthority = rollback.publicState.signing_authority;
   rollbackStore.close();
   return {
     at_expiry_code: atExpiryCode,
+    null_renewal_code: nullRenewalCode,
     persisted_status: persistedStatus,
     renewed_authority: renewedAuthority,
     rollback_authority: rollbackAuthority,
-    rollback_code: rollbackCode
+    rollback_code: rollbackCode,
+    stale_renewal_code: staleRenewalCode,
+    status_after_rejected_renewals: statusAfterRejectedRenewals
   };
 }
 

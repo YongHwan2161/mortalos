@@ -1274,3 +1274,20 @@ result, and reproducible verification.
   and retention of corrupt, removed-with-key, and active-without-key version-1
   databases. The old source and receipt are superseded and must be rebuilt before
   any updated PR head is pushed.
+
+### PR #41 second independent review BLOCK and renewal-bound remediation
+
+- Exact replacement head `eabdb019e2430b00276a9f691916717d5f3e3509` closed the
+  concurrency, migration, and clock-rollback findings, but independent reviewer
+  comment `5079622973` correctly BLOCKed promotion: an already-expired authority
+  could call `renewAuthority(null)`, clear both expiry fields, and regain indefinite
+  signing authority.
+- The next replacement permits expired-authority renewal only with a non-null
+  expiry strictly beyond the persisted observation high-water mark. Null, stale,
+  and equal renewals return `E_DURABLE_POLICY`, leave the authority expired, and
+  cannot invoke signing. Node and actual IndexedDB regressions must prove these
+  properties before a valid future renewal succeeds.
+- This remediation changes source bytes and invalidates the prior receipt, PR-body
+  snapshot, exact-head CI, and review decision. A new frozen source, rebuilt S2
+  receipt, complete exact-head gates, and fresh immutable review are required
+  before expected-head merge.

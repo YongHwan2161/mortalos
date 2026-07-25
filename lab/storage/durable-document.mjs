@@ -438,6 +438,15 @@ export function renewedDocument(document, expiresAt, observedAt) {
   assertTimestamp(expiresAt, "authority expiry", { nullable: true });
   assertTimestamp(observedAt, "authority renewal observation");
   const highWatermark = Math.max(observedAt, next.policy.expired_at ?? 0);
+  if (
+    next.policy.status === "expired" &&
+    (expiresAt === null || expiresAt <= highWatermark)
+  ) {
+    throw durableError(
+      "E_DURABLE_POLICY",
+      "expired authority renewal requires an expiry beyond the persisted high-water mark"
+    );
+  }
   next.policy.expires_at = expiresAt;
   next.policy.expired_at = expiresAt !== null && expiresAt <= highWatermark
     ? highWatermark

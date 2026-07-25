@@ -373,9 +373,11 @@ Resource contribution must be explicit and revocable in later participant-runtim
 - The committed-head cache is non-authoritative and disposable. Evidence replay,
   key identity, custody, and state references determine recovery.
 - Reached expiry is a persisted policy latch. Same-process and cold-restart clock
-  rollback cannot reactivate it; only a versioned CAS-protected renewal may set a
-  new future expiry. Expiry still does not erase previously released signatures,
-  public evidence, browser backups, or hidden copies.
+  rollback cannot reactivate it; only a versioned CAS-protected renewal with a
+  non-null expiry strictly beyond the persisted observation high-water mark may
+  reactivate it. Null, stale, or equal renewal remains expired. Expiry still does
+  not erase previously released signatures, public evidence, browser backups, or
+  hidden copies.
 - Legacy removal metadata and key presence must agree. `removed + key` and
   `active + no key` abort migration and retain the version-1 database.
 - Node's memory durable store proves failure semantics only. It is not a production

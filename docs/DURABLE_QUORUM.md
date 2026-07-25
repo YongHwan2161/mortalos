@@ -73,9 +73,11 @@ Once the explicit expiry time is observed, restore or the next signing attempt
 persists `policy.status = expired` and `expired_at` through the same revision CAS.
 The in-process clock observation is non-decreasing, and the persisted latch prevents
 a cold restart with a rolled-back wall clock from re-enabling signing. Explicit
-renewal may move an expired authority to a new future expiry; it cannot revive
-removed authority. `expireAuthority()` and removal abandon incomplete journal work,
-delete the key in the same transaction, and retain canonical public evidence
+renewal may move an expired authority only to a non-null expiry strictly beyond the
+persisted observation high-water mark. It cannot clear the expiry with `null`, use
+a stale or equal timestamp, or revive removed authority. Rejected renewal leaves
+the authority expired. `expireAuthority()` and removal abandon incomplete journal
+work, delete the key in the same transaction, and retain canonical public evidence
 read-only.
 
 IndexedDB schema `1` migrates to schema `2` only when the complete legacy key,
@@ -101,7 +103,7 @@ R1 precedence:
 | `E_DURABLE_CONFLICT` | The expected whole-document revision is stale or non-consecutive. |
 | `E_DURABLE_CUSTODY` | A commissioned active key is not current after replay. |
 | `E_DURABLE_AUTHORITY` | Local authority is removed, missing, or unavailable. |
-| `E_DURABLE_EXPIRED` | Reached explicit expiry blocks signing pending removal. |
+| `E_DURABLE_EXPIRED` | Reached explicit expiry blocks signing pending valid future renewal or removal. |
 | `E_DURABLE_MIGRATION` | Complete non-destructive migration is impossible. |
 
 ## Verification
@@ -124,8 +126,8 @@ The gate covers:
 - explicit renewal, expiry, and atomic authority removal;
 - actual Chromium IndexedDB migration and non-destructive corrupt,
   removed-plus-key, and active-keyless migration failure;
-- reached-expiry same-process and cold-restart clock rollback rejection plus
-  explicit renewal;
+- reached-expiry same-process and cold-restart clock rollback rejection, rejection
+  of null/stale/equal renewal, and explicit strictly-future renewal;
 - `100/100` Browser-B accepted-handoff process closures and cold restarts; and
 - `100/100` trials for each lost A/B/C choice where the surviving durable pair
   cold-starts, commits, repairs D, and commits the next transition.

@@ -49,6 +49,15 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   rewriting v1; and durably latch reached expiry across same-process and cold-start
   clock rollback. Node plus actual IndexedDB regressions and a fully rebuilt source
   receipt are mandatory before a fresh immutable review.
+- Exact replacement head `eabdb019e2430b00276a9f691916717d5f3e3509`
+  closed those three findings, but independent reviewer comment `5079622973`
+  correctly BLOCKed promotion because an expired authority could use
+  `renewAuthority(null)` to regain indefinite signing authority.
+- The next replacement must permit expired-authority renewal only with a non-null
+  expiry strictly beyond the persisted observation high-water mark. Null, stale,
+  and equal renewals must return `E_DURABLE_POLICY`, leave authority expired, and
+  be proven in Node plus actual IndexedDB. This source change invalidates the prior
+  receipt, PR-body snapshot, exact-head CI, and review decision.
 
 ### ACTIVE — S1 receipt post-squash portability correction
 
