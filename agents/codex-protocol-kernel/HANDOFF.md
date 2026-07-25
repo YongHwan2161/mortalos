@@ -29,6 +29,9 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`, permanently binds promotion
   `a4d5183941c82845532a003b55b03522e3e98872`, verifies its exact 28-path diff
   and every promoted byte digest, and records the PR #39 review attestation.
+  A fresh remote clone began at depth 1, expanded to the 82-commit branch
+  ancestry, confirmed the obsolete source object remained absent, and passed
+  receipt tests 12/12 plus direct `verify:s1`.
 - Expected handoff: one focused hotfix PR; independent immutable-head review;
   expected-head squash merge only after PASS
 
