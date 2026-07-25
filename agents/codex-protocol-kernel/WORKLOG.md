@@ -1159,3 +1159,31 @@ result, and reproducible verification.
   that both records and the prior fork snapshot remain byte-equivalent after the
   failed sync. The source receipt and immutable review evidence must be rebuilt
   again before promotion.
+
+## 2026-07-25 — S1 receipt post-squash portability correction
+
+- PR #39 was independently reviewed and expected-head squash merged as
+  `a4d5183941c82845532a003b55b03522e3e98872`, but both post-merge Verify
+  `30139055068` and Deploy `30139055066` failed closed before deployment.
+  Their depth-1 checkout could not resolve branch-only source commit
+  `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09` after branch deletion.
+- Receipt format v2 retains the reviewed source SHA, source timestamp, original
+  24-artifact digest inventory, exact quantitative evidence, and attestation.
+  It additionally binds the permanent promotion commit, its direct S0 parent,
+  its exact 28-path diff, and all 28 promoted Git-object byte digests.
+- The verifier no longer requires an unreachable PR branch object. It requires
+  the frozen source/base/promotion identities, verifies base and promotion
+  objects and direct-parent relation, checks validation and promotion chronology,
+  and reads package lock plus every promoted artifact from the permanent main
+  commit. Any source, base, promotion, path, digest, result, interval, review, or
+  receipt-byte substitution still fails closed.
+- Local validation passed: receipt negative suite 11/11, direct `verify:s1`,
+  full `npm test`, core coverage 100.00/94.83/100.00, Participant Core
+  Node/Chromium 10,000-schedule parity, conformance 76/76, properties
+  10,000/10,000, multi-browser 7/7, isolated quorum, Lab, R1, portable
+  10,000/10,000, state/Python differential, UX, singleton, H2, relay dry-run,
+  and dependency audit with zero vulnerabilities.
+- Promotion remains HOLD until an exact depth-1 clone passes after the hotfix
+  commit is published, the immutable PR head passes policy and Verify, an
+  independent review attests PASS, and post-merge Verify plus production Deploy
+  both succeed on one exact main SHA.

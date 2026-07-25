@@ -5,6 +5,30 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
+### ACTIVE — S1 receipt post-squash portability correction
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `a4d5183941c82845532a003b55b03522e3e98872`
+- Work branch: `agent/codex-protocol-kernel--s1-receipt-main-portability`
+- Exact intended paths: `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/WORKLOG.md`,
+  `evidence/stages/s1-participant-core.json`,
+  `schemas/s1-participant-core-receipt.schema.json`,
+  `scripts/verify-s1-receipt.mjs`, and `test/s1-receipt.test.mjs`
+- Contract affected: make the S1 receipt permanently verifiable from the promoted
+  main commit after squash merge and branch deletion, without weakening exact
+  artifact, lineage, result, interval, or receipt-byte binding
+- Required evidence: focused receipt negative tests; full `npm test`; exact
+  shallow-clone reproduction; dependency audit; trusted policy and Verify on the
+  immutable PR head; post-merge Verify and Deploy on one exact main SHA
+- Local candidate evidence: receipt v2 negative suite 11/11, direct `verify:s1`,
+  full `npm test`, and dependency audit passed. The receipt retains source
+  `1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09`, permanently binds promotion
+  `a4d5183941c82845532a003b55b03522e3e98872`, verifies its exact 28-path diff
+  and every promoted byte digest, and records the PR #39 review attestation.
+- Expected handoff: one focused hotfix PR; independent immutable-head review;
+  expected-head squash merge only after PASS
+
 ### ACTIVE — Implement S1 Unified Participant Core
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
