@@ -28,6 +28,15 @@ function git(args, options = {}) {
   }).trim();
 }
 
+function gitSucceeds(args) {
+  try {
+    git(args);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function syntheticPromotionCommit() {
   const tree = git(["write-tree"]);
   return git(
@@ -54,7 +63,24 @@ async function rejectsMutation(path, value) {
 
 test("the committed S2 receipt binds the exact source snapshot and strict results", async () => {
   const result = await verifyS2Receipt();
-  assert.equal(result.mode, "candidate");
+  const expectedMode = gitSucceeds([
+    "merge-base",
+    "--is-ancestor",
+    receipt.source_commit,
+    "HEAD"
+  ])
+    ? "candidate"
+    : "promotion";
+  assert.equal(result.mode, expectedMode);
+  if (expectedMode === "promotion") {
+    assert.match(result.promotionCommit, /^[0-9a-f]{40}$/u);
+    assert.ok(
+      gitSucceeds(["merge-base", "--is-ancestor", result.promotionCommit, "HEAD"]),
+      "S2 promotion commit must remain on first-parent repository history"
+    );
+  } else {
+    assert.equal(result.promotionCommit, null);
+  }
   assert.equal(result.receipt.source_commit, receipt.source_commit);
   assert.equal(result.artifactCount, 28);
 });

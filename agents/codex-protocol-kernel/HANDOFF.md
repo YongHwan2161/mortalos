@@ -5,6 +5,26 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
+### ACTIVE — S2 promotion-mode receipt regression
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `55db1a9b73bcffeeb4a4812ad408d31b8a4e673f`
+- Work branch: `agent/codex-protocol-kernel--s2-promotion-mode-regression`
+- Intended paths: `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/WORKLOG.md`, and
+  `test/s2-receipt.test.mjs`
+- Contract affected: the committed S2 receipt test must accept the verifier's
+  repository-state-dependent `candidate` result before squash promotion and
+  `promotion` result on the exact promoted `main`, while continuing to reject any
+  other mode or failed receipt validation
+- Required evidence: focused `npm run test:s2-receipt`; direct `npm run verify:s2`;
+  full `npm test`; exact-head Agent PR Policy and Verify; independent immutable-head
+  reviewer PASS; expected-head squash merge; exact-main Verify and Deploy
+- Notes: PR #41 correctly promoted S2 to main at `55db1a9b`, but both post-merge
+  workflows failed before deployment because the first receipt test asserted
+  `candidate` unconditionally even though `verifyS2Receipt()` correctly returned
+  `promotion`. This task changes no runtime, receipt, schema, or evidence bytes.
+
 ### ACTIVE — Implement S2 crash-safe durable quorum
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
