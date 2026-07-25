@@ -557,7 +557,8 @@ test("presentation and participant adapters cannot import low-level authority co
     "../lab/live-incubator.mjs",
     "../lab/participant/live-endpoint.mjs",
     "../lab/participant/quorum-endpoint.mjs",
-    "../lab/participant/durable-participant.mjs"
+    "../lab/participant/durable-participant.mjs",
+    "../lab/participant/durable-quorum-endpoint.mjs"
   ];
   for (const path of adapters) {
     const source = await readFile(new URL(path, import.meta.url), "utf8");

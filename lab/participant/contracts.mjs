@@ -3,9 +3,10 @@ export const PARTICIPANT_SNAPSHOT_FORMAT = "mortalos-participant-snapshot/1";
 export const PARTICIPANT_PORT_FORMAT = "mortalos-participant-port/1";
 
 export const PARTICIPANT_PORTS = Object.freeze({
+  DurableStore: Object.freeze(["read", "write"]),
   EvidenceStore: Object.freeze(["load", "replace"]),
   KeyStore: Object.freeze(["create", "describe", "destroy", "sign"]),
-  SignOnceJournal: Object.freeze(["read", "reserve"]),
+  SignOnceJournal: Object.freeze(["complete", "read", "record", "reserve"]),
   StateStore: Object.freeze(["load", "replace"]),
   Transport: Object.freeze(["receive", "send"])
 });

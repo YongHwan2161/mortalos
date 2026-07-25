@@ -1201,3 +1201,121 @@ result, and reproducible verification.
   evidence-only descendant changes it. Promotion remains HOLD only for immutable
   PR policy, remote Verify, independent review, expected-head merge, and
   exact-main post-merge Verify plus Deploy.
+
+## 2026-07-25 — S2 crash-safe durable quorum candidate
+
+- Replaced the browser-only snapshot path with one versioned
+  `mortalos-durable-participant/2` document and a storage-neutral
+  `DurableQuorumEndpoint`. The endpoint delegates all candidate construction,
+  signing-request validation, replay, fork, custody, and state semantics to the
+  S1 `ParticipantCore`; adapters own only key custody, atomic persistence, clock,
+  consent, and fault injection.
+- The durable document binds the non-extractable WebCrypto key, public key
+  identity, canonical evidence, current state reference, sign-once journal,
+  pending proposal/signature, cache-only committed head, explicit expiry,
+  renewal/removal state, and migration metadata. Restore replays evidence and
+  checks the key, custody, journal, and state reference instead of trusting the
+  cached head.
+- Signing now follows reserve intent -> create signature -> persist signature ->
+  commit evidence/state/journal. Every operation has deterministic before/after
+  fault boundaries in the Node adapter, while IndexedDB replaces the complete
+  participant document in one strict transaction. Authority removal deletes the
+  key and abandons incomplete signing entries while retaining public evidence;
+  expiry and renewal are explicit operations with no hard-coded 30-day limit.
+- Node fault and recovery tests pass 7/7. They cover durable `2-of-3` commission,
+  every one-endpoint loss and D repair, all operation boundaries, reserve/sign/
+  commit crash states, signer-call accounting, explicit expiry/renewal/removal,
+  schema/key/evidence/journal/state/custody corruption, and fail-closed legacy
+  migration.
+- Actual Chromium acceptance passed 100/100 A-to-B cold-process handoffs and
+  100/100 independent cold-restart transition/repair runs for each complementary
+  A, B, and C loss. The migration gate separately proved valid v1-to-v2 upgrade
+  and corrupt-v1 transaction abort with the original version-1 database retained.
+- On the same candidate bytes, the ordered repository chain passed through
+  `verify:ux`, including governance 30/30, S0 and S1 receipts 12/12 each, core
+  coverage 100.00/94.83/100.00, Participant Core Node/browser parity over 10,000
+  schedules, conformance 76/76, properties 10,000/10,000, state and transport
+  10,000 schedules, relay runtime and dry-run, multi-browser, Lab, cost controls,
+  R1, build, and UX. The terminal was externally interrupted immediately after
+  starting `verify:portable`; a standalone continuation on unchanged bytes then
+  passed portable 10,000/10,000, state and R1 Python differential, singleton,
+  and H2. This is strong local candidate evidence, not a substitute for one clean
+  immutable-head CI run.
+- S2 remains `CANDIDATE_PASS` only after a frozen source commit, a machine-checked
+  main-portable receipt, the complete exact-head Verify workflow, independent
+  immutable review, expected-head merge, and post-merge Verify plus Deploy.
+
+### PR #41 independent review BLOCK and concurrency/policy remediation
+
+- Head `826d186609dc87b034fd847d983bf761068f1768` passed Trusted policy
+  `30158974173/1`, exact-head Verify `30158719779/1`, and a clean uninterrupted
+  local `npm test`. Independent reviewer comment `5078803913` nevertheless
+  correctly BLOCKed promotion with no attestation or merge.
+- Two endpoint instances restored from one revision could each blind-put a
+  conflicting reservation, run separate signers, persist one last-write-wins
+  journal, and return both signatures. The replacement storage contract performs
+  an expected-revision read/compare/consecutive-write in one transaction.
+  Deterministic Node and actual IndexedDB races now require the stale call to fail
+  `E_DURABLE_CONFLICT` before signer invocation, one signature to return, one
+  journal entry to persist, and the losing body to remain forbidden after restart.
+- Legacy `authority_removed = true` with a retained key is now an inconsistent
+  snapshot, as is active authority without a key. Pure and actual IndexedDB
+  migration regressions require both upgrades to abort and retain the version-1
+  database unchanged.
+- Authority policy now has an `expired` state and `expired_at` latch. Restore or a
+  signing attempt that observes reached expiry commits that latch through CAS.
+  Same-process and cold-restart clock rollback cannot restore authority; only an
+  explicit CAS-protected renewal beyond the persisted high-water mark can reactivate
+  it, while removal remains irreversible.
+- Focused replacement evidence passes Node durability 8/8 and full actual
+  Chromium 100/100 for handoff plus 100/100 for each A/B/C loss/repair matrix.
+  The same browser run passes two-instance IndexedDB CAS with zero stale signer
+  calls, same-process and cold-restart expiry rollback rejection, valid migration,
+  and retention of corrupt, removed-with-key, and active-without-key version-1
+  databases. The old source and receipt are superseded and must be rebuilt before
+  any updated PR head is pushed.
+
+### PR #41 second independent review BLOCK and renewal-bound remediation
+
+- Exact replacement head `eabdb019e2430b00276a9f691916717d5f3e3509` closed the
+  concurrency, migration, and clock-rollback findings, but independent reviewer
+  comment `5079622973` correctly BLOCKed promotion: an already-expired authority
+  could call `renewAuthority(null)`, clear both expiry fields, and regain indefinite
+  signing authority.
+- The next replacement permits expired-authority renewal only with a non-null
+  expiry strictly beyond the persisted observation high-water mark. Null, stale,
+  and equal renewals return `E_DURABLE_POLICY`, leave the authority expired, and
+  cannot invoke signing. Node and actual IndexedDB regressions must prove these
+  properties before a valid future renewal succeeds.
+- This remediation changes source bytes and invalidates the prior receipt, PR-body
+  snapshot, exact-head CI, and review decision. A new frozen source, rebuilt S2
+  receipt, complete exact-head gates, and fresh immutable review are required
+  before expected-head merge.
+
+### PR #41 third independent review BLOCK and legacy-store retirement
+
+- Exact head `f51a6867d7f5450d89ce6e8b39e3c5098b7db609` passed local
+  exact-head `npm test`, policy `30171963307/1`, and Verify `30171939595/1`.
+  Independent reviewer comment `5080410491` confirmed all prior P1s closed but
+  found a new authority bypass: successful v1-to-v2 migration copied the
+  non-extractable key into `participant` without deleting legacy `keys/active`.
+- After `removeAuthority()`, the v2 document was removed/null-key but the legacy
+  key remained usable by same-origin WebCrypto signing. This contradicted both
+  the one-document storage contract and atomic key-removal claim.
+- The replacement version-change transaction reads and validates all legacy
+  records, schedules the v2 document write, and deletes `evidence`, `keys`, and
+  `meta` stores atomically. Any read, validation, write, or schema-deletion failure
+  aborts the transaction and retains the complete version-1 database.
+- Actual Chromium regression must prove a successful database contains only the
+  `participant` store and that post-removal state is `removed` with no participant
+  key, no legacy key, and no raw signing path. Existing invalid-migration cases
+  must still abort at version 1 unchanged.
+- The focused replacement run passed Node durability 8/8 and actual Chromium with
+  reduced 1/1 handoff plus 1/1 per A/B/C loss matrix. The browser inspection proved
+  valid and empty v1 upgrades expose only `participant`, invalid v1 upgrades retain
+  exactly `evidence`, `keys`, and `meta` at version 1, and removal leaves neither a
+  participant key nor a legacy raw-signing path.
+- Because these source and evidence bytes differ from `f51a686`, the previous S2
+  receipt, schema, verifier, and receipt tests were removed from the source
+  candidate. They may be rebuilt only after the replacement source commit passes
+  the complete uninterrupted release chain.

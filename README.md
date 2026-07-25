@@ -11,9 +11,9 @@ relay, host, UI, or model as the source of truth.
 - Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos)
 - Current North Star: [post-hackathon roadmap](docs/NORTH_STAR_ROADMAP.md)
 
-The repository contains a promoted multi-browser baseline and a stricter next
-program: converge its separate participant implementations into one crash-safe,
-recoverable participant core. The [claim matrix](docs/CLAIM_MATRIX.md) distinguishes
+The repository contains a promoted multi-browser baseline and unified Participant
+Core plus a receipt-gated crash-safe durable-quorum implementation. The
+[claim matrix](docs/CLAIM_MATRIX.md) distinguishes
 implemented, exact-head verified, physically verified, promoted, and explicitly
 unclaimed behavior.
 
@@ -81,6 +81,7 @@ npm run test:state
 npm run test:transport
 npm run test:relay
 npm run test:multi-browser
+npm run test:durable-quorum
 npm run verify:persistent-handoff
 npm run verify:ux
 npm run verify:state
@@ -119,9 +120,10 @@ portable kernel → accepted lineage or stable rejection
 
 Each endpoint verifies locally. The relay cannot return `accepted: true`, choose a
 head, sign, resolve a fork, or declare death. Durable Participant storage is consent-
-gated and contains one non-extractable key plus canonical public evidence; restore
-replays that evidence instead of trusting cached verdicts. Ephemeral Demo creates no
-durable browser storage.
+gated and uses one atomic versioned document for a non-extractable key, canonical
+public evidence, state references, sign-once journal, pending recovery, and explicit
+authority policy. Restore replays evidence instead of trusting cached verdicts.
+Ephemeral Demo creates no durable browser storage.
 
 The implemented core sequence is:
 
@@ -166,6 +168,7 @@ out of band; a failed candidate preserves or restores the last accepted deployme
 - [S1–S8 stage tracking](docs/STAGE_TRACKING.md)
 - [Endpoint-neutral architecture](docs/ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](docs/BROWSER_PARTICIPANT_COMPATIBILITY.md)
+- [Crash-safe durable quorum](docs/DURABLE_QUORUM.md)
 - [Protocol](docs/PROTOCOL.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Rejection codes](docs/REJECTION_CODES.md)

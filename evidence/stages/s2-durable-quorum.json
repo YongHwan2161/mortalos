@@ -1,0 +1,285 @@
+{
+  "format": "mortalos-stage-receipt/2",
+  "stage": "S2",
+  "status": "PASS",
+  "source_commit": "2ef4ea9e55e6d8ebfc1934dd38a663cb0befda90",
+  "base_commit": "d0a9ba0f7e4f1a3a17cb7d4af04a9c1113a09ec4",
+  "source_committed_at": "2026-07-25T20:27:04.000Z",
+  "dependency_lock_digest": "sha256:c69b887d03595e6f734849129fd73ab0f2898ec81f848b65463d1bf7ba4b9298",
+  "protocol_versions": [
+    "mortalos/0",
+    "mortalos/1"
+  ],
+  "state_versions": [
+    "mortalos-state/1"
+  ],
+  "storage_schema_versions": [
+    "mortalos-durable-participant/1",
+    "mortalos-durable-participant/2"
+  ],
+  "crypto_versions": [
+    "Ed25519",
+    "SHA-256"
+  ],
+  "policy_versions": [
+    "mortalos-authority-policy/1",
+    "mortalos-sign-once-journal-entry/1",
+    "mortalos-durable-pending/1"
+  ],
+  "package_digests": {
+    "package.json": "sha256:45e3fc280cf66f550225c12946c3ad17b5e28c10bdb4308ddf5d28f5aaf3cd2d"
+  },
+  "topology_digest": "sha256:5fb88e1e571145fbe3d26c85f41e8c871902ef5de49be3fbccc3a86bc5e7ed4a",
+  "commands": [
+    {
+      "command": "npm run test:durable-quorum",
+      "status": "PASS",
+      "summary": "Eight Node tests and actual Chromium 100/100 handoff plus 100/100-per-loss matrices passed, including atomic legacy-store retirement and post-removal raw-signing rejection."
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "summary": "The complete ordered repository chain passed without interruption on the frozen source commit."
+    },
+    {
+      "command": "npm run verify:lab",
+      "status": "PASS",
+      "summary": "Chromium Lab acceptance and 20 consecutive persistent A-to-B handoffs passed."
+    },
+    {
+      "command": "npm run test:chromium",
+      "status": "PASS",
+      "summary": "Committed and Chromium corpus results were byte-identical; 10,000 adversarial cases were rejected."
+    },
+    {
+      "command": "npm run verify:transport",
+      "status": "PASS",
+      "summary": "10,000 seeded schedules and 30,000 endpoint recoveries matched in Node and Chromium."
+    },
+    {
+      "command": "npm run test:coverage",
+      "status": "PASS",
+      "summary": "Repository coverage was 94.70% lines, 92.23% branches, and 95.22% functions."
+    },
+    {
+      "command": "npm audit --audit-level=high",
+      "status": "PASS",
+      "summary": "Found 0 vulnerabilities."
+    },
+    {
+      "command": "npm run verify:s2",
+      "status": "PASS",
+      "summary": "Receipt schema, lineage, exact source and promotion inventories, digests, concurrency, bounded renewal, migration retirement, limitations, and receipt bytes read back exactly."
+    }
+  ],
+  "environment": {
+    "os": "Windows",
+    "architecture": "x64",
+    "node": "v22.12.0",
+    "npm": "10.9.0",
+    "chromium": "149.0.7827.55",
+    "timezone": "Asia/Seoul",
+    "cross_origin_isolated_lab": true
+  },
+  "seeds": {
+    "handoff_trials": 100,
+    "loss_trials_per_endpoint": 100,
+    "loss_endpoints": [
+      "A",
+      "B",
+      "C"
+    ],
+    "participant_schedule_count": 10000,
+    "property_corpus": 1297044052
+  },
+  "started_at": "2026-07-25T20:27:05.000Z",
+  "completed_at": "2026-07-25T21:31:12.890Z",
+  "results": {
+    "durable_node_tests": {
+      "passed": 8,
+      "failed": 0
+    },
+    "cold_process_handoffs": {
+      "passed": 100,
+      "total": 100,
+      "failed": 0
+    },
+    "single_endpoint_loss_repair": {
+      "A": {
+        "passed": 100,
+        "total": 100
+      },
+      "B": {
+        "passed": 100,
+        "total": 100
+      },
+      "C": {
+        "passed": 100,
+        "total": 100
+      },
+      "failed": 0
+    },
+    "fault_matrix": {
+      "operations": [
+        "initialize",
+        "reserve",
+        "signature",
+        "commit",
+        "observe",
+        "sync",
+        "renew",
+        "expire",
+        "remove"
+      ],
+      "boundaries_per_operation": 2,
+      "allowed_recovery_outcomes": [
+        "old_committed_head",
+        "recoverable_pending_successor",
+        "new_committed_head"
+      ],
+      "unexpected_outcomes": 0
+    },
+    "sign_once": {
+      "critical_phases": [
+        "reserve",
+        "signature",
+        "commit"
+      ],
+      "boundaries_per_phase": 2,
+      "conflicting_second_signatures": 0
+    },
+    "concurrent_compare_and_swap": {
+      "adapters": [
+        "memory",
+        "indexeddb"
+      ],
+      "simultaneous_instances": 2,
+      "signatures_returned": 1,
+      "stale_signer_calls": 0,
+      "persisted_journal_entries": 1,
+      "stale_writer_error": "E_DURABLE_CONFLICT",
+      "restart_losing_body_error": "E_DURABLE_EQUIVOCATION"
+    },
+    "corruption_matrix": {
+      "unknown_schema": "PASS",
+      "corrupt_key_handle": "PASS",
+      "missing_evidence": "PASS",
+      "key_custody_mismatch": "PASS",
+      "partial_journal": "PASS",
+      "state_mismatch": "PASS",
+      "failed_migration": "PASS"
+    },
+    "migration": {
+      "valid_v1_to_v2": "PASS",
+      "successful_store_names": [
+        "participant"
+      ],
+      "legacy_stores_removed_on_success": "PASS",
+      "empty_v1_document_absent": true,
+      "empty_v1_store_names": [
+        "participant"
+      ],
+      "empty_v1_legacy_stores_removed": "PASS",
+      "removal_status": "removed",
+      "participant_key_absent_after_removal": true,
+      "legacy_key_absent_after_removal": true,
+      "legacy_raw_signing_after_removal": false,
+      "corrupt_v1_aborted": "PASS",
+      "removed_with_key_v1_aborted": "PASS",
+      "active_without_key_v1_aborted": "PASS",
+      "invalid_old_versions_retained": true
+    },
+    "authority_policy": {
+      "removal_prevents_future_signing": "PASS",
+      "public_evidence_retained": "PASS",
+      "expiry_latch_persisted": "PASS",
+      "same_process_clock_rollback_prevented": "PASS",
+      "cold_restart_clock_rollback_prevented": "PASS",
+      "null_renewal_rejected": "PASS",
+      "stale_or_equal_renewal_rejected": "PASS",
+      "status_after_rejected_renewals": "expired",
+      "explicit_future_renewal_required": "PASS",
+      "hard_coded_30_day_lifetime": false
+    },
+    "participant_core": {
+      "tests_passed": 10,
+      "tests_failed": 0,
+      "coverage_lines_percent": 100,
+      "coverage_branches_percent": 94.83,
+      "coverage_functions_percent": 100,
+      "seeded_schedule_parity": 10000,
+      "result_digest": "sha256:b440878b4a484bba5b38a3c4757d4d630793c4244facf88d9804ab033d3ed73a"
+    },
+    "protocol_conformance": {
+      "passed": 76,
+      "failed": 0
+    },
+    "property_cases": {
+      "passed": 10000,
+      "failed": 0
+    },
+    "persistent_handoffs": {
+      "passed": 20,
+      "total": 20,
+      "relay_operations_per_12_seconds": 38,
+      "local_rate_limit_failures": 0
+    },
+    "portable_adversarial_cases": {
+      "rejected": 10000,
+      "total": 10000
+    },
+    "transport": {
+      "seeded_schedules": 10000,
+      "endpoint_recoveries": 30000,
+      "node_chromium_result_digest": "sha256:4dd66c9bf7d68af2c3e520987c1bccb3fcad8213a063178319eb7fcba9ab81d3"
+    },
+    "repository_coverage_percent": {
+      "lines": 94.7,
+      "branches": 92.23,
+      "functions": 95.22
+    },
+    "dependency_vulnerabilities": {
+      "high_or_higher": 0,
+      "total": 0
+    }
+  },
+  "known_limitations": [
+    "The browser adapter proves same-host process and IndexedDB failure semantics, not independent physical or administrative failure domains.",
+    "A production Node custody claim remains blocked on a platform key-store security ADR and implementation.",
+    "Exact resource manifests, chunk replication, and reconstruction remain S3 work.",
+    "Encrypted state and epoch-key rotation remain S4 work.",
+    "Firefox, WebKit, cross-device, and independent-provider promotion remain S7 and S8 work."
+  ],
+  "failures": [],
+  "artifact_digests": {
+    "README.md": "sha256:9eb84ec0050a3b9025eed507032ea8c6e6a5c1d834c0ea689f9febaddd7e9248",
+    "agents/codex-protocol-kernel/HANDOFF.md": "sha256:5d163c7363d064c2083f4f3db88e1b30a02fbd9d8837de58b35bf8033dcb1971",
+    "agents/codex-protocol-kernel/WORKLOG.md": "sha256:f0a51d3eb597e4be03b5eb37f7f51952f0f4f137dd871e64f1bb67eb80dc8ce9",
+    "docs/ACCESS_ARCHITECTURE.md": "sha256:e8606b9234a6e3a284e2c5d424159684e2586b1a35e8f56b57ec5d303c9ea040",
+    "docs/BROWSER_PARTICIPANT_COMPATIBILITY.md": "sha256:285e5f1a800a5a65f6dfe20cc2ba12f61d542fbc2ed556921534a33c135e6fc7",
+    "docs/CLAIM_MATRIX.md": "sha256:9581cd31fffa6589d5c5ada274018d46a9a2a149fdfe7afe54c8ea1405144b96",
+    "docs/DURABLE_QUORUM.md": "sha256:113c56ddd040001615fd4e23bddf5a234c2ebdaa1e96eefa49ed874db75f41c3",
+    "docs/NORTH_STAR_ROADMAP.md": "sha256:3fdd917d33bd71384ca4d91c7a5a14342ed8cf37e07d0f86ebf94690aef2b2ea",
+    "docs/PARTICIPANT_CORE.md": "sha256:889b95ef939a8c1bb6a3c4327b9794f126b9a9da2627e760d27f2f2fe947aaf3",
+    "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md": "sha256:5a306edf0b7a9e0b830ccf5e82e96a92890c9f18f4766adfc9aa7ecc5cd25115",
+    "docs/README.md": "sha256:8628232accb27f8999366edf84aae2c4f6ceebd12289b1f84b8d8393dddd1054",
+    "docs/STAGE_TRACKING.md": "sha256:b049f44c76a695d755e1aa820d7ba1a077f400298338056cf292f351a243cd81",
+    "docs/THREAT_MODEL.md": "sha256:f220063b579fd14fc7872fa6c670c00b1f456c1dd1ccfdd2241d99bc2a1b0221",
+    "docs/TRACEABILITY.md": "sha256:b15b303f33a66600621808af96be8954b5f09729445db20b282a1561dd0f1501",
+    "lab/participant/contracts.mjs": "sha256:d955a3af1faa1cd1f034a5ff9c4ccd68f0b20e8d2c66231c3d703021d11e5e23",
+    "lab/participant/durable-participant.mjs": "sha256:4588e89ee337e614418a1c6e560e8b02aa7b564f5875e0d5d549dd994f21112e",
+    "lab/participant/durable-quorum-endpoint.mjs": "sha256:f134a9cdda9b61b8b332fee7d97b528ed0daa0c7a3d82cb4f7a2df525a91073c",
+    "lab/participant/webcrypto-key-store.mjs": "sha256:e48ab457ee7dc4b190700d2e3780a7f7aab2b8a31d8212db3647560dcd4104ab",
+    "lab/storage/durable-document.mjs": "sha256:6b7a0e7de39ddc43e41a24bf16804182f4e667ecfa3c534b0b6e3c609c30c5f4",
+    "lab/storage/durable-store.mjs": "sha256:f396edd7bce8b0c311e55762a01422c0fb6ebad9e47b253e11fb5d29881a9387",
+    "lab/storage/memory-durable-store.mjs": "sha256:18115ee38a5d470cdffeaeb4d177ba4c332447495bc9866fabfc3b594b52f381",
+    "package.json": "sha256:45e3fc280cf66f550225c12946c3ad17b5e28c10bdb4308ddf5d28f5aaf3cd2d",
+    "scripts/verify-durable-quorum-chromium.mjs": "sha256:3fea7a9007d76b8b2ac86a697c8269f22309d80398175cba6d0288849894383c",
+    "scripts/verify-lab.mjs": "sha256:8b70c1e28650ff8b487e8696e4512dde546ef9ce3e2d64948d574849ae83dbb0",
+    "test/durable-browser-entry.mjs": "sha256:c8d172fe300ed199e8068ea8c7fc76adaf97a547a29108dfcdf80c15e5dc6979",
+    "test/durable-quorum.test.mjs": "sha256:d940b7f6cec0f2f5509dd1a9bbc1be97a1cc57748f45805c3b20ae10a12fcdaa",
+    "test/lab.test.mjs": "sha256:865b9de16e7089a8039f54b35980c6859fab4715a7f063b227b6cc393c871238",
+    "test/participant-core.test.mjs": "sha256:0b91e5a868ab2697e1e23d50462c535fe8c22956aa06a1c402500d09ace3fca0"
+  },
+  "review_snapshot": "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference."
+}

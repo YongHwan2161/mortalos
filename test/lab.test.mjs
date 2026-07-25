@@ -251,17 +251,28 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(combined, /exportKey\("pkcs8", generated\.privateKey\)/);
 
   const durableSource = await readFile(new URL("../lab/participant/durable-participant.mjs", import.meta.url), "utf8");
+  const durableEndpointSource = await readFile(new URL("../lab/participant/durable-quorum-endpoint.mjs", import.meta.url), "utf8");
+  const durableDocumentSource = await readFile(new URL("../lab/storage/durable-document.mjs", import.meta.url), "utf8");
   const keyStoreSource = await readFile(new URL("../lab/participant/webcrypto-key-store.mjs", import.meta.url), "utf8");
   const durableStoreSource = await readFile(new URL("../lab/storage/durable-store.mjs", import.meta.url), "utf8");
   const appSource = await readFile(new URL("../lab/app.mjs", import.meta.url), "utf8");
-  assert.match(durableSource, /generateKey\(\{ name: "Ed25519" \}, false, \["sign", "verify"\]\)/);
-  assert.match(durableSource, /initialQuorum: \{ type: "threshold", threshold: 1 \}/);
+  assert.match(keyStoreSource, /generateKey\(\{ name: "Ed25519" \}, false, \["sign", "verify"\]\)/);
+  assert.match(durableSource, /threshold: 1/);
   assert.match(keyStoreSource, /exportKey\("pkcs8", privateKey\)/);
-  assert.match(durableSource, /pending !== null/);
-  assert.match(durableStoreSource, /database\.transaction\(STORES, "readwrite", \{ durability: "strict" \}\)/);
-  assert.match(durableStoreSource, /event\.oldVersion !== 0/);
+  assert.match(
+    durableEndpointSource,
+    /#commitDocument\("reserve", reserved\.document\)[\s\S]*?#signer\(/
+  );
+  assert.match(
+    durableEndpointSource,
+    /expectedRevision = this\.#document\?\.revision \?\? null;[\s\S]*?write\(operation, document, \{ expectedRevision \}\)/
+  );
+  assert.match(durableDocumentSource, /next\.pending = null[\s\S]*?next\.revision \+= 1/);
+  assert.match(durableStoreSource, /database\.transaction\(\[DOCUMENT_STORE\], "readwrite", \{ durability: "strict" \}\)/);
+  assert.match(durableStoreSource, /event\.oldVersion === 1/);
   assert.doesNotMatch(durableStoreSource, /request\.oldVersion/);
-  assert.match(durableStoreSource, /objectStore\("keys"\)\.delete\("active"\)/);
+  assert.match(durableDocumentSource, /next\.key = null/);
+  assert.doesNotMatch(durableSource, /ttlDays > 30|30-day/);
   assert.match(appSource, /if \(!byId\("durable-consent"\)\.checked\) throw/);
 
   const serverSource = await readFile(new URL("../scripts/serve-lab.mjs", import.meta.url), "utf8");

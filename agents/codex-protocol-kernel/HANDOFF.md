@@ -5,6 +5,72 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
+### ACTIVE — Implement S2 crash-safe durable quorum
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `d0a9ba0f7e4f1a3a17cb7d4af04a9c1113a09ec4`
+- Work branch: `agent/codex-protocol-kernel--s2-crash-safe-durable-quorum`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--s2-crash-safe-durable-quorum`
+- Exact intended shared areas: versioned durable participant schema and adapters
+  under `lab/participant/` and `lab/storage/`; the unified Participant Core only
+  where a storage-neutral prepare/recover contract is required; focused Node and
+  Chromium fault-injection tests; matching verifier, package command, workflow,
+  protocol/traceability documentation, receipt schema/fixture, and Issue #31
+  evidence.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
+- Intended change: implement a storage-neutral write-ahead protocol that durably
+  reserves each sign-once tuple before signature release, recovers only by replaying
+  canonical evidence/state proofs, commits accepted evidence/state/journal metadata
+  atomically, supports explicit renewal/removal, and gives IndexedDB and local Node
+  adapters identical failure semantics for durable `2-of-3` birth, handoff,
+  transition, one-loss continuation, and D repair.
+- Required gates: every enumerated write boundary produces only old head,
+  recoverable pending successor, or new head; no conflicting second signature;
+  corrupt/unknown/mismatched schema, key, evidence, state, journal, or migration
+  fails closed; B cold restart after handoff `100/100`; A/B/C loss, pair restart,
+  transition, and D repair `100/100` per loss; clean Node and Chromium exact-head
+  suites; full repository/coverage/audit regression; immutable independent review,
+  expected-head merge, post-merge Verify, and exact-main Deploy.
+- Excluded: S3 resource replication/reconstruction, S4 encrypted state/epoch keys,
+  a production Node custody claim, SDK/CLI packaging, Capsule product work, or
+  independent-provider promotion.
+- Expected handoff: one focused Issue #31 PR with
+  `evidence/stages/s2-durable-quorum.json`; independent immutable-head review and
+  expected-head squash merge only after every S2 and regression gate passes.
+- PR #41 head `826d186609dc87b034fd847d983bf761068f1768` passed policy
+  `30158974173/1` and Verify `30158719779/1`, but independent review BLOCKed it
+  without attestation or merge. Comment `5078803913` reproduced three P1 authority
+  failures: blind same-revision writers released conflicting signatures; a removed
+  v1 authority with a stale key migrated active; and reached expiry was reversible
+  by wall-clock rollback.
+- The replacement source must use a consecutive expected-revision CAS inside each
+  whole-document transaction and fail stale reservations before signer invocation;
+  abort inconsistent removed-plus-key and active-keyless migrations without
+  rewriting v1; and durably latch reached expiry across same-process and cold-start
+  clock rollback. Node plus actual IndexedDB regressions and a fully rebuilt source
+  receipt are mandatory before a fresh immutable review.
+- Exact replacement head `eabdb019e2430b00276a9f691916717d5f3e3509`
+  closed those three findings, but independent reviewer comment `5079622973`
+  correctly BLOCKed promotion because an expired authority could use
+  `renewAuthority(null)` to regain indefinite signing authority.
+- The next replacement must permit expired-authority renewal only with a non-null
+  expiry strictly beyond the persisted observation high-water mark. Null, stale,
+  and equal renewals must return `E_DURABLE_POLICY`, leave authority expired, and
+  be proven in Node plus actual IndexedDB. This source change invalidates the prior
+  receipt, PR-body snapshot, exact-head CI, and review decision.
+- Exact head `f51a6867d7f5450d89ce6e8b39e3c5098b7db609` closed all prior
+  P1s and passed policy `30171963307/1` plus Verify `30171939595/1`, but
+  independent reviewer comment `5080410491` correctly BLOCKed promotion because
+  successful v1 migration left the legacy `keys/active` signing key beside the v2
+  document. After v2 authority removal, same-origin code could still sign through
+  that orphaned non-extractable key.
+- The next replacement must atomically create the v2 participant document and
+  delete every legacy object store within the same version-change transaction.
+  Failed migrations must retain the complete v1 database, while successful
+  migration followed by removal must expose only the `participant` store, a
+  removed/null-key document, no legacy key, and no raw signing path. A fresh source,
+  receipt, CI snapshot, and independent review are mandatory.
+
 ### ACTIVE — S1 receipt post-squash portability correction
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
