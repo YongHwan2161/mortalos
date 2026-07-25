@@ -1201,3 +1201,46 @@ result, and reproducible verification.
   evidence-only descendant changes it. Promotion remains HOLD only for immutable
   PR policy, remote Verify, independent review, expected-head merge, and
   exact-main post-merge Verify plus Deploy.
+
+## 2026-07-25 — S2 crash-safe durable quorum candidate
+
+- Replaced the browser-only snapshot path with one versioned
+  `mortalos-durable-participant/2` document and a storage-neutral
+  `DurableQuorumEndpoint`. The endpoint delegates all candidate construction,
+  signing-request validation, replay, fork, custody, and state semantics to the
+  S1 `ParticipantCore`; adapters own only key custody, atomic persistence, clock,
+  consent, and fault injection.
+- The durable document binds the non-extractable WebCrypto key, public key
+  identity, canonical evidence, current state reference, sign-once journal,
+  pending proposal/signature, cache-only committed head, explicit expiry,
+  renewal/removal state, and migration metadata. Restore replays evidence and
+  checks the key, custody, journal, and state reference instead of trusting the
+  cached head.
+- Signing now follows reserve intent -> create signature -> persist signature ->
+  commit evidence/state/journal. Every operation has deterministic before/after
+  fault boundaries in the Node adapter, while IndexedDB replaces the complete
+  participant document in one strict transaction. Authority removal deletes the
+  key and abandons incomplete signing entries while retaining public evidence;
+  expiry and renewal are explicit operations with no hard-coded 30-day limit.
+- Node fault and recovery tests pass 7/7. They cover durable `2-of-3` commission,
+  every one-endpoint loss and D repair, all operation boundaries, reserve/sign/
+  commit crash states, signer-call accounting, explicit expiry/renewal/removal,
+  schema/key/evidence/journal/state/custody corruption, and fail-closed legacy
+  migration.
+- Actual Chromium acceptance passed 100/100 A-to-B cold-process handoffs and
+  100/100 independent cold-restart transition/repair runs for each complementary
+  A, B, and C loss. The migration gate separately proved valid v1-to-v2 upgrade
+  and corrupt-v1 transaction abort with the original version-1 database retained.
+- On the same candidate bytes, the ordered repository chain passed through
+  `verify:ux`, including governance 30/30, S0 and S1 receipts 12/12 each, core
+  coverage 100.00/94.83/100.00, Participant Core Node/browser parity over 10,000
+  schedules, conformance 76/76, properties 10,000/10,000, state and transport
+  10,000 schedules, relay runtime and dry-run, multi-browser, Lab, cost controls,
+  R1, build, and UX. The terminal was externally interrupted immediately after
+  starting `verify:portable`; a standalone continuation on unchanged bytes then
+  passed portable 10,000/10,000, state and R1 Python differential, singleton,
+  and H2. This is strong local candidate evidence, not a substitute for one clean
+  immutable-head CI run.
+- S2 remains `CANDIDATE_PASS` only after a frozen source commit, a machine-checked
+  main-portable receipt, the complete exact-head Verify workflow, independent
+  immutable review, expected-head merge, and post-merge Verify plus Deploy.

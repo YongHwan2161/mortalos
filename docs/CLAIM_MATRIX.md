@@ -1,6 +1,6 @@
 # MortalOS current claim matrix
 
-Status: **ACTIVE S1 candidate claim authority**
+Status: **ACTIVE S2 candidate claim authority**
 
 Last synchronized: **2026-07-25 KST**
 
@@ -17,9 +17,9 @@ inherits truth from another.
 | Read-only canonical evidence export/import | Yes | Yes | Not applicable | Yes | Import does not confer signing authority. |
 | A→B browser custody succession after A closes | Yes | Yes, Chromium persistent profiles | No | Yes, within the browser-profile claim | Profiles are not evidence of separate people, devices, organizations, or credential domains. |
 | Logical browser `2-of-3` loss and D repair | Yes | Yes, isolated Chromium contexts | No | Yes, as logical quorum evidence | Current contexts can share one host and administrative domain. |
-| Consent-gated durable `1-of-1` participant reload | Yes | Yes, Chromium | No | Yes, as single-participant durability | Not crash-safe durable quorum and not sufficient for the North Star. |
-| Unified deterministic Participant Core | Yes | Yes, Node and Chromium candidate | Not applicable | Pending immutable review, merge, and post-merge Verify | Live incubator, durable reload, A→B, quorum, catch-up, fork, snapshot, and availability paths use one core. This does not make adapter persistence crash-safe. |
-| Crash-safe durable `2-of-3` cold recovery and sign-once journal | No | No | No | No | S2 target; current in-memory quorum evidence must not be relabeled durable. |
+| Consent-gated durable `1-of-1` participant reload | Yes | Yes, Chromium schema v2 | No | Yes, within exact receipt/deploy evidence | Uses the same replay/WAL path as durable quorum; it remains one-key authority. |
+| Unified deterministic Participant Core | Yes | Yes, Node and Chromium | Not applicable | Yes | S1 receipt v2 is main-history portable; live, durable, handoff, quorum, catch-up, fork, snapshot, and availability paths use one core. |
+| Crash-safe durable `2-of-3` cold recovery and sign-once journal | Yes | Yes, Node plus actual Chromium `100/100` per required matrix on the S2 candidate | No | Receipt/review/merge gated | Same-host profiles and test adapters do not prove independent devices, credentials, or administrators. |
 | Exact R3 state replica recovery after storage/relay loss | No | No | No | No | Current v1 state roots prove transition integrity, not retrievability. |
 | Confidential replicated state with epoch-key removal | No | No | No | No | Current protocol provides integrity, not state confidentiality. |
 | Public SDK/CLI package interoperability | No | No | No | No | Repository scripts are not a supported package or stable public API. |

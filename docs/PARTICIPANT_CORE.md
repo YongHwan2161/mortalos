@@ -1,7 +1,6 @@
 # MortalOS Participant Core
 
-Status: **S1 implementation candidate — promotion requires immutable review, merge,
-and post-merge Verify**
+Status: **S1 promoted; S2 durable adapter uses this unchanged authority boundary**
 
 Contract versions:
 
@@ -37,19 +36,21 @@ core snapshot to UI fields. They cannot return a validity verdict or inject a he
 
 | Port | Required methods | Authority excluded |
 | --- | --- | --- |
+| `DurableStore` | `read`, `write` | Whole-document atomicity cannot decide acceptance. |
 | `KeyStore` | `create`, `describe`, `destroy`, `sign` | Cannot choose a body or claim acceptance. |
 | `EvidenceStore` | `load`, `replace` | Stored head metadata is never recognition authority. |
 | `StateStore` | `load`, `replace` | State bytes must still reproduce the committed root. |
-| `SignOnceJournal` | `read`, `reserve` | A reservation does not make a candidate valid. |
+| `SignOnceJournal` | `read`, `reserve`, `record`, `complete` | A reservation or stored signature does not make a candidate valid. |
 | `Transport` | `receive`, `send` | Delivery order or peer verdicts do not affect validity. |
 
 Every port result uses an exact allowlisted success/failure envelope. Stable port
 failure codes distinguish unavailable capability, corrupt result, I/O failure,
 timeout, and transport outage.
 
-S1 provides the contract and the in-memory/WebCrypto adapters. Crash-safe journal,
-evidence, and state-store transactions are S2 work; the existence of these
-interfaces is not a durable-quorum claim.
+S1 provides the authority contract and in-memory/WebCrypto adapters. S2 implements
+the crash-safe journal and atomic evidence/state transaction in
+[`DURABLE_QUORUM.md`](DURABLE_QUORUM.md). Storage still cannot construct candidates,
+derive signing bytes, inject a head, or turn a reservation into acceptance.
 
 ## Deterministic snapshot
 
@@ -107,5 +108,6 @@ A static source-boundary test rejects low-level validation, protocol-object, or
 signing-message imports from UI and participant adapters.
 
 The complete repository, Chromium, transport, R1, state, relay, dependency, review,
-merge, and post-merge gates still apply. Passing S1 does not promote S2 durability,
-S3 recovery, S4 confidentiality, or independent failure domains.
+merge, and post-merge gates still apply. Passing S1 does not itself promote S2;
+passing S2 does not promote S3 recovery, S4 confidentiality, or independent failure
+domains.

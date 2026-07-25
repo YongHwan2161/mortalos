@@ -5,6 +5,39 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
+### ACTIVE — Implement S2 crash-safe durable quorum
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `d0a9ba0f7e4f1a3a17cb7d4af04a9c1113a09ec4`
+- Work branch: `agent/codex-protocol-kernel--s2-crash-safe-durable-quorum`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--s2-crash-safe-durable-quorum`
+- Exact intended shared areas: versioned durable participant schema and adapters
+  under `lab/participant/` and `lab/storage/`; the unified Participant Core only
+  where a storage-neutral prepare/recover contract is required; focused Node and
+  Chromium fault-injection tests; matching verifier, package command, workflow,
+  protocol/traceability documentation, receipt schema/fixture, and Issue #31
+  evidence.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
+- Intended change: implement a storage-neutral write-ahead protocol that durably
+  reserves each sign-once tuple before signature release, recovers only by replaying
+  canonical evidence/state proofs, commits accepted evidence/state/journal metadata
+  atomically, supports explicit renewal/removal, and gives IndexedDB and local Node
+  adapters identical failure semantics for durable `2-of-3` birth, handoff,
+  transition, one-loss continuation, and D repair.
+- Required gates: every enumerated write boundary produces only old head,
+  recoverable pending successor, or new head; no conflicting second signature;
+  corrupt/unknown/mismatched schema, key, evidence, state, journal, or migration
+  fails closed; B cold restart after handoff `100/100`; A/B/C loss, pair restart,
+  transition, and D repair `100/100` per loss; clean Node and Chromium exact-head
+  suites; full repository/coverage/audit regression; immutable independent review,
+  expected-head merge, post-merge Verify, and exact-main Deploy.
+- Excluded: S3 resource replication/reconstruction, S4 encrypted state/epoch keys,
+  a production Node custody claim, SDK/CLI packaging, Capsule product work, or
+  independent-provider promotion.
+- Expected handoff: one focused Issue #31 PR with
+  `evidence/stages/s2-durable-quorum.json`; independent immutable-head review and
+  expected-head squash merge only after every S2 and regression gate passes.
+
 ### ACTIVE — S1 receipt post-squash portability correction
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`

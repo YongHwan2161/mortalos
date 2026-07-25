@@ -355,7 +355,31 @@ Resource contribution must be explicit and revocable in later participant-runtim
 - Restart recovery replays signed evidence and state sidecars. A pending, corrupt,
   or partially persisted candidate cannot become an accepted head.
 
-## 16. Threat-model change control
+## 16. S2 durable-quorum assumptions and exclusions
+
+- A non-extractable browser `CryptoKey` prevents supported API export; it does not
+  resist a compromised browser process, operating system, hardware, or user account.
+- IndexedDB atomicity and strict durability are platform assumptions. The S2 fault
+  gate verifies every adapter-visible boundary but does not claim power-loss
+  guarantees beyond the browser/storage contract.
+- A durable reservation prevents signing a conflicting body for the same tuple. If
+  a crash occurs after Ed25519 computation but before signature persistence, the
+  exact deterministic message may be signed again during recovery; the failed call
+  released no signature and a different body remains forbidden.
+- The committed-head cache is non-authoritative and disposable. Evidence replay,
+  key identity, custody, and state references determine recovery.
+- Explicit expiry disables future signing but does not erase previously released
+  signatures, public evidence, browser backups, or hidden copies.
+- Node's memory durable store proves failure semantics only. It is not a production
+  Node key store or hardware-backed custody claim.
+- The `100/100` Chromium matrices use separately persisted profiles/databases on one
+  host and one administrative domain. They do not satisfy S7 independent failure
+  domains.
+- S2 state references bind deterministic state already carried by evidence. S2 does
+  not prove external chunk availability, confidential state, relay independence, or
+  exact resource-byte reconstruction.
+
+## 17. Threat-model change control
 
 Any implementation change that introduces one of the following requires a threat-model revision before merge:
 

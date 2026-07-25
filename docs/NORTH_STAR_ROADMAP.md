@@ -1,6 +1,6 @@
 # MortalOS North Star roadmap
 
-Status: **ACTIVE — S1 Unified Participant Core candidate**
+Status: **ACTIVE — S2 crash-safe durable quorum candidate**
 
 Last synchronized: **2026-07-25 KST**
 
@@ -26,11 +26,14 @@ MortalOS already has a portable deterministic kernel, v1 bounded state transitio
 browser-held non-extractable keys, A→B succession, logical `2-of-3` loss/repair
 evidence, an authority-neutral relay, and English/Korean Lab acceptance.
 
-S1 now routes the live incubator, durable reload, handoff, and logical quorum
-participants through one deterministic Participant Core. The remaining root gap is
-crash-safe durable quorum: current evidence does not yet prove transactional
-sign-once recovery, exact resource reconstruction, confidentiality, or independent
-failure domains. The
+S1 is promoted and routes the live incubator, durable reload, handoff, and logical
+quorum participants through one deterministic Participant Core. S2 adds a versioned
+write-ahead sign-once journal, replay-only recovery, strict IndexedDB transactions,
+explicit authority policy, schema migration, process-cold handoff recovery, and
+durable one-loss/D-repair matrices. Its implementation is not promoted until the
+exact S2 receipt, immutable review, merge, post-merge Verify, and deployment agree.
+The next architectural gap is S3 exact resource reconstruction; confidentiality and
+independent failure domains remain later stages. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
 
@@ -72,5 +75,5 @@ byte-identical for the portable corpus. Exactly 10,000 cases replay from seed
 `1297044052`. Any cross-runtime mismatch reopens the earliest portable gate and
 invalidates later evidence. An old green run does not cover a new SHA.
 
-S2 must not begin until the complete S1 receipt, immutable review, expected-head
-merge, and post-merge Verify are promoted.
+S3 must not begin until the complete S2 receipt, immutable review, expected-head
+merge, post-merge Verify, and exact-main deployment are promoted.

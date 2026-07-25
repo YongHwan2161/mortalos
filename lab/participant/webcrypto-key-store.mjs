@@ -51,6 +51,19 @@ export async function signBytes(keyId, privateKey, message) {
   });
 }
 
+export async function createStoredWebCryptoKey() {
+  const generated = await crypto.subtle.generateKey({ name: "Ed25519" }, false, ["sign", "verify"]);
+  await assertNonExtractableSigningKey(generated.privateKey);
+  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", generated.publicKey));
+  const custodian = custodianFromPublicKeyBytes(raw);
+  return {
+    key_id: custodian.key_id,
+    private_key: generated.privateKey,
+    public_key: custodian.public_key,
+    public_key_raw: raw.buffer
+  };
+}
+
 export class WebCryptoKeyStore {
   #record = null;
 

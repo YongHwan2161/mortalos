@@ -27,9 +27,9 @@ Anything less is **HOLD**.
 
 ## Current candidate
 
-S1 is implemented on
-`agent/codex-protocol-kernel--s1-unified-participant-core`. Its promotion remains
-**HOLD**. The exact source-bound receipt at
-`evidence/stages/s1-participant-core.json` passes locally; immutable-head review,
-expected-head merge, post-merge Verify, and production deployment still must pass.
-S2 has not started.
+S1 is promoted on `main` with a main-history-portable receipt, independent immutable
+review, expected-head merge, post-merge Verify, and exact-main Deploy. S2 is
+implemented on `agent/codex-protocol-kernel--s2-crash-safe-durable-quorum`; its
+promotion remains **HOLD** until `evidence/stages/s2-durable-quorum.json`, all
+`100/100` durable matrices, immutable review, merge, post-merge Verify, and
+exact-main deployment pass.

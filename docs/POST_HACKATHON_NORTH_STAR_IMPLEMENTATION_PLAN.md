@@ -226,7 +226,8 @@ runtime refactoring starts.
 
 Priority: **P0 — first runtime change**
 
-Status: **IMPLEMENTED CANDIDATE — promotion pending exact receipt, independent review, merge, and post-merge Verify**
+Status: **PROMOTED — exact receipt, independent review, merge, post-merge Verify,
+and Deploy passed**
 
 ### Goal
 
@@ -309,7 +310,8 @@ inject a recognized head.
 
 Priority: **P0**
 
-Status: **PLANNED**
+Status: **IMPLEMENTED CANDIDATE — promotion pending exact receipt, independent
+review, merge, post-merge Verify, and Deploy**
 
 ### Goal
 

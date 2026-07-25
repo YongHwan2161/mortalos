@@ -622,37 +622,38 @@ async function runImportProof(browser, serverUrl, locale, bundle) {
 async function inspectDurableDatabase(page) {
   return page.evaluate(async () => {
     const database = await new Promise((resolve, reject) => {
-      const request = indexedDB.open("mortalos-participant", 1);
+      const request = indexedDB.open("mortalos-participant", 2);
       request.addEventListener("success", () => resolve(request.result), { once: true });
       request.addEventListener("error", () => reject(request.error), { once: true });
     });
     try {
-      const transaction = database.transaction(["evidence", "keys", "meta"], "readonly");
-      const read = (store) => new Promise((resolve, reject) => {
-        const request = transaction.objectStore(store).get("active");
+      const transaction = database.transaction(["participant"], "readonly");
+      const document = await new Promise((resolve, reject) => {
+        const request = transaction.objectStore("participant").get("active");
         request.addEventListener("success", () => resolve(request.result ?? null), { once: true });
         request.addEventListener("error", () => reject(request.error), { once: true });
       });
-      const [evidence, key, meta] = await Promise.all([read("evidence"), read("keys"), read("meta")]);
       let privateExportRejected = null;
-      if (key?.private_key) {
+      if (document?.key?.private_key) {
         try {
-          await crypto.subtle.exportKey("pkcs8", key.private_key);
+          await crypto.subtle.exportKey("pkcs8", document.key.private_key);
           privateExportRejected = false;
         } catch {
           privateExportRejected = true;
         }
       }
       return {
-        evidence,
-        key: key ? {
-          extractable: key.private_key.extractable,
-          key_id: key.key_id,
+        evidence_count: document?.evidence.length ?? 0,
+        key: document?.key ? {
+          extractable: document.key.private_key.extractable,
+          key_id: document.key.key_id,
           private_export_rejected: privateExportRejected,
-          type: key.private_key.type,
-          usages: [...key.private_key.usages]
+          type: document.key.private_key.type,
+          usages: [...document.key.private_key.usages]
         } : null,
-        meta,
+        pending: document?.pending ?? null,
+        policy: document?.policy ?? null,
+        schema_version: document?.schema_version ?? null,
         stores: [...database.objectStoreNames]
       };
     } finally {
@@ -695,7 +696,12 @@ async function runDurableProof(browser, serverUrl) {
     assert.equal(created.private_export_rejected, true);
     assert.equal(created.sequence, "0");
     assert.equal(created.pulse_count, 0);
-    assert.deepEqual(created.storage, ["IndexedDB CryptoKey", "public evidence", "schema metadata"]);
+    assert.deepEqual(created.storage, [
+      "IndexedDB non-extractable CryptoKey",
+      "canonical evidence",
+      "sign-once journal",
+      "state references"
+    ]);
     assert.deepEqual(await storageSnapshot(page), {
       local: 0,
       session: 0,
@@ -707,7 +713,7 @@ async function runDurableProof(browser, serverUrl) {
     assert.doesNotMatch(JSON.stringify(created), /"private_key"|private[_-]?bytes|pkcs8/i);
 
     const database = await inspectDurableDatabase(page);
-    assert.deepEqual(database.stores, ["evidence", "keys", "meta"]);
+    assert.deepEqual(database.stores, ["participant"]);
     assert.deepEqual(database.key, {
       extractable: false,
       key_id: database.key.key_id,
@@ -715,9 +721,10 @@ async function runDurableProof(browser, serverUrl) {
       type: "private",
       usages: ["sign"]
     });
-    assert.equal(database.meta.pending, null);
-    assert.equal(database.meta.schema_version, 1);
-    assert.doesNotMatch(JSON.stringify(database.evidence), /private[_-]?key|pkcs8|CryptoKey/i);
+    assert.equal(database.pending, null);
+    assert.equal(database.schema_version, 2);
+    assert.equal(database.evidence_count, 1);
+    assert.equal(database.policy.status, "active");
 
     await page.click("#nurture-durable");
     await page.locator('#durable-status[data-state="accept"]').waitFor();
@@ -765,17 +772,23 @@ async function runDurableProof(browser, serverUrl) {
 
     await page.evaluate(async () => {
       const database = await new Promise((resolve, reject) => {
-        const request = indexedDB.open("mortalos-participant", 1);
+        const request = indexedDB.open("mortalos-participant", 2);
         request.addEventListener("success", () => resolve(request.result), { once: true });
         request.addEventListener("error", () => reject(request.error), { once: true });
       });
-      const transaction = database.transaction("meta", "readwrite", { durability: "strict" });
+      const transaction = database.transaction("participant", "readwrite", { durability: "strict" });
       const current = await new Promise((resolve, reject) => {
-        const request = transaction.objectStore("meta").get("active");
+        const request = transaction.objectStore("participant").get("active");
         request.addEventListener("success", () => resolve(request.result), { once: true });
         request.addEventListener("error", () => reject(request.error), { once: true });
       });
-      transaction.objectStore("meta").put({ ...current, pending: { status: "prepared" } });
+      transaction.objectStore("participant").put({
+        ...current,
+        state_references: [{
+          ...current.state_references[0],
+          state_root: `sha256:${"A".repeat(43)}`
+        }]
+      });
       await new Promise((resolve, reject) => {
         transaction.addEventListener("complete", resolve, { once: true });
         transaction.addEventListener("abort", () => reject(transaction.error), { once: true });

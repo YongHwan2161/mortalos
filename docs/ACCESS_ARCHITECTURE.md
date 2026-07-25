@@ -1,9 +1,9 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **R1 wire, deterministic state, participant storage, virtual transport, and
-Cloudflare relay candidate implemented; production promotion remains exact-SHA gated**
+Status: **S1 promoted; S2 crash-safe participant storage implemented and exact-SHA
+promotion gated**
 
-Last synchronized: **2026-07-19 KST**
+Last synchronized: **2026-07-25 KST**
 
 ## Decision
 
@@ -64,13 +64,17 @@ local kernel.
 ## Persistence profiles
 
 Ephemeral Demo creates no durable browser state. Durable Participant requires explicit
-consent and stores one structured-cloned non-extractable key, canonical public
-evidence, and versioned expiry/authority metadata in IndexedDB. It never stores or
-trusts a verdict, accepted context, private-key bytes, locale, or relay authority.
+consent and stores one atomic schema-v2 document containing a structured-cloned
+non-extractable key, canonical public evidence, verified state references,
+write-ahead sign-once journal, recoverable pending operation, and explicit
+expiry/removal/migration metadata. It never stores or trusts a verdict, accepted
+context, private-key bytes, locale, or relay authority.
 
-Restore fails closed on unknown schema, pending writes, missing evidence, key/custody
-mismatch, extractable key material, invalid replay, or expiry. Authority removal
-deletes the key while retaining public evidence read-only.
+Restore fails closed on unknown schema, partial journal, missing commissioned
+evidence, key/custody mismatch, extractable key material, state mismatch, or invalid
+replay. Valid pending work is recovered. Reaching expiry disables signing until an
+explicit atomic expiry operation deletes the key while retaining public evidence
+read-only.
 
 ## Relay boundary
 
@@ -112,6 +116,10 @@ validation or erase already held evidence.
 - Actual Chromium demonstrates A→B succession in English and Korean, 20 consecutive
   handoffs across two distinct persistent user-data profiles with A's process closed
   after acceptance, plus ten isolated three-endpoint `2-of-3` loss/repair runs.
+- The S2 actual-Chromium gate persists each endpoint in a separate IndexedDB,
+  closes the browser process, and passes `100/100` B handoff recoveries plus
+  `100/100` cold pair recovery/transition/D-repair/next-transition trials for each
+  lost A, B, and C. This is same-host profile evidence, not S7 failure-domain proof.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
 or ambient-random dependency. All portable corpus results must remain byte-identical
