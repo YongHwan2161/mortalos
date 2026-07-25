@@ -1195,8 +1195,9 @@ result, and reproducible verification.
   independent review attests PASS, and post-merge Verify plus production Deploy
   both succeed on one exact main SHA.
 - Fresh remote-clone acceptance passed on the published candidate: the checkout
-  began with exactly one commit, expanded to 82 reachable branch/main commits,
+  began with exactly one commit, fetched full reachable branch/main history,
   proved the old source object was absent, then passed the 12-test receipt suite
-  and direct verifier. Promotion remains HOLD only for immutable PR policy,
-  remote Verify, independent review, expected-head merge, and exact-main
-  post-merge Verify plus Deploy.
+  and direct verifier. Commit count is deliberately not evidence because every
+  evidence-only descendant changes it. Promotion remains HOLD only for immutable
+  PR policy, remote Verify, independent review, expected-head merge, and
+  exact-main post-merge Verify plus Deploy.
