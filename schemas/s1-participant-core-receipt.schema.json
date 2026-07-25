@@ -10,6 +10,8 @@
     "status",
     "source_commit",
     "base_commit",
+    "promotion_commit",
+    "source_committed_at",
     "dependency_lock_digest",
     "package_digests",
     "contracts",
@@ -22,14 +24,17 @@
     "known_limitations",
     "failures",
     "artifact_digests",
+    "promotion_artifact_digests",
     "review_snapshot"
   ],
   "properties": {
-    "format": { "const": "mortalos-stage-receipt/1" },
+    "format": { "const": "mortalos-stage-receipt/2" },
     "stage": { "const": "S1" },
     "status": { "enum": ["PASS", "HOLD"] },
     "source_commit": { "$ref": "#/$defs/commit" },
     "base_commit": { "$ref": "#/$defs/commit" },
+    "promotion_commit": { "$ref": "#/$defs/commit" },
+    "source_committed_at": { "$ref": "#/$defs/timestamp" },
     "dependency_lock_digest": { "$ref": "#/$defs/digest" },
     "package_digests": {
       "type": "object",
@@ -124,6 +129,12 @@
       "additionalProperties": { "$ref": "#/$defs/digest" },
       "minProperties": 24,
       "maxProperties": 24
+    },
+    "promotion_artifact_digests": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/digest" },
+      "minProperties": 28,
+      "maxProperties": 28
     },
     "review_snapshot": { "type": "string", "minLength": 1 }
   },

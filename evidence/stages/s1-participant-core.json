@@ -1,9 +1,11 @@
 {
-  "format": "mortalos-stage-receipt/1",
+  "format": "mortalos-stage-receipt/2",
   "stage": "S1",
   "status": "PASS",
   "source_commit": "1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09",
   "base_commit": "4a3ede86402ba507c49fb5f563bf932fedd5eb1c",
+  "promotion_commit": "a4d5183941c82845532a003b55b03522e3e98872",
+  "source_committed_at": "2026-07-25T00:30:09.000Z",
   "dependency_lock_digest": "sha256:c69b887d03595e6f734849129fd73ab0f2898ec81f848b65463d1bf7ba4b9298",
   "package_digests": {
     "package.json": "sha256:e06bc497d039923d532a4f569529ccd7deb98ccf8bb44a64661cdfe1649f8d3b"
@@ -207,5 +209,35 @@
     "test/lab.test.mjs": "sha256:f8bd48d1bcee5c060f72bd711cf31009d6db3315e0e6f3d0d161d777b675d4fb",
     "test/participant-core.test.mjs": "sha256:8ed1a912f77cf17d964d982b1fc24f51cb13cf58236a60f82ac587a77d6bb6a2"
   },
-  "review_snapshot": "pending: reviewer-merge-gate immutable-head review"
+  "promotion_artifact_digests": {
+    ".github/workflows/verify.yml": "sha256:2d8dbdf75d825bc07b0b826088c86b945442b56a03bd14ad41d42f3e5dfdf2b4",
+    "agents/codex-protocol-kernel/HANDOFF.md": "sha256:962934f86a22c49507e410ff8ba75ea3f56ddadc9146bd0f74ff50ae49a0f71c",
+    "agents/codex-protocol-kernel/WORKLOG.md": "sha256:39cd8fc549be70f6f930b4d8e37301d051c32f6f6b1ac1416c995d20408dc854",
+    "docs/CLAIM_MATRIX.md": "sha256:dec1835bf8a73240577be64221a9be97e1cdc4f4828896e2e20e477e37a8f61f",
+    "docs/NORTH_STAR_ROADMAP.md": "sha256:c4d193ae71fe541471d3cba43a7546dcbfed1dc928b6bf0fbc1df946cb8a4298",
+    "docs/PARTICIPANT_CORE.md": "sha256:a673266b8202e549451e0f6d12af945a3834c3bffde916d8212c92974ff723fb",
+    "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md": "sha256:7e4475dfd97d9cbe383913ed09ecd66acbd06996bd8033dc921bc6041722cf31",
+    "docs/README.md": "sha256:11e0a038f708a3482c8f09d01cc6c0ff76d580a85f57742e7f958951ac6e8b3f",
+    "docs/STAGE_TRACKING.md": "sha256:c935570b3cd33d56b8a2200bc0c48cce33cc60fceb0237e4f4c70255f9b0114c",
+    "docs/THREAT_MODEL.md": "sha256:38d5053cbf7a3cab729ac292976eb3fc4b3d4092851a552b968b11b7388ea762",
+    "docs/TRACEABILITY.md": "sha256:68bc39a0b5ffaa83f1715be9820a45e4a4df022f2eeb838d11f60daa3f86816c",
+    "evidence/stages/s1-participant-core.json": "sha256:c34d8457f9a25cb1d76ef90d8d581c2864721e646c3b6aeb97218f5dc908b7b3",
+    "lab/live-incubator.mjs": "sha256:c813cfe5a98f6415ab8310f18c36a7db7c5100b499f5dde037b8575c57db988c",
+    "lab/participant/contracts.mjs": "sha256:2346e0d6bcb32fc03b408b292aa463d963b78f2fff62dbda95be2a8a6ea6b6f1",
+    "lab/participant/core.mjs": "sha256:d600b4b33d22fac4985818efefd853fb26cda4c0c70b8e82ce9392d2bf7389e0",
+    "lab/participant/durable-participant.mjs": "sha256:0529db77d4530d10f18aff35bc8f286795ccbb9eac83c54d2f06a43c1c861ad4",
+    "lab/participant/live-endpoint.mjs": "sha256:fef522db3f9d73c4fabc288a6272059fca7f0775b68d8b6bb52052bf74d05a04",
+    "lab/participant/model.mjs": "sha256:30417f9c99c789bfe2a39c70762fc88cda49767838fa65e7ddd670e0210286fe",
+    "lab/participant/protocol-objects.mjs": "sha256:f1632d338cc908b7e5d7f22ad63e2e84714e47849383387fad3af0d962cfe7ad",
+    "lab/participant/quorum-endpoint.mjs": "sha256:c68507768d78b04d2807d7cbc597578c59cd23cc0441e00c887c8cfcd233c91a",
+    "lab/participant/webcrypto-key-store.mjs": "sha256:2fb3b3f2bb88bc22db068e4b66f10004e388f0eff3fc9a2cedf56a359de1439b",
+    "package.json": "sha256:3a544f9b368c68a4924ba891db560af5a80f9b7b5eda1c8462a06a9f68bbfcf7",
+    "schemas/s1-participant-core-receipt.schema.json": "sha256:da7f35daeaf5019bcc7a8fcd0102aad3797c76a8ea1450a5b1764114e9ad05f2",
+    "scripts/verify-participant-core.mjs": "sha256:a3168335c9e4142113367190a79d4d2deed276c7a53236011a6084c184afec32",
+    "scripts/verify-s1-receipt.mjs": "sha256:9369a2758db78c2154eff4d029d86c227fdbdd1d91f236a7407222c0028100f4",
+    "test/lab.test.mjs": "sha256:f8bd48d1bcee5c060f72bd711cf31009d6db3315e0e6f3d0d161d777b675d4fb",
+    "test/participant-core.test.mjs": "sha256:8ed1a912f77cf17d964d982b1fc24f51cb13cf58236a60f82ac587a77d6bb6a2",
+    "test/s1-receipt.test.mjs": "sha256:ac81b008754a848ac76cf7cd523231153a70ab96216cc277addeb5f7a9c26376"
+  },
+  "review_snapshot": "PASS: PR #39 head 5e69f4231eda58919916adbbf44fe63aed294056; comment 5076122640; body sha256:b8573835fbd96cceb367e15e9bd289618f54ffc76d6b0736212de799c3acca3e"
 }

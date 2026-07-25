@@ -8,7 +8,10 @@ import Ajv2020 from "ajv/dist/2020.js";
 
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const defaultReceiptPath = resolve(defaultRoot, "evidence", "stages", "s1-participant-core.json");
-const EXPECTED_RECEIPT_DIGEST = "sha256:c34d8457f9a25cb1d76ef90d8d581c2864721e646c3b6aeb97218f5dc908b7b3";
+const EXPECTED_RECEIPT_DIGEST = "sha256:37aae24d24ad3cd96c1a85fb9cfd949d64037c5b76cbe7fd2a93c7cc47ffc0f4";
+const EXPECTED_SOURCE_COMMIT = "1a0de4e750ebe0f4ec1f1f178e82563f14cf4e09";
+const EXPECTED_BASE_COMMIT = "4a3ede86402ba507c49fb5f563bf932fedd5eb1c";
+const EXPECTED_PROMOTION_COMMIT = "a4d5183941c82845532a003b55b03522e3e98872";
 const EXPECTED_ARTIFACT_PATHS = [
   ".github/workflows/verify.yml",
   "agents/codex-protocol-kernel/HANDOFF.md",
@@ -34,6 +37,13 @@ const EXPECTED_ARTIFACT_PATHS = [
   "scripts/verify-participant-core.mjs",
   "test/lab.test.mjs",
   "test/participant-core.test.mjs"
+];
+const EXPECTED_PROMOTION_PATHS = [
+  ...EXPECTED_ARTIFACT_PATHS,
+  "evidence/stages/s1-participant-core.json",
+  "schemas/s1-participant-core-receipt.schema.json",
+  "scripts/verify-s1-receipt.mjs",
+  "test/s1-receipt.test.mjs"
 ];
 const EXPECTED_CONTRACTS = {
   operation: "mortalos-participant-operation/1",
@@ -198,9 +208,9 @@ function assertRepositoryPath(path, label) {
   );
 }
 
-function sourceBytes(root, sourceCommit, path) {
+function committedBytes(root, commit, path) {
   assertRepositoryPath(path, "digest");
-  return git(root, ["show", `${sourceCommit}:${path}`], null);
+  return git(root, ["show", `${commit}:${path}`], null);
 }
 
 function sorted(values) {
@@ -224,28 +234,34 @@ export async function verifyS1Receipt({
   const validate = ajv.compile(schema);
   assert.ok(validate(receipt), ajv.errorsText(validate.errors, { separator: "\n" }));
 
-  assert.equal(gitText(root, ["cat-file", "-t", receipt.source_commit]), "commit");
+  assert.equal(receipt.source_commit, EXPECTED_SOURCE_COMMIT, "S1 source commit mismatch");
+  assert.equal(receipt.base_commit, EXPECTED_BASE_COMMIT, "S1 base commit mismatch");
+  assert.equal(receipt.promotion_commit, EXPECTED_PROMOTION_COMMIT, "S1 promotion commit mismatch");
   assert.equal(gitText(root, ["cat-file", "-t", receipt.base_commit]), "commit");
+  assert.equal(gitText(root, ["cat-file", "-t", receipt.promotion_commit]), "commit");
   assert.equal(
-    gitText(root, ["rev-parse", `${receipt.source_commit}^`]),
+    gitText(root, ["rev-parse", `${receipt.promotion_commit}^`]),
     receipt.base_commit,
-    "S1 source commit is not a direct child of the recorded baseline"
+    "S1 promotion commit is not a direct child of the recorded baseline"
   );
-  const sourceCommittedAt = Date.parse(gitText(root, ["show", "-s", "--format=%cI", receipt.source_commit]));
+  const sourceCommittedAt = Date.parse(receipt.source_committed_at);
   assert.ok(Number.isFinite(sourceCommittedAt), "S1 source commit timestamp is invalid");
   assert.ok(sourceCommittedAt <= Date.parse(receipt.started_at), "S1 validation started before the source was frozen");
   assert.ok(Date.parse(receipt.started_at) <= Date.parse(receipt.completed_at), "S1 validation interval is inverted");
+  const promotedAt = Date.parse(gitText(root, ["show", "-s", "--format=%cI", receipt.promotion_commit]));
+  assert.ok(Number.isFinite(promotedAt), "S1 promotion commit timestamp is invalid");
+  assert.ok(Date.parse(receipt.completed_at) <= promotedAt, "S1 promotion predates completed validation");
 
   assert.equal(
     receipt.dependency_lock_digest,
-    digest(sourceBytes(root, receipt.source_commit, "package-lock.json")),
+    digest(committedBytes(root, receipt.promotion_commit, "package-lock.json")),
     "S1 dependency lock digest mismatch"
   );
   assert.deepEqual(Object.keys(receipt.package_digests), ["package.json"], "S1 package digest inventory mismatch");
   assert.equal(
     receipt.package_digests["package.json"],
-    digest(sourceBytes(root, receipt.source_commit, "package.json")),
-    "S1 package digest mismatch"
+    receipt.artifact_digests["package.json"],
+    "S1 source package digest mismatch"
   );
 
   assert.deepEqual(
@@ -253,15 +269,28 @@ export async function verifyS1Receipt({
     sorted(EXPECTED_ARTIFACT_PATHS),
     "S1 artifact digest inventory mismatch"
   );
+  assert.deepEqual(
+    sorted(Object.keys(receipt.promotion_artifact_digests)),
+    sorted(EXPECTED_PROMOTION_PATHS),
+    "S1 promotion artifact digest inventory mismatch"
+  );
   const changedPaths = gitText(root, [
     "diff",
     "--name-only",
     receipt.base_commit,
-    receipt.source_commit
+    receipt.promotion_commit
   ]).split(/\r?\n/u).filter(Boolean);
-  assert.deepEqual(sorted(changedPaths), sorted(EXPECTED_ARTIFACT_PATHS), "S1 source diff inventory mismatch");
-  for (const [path, expected] of Object.entries(receipt.artifact_digests)) {
-    assert.equal(digest(sourceBytes(root, receipt.source_commit, path)), expected, `S1 artifact digest mismatch: ${path}`);
+  assert.deepEqual(
+    sorted(changedPaths),
+    sorted(EXPECTED_PROMOTION_PATHS),
+    "S1 promotion diff inventory mismatch"
+  );
+  for (const [path, expected] of Object.entries(receipt.promotion_artifact_digests)) {
+    assert.equal(
+      digest(committedBytes(root, receipt.promotion_commit, path)),
+      expected,
+      `S1 promotion artifact digest mismatch: ${path}`
+    );
   }
 
   assert.deepEqual(receipt.contracts, EXPECTED_CONTRACTS, "S1 contract inventory mismatch");
@@ -273,7 +302,10 @@ export async function verifyS1Receipt({
   assert.deepEqual(receipt.known_limitations, EXPECTED_LIMITATIONS, "S1 limitations mismatch");
   assert.equal(receipt.status, "PASS");
   assert.deepEqual(receipt.failures, []);
-  assert.equal(receipt.review_snapshot, "pending: reviewer-merge-gate immutable-head review");
+  assert.equal(
+    receipt.review_snapshot,
+    "PASS: PR #39 head 5e69f4231eda58919916adbbf44fe63aed294056; comment 5076122640; body sha256:b8573835fbd96cceb367e15e9bd289618f54ffc76d6b0736212de799c3acca3e"
+  );
   assert.equal(digest(receiptBytes), EXPECTED_RECEIPT_DIGEST, "committed S1 receipt digest mismatch");
 
   return {
@@ -287,6 +319,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const result = await verifyS1Receipt();
   console.log("MortalOS S1 Participant Core receipt: PASS");
   console.log(`- source commit: ${result.receipt.source_commit}`);
+  console.log(`- promotion commit: ${result.receipt.promotion_commit}`);
   console.log(`- receipt digest: ${result.receiptDigest}`);
   console.log(`- exact changed source artifacts: ${result.artifactCount}`);
 }

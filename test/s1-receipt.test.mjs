@@ -16,20 +16,33 @@ function mutate(path, value) {
   return copy;
 }
 
-test("the committed S1 receipt is bound to its exact source snapshot and results", async () => {
+test("the committed S1 receipt is bound to its exact promoted snapshot and results", async () => {
   const result = await verifyS1Receipt();
   assert.equal(result.receipt.source_commit, receipt.source_commit);
+  assert.equal(result.receipt.promotion_commit, receipt.promotion_commit);
   assert.equal(result.artifactCount, 24);
 });
 
-test("source and baseline lineage substitutions fail closed", async () => {
+test("Verify and Deploy retain full main history without persisted credentials", async () => {
+  const checkout = /uses: actions\/checkout@[^\r\n]+\r?\n\s+with:\r?\n\s+fetch-depth: 0\r?\n\s+persist-credentials: false/u;
+  for (const workflow of ["verify.yml", "deploy-lab.yml"]) {
+    const source = await readFile(new URL(`../.github/workflows/${workflow}`, import.meta.url), "utf8");
+    assert.match(source, checkout, `${workflow} checkout must retain receipt history`);
+  }
+});
+
+test("source, baseline, and promotion lineage substitutions fail closed", async () => {
   await assert.rejects(
     verifyS1Receipt({ receiptOverride: mutate(["source_commit"], receipt.base_commit) }),
-    /not a direct child/
+    /source commit mismatch/
   );
   await assert.rejects(
     verifyS1Receipt({ receiptOverride: mutate(["base_commit"], receipt.source_commit) }),
-    /not a direct child/
+    /base commit mismatch/
+  );
+  await assert.rejects(
+    verifyS1Receipt({ receiptOverride: mutate(["promotion_commit"], receipt.base_commit) }),
+    /promotion commit mismatch/
   );
 });
 
@@ -44,7 +57,16 @@ test("package, lock, and artifact digest substitutions fail closed", async () =>
   );
   await assert.rejects(
     verifyS1Receipt({ receiptOverride: mutate(["artifact_digests", "lab/participant/core.mjs"], `sha256:${"0".repeat(64)}`) }),
-    /artifact digest mismatch/
+    /committed S1 receipt digest mismatch/
+  );
+  await assert.rejects(
+    verifyS1Receipt({
+      receiptOverride: mutate(
+        ["promotion_artifact_digests", "lab/participant/core.mjs"],
+        `sha256:${"0".repeat(64)}`
+      )
+    }),
+    /promotion artifact digest mismatch/
   );
 });
 
@@ -125,6 +147,10 @@ test("contract, environment, and seed substitutions fail closed", async () => {
 test("validation cannot predate the frozen source", async () => {
   await assert.rejects(
     verifyS1Receipt({ receiptOverride: mutate(["started_at"], "2026-07-24T21:50:29.000Z") }),
+    /started before the source was frozen/
+  );
+  await assert.rejects(
+    verifyS1Receipt({ receiptOverride: mutate(["source_committed_at"], "2026-07-25T00:32:00.000Z") }),
     /started before the source was frozen/
   );
 });
