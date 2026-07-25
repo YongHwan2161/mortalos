@@ -1244,3 +1244,33 @@ result, and reproducible verification.
 - S2 remains `CANDIDATE_PASS` only after a frozen source commit, a machine-checked
   main-portable receipt, the complete exact-head Verify workflow, independent
   immutable review, expected-head merge, and post-merge Verify plus Deploy.
+
+### PR #41 independent review BLOCK and concurrency/policy remediation
+
+- Head `826d186609dc87b034fd847d983bf761068f1768` passed Trusted policy
+  `30158974173/1`, exact-head Verify `30158719779/1`, and a clean uninterrupted
+  local `npm test`. Independent reviewer comment `5078803913` nevertheless
+  correctly BLOCKed promotion with no attestation or merge.
+- Two endpoint instances restored from one revision could each blind-put a
+  conflicting reservation, run separate signers, persist one last-write-wins
+  journal, and return both signatures. The replacement storage contract performs
+  an expected-revision read/compare/consecutive-write in one transaction.
+  Deterministic Node and actual IndexedDB races now require the stale call to fail
+  `E_DURABLE_CONFLICT` before signer invocation, one signature to return, one
+  journal entry to persist, and the losing body to remain forbidden after restart.
+- Legacy `authority_removed = true` with a retained key is now an inconsistent
+  snapshot, as is active authority without a key. Pure and actual IndexedDB
+  migration regressions require both upgrades to abort and retain the version-1
+  database unchanged.
+- Authority policy now has an `expired` state and `expired_at` latch. Restore or a
+  signing attempt that observes reached expiry commits that latch through CAS.
+  Same-process and cold-restart clock rollback cannot restore authority; only an
+  explicit CAS-protected renewal beyond the persisted high-water mark can reactivate
+  it, while removal remains irreversible.
+- Focused replacement evidence passes Node durability 8/8 and full actual
+  Chromium 100/100 for handoff plus 100/100 for each A/B/C loss/repair matrix.
+  The same browser run passes two-instance IndexedDB CAS with zero stale signer
+  calls, same-process and cold-restart expiry rollback rejection, valid migration,
+  and retention of corrupt, removed-with-key, and active-without-key version-1
+  databases. The old source and receipt are superseded and must be rebuilt before
+  any updated PR head is pushed.

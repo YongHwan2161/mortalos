@@ -15,6 +15,7 @@ import {
   createAuthorityPolicy,
   createKeyReadyDocument,
   durableError,
+  expiredAuthorityDocument,
   observedDocument,
   recordDurableSignature,
   removedAuthorityDocument,
@@ -53,6 +54,7 @@ export class DurableQuorumEndpoint {
   #core = null;
   #document = null;
   #endpointId;
+  #maxObservedNow = 0;
   #signer;
   #store;
 
@@ -79,6 +81,7 @@ export class DurableQuorumEndpoint {
   }
 
   get publicState() {
+    const now = this.#observeNow();
     if (!this.#document) {
       return {
         endpoint_id: this.#endpointId,
@@ -112,7 +115,7 @@ export class DurableQuorumEndpoint {
         this.#document.policy.status === "active" &&
         (
           this.#document.policy.expires_at === null ||
-          this.#document.policy.expires_at > this.#clock()
+          this.#document.policy.expires_at > now
         ) &&
         (snapshot === null || snapshot.current_custodian)
       ),
@@ -123,14 +126,17 @@ export class DurableQuorumEndpoint {
 
   async initializeKey({ expiresAt = null } = {}) {
     if (await this.#store.read()) throw durableError("E_DURABLE_EXISTS", "durable endpoint already exists");
+    const now = this.#observeNow();
+    if (expiresAt !== null && expiresAt <= now) {
+      throw durableError("E_DURABLE_POLICY", "new authority expiry must be in the future");
+    }
     const key = await createStoredWebCryptoKey();
     const document = createKeyReadyDocument({
       endpointId: this.#endpointId,
       key,
       policy: createAuthorityPolicy({ expiresAt })
     });
-    await this.#store.write("initialize", document);
-    this.#document = document;
+    await this.#commitDocument("initialize", document);
     this.#core = null;
     return this.custodian;
   }
@@ -142,8 +148,19 @@ export class DurableQuorumEndpoint {
       this.#core = null;
       return null;
     }
-    const recovered = await replayDurableDocument(stored, { now: this.#clock() });
-    this.#document = recovered.document;
+    const now = this.#observeNow();
+    const recovered = await replayDurableDocument(stored, { now });
+    this.#document = stored;
+    if (
+      recovered.document.policy.status === "active" &&
+      recovered.document.policy.expires_at !== null &&
+      recovered.document.policy.expires_at <= now
+    ) {
+      const expired = expiredAuthorityDocument(recovered.document, now);
+      await this.#commitDocument("expire", expired);
+    } else {
+      this.#document = recovered.document;
+    }
     this.#core = recovered.core;
     return this.publicState;
   }
@@ -178,8 +195,7 @@ export class DurableQuorumEndpoint {
       committedTuple: own?.kind === "genesis" ? own.tuple : null,
       validatedCore: core
     });
-    await this.#store.write("commit", next);
-    this.#document = next;
+    await this.#commitDocument("commit", next);
     this.#core = core;
     return clone(record);
   }
@@ -236,8 +252,7 @@ export class DurableQuorumEndpoint {
       committedTuple: own ? own.tuple : null,
       validatedCore: replay
     });
-    await this.#store.write("commit", next);
-    this.#document = next;
+    await this.#commitDocument("commit", next);
     this.#core = replay;
     return clone(replay.records.at(-1));
   }
@@ -253,8 +268,7 @@ export class DurableQuorumEndpoint {
     replay.openGenesis(this.#core.records[0], this.#core.records.slice(1));
     replay.sync(records);
     const next = committedDocument(this.#document, replay.records, { validatedCore: replay });
-    await this.#store.write("sync", next);
-    this.#document = next;
+    await this.#commitDocument("sync", next);
     this.#core = replay;
     return this.publicState;
   }
@@ -266,31 +280,34 @@ export class DurableQuorumEndpoint {
     const replay = new ParticipantCore(this.#endpointId);
     replay.openGenesis(records[0], records.slice(1));
     const next = observedDocument(this.#document, records, { validatedCore: replay });
-    await this.#store.write("observe", next);
-    this.#document = next;
+    await this.#commitDocument("observe", next);
     this.#core = replay;
     return this.publicState;
   }
 
   async renewAuthority(expiresAt = null) {
-    const next = renewedDocument(this.#document, expiresAt);
-    await this.#store.write("renew", next);
-    this.#document = next;
+    const next = renewedDocument(this.#document, expiresAt, this.#observeNow());
+    await this.#commitDocument("renew", next);
     return this.publicState;
   }
 
   async removeAuthority() {
-    const next = removedAuthorityDocument(this.#document, this.#clock());
-    await this.#store.write("remove", next);
-    this.#document = next;
+    const next = removedAuthorityDocument(this.#document, this.#observeNow());
+    await this.#commitDocument("remove", next);
     return this.publicState;
   }
 
   async expireAuthority() {
+    const now = this.#observeNow();
     if (
       !this.#document ||
-      this.#document.policy.expires_at === null ||
-      this.#document.policy.expires_at > this.#clock()
+      (
+        this.#document.policy.status !== "expired" &&
+        (
+          this.#document.policy.expires_at === null ||
+          this.#document.policy.expires_at > now
+        )
+      )
     ) {
       throw durableError("E_DURABLE_POLICY", "authority expiry has not been reached");
     }
@@ -298,12 +315,7 @@ export class DurableQuorumEndpoint {
   }
 
   async #signDurably({ body, kind, proposal, request }) {
-    if (
-      this.#document.policy.expires_at !== null &&
-      this.#document.policy.expires_at <= this.#clock()
-    ) {
-      throw durableError("E_DURABLE_EXPIRED", "expired authority requires explicit expiry removal");
-    }
+    await this.#enforceSigningPolicy();
     const reserved = reserveSigningIntent(this.#document, {
       body,
       keyId: request.key_id,
@@ -313,8 +325,7 @@ export class DurableQuorumEndpoint {
       purpose: request.purpose
     });
     if (!reserved.existing) {
-      await this.#store.write("reserve", reserved.document);
-      this.#document = reserved.document;
+      await this.#commitDocument("reserve", reserved.document);
     } else {
       this.#document = reserved.document;
     }
@@ -326,9 +337,41 @@ export class DurableQuorumEndpoint {
       request.message
     );
     const signed = recordDurableSignature(this.#document, reserved.entry.tuple, signature);
-    await this.#store.write("signature", signed);
-    this.#document = signed;
+    await this.#commitDocument("signature", signed);
     return clone(signature);
+  }
+
+  async #commitDocument(operation, document) {
+    const expectedRevision = this.#document?.revision ?? null;
+    await this.#store.write(operation, document, { expectedRevision });
+    this.#document = document;
+  }
+
+  async #enforceSigningPolicy() {
+    if (!this.#document?.key || this.#document.policy.status === "removed") {
+      throw durableError("E_DURABLE_AUTHORITY", "durable signing authority unavailable");
+    }
+    const now = this.#observeNow();
+    if (
+      this.#document.policy.status === "active" &&
+      this.#document.policy.expires_at !== null &&
+      this.#document.policy.expires_at <= now
+    ) {
+      const expired = expiredAuthorityDocument(this.#document, now);
+      await this.#commitDocument("expire", expired);
+    }
+    if (this.#document.policy.status === "expired") {
+      throw durableError("E_DURABLE_EXPIRED", "expired authority requires explicit renewal or removal");
+    }
+  }
+
+  #observeNow() {
+    const observed = this.#clock();
+    if (!Number.isSafeInteger(observed) || observed < 0) {
+      throw durableError("E_DURABLE_POLICY", "authority clock must be a non-negative safe integer");
+    }
+    this.#maxObservedNow = Math.max(this.#maxObservedNow, observed);
+    return this.#maxObservedNow;
   }
 }
 

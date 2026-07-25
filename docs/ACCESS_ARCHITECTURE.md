@@ -68,13 +68,16 @@ consent and stores one atomic schema-v2 document containing a structured-cloned
 non-extractable key, canonical public evidence, verified state references,
 write-ahead sign-once journal, recoverable pending operation, and explicit
 expiry/removal/migration metadata. It never stores or trusts a verdict, accepted
-context, private-key bytes, locale, or relay authority.
+context, private-key bytes, locale, or relay authority. Every replacement compares
+the caller's expected revision and writes the next consecutive revision in the same
+strict transaction; a stale tab fails before signer invocation.
 
 Restore fails closed on unknown schema, partial journal, missing commissioned
 evidence, key/custody mismatch, extractable key material, state mismatch, or invalid
 replay. Valid pending work is recovered. Reaching expiry disables signing until an
-explicit atomic expiry operation deletes the key while retaining public evidence
-read-only.
+expired-policy latch is durably committed. Clock rollback cannot clear the latch;
+explicit versioned renewal may set a new future expiry, while explicit removal
+deletes the key and retains public evidence read-only.
 
 ## Relay boundary
 

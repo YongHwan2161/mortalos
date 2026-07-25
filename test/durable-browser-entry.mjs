@@ -11,6 +11,9 @@ import {
 import {
   createEvidenceBundle
 } from "../lab/evidence-export.mjs";
+import {
+  signBytes
+} from "../lab/participant/webcrypto-key-store.mjs";
 
 function seed(value) {
   return new Uint8Array(16).fill(value);
@@ -185,6 +188,152 @@ async function restoreLossAndRepair(run, lost, expected) {
   return result;
 }
 
+async function verifyIndexedDbCompareAndSwap() {
+  const databaseName = "mortalos-s2-concurrent-cas";
+  await deleteDurableStore(databaseName);
+  const bootstrap = endpoint("CAS", databaseName);
+  await bootstrap.endpoint.initializeKey();
+  const body = bootstrap.endpoint.createGenesisBody({
+    custodians: [bootstrap.endpoint.custodian],
+    initialStateSeed: seed(81),
+    nonceSeed: seed(82),
+    threshold: 1
+  });
+  const genesisApproval = await bootstrap.endpoint.approveGenesis(body);
+  await bootstrap.endpoint.commissionGenesis(body, [genesisApproval]);
+  bootstrap.store.close();
+
+  let releaseSigner;
+  let signerEntered;
+  const entered = new Promise((resolve) => {
+    signerEntered = resolve;
+  });
+  const release = new Promise((resolve) => {
+    releaseSigner = resolve;
+  });
+  let primarySignerCalls = 0;
+  let staleSignerCalls = 0;
+  const primaryStore = new IndexedDbDurableStore({ databaseName, endpointId: "CAS" });
+  const staleStore = new IndexedDbDurableStore({ databaseName, endpointId: "CAS" });
+  const primary = new DurableQuorumEndpoint({
+    endpointId: "CAS",
+    store: primaryStore,
+    clock: () => 1_800_000_000_000,
+    signer: async (...args) => {
+      primarySignerCalls += 1;
+      signerEntered();
+      await release;
+      return signBytes(...args);
+    }
+  });
+  const stale = new DurableQuorumEndpoint({
+    endpointId: "CAS",
+    store: staleStore,
+    clock: () => 1_800_000_000_000,
+    signer: async (...args) => {
+      staleSignerCalls += 1;
+      return signBytes(...args);
+    }
+  });
+  await Promise.all([primary.restore(), stale.restore()]);
+  const acceptedBody = primary.createStateProposal(1);
+  const rejectedBody = stale.createStateProposal(2);
+  const acceptedPromise = primary.approveProposal(acceptedBody);
+  await entered;
+  let staleCode = null;
+  try {
+    await stale.approveProposal(rejectedBody);
+  } catch (error) {
+    staleCode = error.code;
+  }
+  releaseSigner();
+  const accepted = await acceptedPromise;
+  primaryStore.close();
+  staleStore.close();
+
+  const recoveredStore = new IndexedDbDurableStore({ databaseName, endpointId: "CAS" });
+  const recovered = new DurableQuorumEndpoint({
+    endpointId: "CAS",
+    store: recoveredStore,
+    clock: () => 1_800_000_000_000
+  });
+  await recovered.restore();
+  let conflictingCode = null;
+  try {
+    await recovered.approveProposal(rejectedBody);
+  } catch (error) {
+    conflictingCode = error.code;
+  }
+  const persistedPulseEntries = recovered.document.journal
+    .filter((entry) => entry.purpose === "pulse-approval").length;
+  recoveredStore.close();
+  return {
+    accepted_signature: typeof accepted.signature === "string",
+    conflicting_code: conflictingCode,
+    persisted_pulse_entries: persistedPulseEntries,
+    primary_signer_calls: primarySignerCalls,
+    stale_code: staleCode,
+    stale_signer_calls: staleSignerCalls
+  };
+}
+
+async function verifyExpiryRollbackLatch() {
+  const databaseName = "mortalos-s2-expiry-rollback";
+  await deleteDurableStore(databaseName);
+  let now = 1_800_000_000_000;
+  const initialStore = new IndexedDbDurableStore({ databaseName, endpointId: "EXP" });
+  const initial = new DurableQuorumEndpoint({
+    endpointId: "EXP",
+    store: initialStore,
+    clock: () => now
+  });
+  await initial.initializeKey({ expiresAt: now + 100 });
+  const body = initial.createGenesisBody({
+    custodians: [initial.custodian],
+    initialStateSeed: seed(83),
+    nonceSeed: seed(84),
+    threshold: 1
+  });
+  const genesisApproval = await initial.approveGenesis(body);
+  await initial.commissionGenesis(body, [genesisApproval]);
+  const proposal = initial.createStateProposal(1);
+  now += 100;
+  let atExpiryCode = null;
+  try {
+    await initial.approveProposal(proposal);
+  } catch (error) {
+    atExpiryCode = error.code;
+  }
+  initialStore.close();
+
+  now -= 1;
+  const rollbackStore = new IndexedDbDurableStore({ databaseName, endpointId: "EXP" });
+  const rollback = new DurableQuorumEndpoint({
+    endpointId: "EXP",
+    store: rollbackStore,
+    clock: () => now
+  });
+  await rollback.restore();
+  const rollbackAuthority = rollback.publicState.signing_authority;
+  let rollbackCode = null;
+  try {
+    await rollback.approveProposal(proposal);
+  } catch (error) {
+    rollbackCode = error.code;
+  }
+  const persistedStatus = rollback.document.policy.status;
+  await rollback.renewAuthority(now + 1_000);
+  const renewedAuthority = rollback.publicState.signing_authority;
+  rollbackStore.close();
+  return {
+    at_expiry_code: atExpiryCode,
+    persisted_status: persistedStatus,
+    renewed_authority: renewedAuthority,
+    rollback_authority: rollbackAuthority,
+    rollback_code: rollbackCode
+  };
+}
+
 async function createVersionOneDatabase(databaseName, snapshot) {
   await deleteDurableStore(databaseName);
   await new Promise((resolve, reject) => {
@@ -208,6 +357,32 @@ async function createVersionOneDatabase(databaseName, snapshot) {
     }, { once: true });
     request.addEventListener("error", () => reject(request.error), { once: true });
   });
+}
+
+async function rejectedVersionOneMigration(databaseName, endpointId, snapshot) {
+  await createVersionOneDatabase(databaseName, snapshot);
+  let failedClosed = false;
+  const store = new IndexedDbDurableStore({
+    databaseName,
+    endpointId,
+    migrationClock: () => 1_800_000_000_001
+  });
+  try {
+    await store.read();
+  } catch {
+    failedClosed = true;
+  }
+  store.close();
+  const retainedVersion = await new Promise((resolve, reject) => {
+    const request = indexedDB.open(databaseName);
+    request.addEventListener("success", () => {
+      const version = request.result.version;
+      request.result.close();
+      resolve(version);
+    }, { once: true });
+    request.addEventListener("error", () => reject(request.error), { once: true });
+  });
+  return { failed_closed: failedClosed, retained_version: retainedVersion };
 }
 
 async function verifyVersionOneMigration() {
@@ -266,48 +441,67 @@ async function verifyVersionOneMigration() {
   };
   migratedStore.close();
 
-  const corruptName = "mortalos-s2-migration-corrupt";
-  await createVersionOneDatabase(corruptName, {
-    evidence: {
-      bundle: createEvidenceBundle(bundleRecords(legacy.records)),
-      id: "active"
-    },
-    keys: {
-      id: "active",
-      key_id: document.key.key_id,
-      private_key: document.key.private_key,
-      public_key_raw: document.key.public_key_raw
-    },
-    meta: {
-      authority_removed: false,
-      expires_at: 1_900_000_000_000,
-      id: "active",
-      pending: { status: "partial" },
-      schema_version: 1
+  const commonEvidence = {
+    bundle: createEvidenceBundle(bundleRecords(legacy.records)),
+    id: "active"
+  };
+  const commonKey = {
+    id: "active",
+    key_id: document.key.key_id,
+    private_key: document.key.private_key,
+    public_key_raw: document.key.public_key_raw
+  };
+  const corrupt = await rejectedVersionOneMigration(
+    "mortalos-s2-migration-corrupt",
+    "legacy",
+    {
+      evidence: commonEvidence,
+      keys: commonKey,
+      meta: {
+        authority_removed: false,
+        expires_at: 1_900_000_000_000,
+        id: "active",
+        pending: { status: "partial" },
+        schema_version: 1
+      }
     }
-  });
-  let failedClosed = false;
-  const corruptStore = new IndexedDbDurableStore({
-    databaseName: corruptName,
-    endpointId: "legacy",
-    migrationClock: () => 1_800_000_000_001
-  });
-  try {
-    await corruptStore.read();
-  } catch {
-    failedClosed = true;
-  }
-  corruptStore.close();
-  const retainedVersion = await new Promise((resolve, reject) => {
-    const request = indexedDB.open(corruptName);
-    request.addEventListener("success", () => {
-      const version = request.result.version;
-      request.result.close();
-      resolve(version);
-    }, { once: true });
-    request.addEventListener("error", () => reject(request.error), { once: true });
-  });
-  return { failed_closed: failedClosed, retained_version: retainedVersion, valid };
+  );
+  const removedWithKey = await rejectedVersionOneMigration(
+    "mortalos-s2-migration-removed-with-key",
+    "legacy",
+    {
+      evidence: commonEvidence,
+      keys: commonKey,
+      meta: {
+        authority_removed: true,
+        expires_at: 1_900_000_000_000,
+        id: "active",
+        pending: null,
+        schema_version: 1
+      }
+    }
+  );
+  const activeWithoutKey = await rejectedVersionOneMigration(
+    "mortalos-s2-migration-active-without-key",
+    "legacy",
+    {
+      evidence: commonEvidence,
+      keys: null,
+      meta: {
+        authority_removed: false,
+        expires_at: 1_900_000_000_000,
+        id: "active",
+        pending: null,
+        schema_version: 1
+      }
+    }
+  );
+  return {
+    active_without_key: activeWithoutKey,
+    corrupt,
+    removed_with_key: removedWithKey,
+    valid
+  };
 }
 
 globalThis.__MORTALOS_DURABLE_BROWSER__ = Object.freeze({
@@ -315,5 +509,7 @@ globalThis.__MORTALOS_DURABLE_BROWSER__ = Object.freeze({
   prepareLossTrial,
   restoreLossAndRepair,
   restoreAndAdvance,
+  verifyExpiryRollbackLatch,
+  verifyIndexedDbCompareAndSwap,
   verifyVersionOneMigration
 });

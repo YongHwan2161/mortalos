@@ -1,5 +1,6 @@
 import {
-  assertDurableDocumentStructure
+  assertDurableDocumentStructure,
+  durableError
 } from "./durable-document.mjs";
 
 function clone(value) {
@@ -33,9 +34,23 @@ export class MemoryDurableStore {
     return clone(this.#document);
   }
 
-  async write(operation, document) {
+  async write(operation, document, { expectedRevision } = {}) {
     assertDurableDocumentStructure(document);
+    if (
+      expectedRevision !== null &&
+      (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0)
+    ) {
+      throw new TypeError("expected durable revision is required");
+    }
+    const wantedRevision = expectedRevision === null ? 0 : expectedRevision + 1;
+    if (document.revision !== wantedRevision) {
+      throw durableError("E_DURABLE_CONFLICT", "next durable revision is not consecutive");
+    }
     await this.#boundary(`${operation}:before`);
+    const currentRevision = this.#document?.revision ?? null;
+    if (currentRevision !== expectedRevision) {
+      throw durableError("E_DURABLE_CONFLICT", "durable revision changed before commit");
+    }
     this.#document = clone(document);
     this.#writes.push(operation);
     await this.#boundary(`${operation}:after`);

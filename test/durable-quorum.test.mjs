@@ -129,23 +129,46 @@ test("authority removal and renewal are explicit atomic policy operations", asyn
   await endpoints[0].renewAuthority(1_900_000_000_000);
   assert.equal(endpoints[0].publicState.expires_at, 1_900_000_000_000);
   const before = endpoints[0].records;
+  let now = 1_900_000_000_001;
   const restarted = new DurableQuorumEndpoint({
     endpointId: "A30",
     store: nodes[0].store,
-    clock: () => 1_900_000_000_001
+    clock: () => now
   });
   await restarted.restore();
   assert.equal(restarted.publicState.signing_authority, false);
+  assert.equal(restarted.document.policy.status, "expired");
   const proposal = endpoints[1].createStateProposal(1);
   await assert.rejects(
     () => restarted.approveProposal(proposal),
     (error) => error.code === "E_DURABLE_EXPIRED"
   );
-  await restarted.expireAuthority();
-  assert.deepEqual(restarted.records, before);
+  now = 1_899_999_999_999;
   assert.equal(restarted.publicState.signing_authority, false);
-  assert.equal(restarted.document.key, null);
-  assert.rejects(() => restarted.renewAuthority(null), (error) => error.code === "E_DURABLE_AUTHORITY");
+  await assert.rejects(
+    () => restarted.approveProposal(proposal),
+    (error) => error.code === "E_DURABLE_EXPIRED"
+  );
+  const coldRollback = new DurableQuorumEndpoint({
+    endpointId: "A30",
+    store: nodes[0].store,
+    clock: () => now
+  });
+  await coldRollback.restore();
+  assert.equal(coldRollback.publicState.signing_authority, false);
+  await assert.rejects(
+    () => coldRollback.approveProposal(proposal),
+    (error) => error.code === "E_DURABLE_EXPIRED"
+  );
+  await coldRollback.renewAuthority(1_900_000_000_100);
+  assert.equal(coldRollback.publicState.signing_authority, true);
+  now = 1_900_000_000_101;
+  assert.equal(coldRollback.publicState.signing_authority, false);
+  await coldRollback.expireAuthority();
+  assert.deepEqual(coldRollback.records, before);
+  assert.equal(coldRollback.publicState.signing_authority, false);
+  assert.equal(coldRollback.document.key, null);
+  assert.rejects(() => coldRollback.renewAuthority(null), (error) => error.code === "E_DURABLE_AUTHORITY");
 });
 
 test("signing intent survives a post-reservation crash and rejects a conflicting body", async () => {
@@ -169,6 +192,71 @@ test("signing intent survives a post-reservation crash and rejects a conflicting
     () => restarted.approveProposal(conflicting),
     (error) => error.code === "E_DURABLE_EQUIVOCATION" || error.code === "E_DURABLE_PENDING"
   );
+});
+
+test("same-revision endpoints CAS before signing and cannot release conflicting bodies", async () => {
+  const { endpoints, nodes } = await createCluster(45);
+  let releaseSigner;
+  let signerEntered;
+  const entered = new Promise((resolve) => {
+    signerEntered = resolve;
+  });
+  const release = new Promise((resolve) => {
+    releaseSigner = resolve;
+  });
+  let primarySignerCalls = 0;
+  let staleSignerCalls = 0;
+  const primary = new DurableQuorumEndpoint({
+    endpointId: "A45",
+    store: nodes[0].store,
+    clock: () => 1_800_000_000_000,
+    signer: async (...args) => {
+      primarySignerCalls += 1;
+      signerEntered();
+      await release;
+      return signBytes(...args);
+    }
+  });
+  const stale = new DurableQuorumEndpoint({
+    endpointId: "A45",
+    store: nodes[0].store,
+    clock: () => 1_800_000_000_000,
+    signer: async (...args) => {
+      staleSignerCalls += 1;
+      return signBytes(...args);
+    }
+  });
+  await primary.restore();
+  await stale.restore();
+  const firstBody = primary.createStateProposal(1);
+  const conflictingBody = stale.createStateProposal(2);
+  const firstApproval = primary.approveProposal(firstBody);
+  await entered;
+  await assert.rejects(
+    () => stale.approveProposal(conflictingBody),
+    (error) => error.code === "E_DURABLE_CONFLICT"
+  );
+  assert.equal(staleSignerCalls, 0);
+  releaseSigner();
+  const signature = await firstApproval;
+  assert.equal(typeof signature.signature, "string");
+  assert.equal(primarySignerCalls, 1);
+
+  const recovered = new DurableQuorumEndpoint({
+    endpointId: "A45",
+    store: nodes[0].store,
+    clock: () => 1_800_000_000_000
+  });
+  await recovered.restore();
+  assert.equal(
+    recovered.document.journal.filter((entry) => entry.purpose === "pulse-approval").length,
+    1
+  );
+  await assert.rejects(
+    () => recovered.approveProposal(conflictingBody),
+    (error) => error.code === "E_DURABLE_EQUIVOCATION"
+  );
+  assert.equal(endpoints[0].publicState.sequence, "0");
 });
 
 test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {
@@ -262,10 +350,9 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
 test("every durable adapter write exposes atomic before/after failure semantics", async () => {
   const { endpoints } = await createCluster(55);
   const prior = endpoints[0].document;
-  const next = structuredClone(prior);
-  next.revision += 1;
   for (const operation of [
     "initialize",
+    "expire",
     "reserve",
     "signature",
     "commit",
@@ -275,6 +362,8 @@ test("every durable adapter write exposes atomic before/after failure semantics"
     "remove"
   ]) {
     for (const side of ["before", "after"]) {
+      const candidate = structuredClone(prior);
+      candidate.revision = operation === "initialize" ? 0 : prior.revision + 1;
       const store = new MemoryDurableStore({
         document: operation === "initialize" ? null : prior,
         fault: (boundary) => {
@@ -282,14 +371,16 @@ test("every durable adapter write exposes atomic before/after failure semantics"
         }
       });
       await assert.rejects(
-        () => store.write(operation, next),
+        () => store.write(operation, candidate, {
+          expectedRevision: operation === "initialize" ? null : prior.revision
+        }),
         new RegExp(`crash:${operation}:${side}`)
       );
       const stored = await store.read();
       if (side === "before") {
         assert.equal(stored?.revision ?? null, operation === "initialize" ? null : prior.revision);
       } else {
-        assert.equal(stored.revision, next.revision);
+        assert.equal(stored.revision, candidate.revision);
       }
     }
   }
@@ -340,6 +431,34 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
       evidence: null,
       keys: null,
       meta: { id: "active", schema_version: 1 }
+    }, { completedAt: 1_800_000_000_000 }),
+    (error) => error.code === "E_DURABLE_MIGRATION"
+  );
+  assert.throws(
+    () => migrateLegacyDurableSnapshot({
+      evidence: { bundle: {}, id: "active" },
+      keys: { id: "active" },
+      meta: {
+        authority_removed: true,
+        expires_at: 1_900_000_000_000,
+        id: "active",
+        pending: null,
+        schema_version: 1
+      }
+    }, { completedAt: 1_800_000_000_000 }),
+    (error) => error.code === "E_DURABLE_MIGRATION"
+  );
+  assert.throws(
+    () => migrateLegacyDurableSnapshot({
+      evidence: { bundle: {}, id: "active" },
+      keys: null,
+      meta: {
+        authority_removed: false,
+        expires_at: 1_900_000_000_000,
+        id: "active",
+        pending: null,
+        schema_version: 1
+      }
     }, { completedAt: 1_800_000_000_000 }),
     (error) => error.code === "E_DURABLE_MIGRATION"
   );

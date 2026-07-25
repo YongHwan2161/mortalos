@@ -351,12 +351,17 @@ storage failure without double-signing, inventing a head, or losing accepted sta
 - [ ] Forced termination at every enumerated storage boundary yields exactly one of:
   old committed head, recoverable pending successor, or new committed head.
 - [ ] No crash point releases a second body signature for the same tuple.
+- [ ] Two endpoint instances restored from the same revision cannot both release
+  conflicting signatures; the stale writer fails before signer invocation in Node
+  and actual IndexedDB.
 - [ ] Unknown schema, corrupt key handle, missing evidence, key/custody mismatch,
   partial journal, state mismatch, and failed migration all fail closed.
 - [ ] Authority removal atomically prevents future signing while retaining
   read-only public evidence.
 - [ ] Expiry and renewal are explicit policy operations; no hard-coded 30-day
   product lifetime remains.
+- [ ] Once expiry is observed, same-process and cold-restart clock rollback cannot
+  reactivate signing without an explicit versioned renewal.
 - [ ] The complete durable-quorum suite passes in clean Chromium and Node test
   adapters on the exact head.
 

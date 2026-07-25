@@ -45,6 +45,7 @@ const KEY_KEYS = Object.freeze([
   "public_key_raw"
 ]);
 const POLICY_KEYS = Object.freeze([
+  "expired_at",
   "expires_at",
   "format",
   "removed_at",
@@ -122,19 +123,28 @@ function assertPolicy(policy) {
   if (policy.format !== DURABLE_POLICY_FORMAT) {
     throw durableError("E_DURABLE_SCHEMA", "unsupported authority policy");
   }
-  if (!["active", "removed"].includes(policy.status)) {
+  if (!["active", "expired", "removed"].includes(policy.status)) {
     throw durableError("E_DURABLE_SCHEMA", "invalid authority policy status");
   }
+  assertTimestamp(policy.expired_at, "authority expiry observation", { nullable: true });
   assertTimestamp(policy.expires_at, "authority expiry", { nullable: true });
   assertTimestamp(policy.removed_at, "authority removal", { nullable: true });
   if (!Number.isSafeInteger(policy.renewal_counter) || policy.renewal_counter < 0) {
     throw durableError("E_DURABLE_SCHEMA", "authority renewal counter is invalid");
   }
   if (
-    (policy.status === "active" && policy.removed_at !== null) ||
+    (policy.status === "active" &&
+      (policy.expired_at !== null || policy.removed_at !== null)) ||
+    (policy.status === "expired" &&
+      (
+        policy.expires_at === null ||
+        policy.expired_at === null ||
+        policy.expired_at < policy.expires_at ||
+        policy.removed_at !== null
+      )) ||
     (policy.status === "removed" && policy.removed_at === null)
   ) {
-    throw durableError("E_DURABLE_SCHEMA", "authority removal metadata is inconsistent");
+    throw durableError("E_DURABLE_SCHEMA", "authority policy metadata is inconsistent");
   }
 }
 
@@ -235,6 +245,7 @@ function canonicalStateReferences(core) {
 export function createAuthorityPolicy({ expiresAt = null } = {}) {
   assertTimestamp(expiresAt, "authority expiry", { nullable: true });
   return {
+    expired_at: null,
     expires_at: expiresAt,
     format: DURABLE_POLICY_FORMAT,
     removed_at: null,
@@ -401,15 +412,38 @@ export function committedDocument(document, records, { committedTuple = null, va
   return next;
 }
 
-export function renewedDocument(document, expiresAt) {
+export function expiredAuthorityDocument(document, expiredAt) {
   const next = clone(document);
   assertDurableDocumentStructure(next);
-  if (next.policy.status !== "active" || !next.key) {
+  assertTimestamp(expiredAt, "authority expiry observation");
+  if (next.policy.status === "removed" || !next.key) {
+    throw durableError("E_DURABLE_AUTHORITY", "removed authority cannot expire");
+  }
+  if (next.policy.expires_at === null || expiredAt < next.policy.expires_at) {
+    throw durableError("E_DURABLE_POLICY", "authority expiry has not been reached");
+  }
+  if (next.policy.status === "expired") return next;
+  next.policy.expired_at = expiredAt;
+  next.policy.status = "expired";
+  next.revision += 1;
+  return next;
+}
+
+export function renewedDocument(document, expiresAt, observedAt) {
+  const next = clone(document);
+  assertDurableDocumentStructure(next);
+  if (next.policy.status === "removed" || !next.key) {
     throw durableError("E_DURABLE_AUTHORITY", "removed authority cannot be renewed");
   }
   assertTimestamp(expiresAt, "authority expiry", { nullable: true });
+  assertTimestamp(observedAt, "authority renewal observation");
+  const highWatermark = Math.max(observedAt, next.policy.expired_at ?? 0);
   next.policy.expires_at = expiresAt;
+  next.policy.expired_at = expiresAt !== null && expiresAt <= highWatermark
+    ? highWatermark
+    : null;
   next.policy.renewal_counter += 1;
+  next.policy.status = next.policy.expired_at === null ? "active" : "expired";
   next.revision += 1;
   return next;
 }
@@ -468,8 +502,8 @@ export function assertDurableDocumentStructure(document) {
   } else if (document.evidence.length === 0) {
     throw durableError("E_DURABLE_EVIDENCE", "commissioned document is missing evidence");
   }
-  if (document.policy.status === "active" && document.key === null) {
-    throw durableError("E_DURABLE_KEY", "active authority is missing its key");
+  if (["active", "expired"].includes(document.policy.status) && document.key === null) {
+    throw durableError("E_DURABLE_KEY", "retained authority is missing its key");
   }
   if (document.policy.status === "removed" && document.key !== null) {
     throw durableError("E_DURABLE_KEY", "removed authority retained a key");
@@ -519,7 +553,7 @@ export async function replayDurableDocument(document, { now = Date.now() } = {})
     next.key &&
     snapshot.current_custodian === false &&
     next.phase === "commissioned" &&
-    next.policy.status === "active" &&
+    ["active", "expired"].includes(next.policy.status) &&
     next.pending === null
   ) {
     throw durableError("E_DURABLE_CUSTODY", "stored key is not current custody");
@@ -568,6 +602,15 @@ export function migrateLegacyDurableSnapshot({
   ) {
     throw durableError("E_DURABLE_MIGRATION", "legacy durable snapshot is incomplete or corrupt");
   }
+  if (meta.authority_removed && keys) {
+    throw durableError(
+      "E_DURABLE_MIGRATION",
+      "legacy removed authority inconsistently retains a key"
+    );
+  }
+  if (!meta.authority_removed && !keys) {
+    throw durableError("E_DURABLE_MIGRATION", "legacy active authority is missing its key");
+  }
   const imported = importEvidenceBundleBytes(canonicalBytes(evidence.bundle));
   const records = publicRecordsFromEvidenceBundle(imported.bundle);
   let key = null;
@@ -592,13 +635,13 @@ export function migrateLegacyDurableSnapshot({
       public_key_raw: keys.public_key_raw
     };
   }
-  if (!meta.authority_removed && !key) {
-    throw durableError("E_DURABLE_MIGRATION", "legacy active authority is missing its key");
-  }
   const policy = createAuthorityPolicy({ expiresAt: meta.expires_at });
-  if (key === null) {
+  if (meta.authority_removed) {
     policy.removed_at = completedAt;
     policy.status = "removed";
+  } else if (meta.expires_at <= completedAt) {
+    policy.expired_at = completedAt;
+    policy.status = "expired";
   }
   const base = createKeyReadyDocument({
     endpointId,

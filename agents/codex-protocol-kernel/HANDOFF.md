@@ -37,6 +37,18 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 - Expected handoff: one focused Issue #31 PR with
   `evidence/stages/s2-durable-quorum.json`; independent immutable-head review and
   expected-head squash merge only after every S2 and regression gate passes.
+- PR #41 head `826d186609dc87b034fd847d983bf761068f1768` passed policy
+  `30158974173/1` and Verify `30158719779/1`, but independent review BLOCKed it
+  without attestation or merge. Comment `5078803913` reproduced three P1 authority
+  failures: blind same-revision writers released conflicting signatures; a removed
+  v1 authority with a stale key migrated active; and reached expiry was reversible
+  by wall-clock rollback.
+- The replacement source must use a consecutive expected-revision CAS inside each
+  whole-document transaction and fail stale reservations before signer invocation;
+  abort inconsistent removed-plus-key and active-keyless migrations without
+  rewriting v1; and durably latch reached expiry across same-process and cold-start
+  clock rollback. Node plus actual IndexedDB regressions and a fully rebuilt source
+  receipt are mandatory before a fresh immutable review.
 
 ### ACTIVE — S1 receipt post-squash portability correction
 

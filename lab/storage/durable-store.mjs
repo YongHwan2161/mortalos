@@ -1,6 +1,7 @@
 import {
   assertDurableDocumentStructure,
   DURABLE_DOCUMENT_SCHEMA_VERSION,
+  durableError,
   migrateLegacyDurableSnapshot
 } from "./durable-document.mjs";
 
@@ -137,13 +138,38 @@ export class IndexedDbDurableStore {
     return value ? structuredClone(value) : null;
   }
 
-  async write(operation, document) {
+  async write(operation, document, { expectedRevision } = {}) {
     assertDurableDocumentStructure(document);
+    if (
+      expectedRevision !== null &&
+      (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0)
+    ) {
+      throw new TypeError("expected durable revision is required");
+    }
+    const wantedRevision = expectedRevision === null ? 0 : expectedRevision + 1;
+    if (document.revision !== wantedRevision) {
+      throw durableError("E_DURABLE_CONFLICT", "next durable revision is not consecutive");
+    }
     await this.#boundary(`${operation}:before`);
     const database = await this.#handle();
     const transaction = database.transaction([DOCUMENT_STORE], "readwrite", { durability: "strict" });
-    transaction.objectStore(DOCUMENT_STORE).put(document);
-    await transactionDone(transaction);
+    const store = transaction.objectStore(DOCUMENT_STORE);
+    let conflict = false;
+    const current = await requestResult(store.get("active"));
+    if ((current?.revision ?? null) !== expectedRevision) {
+      conflict = true;
+      transaction.abort();
+    } else {
+      store.put(document);
+    }
+    try {
+      await transactionDone(transaction);
+    } catch (error) {
+      if (conflict) {
+        throw durableError("E_DURABLE_CONFLICT", "durable revision changed before commit");
+      }
+      throw error;
+    }
     await this.#boundary(`${operation}:after`);
   }
 

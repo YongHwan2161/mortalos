@@ -74,14 +74,35 @@ try {
 
   context = await chromium.launchPersistentContext(profileDirectory, launchOptions);
   page = await pageWithHarness(context);
+  const compareAndSwap = await page.evaluate(() =>
+    globalThis.__MORTALOS_DURABLE_BROWSER__.verifyIndexedDbCompareAndSwap());
+  assert.equal(compareAndSwap.accepted_signature, true);
+  assert.equal(compareAndSwap.stale_code, "E_DURABLE_CONFLICT");
+  assert.equal(compareAndSwap.stale_signer_calls, 0);
+  assert.equal(compareAndSwap.primary_signer_calls, 1);
+  assert.equal(compareAndSwap.persisted_pulse_entries, 1);
+  assert.equal(compareAndSwap.conflicting_code, "E_DURABLE_EQUIVOCATION");
+  const expiry = await page.evaluate(() =>
+    globalThis.__MORTALOS_DURABLE_BROWSER__.verifyExpiryRollbackLatch());
+  assert.equal(expiry.at_expiry_code, "E_DURABLE_EXPIRED");
+  assert.equal(expiry.persisted_status, "expired");
+  assert.equal(expiry.rollback_authority, false);
+  assert.equal(expiry.rollback_code, "E_DURABLE_EXPIRED");
+  assert.equal(expiry.renewed_authority, true);
   const migration = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyVersionOneMigration());
   assert.equal(migration.valid.schema_version, 2);
   assert.equal(migration.valid.from_schema, 1);
   assert.equal(migration.valid.signing_authority, true);
   assert.match(migration.valid.organism_id, /^mortalos:/);
-  assert.equal(migration.failed_closed, true);
-  assert.equal(migration.retained_version, 1);
+  for (const rejected of [
+    migration.corrupt,
+    migration.removed_with_key,
+    migration.active_without_key
+  ]) {
+    assert.equal(rejected.failed_closed, true);
+    assert.equal(rejected.retained_version, 1);
+  }
   for (let run = 0; run < trials; run += 1) {
     const recovered = await page.evaluate((value) =>
       globalThis.__MORTALOS_DURABLE_BROWSER__.restoreAndAdvance(value), run);
@@ -114,8 +135,10 @@ try {
   console.log(`MortalOS S2 Chromium durable handoff: PASS (${trials}/${trials})`);
   console.log("- target browser process fully closed between accepted handoff and recovery");
   console.log("- non-extractable IndexedDB CryptoKey, canonical evidence replay, and same-identity continuation");
+  console.log("- same-revision IndexedDB writers use CAS before signing; stale signer calls: 0");
+  console.log("- reached expiry survives same-process and cold-restart clock rollback until explicit renewal");
   console.log(`- A/B/C loss, cold pair restart, transition, D repair, and next transition: ${lossTrials}/${lossTrials} each`);
-  console.log("- schema v1→v2 migration succeeded; corrupt v1 migration failed without rewriting the only copy");
+  console.log("- schema v1→v2 migration succeeded; corrupt/removed+key/active-keyless v1 copies stayed at version 1");
 } finally {
   await server.close();
   await rm(temporaryRoot, { force: true, recursive: true });

@@ -366,10 +366,18 @@ Resource contribution must be explicit and revocable in later participant-runtim
   a crash occurs after Ed25519 computation but before signature persistence, the
   exact deterministic message may be signed again during recovery; the failed call
   released no signature and a different body remains forbidden.
+- Separate endpoint instances restored from one revision are concurrent writers.
+  Every whole-document write therefore uses a consecutive expected-revision CAS
+  inside the storage transaction. A stale reservation fails before signer
+  invocation; process-local serialization alone is not a security boundary.
 - The committed-head cache is non-authoritative and disposable. Evidence replay,
   key identity, custody, and state references determine recovery.
-- Explicit expiry disables future signing but does not erase previously released
-  signatures, public evidence, browser backups, or hidden copies.
+- Reached expiry is a persisted policy latch. Same-process and cold-restart clock
+  rollback cannot reactivate it; only a versioned CAS-protected renewal may set a
+  new future expiry. Expiry still does not erase previously released signatures,
+  public evidence, browser backups, or hidden copies.
+- Legacy removal metadata and key presence must agree. `removed + key` and
+  `active + no key` abort migration and retain the version-1 database.
 - Node's memory durable store proves failure semantics only. It is not a production
   Node key store or hardware-backed custody claim.
 - The `100/100` Chromium matrices use separately persisted profiles/databases on one

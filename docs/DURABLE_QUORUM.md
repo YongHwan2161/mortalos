@@ -29,10 +29,12 @@ The versioned document contains:
 - explicit expiry, renewal, and removal policy metadata; and
 - migration provenance.
 
-The IndexedDB and local Node test stores replace the entire document in one strict
-transaction. The Node adapter is a failure-semantics test adapter, not a production
-Node key-custody claim. Selecting a production Node key store requires a separate
-platform-security ADR.
+The IndexedDB and local Node test stores replace the entire document with an
+expected-revision compare-and-swap. IndexedDB reads the current revision and writes
+the consecutive revision inside the same strict transaction. A stale writer receives
+`E_DURABLE_CONFLICT` before its signer can run. The Node adapter is a
+failure-semantics test adapter, not a production Node key-custody claim. Selecting a
+production Node key store requires a separate platform-security ADR.
 
 ## Write-ahead signing
 
@@ -41,7 +43,7 @@ For every Genesis approval, Pulse approval, or custody acceptance:
 1. Participant Core validates and derives the exact signing request.
 2. The adapter computes one purpose/key/organism/sequence/parent tuple.
 3. The tuple, canonical body digest, message digest, and pending proposal are
-   durably reserved.
+   durably reserved only if the caller's expected document revision still matches.
 4. Only after the reservation transaction completes may the non-extractable key
    sign.
 5. The signature is durably attached to the same journal/pending record before it is
@@ -55,6 +57,11 @@ returns the already stored signature without invoking the signer again. A crash
 around commit exposes only the old committed head with pending work or the new
 committed head.
 
+Two endpoints or tabs restored from the same revision may race, but only one
+reservation CAS can commit. The loser fails before invoking its signer. If two
+same-body signers race after one stored reservation, only the signer whose
+signature CAS commits may return to its caller.
+
 ## Recovery and policy operations
 
 Restore rejects unknown fields or versions, missing commissioned evidence, corrupt
@@ -62,15 +69,20 @@ or extractable keys, key/public-identity mismatch, key/custody mismatch, duplica
 or partial journal records, pending/body mismatch, state-reference mismatch, and
 invalid canonical evidence.
 
-Expiry does not silently rewrite storage during restore. Once the explicit expiry
-time is reached, signing is disabled until `expireAuthority()` atomically removes
-the key. Renewal is a separate versioned write and cannot revive removed authority.
-Removal abandons incomplete journal work, deletes the key in the same transaction,
-and retains canonical public evidence read-only.
+Once the explicit expiry time is observed, restore or the next signing attempt
+persists `policy.status = expired` and `expired_at` through the same revision CAS.
+The in-process clock observation is non-decreasing, and the persisted latch prevents
+a cold restart with a rolled-back wall clock from re-enabling signing. Explicit
+renewal may move an expired authority to a new future expiry; it cannot revive
+removed authority. `expireAuthority()` and removal abandon incomplete journal work,
+delete the key in the same transaction, and retain canonical public evidence
+read-only.
 
 IndexedDB schema `1` migrates to schema `2` only when the complete legacy key,
 evidence, metadata, and empty pending marker validate. Failed migration aborts the
-upgrade transaction, leaving the only version-1 copy unchanged.
+upgrade transaction, leaving the only version-1 copy unchanged. In particular,
+`authority_removed = true` with a retained key and active authority without a key
+are inconsistent snapshots and cannot migrate.
 
 ## Local adapter error vocabulary
 
@@ -86,6 +98,7 @@ R1 precedence:
 | `E_DURABLE_JOURNAL` | Partial, duplicated, or corrupt journal/pending binding. |
 | `E_DURABLE_EQUIVOCATION` | A tuple is bound to another body/message or recovered signature. |
 | `E_DURABLE_PENDING` | Another exact pending operation must finish first. |
+| `E_DURABLE_CONFLICT` | The expected whole-document revision is stale or non-consecutive. |
 | `E_DURABLE_CUSTODY` | A commissioned active key is not current after replay. |
 | `E_DURABLE_AUTHORITY` | Local authority is removed, missing, or unavailable. |
 | `E_DURABLE_EXPIRED` | Reached explicit expiry blocks signing pending removal. |
@@ -100,13 +113,19 @@ npm run test:durable-quorum
 The gate covers:
 
 - Node integration and deterministic failure injection at reservation, signature,
-  commit, renewal, removal, observation, synchronization, and initialization write
-  boundaries;
+  commit, expiry, renewal, removal, observation, synchronization, and
+  initialization write boundaries;
+- deterministic two-endpoint same-revision races in Node and actual IndexedDB,
+  requiring one returned signature, zero stale-writer signer calls, and one durable
+  tuple/body reservation;
 - exact old/pending/new crash outcomes and signer-call accounting;
 - unknown/corrupt schema, key, evidence, journal, state, custody, and migration
   rejection;
 - explicit renewal, expiry, and atomic authority removal;
-- actual Chromium IndexedDB migration and non-destructive migration failure;
+- actual Chromium IndexedDB migration and non-destructive corrupt,
+  removed-plus-key, and active-keyless migration failure;
+- reached-expiry same-process and cold-restart clock rollback rejection plus
+  explicit renewal;
 - `100/100` Browser-B accepted-handoff process closures and cold restarts; and
 - `100/100` trials for each lost A/B/C choice where the surviving durable pair
   cold-starts, commits, repairs D, and commits the next transition.

@@ -170,13 +170,13 @@ A change to any invariant, message field, domain separator, validation precedenc
 | v1 deterministic state/receipt bytes across JavaScript and independent Python | `test/vectors/state-v1.json`, `scripts/verify-state.mjs`, `r1/python/state_verify.py` | PASS |
 | v1 malformed/limit/tamper atomic rejection and 10,000 transitions | `test/state-engine.test.mjs`, stable `E_STATE_*` codes | PASS |
 | v1 actual Chromium Nurture and export/import reconstruction | `lab/live-incubator.mjs`, `lab/evidence-export.mjs`, `scripts/verify-lab.mjs` | PASS |
-| S2 reserve-before-sign and no conflicting tuple | `lab/storage/durable-document.mjs`, `lab/participant/durable-quorum-endpoint.mjs`, `test/durable-quorum.test.mjs` — reserve/signature boundary crashes and signer-call accounting | PASS required on exact S2 head |
-| S2 atomic evidence/state/journal commit | whole-document strict transactions in `lab/storage/durable-store.mjs` and old/pending/new fault matrix in `test/durable-quorum.test.mjs` | PASS required on exact S2 head |
+| S2 reserve-before-sign and no conflicting tuple | `lab/storage/durable-document.mjs`, `lab/participant/durable-quorum-endpoint.mjs`, `test/durable-quorum.test.mjs` — reserve/signature boundary crashes, signer-call accounting, and two-instance conflicting-body race | PASS required on exact S2 head |
+| S2 atomic evidence/state/journal commit | consecutive expected-revision CAS inside whole-document strict transactions in `lab/storage/durable-store.mjs`; old/pending/new and stale-writer fault matrix in `test/durable-quorum.test.mjs` | PASS required on exact S2 head |
 | S2 replay-only restore and fail-closed corruption | `replayDurableDocument`; unknown schema, key, evidence, journal, state, custody, and migration negatives | PASS required on exact S2 head |
 | S2 Browser-B handoff cold restart | `scripts/verify-durable-quorum-chromium.mjs`, actual persistent Chromium process closure and `100/100` replay/continuation | PASS required on exact S2 head |
 | S2 any A/B/C loss and D repair | same actual-Chromium gate, `100/100` per loss: surviving pair cold-start, transition, D acceptance/repair, next transition | PASS required on exact S2 head |
-| S2 schema migration and rollback | actual IndexedDB v1→v2 migration plus corrupt-upgrade abort retaining v1 | PASS required on exact S2 head |
-| S2 explicit renewal/removal | Node test proves renewal is a versioned write and removal atomically drops the key while public evidence remains replayable | PASS required on exact S2 head |
+| S2 schema migration and rollback | actual IndexedDB v1→v2 migration plus corrupt, removed-plus-key, and active-keyless upgrade abort retaining v1 | PASS required on exact S2 head |
+| S2 explicit expiry/renewal/removal | Node and Chromium tests prove persisted expiry across clock rollback/cold restart, CAS-protected renewal, and atomic key removal with replayable public evidence | PASS required on exact S2 head |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.
 

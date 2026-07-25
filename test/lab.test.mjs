@@ -259,7 +259,14 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(keyStoreSource, /generateKey\(\{ name: "Ed25519" \}, false, \["sign", "verify"\]\)/);
   assert.match(durableSource, /threshold: 1/);
   assert.match(keyStoreSource, /exportKey\("pkcs8", privateKey\)/);
-  assert.match(durableEndpointSource, /write\("reserve", reserved\.document\)[\s\S]*?#signer\(/);
+  assert.match(
+    durableEndpointSource,
+    /#commitDocument\("reserve", reserved\.document\)[\s\S]*?#signer\(/
+  );
+  assert.match(
+    durableEndpointSource,
+    /expectedRevision = this\.#document\?\.revision \?\? null;[\s\S]*?write\(operation, document, \{ expectedRevision \}\)/
+  );
   assert.match(durableDocumentSource, /next\.pending = null[\s\S]*?next\.revision \+= 1/);
   assert.match(durableStoreSource, /database\.transaction\(\[DOCUMENT_STORE\], "readwrite", \{ durability: "strict" \}\)/);
   assert.match(durableStoreSource, /event\.oldVersion === 1/);

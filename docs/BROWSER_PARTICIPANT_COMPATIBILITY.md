@@ -18,7 +18,8 @@ MortalOS exposes two deliberately different browser modes.
 - IndexedDB contains one atomic versioned participant document with the
   structured-cloned key, canonical public evidence, state references, sign-once
   journal, recoverable pending operation, replay-derived cache, migration, and
-  expiry/authority metadata. Locale remains URL-only.
+  expiry/authority metadata. Each replacement is a consecutive expected-revision
+  compare-and-swap inside one strict transaction. Locale remains URL-only.
 - Restore never trusts stored head or verdict fields. It imports canonical evidence,
   replays it through R1, verifies the stored key against current custody, and only
   then exposes signing authority.
@@ -27,8 +28,9 @@ MortalOS exposes two deliberately different browser modes.
   incomplete replay fails closed. A valid pending marker is recoverable, not a
   blanket rejection.
 - Removing authority atomically deletes the key while retaining public history in a
-  read-only state. Reaching expiry disables signing; an explicit atomic expiry
-  operation performs removal rather than silently rewriting during restore.
+  read-only state. Reaching expiry persists an expired-policy latch, so same-process
+  and cold-restart clock rollback cannot restore signing. Explicit renewal is the
+  only way to set a later expiry; explicit removal deletes the key.
 
 ## Browser downgrade behavior
 
@@ -59,7 +61,9 @@ honest visible downgrade decide the mode.
 `npm run test:durable-quorum` additionally closes the target browser process after
 handoff, cold-restores `100/100`, and runs every A/B/C one-loss/D-repair matrix
 `100/100`. It also proves valid v1→v2 migration and that corrupt migration leaves the
-version-1 copy unchanged.
+version-1 copy unchanged. An actual IndexedDB two-instance race proves the stale
+writer fails before its signer runs, and inconsistent `removed + key` or
+`active + no key` legacy snapshots remain at version 1.
 
 This verifies browser/profile isolation and protocol behavior. It does not by itself
 prove a distinct physical device or administrative failure domain.
