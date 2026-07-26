@@ -54,6 +54,23 @@ function syntheticPromotionCommit(treeish) {
   );
 }
 
+function syntheticPullRequestMergeCommit(head) {
+  const tree = git(["rev-parse", `${head}^{tree}`]);
+  return git(
+    ["commit-tree", tree, "-p", receipt.base_commit, "-p", receipt.source_commit],
+    {
+      input: "test-only S3 pull-request merge snapshot\n",
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: "MortalOS receipt test",
+        GIT_AUTHOR_EMAIL: "receipt-test@example.invalid",
+        GIT_COMMITTER_NAME: "MortalOS receipt test",
+        GIT_COMMITTER_EMAIL: "receipt-test@example.invalid"
+      }
+    }
+  );
+}
+
 async function rejectsMutation(path, value) {
   await assert.rejects(
     verifyS3Receipt({ receiptOverride: mutate(path, value) }),
@@ -72,17 +89,45 @@ test("the committed S3 receipt binds the exact source snapshot and strict result
     ? "candidate"
     : "promotion";
   assert.equal(result.mode, expectedMode);
-  assert.match(result.promotionCommit, /^[0-9a-f]{40}$/u);
+  if (expectedMode === "promotion") {
+    assert.match(result.promotionCommit, /^[0-9a-f]{40}$/u);
+    assert.ok(
+      gitSucceeds(["merge-base", "--is-ancestor", result.promotionCommit, "HEAD"]),
+      "S3 promotion commit must remain on first-parent repository history"
+    );
+  } else {
+    assert.equal(result.promotionCommit, null);
+  }
   assert.equal(result.receipt.source_commit, receipt.source_commit);
   assert.equal(result.artifactCount, 25);
 });
 
 test("a synthetic direct-parent squash is permanently verifiable without source ancestry", async () => {
   const repositoryResult = await verifyS3Receipt();
-  const promotionCommit = syntheticPromotionCommit(repositoryResult.promotionCommit);
+  const promotionCommit = syntheticPromotionCommit(repositoryResult.promotionCommit ?? "HEAD");
   const result = await verifyS3Receipt({ promotionCommitOverride: promotionCommit });
   assert.equal(result.mode, "promotion");
   assert.equal(result.promotionCommit, promotionCommit);
+});
+
+test("a GitHub-style pull-request merge verifies its exact tree without masquerading as promotion", async () => {
+  const head = git(["rev-parse", "HEAD"]);
+  const mergeCommit = syntheticPullRequestMergeCommit(head);
+  const replaceBase = "refs/s3-receipt-test-replace/";
+  const replaceRef = `${replaceBase}${head}`;
+  const previousReplaceBase = process.env.GIT_REPLACE_REF_BASE;
+  git(["update-ref", replaceRef, mergeCommit]);
+  process.env.GIT_REPLACE_REF_BASE = replaceBase;
+  try {
+    const result = await verifyS3Receipt();
+    assert.equal(result.mode, "candidate");
+    assert.equal(result.promotionCommit, null);
+    assert.equal(git(["rev-parse", "HEAD^"]), receipt.base_commit);
+  } finally {
+    if (previousReplaceBase === undefined) delete process.env.GIT_REPLACE_REF_BASE;
+    else process.env.GIT_REPLACE_REF_BASE = previousReplaceBase;
+    git(["update-ref", "-d", replaceRef]);
+  }
 });
 
 test("Verify and Deploy retain full main history without persisted credentials", async () => {

@@ -17,7 +17,7 @@ const EXPECTED_PROMOTION_PACKAGE_DIGEST =
 const EXPECTED_SCHEMA_DIGEST =
   "sha256:10eb65ed34ecdc43224d36659716dcb79620a1605dc49c8964258bae2fb73e0f";
 const EXPECTED_TEST_DIGEST =
-  "sha256:2274387a6c7929b1d022c13257142321e45dff79e971739b860a5e57543573d9";
+  "sha256:a2fc2e8215504aa3777e64faf72c63d78a9f6113999d499a630f00ce68ebfc42";
 const EXPECTED_REVIEW_SNAPSHOT =
   "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference.";
 const EXPECTED_SOURCE_PATHS = [
@@ -133,12 +133,7 @@ function assertSourceArtifacts(root, receipt) {
   );
 }
 
-function assertPromotionSnapshot(root, receipt, commit, expectedParent) {
-  assert.equal(
-    gitText(root, ["rev-parse", `${commit}^`]),
-    expectedParent,
-    "S3 promotion parent mismatch"
-  );
+function assertPromotionTree(root, receipt, commit) {
   assert.deepEqual(
     sorted(changedPaths(root, receipt.base_commit, commit)),
     sorted(EXPECTED_PROMOTION_PATHS),
@@ -177,6 +172,15 @@ function assertPromotionSnapshot(root, receipt, commit, expectedParent) {
     receipt.dependency_lock_digest,
     "S3 dependency lock digest mismatch"
   );
+}
+
+function assertPromotionSnapshot(root, receipt, commit) {
+  assert.equal(
+    gitText(root, ["rev-parse", `${commit}^`]),
+    receipt.base_commit,
+    "S3 promotion parent mismatch"
+  );
+  assertPromotionTree(root, receipt, commit);
 }
 
 function findPromotionCommit(root, receipt) {
@@ -331,16 +335,15 @@ export async function verifyS3Receipt({
     !promotionCommitOverride &&
     gitSucceeds(root, ["merge-base", "--is-ancestor", receipt.source_commit, "HEAD"]);
   let mode;
-  let promotionCommit;
+  let promotionCommit = null;
   if (sourceIsCurrentAncestor) {
     mode = "candidate";
     assertSourceArtifacts(root, receipt);
-    promotionCommit = gitText(root, ["rev-parse", "HEAD"]);
-    assertPromotionSnapshot(root, receipt, promotionCommit, receipt.source_commit);
+    assertPromotionTree(root, receipt, "HEAD");
   } else {
     mode = "promotion";
     promotionCommit = promotionCommitOverride ?? findPromotionCommit(root, receipt);
-    assertPromotionSnapshot(root, receipt, promotionCommit, receipt.base_commit);
+    assertPromotionSnapshot(root, receipt, promotionCommit);
     const promotedAt = Date.parse(gitText(root, ["show", "-s", "--format=%cI", promotionCommit]));
     assert.ok(Number.isFinite(promotedAt), "S3 promotion timestamp is invalid");
     assert.ok(Date.parse(receipt.completed_at) <= promotedAt, "S3 promotion predates completed validation");
@@ -360,7 +363,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   console.log("MortalOS S3 state recovery receipt: PASS");
   console.log(`- verification mode: ${result.mode}`);
   console.log(`- source commit: ${result.receipt.source_commit}`);
-  console.log(`- promotion commit: ${result.promotionCommit}`);
+  if (result.promotionCommit) console.log(`- promotion commit: ${result.promotionCommit}`);
   console.log(`- receipt digest: ${result.receiptDigest}`);
   console.log(`- exact changed source artifacts: ${result.artifactCount}`);
 }
