@@ -406,7 +406,33 @@ Resource contribution must be explicit and revocable in later participant-runtim
   is S4 work; independent provider/domain evidence is S7 work; browser-engine parity
   is S8 work.
 
-## 18. Threat-model change control
+## 18. S4 confidential-state ADR boundary
+
+S4 implementation remains HOLD until the
+[confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is
+independently promoted. The proposed boundary uses AES-256-GCM only for bounded
+chunk authenticated encryption and RSA-OAEP-3072-SHA-256 only for recipient-specific
+epoch-key wrapping through WebCrypto.
+
+- Signing authority and confidentiality keys remain distinct.
+- GCM IVs are unique under one epoch key through a durable 64-bit invocation
+  counter; gaps are safe and reuse is forbidden.
+- Canonical AAD binds organism, membership head, epoch, resource, chunk position,
+  prior confidential root, plaintext length, and invocation counter.
+- Membership change creates a fresh epoch key and wraps it for every and only the
+  new membership.
+- Decryption success is never protocol acceptance.
+- Removed-member denial applies only to future epochs. Retroactive secrecy, secure
+  erasure, endpoint-compromise resistance, and traffic-analysis resistance are not
+  claimed.
+- Rotation activation is atomic old-or-new; any mixed membership/key/package state
+  fails closed while the prior complete epoch remains readable.
+
+The implementation must add relay/store capture evidence, standard and
+cross-runtime vectors, one-million-record IV uniqueness, removed-member denial, and
+every-write-boundary rotation faults before any confidentiality claim is promoted.
+
+## 19. Threat-model change control
 
 Any implementation change that introduces one of the following requires a threat-model revision before merge:
 

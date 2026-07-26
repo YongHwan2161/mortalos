@@ -1420,3 +1420,48 @@ result, and reproducible verification.
   inventory, fetch, chunk verification, reconstruction, aggregate verification,
   activation, and prior-state preservation. The SSOT now binds base `e04a579` and
   the real `npm run test:state-package` command.
+
+### 2026-07-26 — S3 promotion closeout
+
+- PR #43 head `cbd38b00717cfa128699f63dd401fb887c555d11` passed policy
+  `30201025754/1`, exact-head Verify `30201006539/1`, and fresh independent review
+  comment `5083500477`. The parent independently reproduced body SHA-256
+  `54f941fc62f69b46a3552034f77e0e13b2f503d1eda3483b422a5bfbe39eb8f3`
+  and the 29-file JCS digest
+  `b7333e376ba43ddb9fa9a627fdad327f1a2f9f574651837894c11d0c3386c210`.
+- Expected-head squash promotion produced exact main
+  `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`. Exact-main Verify
+  `30202501790/1` passed.
+- Deploy `30202501782/1` verified source and published relay/static artifacts, then
+  failed closed because the custom domain served one stale `corpus-worker.js`
+  digest for its 60-second propagation window. Direct custom, cache-busted,
+  immutable-deployment, and canonical-pages readback converged to the expected
+  135,829-byte digest
+  `sha256:pBSBXgGtcOlV_x5o1X6IB6ShZIhl0i0MiJMdbJvYKjg`.
+- Attempt `30202501782/2` reran exact-source verification, relay and static deploy,
+  seven-asset public readback, public Chromium, English/Korean acceptance, and 20
+  persistent A-to-B handoffs and passed. Issue #32 was closed as completed.
+
+### 2026-07-26 — S4 cryptographic ADR candidate
+
+- Runtime implementation remains HOLD. This documentation-only branch proposes
+  `mortalos-confidential-state-suite/1` for independent review before code:
+  AES-256-GCM with 128-bit tags, deterministic 96-bit IVs from a fixed suite field
+  plus durable per-key 64-bit invocation counter, and
+  RSA-OAEP-3072-SHA-256 recipient-specific epoch-key wrapping through WebCrypto.
+- The ADR separates signing and encryption keys; binds organism, membership, epoch,
+  resource, chunk position, lengths, prior root, and counter through canonical AAD;
+  rotates a fresh epoch key on membership change; and requires atomic old-or-new
+  recovery at every write boundary.
+- The only future-member claim is denial of epochs created after removal. The ADR
+  explicitly rejects retroactive secrecy, secure erasure, endpoint-compromise
+  resistance, traffic-analysis resistance, and decryption-as-validity.
+- Required implementation evidence includes standard and Node/Chromium vectors,
+  one million unique IV records, relay/store capture, any-two ciphertext recovery,
+  removed-member future denial, authentication adversaries, full rotation fault
+  injection, exact S4 receipt, independent implementation review, and exact-main
+  deployment.
+- ADR candidate checks pass: locked install audited 93 installed packages with zero
+  vulnerabilities; license, specification (81 relative links), release-link
+  inventory (53 local and 12 HTTPS syntax-only), governance 30/30, and
+  `git diff --check` are clean. Runtime and dependency files are unchanged.

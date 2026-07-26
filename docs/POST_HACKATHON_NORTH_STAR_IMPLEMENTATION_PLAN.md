@@ -1,6 +1,6 @@
 # MortalOS post-hackathon North Star implementation plan
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2 promoted; S3 candidate HOLD**
+Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2/S3 promoted; S4 ADR REVIEW**
 
 Plan authority date: **2026-07-25 KST**
 
@@ -8,7 +8,7 @@ Initial planning base: `origin/main`
 `079e37dfdea8ce94998533979546b65cc09709d6`
 
 Last reconciled main base: `origin/main`
-`e04a579081d96a834455abba79c66e4a102a4487`
+`1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`
 
 Owner: `codex-protocol-kernel`
 
@@ -415,8 +415,8 @@ storage failure without double-signing, inventing a head, or losing accepted sta
 
 Priority: **P0**
 
-Status: **HOLD — candidate implemented; exact receipt, independent review,
-expected-head merge, post-merge Verify, and Deploy remain required**
+Status: **PROMOTED — PR #43 independently reviewed and expected-head merged;
+exact-main Verify 30202501790/1 and Deploy 30202501782/2 passed**
 
 ### Goal
 
@@ -486,7 +486,8 @@ cannot be chosen from ambient runtime defaults.
 
 Priority: **P1**
 
-Status: **PLANNED**
+Status: **ADR REVIEW — implementation HOLD until the cryptographic ADR is
+independently reviewed and promoted**
 
 ### Goal
 
@@ -495,7 +496,9 @@ preserving deterministic integrity, recovery, and explicit membership changes.
 
 ### Implementation scope and deliverables
 
-1. Approve a cryptographic ADR before implementation. It must define:
+1. Approve the
+   [S4 confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md)
+   before implementation. It must define:
    - audited WebCrypto-compatible AEAD;
    - key derivation and domain separation;
    - unique nonce construction and collision policy;

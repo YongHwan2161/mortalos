@@ -1,6 +1,6 @@
 # MortalOS North Star roadmap
 
-Status: **ACTIVE — S3 state availability and recovery candidate**
+Status: **ACTIVE — S3 promoted; S4 cryptographic ADR review**
 
 Last synchronized: **2026-07-26 KST**
 
@@ -27,14 +27,16 @@ browser-held non-extractable keys, A→B succession, logical `2-of-3` loss/repai
 evidence, an authority-neutral relay, and English/Korean Lab acceptance.
 
 S1 is promoted and routes the live incubator, durable reload, handoff, and logical
-quorum participants through one deterministic Participant Core. S2 is promoted and adds a versioned
-write-ahead sign-once journal, replay-only recovery, strict IndexedDB transactions,
-explicit authority policy, schema migration, process-cold handoff recovery, and
-durable one-loss/D-repair matrices. S3 now has a candidate canonical resource
-manifest, 64 KiB content-addressed chunks, exact 1 MiB reconstruction, resumable
-recovery, and an independent Python verifier. It remains unpromoted until its exact
-receipt, immutable review, merge, post-merge Verify, and deployment agree. Confidentiality and
-independent failure domains remain later stages. The
+quorum participants through one deterministic Participant Core. S2 is promoted and
+adds a versioned write-ahead sign-once journal, replay-only recovery, strict
+IndexedDB transactions, explicit authority policy, schema migration, process-cold
+handoff recovery, and durable one-loss/D-repair matrices. S3 is promoted at
+`1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d` with a canonical resource manifest,
+64 KiB content-addressed chunks, exact 1 MiB reconstruction, resumable recovery,
+an independent Python verifier, exact-main Verify `30202501790/1`, and Deploy
+`30202501782/2`. S4 implementation remains blocked while the
+[confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is under
+independent review. Independent failure domains remain a later stage. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
 
@@ -76,5 +78,8 @@ byte-identical for the portable corpus. Exactly 10,000 cases replay from seed
 `1297044052`. Any cross-runtime mismatch reopens the earliest portable gate and
 invalidates later evidence. An old green run does not cover a new SHA.
 
-S4 must not begin until the complete S3 receipt, immutable review, expected-head
-merge, post-merge Verify, and exact-main deployment are promoted.
+S3 satisfied its complete receipt, immutable review, expected-head merge,
+post-merge Verify, and exact-main deployment gates. S4 may proceed only in this
+order: promote the cryptographic ADR, freeze an implementation source and exact
+receipt, obtain a second immutable implementation review, then merge and verify the
+exact main deployment.
