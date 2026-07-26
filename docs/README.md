@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-07-25 KST**
+Last synchronized: **2026-07-26 KST**
 
 ## Current authority
 
@@ -21,13 +21,15 @@ plans cannot promote a current claim.
 
 `mortalos/0` preserves an opaque declared state root and has no state-transition
 event. `mortalos/1` binds exact bounded state artifacts and deterministic
-transitions, but still does not prove resource retrievability, storage durability,
-or global availability. R3 recovery remains planned work.
+transitions. The [R3 state availability ADR](STATE_AVAILABILITY_AND_RECOVERY.md)
+adds a candidate bounded manifest/chunk recovery protocol, but does not prove
+physical-domain durability or global availability.
 
 ## Architecture and compatibility
 
 - [Unified Participant Core](PARTICIPANT_CORE.md)
 - [Crash-safe durable quorum](DURABLE_QUORUM.md)
+- [R3 state availability and recovery](STATE_AVAILABILITY_AND_RECOVERY.md)
 - [Endpoint-neutral access architecture](ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](BROWSER_PARTICIPANT_COMPATIBILITY.md)
 
@@ -47,11 +49,12 @@ deadlines, submission paths, or promotion status as current authority.
 
 The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
-`2-of-3` loss/repair, and the merged S1 Participant Core within the qualifications
-in the claim matrix. S2 crash-safe durable quorum is implemented and locally
-verified but remains receipt/review/merge/deploy gated.
+`2-of-3` loss/repair, the merged S1 Participant Core, and S2 crash-safe durable
+quorum within the qualifications in the claim matrix. S3 exact logical resource
+recovery is implemented and locally verified but remains
+receipt/review/merge/deploy gated.
 
-It does not yet promote S2 before that release chain, R3 resource recovery,
-confidential replicated state, independent failure domains, a public SDK/CLI,
+It does not yet promote S3 before that release chain, confidential replicated
+state, independent failure domains, a public SDK/CLI,
 Byzantine/Sybil resistance, global death, or Firefox/WebKit durable parity. GPT is
 optional and non-authoritative.
