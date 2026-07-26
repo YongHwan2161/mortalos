@@ -1319,3 +1319,52 @@ result, and reproducible verification.
   receipt, schema, verifier, and receipt tests were removed from the source
   candidate. They may be rebuilt only after the replacement source commit passes
   the complete uninterrupted release chain.
+
+### 2026-07-26 — S2 post-squash promotion-mode receipt regression
+
+- PR #41 was independently reviewed at exact head
+  `68a0e1cb47a627cec5b4a52099781cb6aff57921`, squash-promoted to main as
+  `55db1a9b73bcffeeb4a4812ad408d31b8a4e673f`, and then failed both exact-main
+  Verify `30178769037` and Deploy `30178769027` before deployment.
+- The receipt verifier itself correctly found promotion commit `55db1a9b`, source
+  `2ef4ea9e55e6d8ebfc1934dd38a663cb0befda90`, receipt
+  `sha256:d757c480f1cf4ebb55e62c4d66e3c48e60f870c24d2c0bdc98c15b4f7ebcdfeb`,
+  and 28 exact artifacts. The first receipt test alone incorrectly required
+  `mode === "candidate"` in every repository state.
+- The test now derives the expected state from exact Git ancestry. Candidate mode
+  still requires no promotion commit; promotion mode requires a 40-hex promotion
+  commit that remains an ancestor of current HEAD. Every verifier, receipt,
+  schema, evidence, runtime, and workflow byte remains unchanged.
+- Focused validation passed S2 receipt mutations 12/12 and direct promotion-mode
+  `verify:s2`. A clean uninterrupted full `npm test` then passed governance 30/30,
+  S0/S1/S2 receipts 12/12 each, Participant Core 10/10 and 10,000 schedule parity,
+  Node durability 8/8, actual Chromium handoff and A/B/C loss/repair 100/100 each,
+  conformance 76/76, properties 10,000/10,000, state and transport 10,000,
+  multi-browser 7/7, Lab/API 23/23, cost controls 14/14, R1 7/7, UX, portable
+  10,000/10,000, JavaScript/Python differentials, singleton, and H2.
+- Promotion remains HOLD until this correction passes exact-head policy and Verify,
+  independent immutable review, expected-head merge, and exact-main Verify plus
+  Deploy.
+- PR #42 head `e6dff823f5f089c527ab82e1ed3e779fef1924a2` passed policy
+  `30180258137` but exact-head Verify `30180258092` failed the synthetic squash
+  test. The helper used `git write-tree`, which reads the mutable index. The local
+  pre-commit run therefore synthesized the unchanged main tree, while CI's clean
+  checkout synthesized the PR head and correctly detected the changed HANDOFF
+  digest. The replacement helper resolves an explicit committed tree: the found
+  promotion commit in promotion mode, or committed HEAD in candidate mode. No
+  uncommitted or staged index state can influence the synthetic receipt proof.
+- Replacement head `43c384e0162e981eb670aed7c5c3dbea9bcf84ca` passed a
+  second clean uninterrupted local `npm test` and policy `30181648416/1`.
+  Exact-head Verify `30181647893/1` passed its own full `npm test`, Participant
+  Core parity, and portable comparison, then failed the standalone `verify:lab`
+  step because `runDurableProof()` waited for
+  `#durable-status[data-state="accept"]` immediately after nurture. That selector
+  was already true from durable creation, so CI could read sequence `0` before the
+  async click handler committed sequence `1`.
+- The Lab verifier now waits for the authoritative public snapshot to expose both
+  `sequence === "1"` and `pulse_count === 1` with the existing 20-second bound.
+  This removes the stale-status race without sleeping, relaxing assertions, or
+  changing product/runtime behavior.
+- The corrected `npm run verify:lab` passed three consecutive focused runs. Every
+  run completed the full actual-Chromium Lab gate and persistent handoff 20/20;
+  measured relay cadence was 38–39 operations per 12 seconds with zero local 429s.
