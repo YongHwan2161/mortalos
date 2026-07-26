@@ -1471,3 +1471,14 @@ result, and reproducible verification.
   promotion artifact. The fixture now obtains the immutable discovered S3
   promotion tree (or the candidate HEAD before promotion) before constructing the
   synthetic merge. Production receipt verification remains unchanged.
+- The first independent PR #44 review correctly BLOCKed the ADR because a shared
+  epoch AES key plus an endpoint-local durable counter can reuse a GCM IV after
+  cross-endpoint failover, and because a JSON-number epoch cannot preserve the
+  advertised unsigned 64-bit range under JCS. It also caught two Markdown
+  hard-break spaces that made the claimed `git diff --check` result false.
+- The remediated contract makes allocation epoch-wide through one linearizable
+  compare-and-swap authority, forbids encryption until an authenticated
+  non-overlapping reservation receipt is committed, retires the key if authority
+  state is lost, and adds concurrent/failover/local-only/overlap rejection. Epochs
+  and counters are canonical decimal strings through `2^64 - 1`; the trailing
+  whitespace is removed.

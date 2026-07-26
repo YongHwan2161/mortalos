@@ -529,8 +529,14 @@ preserving deterministic integrity, recovery, and explicit membership changes.
   `N+1`, while authorized survivors can.
 - [ ] Replayed, substituted, truncated, reordered, or cross-resource ciphertext
   fails authentication without exposing partial plaintext.
-- [ ] Nonce uniqueness is enforced by construction and tested across at least
-  1,000,000 generated encryption records with zero collision.
+- [ ] Nonce uniqueness is enforced through one epoch-wide linearizable counter
+  authority and tested across at least 1,000,000 records from concurrent writers
+  with zero collision; cross-endpoint failover, local-only allocation,
+  lost-authority, stale, overlap, rollback, and overflow all fail before
+  encryption.
+- [ ] Every unsigned 64-bit epoch and counter is represented in JCS as a canonical
+  decimal string and boundary-tested across `2^53` through `2^64 - 1`; no JSON
+  number coercion is accepted.
 - [ ] Rotation interrupted at every write boundary restores the old complete epoch
   or the new complete epoch, never a mixed accepted state.
 - [ ] Metadata leakage and absence of retroactive secrecy are visibly documented.

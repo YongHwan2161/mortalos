@@ -22,12 +22,14 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 - Intended change: reconcile S3 promotion evidence; specify the complete
   standards-only S4 cryptographic contract before implementation, including
   AES-256-GCM record encryption, RSA-OAEP-3072-SHA-256 epoch-key wrapping,
-  per-key 96-bit nonce allocation, canonical AAD and wrap labels, membership/epoch
-  binding, atomic rotation and recovery, removed-member semantics, metadata
-  leakage, migration, and fail-closed test obligations.
+  epoch-wide linearizable per-key 96-bit nonce allocation, canonical decimal
+  64-bit epochs/counters, canonical AAD and wrap labels, membership/epoch binding,
+  atomic rotation and recovery, removed-member semantics, metadata leakage,
+  migration, and fail-closed test obligations.
 - Required gates: no runtime or dependency changes; exact doc link/spec checks;
   the S3 synthetic merge fixture must remain pinned to the immutable S3 promotion
   tree when later branches add files;
+  no endpoint-local counter allocator may be used with a shared epoch key;
   crypto ADR independently reviewed at an immutable PR head; expected-head squash
   merge; post-merge Verify and Deploy. S4 implementation remains forbidden until
   the ADR is promoted.

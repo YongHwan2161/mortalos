@@ -2,8 +2,8 @@
 
 Status: **PROPOSED ADR — IMPLEMENTATION HOLD**
 
-Decision owner: `codex-protocol-kernel`  
-Independent reviewer: `reviewer-merge-gate`  
+Decision owner: `codex-protocol-kernel`
+Independent reviewer: `reviewer-merge-gate`
 Decision base: `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`
 
 No S4 runtime code may merge until this ADR passes an immutable independent review
@@ -144,18 +144,27 @@ duplicate encryption-key digests fail closed before any wrap or unwrap.
 
 An accepted confidential epoch contains:
 
-- a strictly increasing unsigned 64-bit `epoch`;
+- a strictly increasing unsigned 64-bit `epoch`, encoded in every JCS document as
+  its canonical decimal string;
 - the exact accepted membership-head digest;
 - a fresh WebCrypto-generated AES-256-GCM key;
-- a 64-bit durable invocation high-water mark;
+- an epoch-wide, linearizable 64-bit invocation high-water mark, encoded as its
+  canonical decimal string;
 - one wrap for every and only current custodian;
 - one or more completely encrypted resource packages; and
 - an atomic active-epoch record.
 
 The public `epoch_id` is a MortalOS domain-separated SHA-256 commitment to the
-canonical suite, organism ID, epoch number, membership-head digest, transition ID,
+canonical suite, organism ID, canonical decimal epoch string,
+membership-head digest, transition ID,
 and sorted current custodian encryption-key digests. It is not derived from the
 secret key.
+
+An epoch string is `"0"` or a non-zero ASCII decimal integer with no leading zero,
+in the closed range `0` through `18446744073709551615`. Implementations compare it
+as an unsigned 64-bit integer (for example with `BigInt`) and never coerce it to a
+JSON number. This rule applies to the epoch in every ID basis, AAD, wrap label,
+manifest, reservation, package, receipt, and active record.
 
 An epoch key is never reused for another `epoch_id`, another organism, or a changed
 membership. Accepted membership change always creates a fresh epoch key and
@@ -177,21 +186,42 @@ through `2^32 - 1`; the wider encoding is reserved for format stability, not a
 larger security claim. Reaching the cap requires a fresh epoch key before another
 encryption.
 
-Before encryption, the durable adapter atomically reserves the next counter and
-persists the new high-water mark. Reservation is monotonic and never rolled back.
-A crash may leave a gap; it must never permit reuse. A stale writer, duplicated
-reservation, counter decrease, counter overflow, unknown high-water state, or
-mixed deterministic/random IV construction, or suite-cap exhaustion fails before
-WebCrypto is called.
+Counter allocation is epoch-wide, not endpoint-local. Every writer for one
+`epoch_id` must use the same linearizable `reserveRange(expectedHighWater, count)`
+authority. A reservation atomically compares the expected high-water mark, commits
+one non-overlapping half-open counter interval, and returns a canonical,
+authenticated reservation receipt binding the authority ID, `epoch_id`, prior and
+next high-water marks, interval, request ID, and count. The confidential package
+commits that receipt and each chunk commits one counter within its interval.
+
+The counter authority is part of the S4 confidentiality TCB. It is not the relay
+or a per-browser storage object, and a caller cannot substitute a local allocator
+after failover. The reference adapter must provide linearizable compare-and-swap
+across processes and endpoints. A future physical deployment must name the actual
+authority and durability domain in its topology receipt; S4 alone does not claim
+that domain is independently durable.
+
+Before encryption, a writer waits until its reservation is durably committed and
+independently verifies the receipt. Only then may it call WebCrypto. Reservation
+is monotonic and never rolled back. A crash may leave a gap; it must never permit
+reuse. A stale writer, conflicting concurrent request, duplicated interval,
+counter decrease, counter overflow, unknown or lost authority state, invalid
+receipt, local-only allocator, mixed deterministic/random IV construction, or
+suite-cap exhaustion fails before WebCrypto is called. If authoritative state
+cannot be recovered exactly, the key is retired and a fresh epoch key is required;
+scanning visible ciphertext must not reconstruct authority because a previously
+reserved but unpublished IV may be absent.
 
 Counter values may repeat after an epoch rotation because the AES key is fresh.
 They may not repeat under the same key. Imports verify that all IVs are exactly 12
-bytes, use the fixed field, are unique within the package, and do not exceed the
-accepted reservation evidence.
+bytes, use the fixed field, are unique within the package, fall within the exact
+committed reservation, and do not exceed the accepted epoch-wide high-water
+evidence.
 
-The implementation gate generates at least 1,000,000 sequential records under one
-key-allocation model and must observe exactly 1,000,000 distinct IV byte strings.
-It also injects stale, duplicate, overflow, rollback, and concurrent reservations.
+The implementation gate generates at least 1,000,000 records from concurrent
+writers sharing one epoch authority and must observe exactly 1,000,000 distinct IV
+byte strings. It also injects cross-endpoint failover, stale, duplicate, overlap,
+overflow, rollback, lost-authority, local-allocator, and concurrent reservations.
 
 ## 7. Canonical associated data
 
@@ -201,7 +231,7 @@ Every encrypted chunk uses a 128-bit GCM tag and canonical UTF-8 AAD with exact 
 {
   "chunk_count": 0,
   "chunk_index": 0,
-  "epoch": 0,
+  "epoch": "0",
   "epoch_id": "sha256:...",
   "format": "mortalos-confidential-chunk-aad/1",
   "invocation_counter": "0",
@@ -241,7 +271,7 @@ the canonical UTF-8 encoding of:
 {
   "custodian_encryption_key": "sha256:...",
   "custodian_id": "mortalos-key:...",
-  "epoch": 0,
+  "epoch": "0",
   "epoch_id": "sha256:...",
   "format": "mortalos-epoch-wrap-label/1",
   "membership_head": "sha256:...",
@@ -267,7 +297,8 @@ Encryption is layered over S3:
 
 1. Validate the accepted lineage, membership descriptor, resource limits, and
    confidential transition input.
-2. Reserve all required invocation counters durably.
+2. Reserve all required invocation counters through the shared epoch-wide
+   linearizable authority and verify its committed receipt.
 3. Encrypt fixed bounded plaintext chunks locally with exact AAD.
 4. Construct and verify the ciphertext-only package and every current-member wrap.
 5. Store and replicate only ciphertext packages through S3 adapters.
@@ -296,8 +327,8 @@ An accepted membership change from epoch `N` to `N+1` requires:
 3. a fresh epoch key;
 4. wraps for every and only the new membership;
 5. complete re-encryption of the active plaintext under epoch `N+1`; and
-6. atomic activation of the new membership, confidential package, wraps, counter
-   state, and active-epoch record.
+6. atomic activation of the new membership, confidential package, wraps,
+   epoch-wide counter-authority binding and state, and active-epoch record.
 
 Every write boundary must recover to one of two complete states:
 
@@ -367,8 +398,9 @@ S4 implementation remains HOLD until all of the following pass on one frozen sou
   negatives;
 - byte-identical Node WebCrypto and actual Chromium vectors;
 - exact JCS AAD and wrap-label fixtures;
-- at least 1,000,000 IV allocations with zero duplicates, plus concurrent,
-  rollback, stale, and overflow rejection;
+- at least 1,000,000 IV allocations from concurrent endpoints sharing one
+  epoch-wide linearizable authority with zero duplicates, plus failover, overlap,
+  local-only allocation, lost-authority, rollback, stale, and overflow rejection;
 - relay and store capture with zero plaintext, raw epoch key, private key, or public
   confidential digest;
 - any-two S3 ciphertext recovery followed by exact authorized decryption;
