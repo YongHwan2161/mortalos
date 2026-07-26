@@ -32,6 +32,8 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   no endpoint-local counter allocator may be used with a shared epoch key;
   counter reservations must use the exact epoch-bound strict-Ed25519/JCS receipt
   contract and exhaustive decimal-string boundary matrix;
+  valid authority forks are detected only when jointly observed and require an
+  unchanged-membership authority-only epoch rotation; hidden forks are nonclaims;
   crypto ADR independently reviewed at an immutable PR head; expected-head squash
   merge; post-merge Verify and Deploy. S4 implementation remains forbidden until
   the ADR is promoted.

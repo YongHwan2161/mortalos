@@ -532,16 +532,23 @@ preserving deterministic integrity, recovery, and explicit membership changes.
 - [ ] Nonce uniqueness is enforced through one epoch-wide linearizable counter
   authority and tested across at least 1,000,000 records from concurrent writers
   with zero collision; cross-endpoint failover, local-only allocation,
-  lost-authority, stale, overlap, rollback, and overflow all fail before
+  lost-authority, stale, rollback, and overflow all fail before
   encryption.
 - [ ] The counter authority uses an epoch-bound strict Ed25519 public key and exact
-  domain-separated JCS reservation receipts; replacement keys, invalid signatures,
-  overlapping histories, and receipts not committed by the package all reject.
+  domain-separated JCS reservation receipts; replacement keys, forged or altered
+  signatures, stale chains, and receipts not committed by the package all reject.
+- [ ] A conforming authority's concurrent CAS emits one signed successor per prior
+  tuple. Jointly observed valid overlaps create explicit authority-equivocation
+  evidence and block the epoch; hidden forks and compromised-authority
+  confidentiality are explicit nonclaims.
 - [ ] Every unsigned 64-bit epoch and counter is represented in JCS as a canonical
   decimal string and boundary-tested across `2^53` through `2^64 - 1`; no JSON
   number coercion is accepted.
 - [ ] Rotation interrupted at every write boundary restores the old complete epoch
   or the new complete epoch, never a mixed accepted state.
+- [ ] Authority loss or equivocation can rotate `N→N+1` with unchanged membership,
+  a fresh authority key, fresh AES key, complete re-encryption/rewrapping, and
+  quorum-authorized atomic activation.
 - [ ] Metadata leakage and absence of retroactive secrecy are visibly documented.
 
 ### HOLD / rollback

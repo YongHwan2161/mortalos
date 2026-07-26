@@ -1479,9 +1479,9 @@ result, and reproducible verification.
 - The remediated contract makes allocation epoch-wide through one linearizable
   compare-and-swap authority, forbids encryption until an authenticated
   non-overlapping reservation receipt is committed, retires the key if authority
-  state is lost, and adds concurrent/failover/local-only/overlap rejection. Epochs
-  and counters are canonical decimal strings through `2^64 - 1`; the trailing
-  whitespace is removed.
+  state is lost, and initially claimed concurrent/failover/local-only/overlap
+  rejection. Epochs and counters are canonical decimal strings through
+  `2^64 - 1`; the trailing whitespace is removed.
 - The second independent review kept PR #44 BLOCKed because “authenticated
   reservation receipt” still omitted exact schema, signature bytes, domain,
   verification key, and epoch binding, while decimal counter representation was
@@ -1491,3 +1491,15 @@ result, and reproducible verification.
   preimage, receipt, digest, package binding, arithmetic, and key-retirement
   rules; and adds an exhaustive per-surface decimal matrix with `2^32`, `2^53`,
   and `2^64` boundary vectors. Authority compromise is now an explicit nonclaim.
+- The third independent review correctly BLOCKed a remaining claim contradiction:
+  two individually valid receipts signed by a compromised bound authority cannot
+  both be rejected without joint history, so “overlap rejection” exceeded the
+  stated non-Byzantine model. It also found no authority-only successor procedure
+  when membership stays unchanged.
+- The corrected ADR conditions confidentiality on a conforming uncompromised
+  authority, chains receipts into the atomic active record, requires exactly one
+  CAS successor in the honest reference model, and detects valid forks only when
+  jointly observed. Such evidence disables writes and triggers a quorum-authorized
+  unchanged-membership `N→N+1` rotation with fresh authority and AES keys,
+  re-encryption, rewrapping, and old-or-new atomic recovery. Hidden forks and prior
+  exposure remain explicit nonclaims.

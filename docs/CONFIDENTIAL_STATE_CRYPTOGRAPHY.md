@@ -67,11 +67,12 @@ versioned dispatcher is explicitly implemented.
 
 ### Promotable claim
 
-An operator that sees only an S4 relay or remote-store capture cannot recover
-resource plaintext or an unwrapped epoch key. A custodian removed at epoch `N`
-does not receive the epoch `N+1` key and cannot decrypt state first created under
-epoch `N+1`, while an authorized surviving custodian with its bound private
-decryption key can.
+Assuming the exact epoch-bound counter authority follows its linearizable
+non-overlap contract and its signing key is not compromised, an operator that sees
+only an S4 relay or remote-store capture cannot recover resource plaintext or an
+unwrapped epoch key. A custodian removed at epoch `N` does not receive the epoch
+`N+1` key and cannot decrypt state first created under epoch `N+1`, while an
+authorized surviving custodian with its bound private decryption key can.
 
 ### Explicit non-claims
 
@@ -83,7 +84,9 @@ decryption key can.
   compromised process, browser, OS, hardware, or user account.
 - S4 trusts the epoch-bound counter authority not to sign overlapping reservation
   histories. Compromise of that authority can violate nonce uniqueness; suite 1
-  provides detection and key retirement after evidence, not Byzantine allocation.
+  detects a fork only when conflicting receipts are jointly observed and then
+  retires the key. It cannot undo prior exposure or detect a hidden fork, and does
+  not provide Byzantine allocation.
 - Any one authorized custodian receives a wrap it can decrypt. Quorum controls
   lineage mutation, not read access by an already authorized custodian.
 - Encryption does not prove protocol validity, availability, liveness, physical
@@ -252,6 +255,7 @@ The exact reservation signature basis is this JCS object:
   "interval_start": "0",
   "next_counter": "16",
   "prior_next_counter": "0",
+  "prior_receipt_digest": null,
   "request_id": "reservation:...",
   "suite": "mortalos-confidential-state-suite/1"
 }
@@ -275,6 +279,7 @@ receipt has exactly three keys:
     "interval_start": "0",
     "next_counter": "16",
     "prior_next_counter": "0",
+    "prior_receipt_digest": null,
     "request_id": "reservation:...",
     "suite": "mortalos-confidential-state-suite/1"
   },
@@ -291,6 +296,13 @@ digest, `interval_start`, `interval_end_exclusive`, and authority ID. Its chunk 
 index `i` must use counter `interval_start + i`, and `count` must equal the package
 chunk count.
 
+The first reservation in an epoch has `prior_receipt_digest: null`. Every later
+reservation carries the exact digest of the previously committed receipt. The
+atomic active record stores both `next_counter` and
+`last_counter_receipt_digest`. Before activation, the candidate basis must match
+both active values; after activation, both advance together. A stale or unlinked
+candidate is rejected without publishing its package.
+
 The verifier checks exact keys, formats, canonical bytes, strict public key and
 signature encodings, recomputed authority ID, epoch binding, receipt signature and
 digest, request-ID grammar (`reservation:` plus exactly 32 base64url bytes), and
@@ -299,9 +311,20 @@ integer arithmetic and requires:
 
 - `count` from `1` through `64`;
 - `prior_next_counter == interval_start`;
+- `prior_receipt_digest` is `null` only when `prior_next_counter == "0"`, otherwise
+  it is the active exact tagged receipt digest;
 - `interval_end_exclusive == interval_start + count`;
 - `next_counter == interval_end_exclusive`; and
 - `0 <= interval_start < interval_end_exclusive <= 4294967296`.
+
+A conforming authority's linearizable compare-and-swap emits at most one signed
+successor for one `(epoch_id, prior_next_counter, prior_receipt_digest)` tuple.
+Concurrent reference tests must prove exactly one success and all stale requests
+must fail before encryption. If two correctly signed successors of the same tuple
+are later jointly observed, the observer records `counter_authority_equivocation`,
+blocks both from new activation, retires the epoch key, and starts the
+authority-only rotation below. Either receipt in isolation remains
+cryptographically valid; suite 1 makes no hidden-fork detection claim.
 
 Before encryption, a writer waits until its reservation is durably committed and
 independently verifies the receipt. Only then may it call WebCrypto. Reservation
@@ -340,8 +363,9 @@ evidence.
 
 The implementation gate generates at least 1,000,000 records from concurrent
 writers sharing one epoch authority and must observe exactly 1,000,000 distinct IV
-byte strings. It also injects cross-endpoint failover, stale, duplicate, overlap,
-overflow, rollback, lost-authority, local-allocator, and concurrent reservations.
+byte strings. It also injects cross-endpoint failover, stale, duplicate, honest
+CAS conflict, jointly observed valid overlap, overflow, rollback, lost-authority,
+local-allocator, and concurrent reservations.
 
 ## 7. Canonical associated data
 
@@ -438,22 +462,35 @@ is distinct `key_unavailable`. Authentication or semantic mismatch is
 `confidential_state_interrupted`. Error details must not reveal whether a guessed
 plaintext, key, tag, label, or individual chunk was close to valid.
 
-## 10. Membership rotation and crash semantics
+## 10. Membership or authority rotation and crash semantics
 
-An accepted membership change from epoch `N` to `N+1` requires:
+An accepted rotation from epoch `N` to `N+1` requires:
 
-1. the current quorum-authorized membership successor;
-2. exact new-custodian acceptance including encryption-key binding;
-3. a fresh epoch key;
-4. wraps for every and only the new membership;
-5. complete re-encryption of the active plaintext under epoch `N+1`; and
-6. atomic activation of the new membership, confidential package, wraps,
+1. a current-quorum-authorized confidential rotation input naming exactly one
+   reason: `membership_change`, `counter_authority_lost`, or
+   `counter_authority_equivocation`;
+2. for membership change, exact new-custodian acceptance including encryption-key
+   binding; otherwise the exact unchanged membership and encryption-key set;
+3. for authority loss or equivocation, a fresh strict Ed25519 counter-authority key
+   and ID; for membership-only change, the prior healthy authority may remain;
+4. a fresh AES epoch key and reset counter chain;
+5. wraps for every and only the resulting membership;
+6. complete re-encryption of the active plaintext under epoch `N+1`; and
+7. atomic activation of the resulting membership, confidential package, wraps,
    epoch-wide counter-authority binding and state, and active-epoch record.
+
+Authority loss or equivocation immediately disables new encryption under epoch
+`N`. It does not require a membership change, and the compromised authority cannot
+authorize its own replacement: the existing MortalOS quorum authorizes the
+rotation input and exact successor package. If an authorized custodian can still
+decrypt the active epoch, it re-encrypts for the same membership under the fresh
+epoch and authority. If no authorized endpoint can decrypt, the result is
+`key_unavailable`; it is never empty state, invalid lineage, or death.
 
 Every write boundary must recover to one of two complete states:
 
-- old membership plus complete readable epoch `N`; or
-- new membership plus complete readable epoch `N+1`.
+- old configuration plus complete readable epoch `N`; or
+- quorum-authorized resulting configuration plus complete readable epoch `N+1`.
 
 A mixed membership/key/package state is never active. Until the final atomic commit,
 epoch `N` remains the only active state and its ciphertext, wraps, and local key
@@ -519,8 +556,12 @@ S4 implementation remains HOLD until all of the following pass on one frozen sou
 - byte-identical Node WebCrypto and actual Chromium vectors;
 - exact JCS AAD and wrap-label fixtures;
 - at least 1,000,000 IV allocations from concurrent endpoints sharing one
-  epoch-wide linearizable authority with zero duplicates, plus failover, overlap,
+  epoch-wide linearizable authority with zero duplicates, plus failover,
   local-only allocation, lost-authority, rollback, stale, and overflow rejection;
+- conforming CAS conflict tests with exactly one signed successor per prior tuple;
+  jointly observed valid overlapping receipts produce explicit authority
+  equivocation and authority-only rotation, while hidden-fork detection remains an
+  explicit nonclaim;
 - relay and store capture with zero plaintext, raw epoch key, private key, or public
   confidential digest;
 - any-two S3 ciphertext recovery followed by exact authorized decryption;
