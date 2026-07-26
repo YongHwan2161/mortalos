@@ -11,8 +11,9 @@ deployment contract and exact-source public Pages release are executable and
 verified. The bounded `mortalos/1` state runtime is executable and cross-language
 verified. The S1 candidate routes live, durable-reload, handoff, quorum, catch-up,
 fork, snapshot, and availability behavior through one Participant Core with a
-static adapter boundary. Crash-safe durable quorum is promoted. R3 bounded state
-availability/recovery is implemented as an exact-source candidate.
+static adapter boundary. Crash-safe durable quorum and R3 bounded state
+availability/recovery are promoted. S4 confidential state is an exact-head
+implementation candidate with promotion still receipt/review/merge/deploy gated.
 
 ## 1. Test ID convention
 
@@ -181,6 +182,12 @@ A change to any invariant, message field, domain separator, validation precedenc
 | S3 independent 1 MiB verification | `scripts/verify-state-package.mjs`, `r1/python/state_package_verify.py`, and `test/vectors/state-package-v1.json` reproduce 16 chunk digests, resource root, state root, input, manifest, and receipt bytes | PASS required on exact S3 head |
 | S3 any-two recovery and adversarial matrix | `src/state/recovery.mjs` and `test/state-package.test.mjs` delete the third replica plus relay, reconstruct exact bytes, reject tamper/order/duplicate/size/stale/limit/decoding failures, and preserve the prior active state | PASS required on exact S3 head |
 | S3 10,000 deterministic recovery schedules | fixed-seed loss/reorder/duplicate/partial/tamper planning produces deterministic bounded outcomes and zero metadata-only acceptance | PASS required on exact S3 head |
+| S4 standards and cross-runtime cryptography | `test/confidential-crypto-vectors.test.mjs`, pinned C2SP/Wycheproof RSA-OAEP-3072/SHA-256 vector, NIST AES-256-GCM KAT, and `scripts/verify-confidential-chromium.mjs` | Node and actual Chromium byte-identical PASS required on exact S4 head |
+| S4 epoch identity and nonce allocation | `src/confidential/counter.mjs`, `lab/storage/confidential-counter-authority-store.mjs`, canonical decimal-string boundary tests, strict Ed25519/JCS receipts, concurrent CAS, one-million-IV gate, and actual Chromium persistent-profile restart | Exactly 1,000,000 distinct IVs, one signed successor per prior tuple, one winner across two browser endpoints, and the same non-extractable key/next counter after full process restart required |
+| S4 ciphertext-only capture and key custody | `src/confidential/keys.mjs`, `src/confidential/package.mjs`, and `test/confidential-package.test.mjs` | No plaintext marker/digest/raw epoch key/private key; RSA private material non-extractable; recovered AES handles non-extractable and decrypt-only; manifest transition/authority/key-set recomputation rejects local-authority substitution before reservation |
+| S4 any-two recovery and private decryption | `src/confidential/recovery.mjs` layered over `src/state/recovery.mjs`; `test/confidential-s3-recovery.test.mjs` | AB, AC, and BC each recover S3 ciphertext and decrypt the exact 1 MiB resource after relay/third loss |
+| S4 removal and rotation | branded accepted heads, current-quorum rotation signatures, runtime-branded equivocation observation, membership removal, and lost/equivocating authority paths in `src/confidential/counter.mjs`, `src/confidential/recovery.mjs`, and `test/confidential-package.test.mjs` | Literal/cloned/forged authority rejected; observed fork retires the bound authority before evidence is usable; removed `N` custodian denied `N+1`; survivors succeed; reason-specific fresh authority/AES key and complete rewrap required |
+| S4 old-or-new crash semantics | counter, every wrap/chunk, package, rotation, and activation faults in `test/confidential-package.test.mjs` | Only the complete old or complete new epoch is active; mixed state never accepted |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.
 

@@ -5,7 +5,47 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Approve the S4 confidential-state cryptographic ADR
+### ACTIVE — Implement S4 confidential state and epoch-key recovery
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `39529337b2a739b1aee4697e680643d77704bbaa`
+- Work branch: `agent/codex-protocol-kernel--s4-confidential-state`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--s4-confidential-state`
+- Exact intended shared areas: confidential-state runtime modules under
+  `src/confidential/`; Node and actual-Chromium cryptographic tests and verifiers;
+  S4 receipt schema, fixture, validator, and package/workflow commands; the S4
+  cryptographic ADR plus claim/stage/roadmap/plan/threat-model/traceability and
+  rejection-code documentation.
+- Exact compatibility paths, only where integration requires them:
+  `src/state/`, `src/rejection-codes.mjs`, `package.json`,
+  `.github/workflows/verify.yml`, and matching tests.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Intended change: implement the promoted
+  `mortalos-confidential-state-suite/1` contract with a strict Ed25519/JCS
+  epoch counter authority, canonical decimal-string counters, AES-256-GCM
+  record encryption, RSA-OAEP-3072-SHA-256 custodian wraps, ciphertext-only
+  S3 storage, any-two recovery and decryption, fail-closed removal, and atomic
+  key/authority rotation.
+- Required gates: one million unique IV allocations with exact cap/boundaries;
+  Node and actual Chromium byte-identical vectors; relay/store capture with no
+  plaintext, AES key, or RSA private material; every two-of-three S3 recovery
+  combination decrypts the exact one-MiB resource after third-replica and relay
+  deletion; strict reservation/receipt/fork/removal/rotation fault matrices;
+  exact S4 receipt; full existing repository suite; immutable independent
+  review; expected-head squash merge; exact-main Verify and Deploy.
+- Excluded: claims against a compromised/Byzantine counter authority, hidden
+  forks not jointly observed, retroactive secrecy, secure erasure, S5 public
+  SDK/CLI packaging, S6 Capsule UI, and S7 physical/provider independence.
+- Independent review of PR #45 at immutable head
+  `9f2236dc60ed826ccb7639e2b0f165385976972a` returned **BLOCK**: recovered AES
+  handles could encrypt, jointly observed forks did not retire the live authority,
+  rotation trusted a caller literal instead of quorum proof, and one ciphertext
+  mutation was nondeterministic. That head and its S4 receipt are invalid for
+  promotion. Remediation must freeze a new direct child of this task base, rebuild
+  a fresh receipt, open a replacement PR, and receive a new immutable-head review.
+
+### HISTORICAL — Approve the S4 confidential-state cryptographic ADR
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`

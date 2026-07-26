@@ -52,6 +52,12 @@ jobs:
       - name: Verify exact source before deployment
         run: npm test
 
+      - name: Verify promoted S0 through S3 receipts
+        run: |
+          npm run verify:baseline
+          npm run verify:s1
+          npm run verify:s2
+          npm run verify:s3
       - name: Deploy exact relay artifact and Durable Object migration
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
