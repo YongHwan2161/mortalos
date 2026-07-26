@@ -62,6 +62,19 @@ Reject {
 | `E_STATE_NEXT_ROOT_MISMATCH` | Deterministic next-state bytes differ from the supplied sidecar or declared next state root. |
 | `E_STATE_RECEIPT_MISMATCH` | The supplied v1 receipt bytes differ from the deterministic engine receipt. |
 | `E_STATE_CUSTODY_CHANGED` | A `state-transition` attempts to change custody or quorum. |
+| `E_STATE_PACKAGE_INVALID` | A state-package input, manifest, receipt, or transition sidecar is malformed, noncanonical, wrong-versioned, or has unknown fields. |
+| `E_STATE_PACKAGE_LIMIT_EXCEEDED` | A resource, chunk, document, source count, or inventory exceeds an S3 fixed ceiling. |
+| `E_STATE_PACKAGE_DECODING_UNSUPPORTED` | A package requests compression, encoding, or a non-raw resource representation. |
+| `E_STATE_PACKAGE_CHUNK_ORDER` | A manifest chunk index does not equal its canonical array position. |
+| `E_STATE_PACKAGE_CHUNK_DUPLICATE` | A manifest repeats a content digest. |
+| `E_STATE_PACKAGE_CHUNK_SIZE` | A chunk or aggregate size differs from the fixed manifest contract. |
+| `E_STATE_PACKAGE_CHUNK_DIGEST_MISMATCH` | Fetched or stored chunk bytes do not match their named digest. |
+| `E_STATE_PACKAGE_RESOURCE_ROOT_MISMATCH` | Reconstructed ordered resource bytes do not match the aggregate root. |
+| `E_STATE_PACKAGE_STALE_ROOT` | A package prior root does not equal the accepted parent state root. |
+| `E_STATE_PACKAGE_INPUT_MISMATCH` | The canonical transition input does not match the manifest input digest. |
+| `E_STATE_PACKAGE_RECEIPT_MISMATCH` | Receipt bytes or their domain-separated digest differ from the deterministic package receipt. |
+| `E_STATE_UNAVAILABLE` | The bounded recovery observation cannot obtain every required chunk; this is not protocol death. |
+| `E_STATE_RECOVERY_INTERRUPTED` | A staged chunk or final active-record boundary was interrupted; the prior verified active record remains. |
 | `E_EVENT_PAYLOAD_HASH_ENCODING` | Event payload hash is not a valid v0 SHA-256 encoding. |
 | `E_CUSTODIAN_COUNT_RANGE` | Custodian count is outside 1 through 16. |
 | `E_CUSTODIAN_DUPLICATE_KEY` | Two custodians declare the same public key. |

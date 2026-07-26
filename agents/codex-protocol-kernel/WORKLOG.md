@@ -1368,3 +1368,37 @@ result, and reproducible verification.
 - The corrected `npm run verify:lab` passed three consecutive focused runs. Every
   run completed the full actual-Chromium Lab gate and persistent handoff 20/20;
   measured relay cadence was 38–39 operations per 12 seconds with zero local 429s.
+
+### 2026-07-26 — S3 R3 state availability and recovery candidate
+
+- S2 correction PR #42 independently PASSed at
+  `a86ba9a8a5f2baea1de306b982c0df2da3990a19`, squash-merged as exact main
+  `e04a579081d96a834455abba79c66e4a102a4487`, and passed post-merge Verify
+  `30185065340/1` plus Deploy `30185065328/1`. The live artifact digest is
+  `sha256:rmbyXLL2vg0rnHkzWw5yQRazHLADxd9acrQr3M-iqt4`; public Chromium and
+  persistent handoff 20/20 passed. Issue #31 was closed with this evidence.
+- S3 defines a raw-only canonical state-package manifest, deterministic transition
+  input and receipt, domain-separated chunk/resource/state/receipt hashes, fixed
+  64 KiB chunks, a 4 MiB resource ceiling, at most 64 chunks, eight sources, and
+  64 inventory entries per source. The reference resource is deterministic 1 MiB
+  split into 16 distinct chunks.
+- `mortalos-state-package-transition/1` is dispatched through the existing
+  `state-transition` validator. Exact manifest, receipt, genome, parent root, next
+  root, and event payload are required; adapters never receive validation
+  capability.
+- Content-addressed recovery treats inventories as hints, verifies each fetched
+  chunk and the reconstructed aggregate root, and updates the active record only
+  after complete verification. Missing chunks return `state_unavailable`;
+  interruption leaves the prior active record and resumable verified chunks.
+- Focused S3 tests pass 7/7: exact 1 MiB binding; lineage acceptance and receipt
+  tamper rejection; each any-two pair after third-replica plus relay deletion;
+  missing-state preservation; changed/reordered/duplicate/wrong-size/wrong-
+  manifest/stale/oversized/decoding/inventory/source bounds; resume/idempotence;
+  and 10,000 deterministic schedules with zero metadata-only acceptance.
+- The independent Python verifier reproduces all 16 chunk digests, resource root,
+  manifest, next state root, input, and receipt bytes. Existing state tests pass
+  4/4 including 10,000 transitions; full conformance and mortality pass 76/76,
+  including the calibrated 1,152-unit boundary and unchanged H2 golden trace.
+- Promotion remains HOLD until source freeze, exact S3 receipt, full `npm test`,
+  immutable independent review, expected-head merge, and exact-main Verify plus
+  Deploy.

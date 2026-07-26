@@ -5,6 +5,11 @@ import {
   parseJsonBytes
 } from "../codec.mjs";
 import { decodeBase64Url, encodeBase64Url } from "../bytes.mjs";
+import {
+  StatePackageError,
+  STATE_PACKAGE_TRANSITION_FORMAT,
+  verifyStatePackageTransitionPayload
+} from "./package.mjs";
 
 export const STATE_ENGINE_VERSION = "mortalos-state/1";
 export const STATE_INPUT_FORMAT = "mortalos-state-input/1";
@@ -232,6 +237,21 @@ export function verifyStateTransitionPayload({
   genomeBytes,
   payload
 }) {
+  if (payload?.format === STATE_PACKAGE_TRANSITION_FORMAT) {
+    try {
+      return verifyStatePackageTransitionPayload({
+        expectedGenomeHash,
+        expectedNextStateRoot,
+        expectedPriorStateRoot,
+        payload
+      });
+    } catch (error) {
+      if (error instanceof StatePackageError) {
+        throw new StateTransitionError(error.code, error.fieldPath, error.detail);
+      }
+      throw error;
+    }
+  }
   exactKeys(payload, [
     "format",
     "input_base64url",

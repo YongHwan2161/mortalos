@@ -716,3 +716,22 @@ state-root-invariance rules in both versions.
 The committed corpus [`state-v1.json`](../test/vectors/state-v1.json), independent
 Python verifier, 10,000-case property gate, R1 wire adapter, and actual Chromium Lab
 are normative release evidence for this extension.
+
+## 15. R3 bounded state-package transition and recovery
+
+`mortalos-state-package-transition/1` is an additional `mortalos/1`
+`state-transition` payload. It carries only canonical input, manifest, and receipt
+bytes. Resource chunks are not embedded in the Pulse. The validator recomputes the
+manifest state basis, deterministic receipt, receipt digest, prior root, next root,
+genome binding, and event-payload hash before acceptance.
+
+The normative manifest, domain strings, 65,536-byte chunk size, 4,194,304-byte
+resource ceiling, 64-chunk ceiling, raw-only decoding rule, and recovery algorithm
+are defined in [STATE_AVAILABILITY_AND_RECOVERY.md](STATE_AVAILABILITY_AND_RECOVERY.md).
+An inventory is never validity evidence. Recovery verifies every fetched chunk and
+the reconstructed aggregate resource before replacing a local active-state record.
+
+`available`, `state_unavailable`, `rejected`, and `interrupted` are local recovery
+results. They do not change Pulse validity, select a lineage head, or contribute to
+the mortality classifier. In particular, missing chunks cannot become empty state
+and cannot establish protocol death.
