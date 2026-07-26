@@ -1420,3 +1420,86 @@ result, and reproducible verification.
   inventory, fetch, chunk verification, reconstruction, aggregate verification,
   activation, and prior-state preservation. The SSOT now binds base `e04a579` and
   the real `npm run test:state-package` command.
+
+### 2026-07-26 — S3 promotion closeout
+
+- PR #43 head `cbd38b00717cfa128699f63dd401fb887c555d11` passed policy
+  `30201025754/1`, exact-head Verify `30201006539/1`, and fresh independent review
+  comment `5083500477`. The parent independently reproduced body SHA-256
+  `54f941fc62f69b46a3552034f77e0e13b2f503d1eda3483b422a5bfbe39eb8f3`
+  and the 29-file JCS digest
+  `b7333e376ba43ddb9fa9a627fdad327f1a2f9f574651837894c11d0c3386c210`.
+- Expected-head squash promotion produced exact main
+  `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`. Exact-main Verify
+  `30202501790/1` passed.
+- Deploy `30202501782/1` verified source and published relay/static artifacts, then
+  failed closed because the custom domain served one stale `corpus-worker.js`
+  digest for its 60-second propagation window. Direct custom, cache-busted,
+  immutable-deployment, and canonical-pages readback converged to the expected
+  135,829-byte digest
+  `sha256:pBSBXgGtcOlV_x5o1X6IB6ShZIhl0i0MiJMdbJvYKjg`.
+- Attempt `30202501782/2` reran exact-source verification, relay and static deploy,
+  seven-asset public readback, public Chromium, English/Korean acceptance, and 20
+  persistent A-to-B handoffs and passed. Issue #32 was closed as completed.
+
+### 2026-07-26 — S4 cryptographic ADR candidate
+
+- Runtime implementation remains HOLD. This documentation-only branch proposes
+  `mortalos-confidential-state-suite/1` for independent review before code:
+  AES-256-GCM with 128-bit tags, deterministic 96-bit IVs from a fixed suite field
+  plus durable per-key 64-bit invocation counter, and
+  RSA-OAEP-3072-SHA-256 recipient-specific epoch-key wrapping through WebCrypto.
+- The ADR separates signing and encryption keys; binds organism, membership, epoch,
+  resource, chunk position, lengths, prior root, and counter through canonical AAD;
+  rotates a fresh epoch key on membership change; and requires atomic old-or-new
+  recovery at every write boundary.
+- The only future-member claim is denial of epochs created after removal. The ADR
+  explicitly rejects retroactive secrecy, secure erasure, endpoint-compromise
+  resistance, traffic-analysis resistance, and decryption-as-validity.
+- Required implementation evidence includes standard and Node/Chromium vectors,
+  one million unique IV records, relay/store capture, any-two ciphertext recovery,
+  removed-member future denial, authentication adversaries, full rotation fault
+  injection, exact S4 receipt, independent implementation review, and exact-main
+  deployment.
+- ADR candidate checks pass: locked install audited 93 installed packages with zero
+  vulnerabilities; license, specification (81 relative links), release-link
+  inventory (53 local and 12 HTTPS syntax-only), governance 30/30, and
+  `git diff --check` are clean. Runtime and dependency files are unchanged.
+- PR #44's first Verify correctly exposed a post-promotion regression in the S3
+  receipt test fixture: its synthetic GitHub merge borrowed the mutable current
+  branch tree, so the newly added ADR path was incorrectly counted as an S3
+  promotion artifact. The fixture now obtains the immutable discovered S3
+  promotion tree (or the candidate HEAD before promotion) before constructing the
+  synthetic merge. Production receipt verification remains unchanged.
+- The first independent PR #44 review correctly BLOCKed the ADR because a shared
+  epoch AES key plus an endpoint-local durable counter can reuse a GCM IV after
+  cross-endpoint failover, and because a JSON-number epoch cannot preserve the
+  advertised unsigned 64-bit range under JCS. It also caught two Markdown
+  hard-break spaces that made the claimed `git diff --check` result false.
+- The remediated contract makes allocation epoch-wide through one linearizable
+  compare-and-swap authority, forbids encryption until an authenticated
+  non-overlapping reservation receipt is committed, retires the key if authority
+  state is lost, and initially claimed concurrent/failover/local-only/overlap
+  rejection. Epochs and counters are canonical decimal strings through
+  `2^64 - 1`; the trailing whitespace is removed.
+- The second independent review kept PR #44 BLOCKed because “authenticated
+  reservation receipt” still omitted exact schema, signature bytes, domain,
+  verification key, and epoch binding, while decimal counter representation was
+  not exhaustive across reservation, package, receipt, and active surfaces.
+- The next remediation binds a distinct strict Ed25519 counter-authority key and
+  ID into the exact epoch-ID basis; freezes the reservation basis, signature
+  preimage, receipt, digest, package binding, arithmetic, and key-retirement
+  rules; and adds an exhaustive per-surface decimal matrix with `2^32`, `2^53`,
+  and `2^64` boundary vectors. Authority compromise is now an explicit nonclaim.
+- The third independent review correctly BLOCKed a remaining claim contradiction:
+  two individually valid receipts signed by a compromised bound authority cannot
+  both be rejected without joint history, so “overlap rejection” exceeded the
+  stated non-Byzantine model. It also found no authority-only successor procedure
+  when membership stays unchanged.
+- The corrected ADR conditions confidentiality on a conforming uncompromised
+  authority, chains receipts into the atomic active record, requires exactly one
+  CAS successor in the honest reference model, and detects valid forks only when
+  jointly observed. Such evidence disables writes and triggers a quorum-authorized
+  unchanged-membership `N→N+1` rotation with fresh authority and AES keys,
+  re-encryption, rewrapping, and old-or-new atomic recovery. Hidden forks and prior
+  exposure remain explicit nonclaims.

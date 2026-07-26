@@ -5,7 +5,43 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Implement S3 R3 state availability and recovery
+### ACTIVE — Approve the S4 confidential-state cryptographic ADR
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`
+- Work branch: `agent/codex-protocol-kernel--s4-crypto-adr`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--s4-crypto-adr`
+- Exact intended shared paths:
+  `docs/CLAIM_MATRIX.md`, `docs/CONFIDENTIAL_STATE_CRYPTOGRAPHY.md`,
+  `docs/NORTH_STAR_ROADMAP.md`,
+  `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`, `docs/README.md`,
+  `docs/STAGE_TRACKING.md`, and `docs/THREAT_MODEL.md`.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Exact verifier-regression path: `test/s3-receipt.test.mjs`.
+- Intended change: reconcile S3 promotion evidence; specify the complete
+  standards-only S4 cryptographic contract before implementation, including
+  AES-256-GCM record encryption, RSA-OAEP-3072-SHA-256 epoch-key wrapping,
+  epoch-wide linearizable per-key 96-bit nonce allocation, canonical decimal
+  64-bit epochs/counters, canonical AAD and wrap labels, membership/epoch binding,
+  atomic rotation and recovery, removed-member semantics, metadata leakage,
+  migration, and fail-closed test obligations.
+- Required gates: no runtime or dependency changes; exact doc link/spec checks;
+  the S3 synthetic merge fixture must remain pinned to the immutable S3 promotion
+  tree when later branches add files;
+  no endpoint-local counter allocator may be used with a shared epoch key;
+  counter reservations must use the exact epoch-bound strict-Ed25519/JCS receipt
+  contract and exhaustive decimal-string boundary matrix;
+  valid authority forks are detected only when jointly observed and require an
+  unchanged-membership authority-only epoch rotation; hidden forks are nonclaims;
+  crypto ADR independently reviewed at an immutable PR head; expected-head squash
+  merge; post-merge Verify and Deploy. S4 implementation remains forbidden until
+  the ADR is promoted.
+- Excluded: cryptographic implementation, key generation, ciphertext formats in
+  runtime code, receipt construction, storage/relay mutation, S5 packaging, S7
+  physical-domain claims, and retroactive secrecy or secure-erasure claims.
+
+### HISTORICAL — Implement S3 R3 state availability and recovery
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `e04a579081d96a834455abba79c66e4a102a4487`

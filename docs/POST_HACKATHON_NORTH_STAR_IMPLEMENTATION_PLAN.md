@@ -1,6 +1,6 @@
 # MortalOS post-hackathon North Star implementation plan
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2 promoted; S3 candidate HOLD**
+Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2/S3 promoted; S4 ADR REVIEW**
 
 Plan authority date: **2026-07-25 KST**
 
@@ -8,7 +8,7 @@ Initial planning base: `origin/main`
 `079e37dfdea8ce94998533979546b65cc09709d6`
 
 Last reconciled main base: `origin/main`
-`e04a579081d96a834455abba79c66e4a102a4487`
+`1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`
 
 Owner: `codex-protocol-kernel`
 
@@ -415,8 +415,8 @@ storage failure without double-signing, inventing a head, or losing accepted sta
 
 Priority: **P0**
 
-Status: **HOLD — candidate implemented; exact receipt, independent review,
-expected-head merge, post-merge Verify, and Deploy remain required**
+Status: **PROMOTED — PR #43 independently reviewed and expected-head merged;
+exact-main Verify 30202501790/1 and Deploy 30202501782/2 passed**
 
 ### Goal
 
@@ -486,7 +486,8 @@ cannot be chosen from ambient runtime defaults.
 
 Priority: **P1**
 
-Status: **PLANNED**
+Status: **ADR REVIEW — implementation HOLD until the cryptographic ADR is
+independently reviewed and promoted**
 
 ### Goal
 
@@ -495,7 +496,9 @@ preserving deterministic integrity, recovery, and explicit membership changes.
 
 ### Implementation scope and deliverables
 
-1. Approve a cryptographic ADR before implementation. It must define:
+1. Approve the
+   [S4 confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md)
+   before implementation. It must define:
    - audited WebCrypto-compatible AEAD;
    - key derivation and domain separation;
    - unique nonce construction and collision policy;
@@ -526,10 +529,26 @@ preserving deterministic integrity, recovery, and explicit membership changes.
   `N+1`, while authorized survivors can.
 - [ ] Replayed, substituted, truncated, reordered, or cross-resource ciphertext
   fails authentication without exposing partial plaintext.
-- [ ] Nonce uniqueness is enforced by construction and tested across at least
-  1,000,000 generated encryption records with zero collision.
+- [ ] Nonce uniqueness is enforced through one epoch-wide linearizable counter
+  authority and tested across at least 1,000,000 records from concurrent writers
+  with zero collision; cross-endpoint failover, local-only allocation,
+  lost-authority, stale, rollback, and overflow all fail before
+  encryption.
+- [ ] The counter authority uses an epoch-bound strict Ed25519 public key and exact
+  domain-separated JCS reservation receipts; replacement keys, forged or altered
+  signatures, stale chains, and receipts not committed by the package all reject.
+- [ ] A conforming authority's concurrent CAS emits one signed successor per prior
+  tuple. Jointly observed valid overlaps create explicit authority-equivocation
+  evidence and block the epoch; hidden forks and compromised-authority
+  confidentiality are explicit nonclaims.
+- [ ] Every unsigned 64-bit epoch and counter is represented in JCS as a canonical
+  decimal string and boundary-tested across `2^53` through `2^64 - 1`; no JSON
+  number coercion is accepted.
 - [ ] Rotation interrupted at every write boundary restores the old complete epoch
   or the new complete epoch, never a mixed accepted state.
+- [ ] Authority loss or equivocation can rotate `N→N+1` with unchanged membership,
+  a fresh authority key, fresh AES key, complete re-encryption/rewrapping, and
+  quorum-authorized atomic activation.
 - [ ] Metadata leakage and absence of retroactive secrecy are visibly documented.
 
 ### HOLD / rollback

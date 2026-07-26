@@ -1,6 +1,6 @@
 # MortalOS current claim matrix
 
-Status: **ACTIVE S3 candidate claim authority**
+Status: **ACTIVE S3 promoted / S4 ADR-review claim authority**
 
 Last synchronized: **2026-07-26 KST**
 
@@ -20,8 +20,8 @@ inherits truth from another.
 | Consent-gated durable `1-of-1` participant reload | Yes | Yes, Chromium schema v2 | No | Yes, within exact receipt/deploy evidence | Uses the same replay/WAL path as durable quorum; it remains one-key authority. |
 | Unified deterministic Participant Core | Yes | Yes, Node and Chromium | Not applicable | Yes | S1 receipt v2 is main-history portable; live, durable, handoff, quorum, catch-up, fork, snapshot, and availability paths use one core. |
 | Crash-safe durable `2-of-3` cold recovery and sign-once journal | Yes | Yes, Node plus actual Chromium `100/100` per required matrix | No | Yes, exact-main S2 receipt/review/Verify/Deploy | Same-host profiles and test adapters do not prove independent devices, credentials, or administrators. |
-| Exact R3 state replica recovery after storage/relay loss | Yes | Yes, 1 MiB/16-chunk logical stores and JavaScript/Python differential on the S3 candidate | No | Receipt/review/merge gated | Inventory is a hint; exact fetched bytes and aggregate root are reverified. Logical stores do not prove independent domains. |
-| Confidential replicated state with epoch-key removal | No | No | No | No | Current protocol provides integrity, not state confidentiality. |
+| Exact R3 state replica recovery after storage/relay loss | Yes | Yes, 1 MiB/16-chunk logical stores, 20,000 end-to-end recovery executions, and JavaScript/Python differential | No | Yes, exact-main S3 receipt/review/Verify/Deploy | Inventory is a hint; exact fetched bytes and aggregate root are reverified. Logical stores do not prove independent domains. |
+| Confidential replicated state with epoch-key removal | No | No | No | No | The cryptographic ADR is under independent review; no S4 runtime or confidentiality claim is promoted. |
 | Public SDK/CLI package interoperability | No | No | No | No | Repository scripts are not a supported package or stable public API. |
 | Continuity Capsule resource lifecycle | No | No | No | No | S6 target; no second workload is authorized before it passes. |
 | Independent host/relay/credential-domain survival | No | No | No | No | Requires S7 topology evidence, 100 trials, and seven-day burn-in. |

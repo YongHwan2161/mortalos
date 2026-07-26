@@ -27,10 +27,13 @@ Anything less is **HOLD**.
 
 ## Current candidate
 
-S1 and S2 are promoted on `main` with main-history-portable receipts, independent
-immutable review, expected-head merge, post-merge Verify, and exact-main Deploy.
-S3 is implemented on
-`agent/codex-protocol-kernel--s3-state-availability-recovery`; its promotion remains
-**HOLD** until `evidence/stages/s3-state-recovery.json`, the exact 1 MiB recovery
-matrix, 10,000 schedules, independent verifier, immutable review, merge,
-post-merge Verify, and exact-main deployment pass.
+S1, S2, and S3 are promoted on `main` with main-history-portable receipts,
+independent immutable review, expected-head merge, post-merge Verify, and exact-main
+Deploy. S3 closed issue #32 at main
+`1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`.
+
+S4 is in ADR review on `agent/codex-protocol-kernel--s4-crypto-adr`.
+Cryptographic implementation is **HOLD** until
+[`CONFIDENTIAL_STATE_CRYPTOGRAPHY.md`](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is
+independently reviewed, expected-head merged, and passes post-merge Verify plus
+Deploy.

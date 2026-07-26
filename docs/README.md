@@ -22,14 +22,17 @@ plans cannot promote a current claim.
 `mortalos/0` preserves an opaque declared state root and has no state-transition
 event. `mortalos/1` binds exact bounded state artifacts and deterministic
 transitions. The [R3 state availability ADR](STATE_AVAILABILITY_AND_RECOVERY.md)
-adds a candidate bounded manifest/chunk recovery protocol, but does not prove
-physical-domain durability or global availability.
+adds the promoted bounded manifest/chunk recovery protocol, but does not prove
+physical-domain durability or global availability. The
+[S4 confidential-state ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is proposed only;
+it grants no implementation or confidentiality claim before independent promotion.
 
 ## Architecture and compatibility
 
 - [Unified Participant Core](PARTICIPANT_CORE.md)
 - [Crash-safe durable quorum](DURABLE_QUORUM.md)
 - [R3 state availability and recovery](STATE_AVAILABILITY_AND_RECOVERY.md)
+- [S4 confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md)
 - [Endpoint-neutral access architecture](ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](BROWSER_PARTICIPANT_COMPATIBILITY.md)
 
@@ -49,12 +52,12 @@ deadlines, submission paths, or promotion status as current authority.
 
 The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
-`2-of-3` loss/repair, the merged S1 Participant Core, and S2 crash-safe durable
-quorum within the qualifications in the claim matrix. S3 exact logical resource
-recovery is implemented and locally verified but remains
-receipt/review/merge/deploy gated.
+`2-of-3` loss/repair, the merged S1 Participant Core, S2 crash-safe durable quorum,
+and S3 exact logical resource recovery within the qualifications in the claim
+matrix. The S4 cryptographic ADR is proposed, but implementation remains HOLD until
+that ADR is independently promoted.
 
-It does not yet promote S3 before that release chain, confidential replicated
-state, independent failure domains, a public SDK/CLI,
+It does not yet promote confidential replicated state, independent failure
+domains, a public SDK/CLI,
 Byzantine/Sybil resistance, global death, or Firefox/WebKit durable parity. GPT is
 optional and non-authoritative.
