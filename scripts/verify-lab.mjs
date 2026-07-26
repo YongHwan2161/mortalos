@@ -727,7 +727,10 @@ async function runDurableProof(browser, serverUrl) {
     assert.equal(database.policy.status, "active");
 
     await page.click("#nurture-durable");
-    await page.locator('#durable-status[data-state="accept"]').waitFor();
+    await page.waitForFunction(() => {
+      const durable = globalThis.__MORTALOS_LAB__?.publicSnapshot().durable;
+      return durable?.sequence === "1" && durable?.pulse_count === 1;
+    }, null, { timeout: 20_000 });
     const nurtured = await page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().durable);
     assert.equal(nurtured.organism_id, created.organism_id);
     assert.equal(nurtured.sequence, "1");

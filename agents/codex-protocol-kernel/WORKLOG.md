@@ -1353,3 +1353,18 @@ result, and reproducible verification.
   digest. The replacement helper resolves an explicit committed tree: the found
   promotion commit in promotion mode, or committed HEAD in candidate mode. No
   uncommitted or staged index state can influence the synthetic receipt proof.
+- Replacement head `43c384e0162e981eb670aed7c5c3dbea9bcf84ca` passed a
+  second clean uninterrupted local `npm test` and policy `30181648416/1`.
+  Exact-head Verify `30181647893/1` passed its own full `npm test`, Participant
+  Core parity, and portable comparison, then failed the standalone `verify:lab`
+  step because `runDurableProof()` waited for
+  `#durable-status[data-state="accept"]` immediately after nurture. That selector
+  was already true from durable creation, so CI could read sequence `0` before the
+  async click handler committed sequence `1`.
+- The Lab verifier now waits for the authoritative public snapshot to expose both
+  `sequence === "1"` and `pulse_count === 1` with the existing 20-second bound.
+  This removes the stale-status race without sleeping, relaxing assertions, or
+  changing product/runtime behavior.
+- The corrected `npm run verify:lab` passed three consecutive focused runs. Every
+  run completed the full actual-Chromium Lab gate and persistent handoff 20/20;
+  measured relay cadence was 38–39 operations per 12 seconds with zero local 429s.
