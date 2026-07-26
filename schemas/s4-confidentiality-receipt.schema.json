@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mortal-os.com/schemas/s4-confidentiality-receipt.schema.json",
+  "title": "MortalOS S4 confidential state evidence receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "stage", "status", "source_commit", "base_commit",
+    "source_committed_at", "dependency_lock_digest", "suite", "formats",
+    "limits", "commands", "environment", "seeds", "started_at",
+    "completed_at", "results", "known_limitations", "failures",
+    "artifact_digests", "review_snapshot"
+  ],
+  "properties": {
+    "format": { "const": "mortalos-stage-receipt/2" },
+    "stage": { "const": "S4" },
+    "status": { "const": "PASS" },
+    "source_commit": { "$ref": "#/$defs/commit" },
+    "base_commit": { "$ref": "#/$defs/commit" },
+    "source_committed_at": { "$ref": "#/$defs/timestamp" },
+    "dependency_lock_digest": { "$ref": "#/$defs/digest" },
+    "suite": { "const": "mortalos-confidential-state-suite/1" },
+    "formats": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "limits": { "$ref": "#/$defs/strictObject" },
+    "commands": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "status", "summary"],
+        "properties": {
+          "command": { "type": "string", "minLength": 1 },
+          "status": { "const": "PASS" },
+          "summary": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "environment": { "$ref": "#/$defs/strictObject" },
+    "seeds": { "$ref": "#/$defs/strictObject" },
+    "started_at": { "$ref": "#/$defs/timestamp" },
+    "completed_at": { "$ref": "#/$defs/timestamp" },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidential_tests", "cryptography", "published_vectors",
+        "nonce_uniqueness", "browser_counter_authority",
+        "ciphertext_capture", "any_two_recovery", "membership_and_rotation",
+        "failure_matrix", "status_separation", "protocol_conformance",
+        "property_cases", "portable_contract", "coverage_percent",
+        "dependency_vulnerabilities"
+      ],
+      "properties": {
+        "confidential_tests": { "$ref": "#/$defs/strictObject" },
+        "cryptography": { "$ref": "#/$defs/strictObject" },
+        "published_vectors": { "$ref": "#/$defs/strictObject" },
+        "nonce_uniqueness": { "$ref": "#/$defs/strictObject" },
+        "browser_counter_authority": { "$ref": "#/$defs/strictObject" },
+        "ciphertext_capture": { "$ref": "#/$defs/strictObject" },
+        "any_two_recovery": { "$ref": "#/$defs/strictObject" },
+        "membership_and_rotation": { "$ref": "#/$defs/strictObject" },
+        "failure_matrix": { "$ref": "#/$defs/strictObject" },
+        "status_separation": { "$ref": "#/$defs/strictObject" },
+        "protocol_conformance": { "$ref": "#/$defs/strictObject" },
+        "property_cases": { "$ref": "#/$defs/strictObject" },
+        "portable_contract": { "$ref": "#/$defs/strictObject" },
+        "coverage_percent": { "$ref": "#/$defs/strictObject" },
+        "dependency_vulnerabilities": { "$ref": "#/$defs/strictObject" }
+      }
+    },
+    "known_limitations": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "failures": { "type": "array", "maxItems": 0 },
+    "artifact_digests": {
+      "type": "object",
+      "minProperties": 34,
+      "maxProperties": 34,
+      "additionalProperties": { "$ref": "#/$defs/digest" }
+    },
+    "review_snapshot": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    },
+    "strictObject": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": true
+    }
+  }
+}

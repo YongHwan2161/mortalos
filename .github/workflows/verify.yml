@@ -61,5 +61,8 @@ jobs:
       - name: Verify the S3 state recovery receipt
         run: npm run verify:s3
 
+      - name: Verify the S4 confidentiality receipt
+        run: npm run verify:s4
+
       - name: Audit production and development dependencies
         run: npm audit --audit-level=moderate
