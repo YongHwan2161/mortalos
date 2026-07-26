@@ -1482,3 +1482,12 @@ result, and reproducible verification.
   state is lost, and adds concurrent/failover/local-only/overlap rejection. Epochs
   and counters are canonical decimal strings through `2^64 - 1`; the trailing
   whitespace is removed.
+- The second independent review kept PR #44 BLOCKed because “authenticated
+  reservation receipt” still omitted exact schema, signature bytes, domain,
+  verification key, and epoch binding, while decimal counter representation was
+  not exhaustive across reservation, package, receipt, and active surfaces.
+- The next remediation binds a distinct strict Ed25519 counter-authority key and
+  ID into the exact epoch-ID basis; freezes the reservation basis, signature
+  preimage, receipt, digest, package binding, arithmetic, and key-retirement
+  rules; and adds an exhaustive per-surface decimal matrix with `2^32`, `2^53`,
+  and `2^64` boundary vectors. Authority compromise is now an explicit nonclaim.

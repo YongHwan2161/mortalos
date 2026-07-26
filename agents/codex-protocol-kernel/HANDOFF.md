@@ -30,6 +30,8 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   the S3 synthetic merge fixture must remain pinned to the immutable S3 promotion
   tree when later branches add files;
   no endpoint-local counter allocator may be used with a shared epoch key;
+  counter reservations must use the exact epoch-bound strict-Ed25519/JCS receipt
+  contract and exhaustive decimal-string boundary matrix;
   crypto ADR independently reviewed at an immutable PR head; expected-head squash
   merge; post-merge Verify and Deploy. S4 implementation remains forbidden until
   the ADR is promoted.

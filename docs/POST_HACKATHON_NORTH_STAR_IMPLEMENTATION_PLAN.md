@@ -534,6 +534,9 @@ preserving deterministic integrity, recovery, and explicit membership changes.
   with zero collision; cross-endpoint failover, local-only allocation,
   lost-authority, stale, overlap, rollback, and overflow all fail before
   encryption.
+- [ ] The counter authority uses an epoch-bound strict Ed25519 public key and exact
+  domain-separated JCS reservation receipts; replacement keys, invalid signatures,
+  overlapping histories, and receipts not committed by the package all reject.
 - [ ] Every unsigned 64-bit epoch and counter is represented in JCS as a canonical
   decimal string and boundary-tested across `2^53` through `2^64 - 1`; no JSON
   number coercion is accepted.

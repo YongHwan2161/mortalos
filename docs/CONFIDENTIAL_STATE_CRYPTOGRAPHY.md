@@ -22,6 +22,7 @@ MortalOS S4 will use one versioned suite:
 | Chunk authenticated encryption | AES-256-GCM with a 128-bit tag |
 | GCM IV | One deterministic 96-bit IV per encryption invocation under one epoch key |
 | Epoch-key distribution | RSA-OAEP with a 3072-bit modulus, public exponent 65537, SHA-256, and MGF1-SHA-256 |
+| Counter-reservation authentication | Ed25519 using the existing strict RFC 8032 public-key and signature profile |
 | Hash and public commitments | SHA-256 with existing MortalOS domain separation |
 | Canonical metadata | RFC 8785 JCS encoded as UTF-8 |
 | Random keys | WebCrypto `generateKey`; no application PRNG or password-derived key |
@@ -45,6 +46,9 @@ followed by one `0x00` byte and the canonical bytes:
 | Commitment | Domain prefix |
 | --- | --- |
 | Custodian encryption-key digest | `MortalOS S4 encryption public key v1` |
+| Counter-authority ID | `MortalOS S4 counter authority v1` |
+| Counter-reservation signature message | `MortalOS S4 counter reservation v1` |
+| Counter-reservation receipt digest | `MortalOS S4 counter receipt v1` |
 | Epoch ID | `MortalOS S4 epoch id v1` |
 | Chunk AAD digest | `MortalOS S4 chunk aad v1` |
 | Ciphertext-chunk digest | `MortalOS S4 ciphertext chunk v1` |
@@ -77,6 +81,9 @@ decryption key can.
   operating systems, remote providers, or a malicious custodian.
 - A non-extractable WebCrypto key blocks supported API export; it does not resist a
   compromised process, browser, OS, hardware, or user account.
+- S4 trusts the epoch-bound counter authority not to sign overlapping reservation
+  histories. Compromise of that authority can violate nonce uniqueness; suite 1
+  provides detection and key retirement after evidence, not Byzantine allocation.
 - Any one authorized custodian receives a wrap it can decrypt. Quorum controls
   lineage mutation, not read access by an already authorized custodian.
 - Encryption does not prove protocol validity, availability, liveness, physical
@@ -90,7 +97,8 @@ decryption key can.
 
 - plaintext resource bytes;
 - the random 256-bit epoch content-encryption key;
-- each custodian's RSA-OAEP private key; and
+- each custodian's RSA-OAEP private key;
+- the counter authority's Ed25519 private key; and
 - transient plaintext produced only after complete authenticated decryption.
 
 The epoch key exists first as a short-lived extractable WebCrypto staging key only
@@ -107,6 +115,7 @@ transmit either secret.
 - organism and resource identifiers;
 - epoch number and membership-head digest;
 - RSA public encryption keys and their digests;
+- the counter-authority Ed25519 public key and authority ID;
 - recipient identifiers;
 - per-record invocation counters and IVs;
 - canonical associated-data metadata;
@@ -156,9 +165,30 @@ An accepted confidential epoch contains:
 
 The public `epoch_id` is a MortalOS domain-separated SHA-256 commitment to the
 canonical suite, organism ID, canonical decimal epoch string,
-membership-head digest, transition ID,
-and sorted current custodian encryption-key digests. It is not derived from the
-secret key.
+membership-head digest, transition ID, counter-authority ID, exact strict
+Ed25519 counter-authority public key, and sorted current custodian encryption-key
+digests. It is not derived from a secret key. Changing the counter authority or
+its key therefore requires a fresh epoch key and a new `epoch_id`.
+
+The exact epoch-ID basis is:
+
+```json
+{
+  "counter_authority_id": "sha256:...",
+  "counter_authority_public_key": "ed25519:...",
+  "custodian_encryption_keys": ["sha256:..."],
+  "epoch": "0",
+  "format": "mortalos-confidential-epoch-id/1",
+  "membership_head": "sha256:...",
+  "organism_id": "mortalos:...",
+  "suite": "mortalos-confidential-state-suite/1",
+  "transition_id": "transition-1"
+}
+```
+
+Custodian encryption-key digests are strictly sorted, unique, and cover every and
+only current custodian. The epoch ID is the tagged SHA-256 result of the
+`MortalOS S4 epoch id v1` domain, one `0x00` byte, and these exact JCS bytes.
 
 An epoch string is `"0"` or a non-zero ASCII decimal integer with no leading zero,
 in the closed range `0` through `18446744073709551615`. Implementations compare it
@@ -201,6 +231,78 @@ across processes and endpoints. A future physical deployment must name the actua
 authority and durability domain in its topology receipt; S4 alone does not claim
 that domain is independently durable.
 
+The authority owns a distinct WebCrypto-generated Ed25519 key pair. Its private key
+is non-extractable with `sign` usage only. Its public key is the exact strict
+32-byte RFC 8032 encoding tagged `ed25519:`. The `authority_id` is the tagged
+SHA-256 result of the `MortalOS S4 counter authority v1` domain, one `0x00` byte,
+and those 32 raw public-key bytes. Both the ID and public key are bound into the
+`epoch_id`; neither a local key nor another authority can validate for that epoch.
+
+The exact reservation signature basis is this JCS object:
+
+```json
+{
+  "authority_id": "sha256:...",
+  "authority_public_key": "ed25519:...",
+  "count": "16",
+  "epoch": "0",
+  "epoch_id": "sha256:...",
+  "format": "mortalos-counter-reservation-basis/1",
+  "interval_end_exclusive": "16",
+  "interval_start": "0",
+  "next_counter": "16",
+  "prior_next_counter": "0",
+  "request_id": "reservation:...",
+  "suite": "mortalos-confidential-state-suite/1"
+}
+```
+
+The signature message is exactly SHA-256 over the UTF-8 bytes
+`MortalOS S4 counter reservation v1`, one `0x00` byte, and the JCS bytes of
+that basis. The authority signs those 32 bytes with Ed25519. The complete canonical
+receipt has exactly three keys:
+
+```json
+{
+  "basis": {
+    "authority_id": "sha256:...",
+    "authority_public_key": "ed25519:...",
+    "count": "16",
+    "epoch": "0",
+    "epoch_id": "sha256:...",
+    "format": "mortalos-counter-reservation-basis/1",
+    "interval_end_exclusive": "16",
+    "interval_start": "0",
+    "next_counter": "16",
+    "prior_next_counter": "0",
+    "request_id": "reservation:...",
+    "suite": "mortalos-confidential-state-suite/1"
+  },
+  "format": "mortalos-counter-reservation-receipt/1",
+  "signature": "ed25519:..."
+}
+```
+
+The signature is the existing strict tagged 64-byte Ed25519 encoding. The receipt
+digest is SHA-256 over
+the `MortalOS S4 counter receipt v1` domain, one `0x00` byte, and the complete
+receipt JCS bytes. Each confidential package manifest commits the exact receipt
+digest, `interval_start`, `interval_end_exclusive`, and authority ID. Its chunk at
+index `i` must use counter `interval_start + i`, and `count` must equal the package
+chunk count.
+
+The verifier checks exact keys, formats, canonical bytes, strict public key and
+signature encodings, recomputed authority ID, epoch binding, receipt signature and
+digest, request-ID grammar (`reservation:` plus exactly 32 base64url bytes), and
+all arithmetic before accepting a reservation. It parses decimal strings with
+integer arithmetic and requires:
+
+- `count` from `1` through `64`;
+- `prior_next_counter == interval_start`;
+- `interval_end_exclusive == interval_start + count`;
+- `next_counter == interval_end_exclusive`; and
+- `0 <= interval_start < interval_end_exclusive <= 4294967296`.
+
 Before encryption, a writer waits until its reservation is durably committed and
 independently verifies the receipt. Only then may it call WebCrypto. Reservation
 is monotonic and never rolled back. A crash may leave a gap; it must never permit
@@ -211,6 +313,24 @@ suite-cap exhaustion fails before WebCrypto is called. If authoritative state
 cannot be recovered exactly, the key is retired and a fresh epoch key is required;
 scanning visible ciphertext must not reconstruct authority because a previously
 reserved but unpublished IV may be absent.
+
+The following representation matrix is exhaustive. Every listed field is a JCS
+string; the same value encoded as a JSON number, exponent, signed value,
+whitespace-padded value, empty string, or leading-zero decimal is invalid.
+
+| Surface | Decimal-string fields | Inclusive range |
+| --- | --- | --- |
+| Epoch-ID basis, reservation basis, AAD, wrap label, manifest, package, receipt, active record | `epoch` | `0` through `18446744073709551615` |
+| Reservation basis and package manifest | `count` | `1` through `64` |
+| Reservation basis, package manifest, active record | `prior_next_counter`, `interval_start`, `interval_end_exclusive`, `next_counter` as applicable | starts `0` through `4294967295`; exclusive end / next `1` through `4294967296` |
+| Chunk AAD and package chunk entry | `invocation_counter` | `0` through `4294967295` |
+
+Boundary vectors must accept epoch strings `9007199254740991`,
+`9007199254740992`, and `18446744073709551615`; reject epoch
+`18446744073709551616`; accept final counter interval
+`4294967295..4294967296`; and reject any counter, invocation, or exclusive end
+beyond `4294967296`. They also reject JSON-number forms at `2^32`, `2^53`, and
+`2^64`, even when a host language would round or preserve the apparent value.
 
 Counter values may repeat after an epoch rotation because the AES key is fresh.
 They may not repeat under the same key. Imports verify that all IVs are exactly 12
