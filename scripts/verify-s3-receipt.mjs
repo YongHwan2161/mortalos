@@ -9,15 +9,15 @@ import Ajv2020 from "ajv/dist/2020.js";
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const defaultReceiptPath = resolve(defaultRoot, "evidence", "stages", "s3-state-recovery.json");
 const EXPECTED_RECEIPT_DIGEST =
-  "sha256:321b886fba65cb85d6d3f1559eed904ff0af74575f47d48c3029d8de442f0e0c";
-const EXPECTED_SOURCE_COMMIT = "11fbdd814b1ae7f21080078f1b0306dbca8d77b7";
+  "sha256:02859cdff4f399a5748644ce4d6c02d0a3b3f9ab9d9ca8093e5f6f0d572a39d4";
+const EXPECTED_SOURCE_COMMIT = "4b47260c016f3f8f79f9f2bd4d48d97d53fb1e2b";
 const EXPECTED_BASE_COMMIT = "e04a579081d96a834455abba79c66e4a102a4487";
 const EXPECTED_PROMOTION_PACKAGE_DIGEST =
   "sha256:e1deb5964531af54db9760a5f559ba00b6468252a62cac1e7c38bb0d994f15d1";
 const EXPECTED_SCHEMA_DIGEST =
   "sha256:10eb65ed34ecdc43224d36659716dcb79620a1605dc49c8964258bae2fb73e0f";
 const EXPECTED_TEST_DIGEST =
-  "sha256:5e455a14fc2ee41bddc390714741c3453fe83acc37e859430149e5fe12534be7";
+  "sha256:fdc07567b942ce8e2af5fb4264d3db7294ba7af270ce127614f1d9c01dd25ea8";
 const EXPECTED_REVIEW_SNAPSHOT =
   "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference.";
 const EXPECTED_SOURCE_PATHS = [
@@ -264,6 +264,13 @@ function assertSemanticEvidence(receipt) {
     stable_failures: 18,
     unexpected_acceptances: 0,
     seeded_schedules: 10000,
+    executions_per_schedule: 2,
+    end_to_end_executions: 20000,
+    public_recovery_api: "recoverStatePackage",
+    available: 2000,
+    rejected: 2000,
+    interrupted: 2000,
+    state_unavailable: 4000,
     metadata_only_acceptances: 0
   });
   assert.deepEqual(receipt.results.recovery_semantics, {
@@ -302,9 +309,9 @@ function assertSemanticEvidence(receipt) {
     node_browser_byte_identical: true
   });
   assert.deepEqual(receipt.results.coverage_percent, {
-    repository: { lines: 95.99, branches: 92.26, functions: 95.95 },
+    repository: { lines: 95.99, branches: 92.33, functions: 95.95 },
     state_package: { lines: 97.15, branches: 91.53, functions: 100 },
-    state_recovery: { lines: 99.3, branches: 94.69, functions: 100 }
+    state_recovery: { lines: 99.3, branches: 94.74, functions: 100 }
   });
   assert.deepEqual(receipt.results.dependency_vulnerabilities, {
     production_dependencies: 4,

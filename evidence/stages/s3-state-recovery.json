@@ -2,9 +2,9 @@
   "format": "mortalos-stage-receipt/2",
   "stage": "S3",
   "status": "PASS",
-  "source_commit": "11fbdd814b1ae7f21080078f1b0306dbca8d77b7",
+  "source_commit": "4b47260c016f3f8f79f9f2bd4d48d97d53fb1e2b",
   "base_commit": "e04a579081d96a834455abba79c66e4a102a4487",
-  "source_committed_at": "2026-07-26T08:05:54.000Z",
+  "source_committed_at": "2026-07-26T10:21:13.000Z",
   "dependency_lock_digest": "sha256:c69b887d03595e6f734849129fd73ab0f2898ec81f848b65463d1bf7ba4b9298",
   "protocol_versions": [
     "mortalos/0",
@@ -35,7 +35,7 @@
     {
       "command": "npm run test:state-package",
       "status": "PASS",
-      "summary": "Twelve state-package, strict semantic-input, constructor-duplicate, lineage-binding, any-two recovery, activation-boundary, bounded-adversary, aggregate-root, and 10,000-schedule tests passed."
+      "summary": "Twelve state-package tests passed, including 10,000 seeded schedules executed twice through recoverStatePackage for 20,000 real inventory, fetch, verify, reconstruct, aggregate-verify, and activation attempts."
     },
     {
       "command": "npm run verify:state-package",
@@ -50,7 +50,7 @@
     {
       "command": "npm run test:coverage",
       "status": "PASS",
-      "summary": "Coverage including both S3 modules passed the 90% branch gate at 95.99% lines, 92.26% branches, and 95.95% functions."
+      "summary": "Coverage including both S3 modules passed the 90% branch gate at 95.99% lines, 92.33% branches, and 95.95% functions."
     },
     {
       "command": "npm audit --audit-level=high",
@@ -91,8 +91,8 @@
     "durable_handoff_trials": 100,
     "durable_loss_trials_per_endpoint": 100
   },
-  "started_at": "2026-07-26T08:05:55.000Z",
-  "completed_at": "2026-07-26T08:44:31.581Z",
+  "started_at": "2026-07-26T10:21:34.000Z",
+  "completed_at": "2026-07-26T11:07:28.507Z",
   "results": {
     "state_package_tests": {
       "passed": 12,
@@ -149,6 +149,13 @@
       "stable_failures": 18,
       "unexpected_acceptances": 0,
       "seeded_schedules": 10000,
+      "executions_per_schedule": 2,
+      "end_to_end_executions": 20000,
+      "public_recovery_api": "recoverStatePackage",
+      "available": 2000,
+      "rejected": 2000,
+      "interrupted": 2000,
+      "state_unavailable": 4000,
       "metadata_only_acceptances": 0
     },
     "recovery_semantics": {
@@ -192,7 +199,7 @@
     "coverage_percent": {
       "repository": {
         "lines": 95.99,
-        "branches": 92.26,
+        "branches": 92.33,
         "functions": 95.95
       },
       "state_package": {
@@ -202,7 +209,7 @@
       },
       "state_recovery": {
         "lines": 99.3,
-        "branches": 94.69,
+        "branches": 94.74,
         "functions": 100
       }
     },
@@ -223,11 +230,11 @@
   "failures": [],
   "artifact_digests": {
     "README.md": "sha256:f3a2ce4829c6898266cc3c8183dd4a5c53a8ddb529b62930f058bcc7d8e124c5",
-    "agents/codex-protocol-kernel/HANDOFF.md": "sha256:99a10934a401343a3b9f21c62e48590fe89e15070f4253730f3df84ae66195f2",
-    "agents/codex-protocol-kernel/WORKLOG.md": "sha256:3857cb267ab8509f69544ce698706f75b3c4bb637b0a4cee5e62e356efc82f02",
+    "agents/codex-protocol-kernel/HANDOFF.md": "sha256:3ae081126ebbdce1d2c9272dea7529daaf434daad45900545790252e7dabb867",
+    "agents/codex-protocol-kernel/WORKLOG.md": "sha256:a28969e47a9269c210ad3a57b921a8afbd48e5e48a8a876a483ccb43568fb04c",
     "docs/CLAIM_MATRIX.md": "sha256:9336ac9d48af4bd6e4cf697eae440071a3afe33fc1d3cb8bfcbf1e76c82d57c4",
     "docs/NORTH_STAR_ROADMAP.md": "sha256:2dee9185bf0da8f78d0caa1af44017968f595d2beb9e14ade3bbfc79dece2613",
-    "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md": "sha256:4bbed34372cb88b26b4b13de4e6056892f790f888966ffcb6127b01b611a1e2c",
+    "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md": "sha256:08c8dcb5d2da9aa6f1863fcc3d28e3204cbdb58796992920c7a3cf9463d0de5c",
     "docs/PROTOCOL.md": "sha256:645d5e89c2f23f69dd2b8e6a555f388a636dd1dcf5dc8fc224e101830ffe7136",
     "docs/README.md": "sha256:2bd5ee276674625601ec265cddb22ab0d19c1301b0ea9efc305b16d71fdb4ff6",
     "docs/REJECTION_CODES.md": "sha256:e83870dba2f0e7668d020c05d149107d36b181cba8f5cb3cd573ac838ec74cd8",
@@ -245,7 +252,7 @@
     "src/state/package-corpus.mjs": "sha256:356a3771205f47df4a521f83e7127cf959755429d301f9beca4f0f68f6a3164f",
     "src/state/package.mjs": "sha256:0921b8b22cc9e2fb09425da9d8159e800d7803e0cf90ff56e2b71e4e8fd765e1",
     "src/state/recovery.mjs": "sha256:9bfde52d058fe400a78bf23a2141866838de57eac469e0bd0e72c93d9f71262e",
-    "test/state-package.test.mjs": "sha256:d5ee5f057af7644a44f55c7056591a9cc54a0100f2ecc425edcacbea07cb8167",
+    "test/state-package.test.mjs": "sha256:14d9c4e8633225bea5c411d008b9ac80206f34d4ff514e145a2a8953b387bb4d",
     "test/vectors/state-package-v1.json": "sha256:894514c3f198a188f645f7242ee8cb65d262902f7ca7f5212d2a5bb78eb7bc94"
   },
   "review_snapshot": "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference."

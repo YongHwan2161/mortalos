@@ -169,6 +169,13 @@ test("adversarial and recovery-semantics substitutions fail closed", async () =>
   for (const [path, value] of [
     [["results", "adversarial_matrix", "stable_failures"], 10],
     [["results", "adversarial_matrix", "cases", 3], "removed_constructor_boundary"],
+    [["results", "adversarial_matrix", "executions_per_schedule"], 1],
+    [["results", "adversarial_matrix", "end_to_end_executions"], 10000],
+    [["results", "adversarial_matrix", "public_recovery_api"], "planStateRecovery"],
+    [["results", "adversarial_matrix", "available"], 1999],
+    [["results", "adversarial_matrix", "rejected"], 1999],
+    [["results", "adversarial_matrix", "interrupted"], 1999],
+    [["results", "adversarial_matrix", "state_unavailable"], 3999],
     [["results", "adversarial_matrix", "metadata_only_acceptances"], 1],
     [["results", "recovery_semantics", "missing_status"], "available"],
     [["results", "recovery_semantics", "resumable"], false],
