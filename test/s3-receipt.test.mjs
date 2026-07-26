@@ -168,10 +168,14 @@ test("reference, verifier, and any-two recovery substitutions fail closed", asyn
 test("adversarial and recovery-semantics substitutions fail closed", async () => {
   for (const [path, value] of [
     [["results", "adversarial_matrix", "stable_failures"], 10],
+    [["results", "adversarial_matrix", "cases", 3], "removed_constructor_boundary"],
     [["results", "adversarial_matrix", "metadata_only_acceptances"], 1],
     [["results", "recovery_semantics", "missing_status"], "available"],
     [["results", "recovery_semantics", "resumable"], false],
     [["results", "recovery_semantics", "prior_active_state_preserved"], false],
+    [["results", "recovery_semantics", "activation_before_prior_preserved"], false],
+    [["results", "recovery_semantics", "activation_after_prior_preserved"], false],
+    [["results", "recovery_semantics", "commit_failure_unpublished"], false],
     [["results", "recovery_semantics", "mortality_unchanged"], false]
   ]) await rejectsMutation(path, value);
 });
