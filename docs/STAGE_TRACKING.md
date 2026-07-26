@@ -27,9 +27,10 @@ Anything less is **HOLD**.
 
 ## Current candidate
 
-S1 is promoted on `main` with a main-history-portable receipt, independent immutable
-review, expected-head merge, post-merge Verify, and exact-main Deploy. S2 is
-implemented on `agent/codex-protocol-kernel--s2-crash-safe-durable-quorum`; its
-promotion remains **HOLD** until `evidence/stages/s2-durable-quorum.json`, all
-`100/100` durable matrices, immutable review, merge, post-merge Verify, and
-exact-main deployment pass.
+S1 and S2 are promoted on `main` with main-history-portable receipts, independent
+immutable review, expected-head merge, post-merge Verify, and exact-main Deploy.
+S3 is implemented on
+`agent/codex-protocol-kernel--s3-state-availability-recovery`; its promotion remains
+**HOLD** until `evidence/stages/s3-state-recovery.json`, the exact 1 MiB recovery
+matrix, 10,000 schedules, independent verifier, immutable review, merge,
+post-merge Verify, and exact-main deployment pass.

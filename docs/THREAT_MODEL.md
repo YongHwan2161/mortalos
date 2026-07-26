@@ -391,7 +391,22 @@ Resource contribution must be explicit and revocable in later participant-runtim
   not prove external chunk availability, confidential state, relay independence, or
   exact resource-byte reconstruction.
 
-## 17. Threat-model change control
+## 17. S3 state-recovery assumptions and exclusions
+
+- The canonical manifest and receipt bind resource bytes to the accepted lineage,
+  but chunk availability is observed through untrusted bounded adapters.
+- Inventories are hints. A fetched chunk is owned, size-checked, and rehashed before
+  storage; the ordered reconstructed resource is rehashed before activation.
+- The raw-only format rejects compression and decoding rather than attempting to
+  bound an attacker-controlled expansion ratio.
+- Recovery interruption may retain verified content-addressed chunks, but cannot
+  replace the last verified active-state record. Retry is resumable and idempotent.
+- `state_unavailable` is not candidate invalidity, global absence, or death.
+- The S3 logical stores share one process and administrative domain. Confidentiality
+  is S4 work; independent provider/domain evidence is S7 work; browser-engine parity
+  is S8 work.
+
+## 18. Threat-model change control
 
 Any implementation change that introduces one of the following requires a threat-model revision before merge:
 

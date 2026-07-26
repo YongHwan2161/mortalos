@@ -1,8 +1,8 @@
 # MortalOS current claim matrix
 
-Status: **ACTIVE S2 candidate claim authority**
+Status: **ACTIVE S3 candidate claim authority**
 
-Last synchronized: **2026-07-25 KST**
+Last synchronized: **2026-07-26 KST**
 
 This matrix is the current claim boundary. “Implemented” means code exists;
 “exact-head locally verified” means the named repository gates pass on the current
@@ -19,8 +19,8 @@ inherits truth from another.
 | Logical browser `2-of-3` loss and D repair | Yes | Yes, isolated Chromium contexts | No | Yes, as logical quorum evidence | Current contexts can share one host and administrative domain. |
 | Consent-gated durable `1-of-1` participant reload | Yes | Yes, Chromium schema v2 | No | Yes, within exact receipt/deploy evidence | Uses the same replay/WAL path as durable quorum; it remains one-key authority. |
 | Unified deterministic Participant Core | Yes | Yes, Node and Chromium | Not applicable | Yes | S1 receipt v2 is main-history portable; live, durable, handoff, quorum, catch-up, fork, snapshot, and availability paths use one core. |
-| Crash-safe durable `2-of-3` cold recovery and sign-once journal | Yes | Yes, Node plus actual Chromium `100/100` per required matrix on the S2 candidate | No | Receipt/review/merge gated | Same-host profiles and test adapters do not prove independent devices, credentials, or administrators. |
-| Exact R3 state replica recovery after storage/relay loss | No | No | No | No | Current v1 state roots prove transition integrity, not retrievability. |
+| Crash-safe durable `2-of-3` cold recovery and sign-once journal | Yes | Yes, Node plus actual Chromium `100/100` per required matrix | No | Yes, exact-main S2 receipt/review/Verify/Deploy | Same-host profiles and test adapters do not prove independent devices, credentials, or administrators. |
+| Exact R3 state replica recovery after storage/relay loss | Yes | Yes, 1 MiB/16-chunk logical stores and JavaScript/Python differential on the S3 candidate | No | Receipt/review/merge gated | Inventory is a hint; exact fetched bytes and aggregate root are reverified. Logical stores do not prove independent domains. |
 | Confidential replicated state with epoch-key removal | No | No | No | No | Current protocol provides integrity, not state confidentiality. |
 | Public SDK/CLI package interoperability | No | No | No | No | Repository scripts are not a supported package or stable public API. |
 | Continuity Capsule resource lifecycle | No | No | No | No | S6 target; no second workload is authorized before it passes. |

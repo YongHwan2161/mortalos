@@ -1,6 +1,6 @@
 # MortalOS post-hackathon North Star implementation plan
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1 promoted; S2 remediation HOLD**
+Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2 promoted; S3 candidate HOLD**
 
 Plan authority date: **2026-07-25 KST**
 
@@ -8,7 +8,7 @@ Initial planning base: `origin/main`
 `079e37dfdea8ce94998533979546b65cc09709d6`
 
 Last reconciled main base: `origin/main`
-`d0a9ba0f7e4f1a3a17cb7d4af04a9c1113a09ec4`
+`e04a579081d96a834455abba79c66e4a102a4487`
 
 Owner: `codex-protocol-kernel`
 
@@ -74,7 +74,7 @@ They must be refreshed at S0.
 | Live handoff | A→B preserves identity and B advances after A closes. | The live participant keeps key and evidence in memory; B is not cold-restarted before continuation. |
 | Durable participant | A consent-gated IndexedDB `1-of-1` participant restores after reload. | It is separate from live handoff and quorum, expires after 1–30 days, and cannot durably operate `2-of-3`. |
 | Quorum | A/B/C logical `2-of-3`, every one-endpoint loss pair, and D repair pass in isolated Chromium contexts. | Context isolation is not independently persisted process/device/credential-domain evidence. |
-| State | `mortalos-state/1` binds a bounded deterministic state transition and JS/Python receipts. | General availability, chunk recovery, confidentiality, and retrievability remain outside the accepted state transition. |
+| State | `mortalos-state/1` binds bounded deterministic transitions; the S3 candidate additionally binds canonical resource manifests, chunks, and JS/Python receipts. | Physical-domain availability, confidentiality, and global retrievability remain unproven. |
 | Relay | Cloudflare Durable Object relay is bounded and non-authoritative. | Public evidence is retained for one to seven days; it is not the resource durability or confidentiality layer. |
 | Product surface | A bilingual Lab exposes continuity, guided falsification, durability, corpus, and diagnostics. | Three participant implementations and a large Lab controller are not a stable SDK or one coherent product path. |
 | Distribution | Source exports exist internally. | The package remains private `0.0.0` with no supported CLI/package contract. |
@@ -343,8 +343,8 @@ inject a recognized head.
 
 Priority: **P0**
 
-Status: **HOLD — candidate remediation in progress; promotion requires a replacement
-exact receipt, independent review, merge, post-merge Verify, and Deploy**
+Status: **PROMOTED — exact receipt, independent review, expected-head merge,
+post-merge Verify, and Deploy passed on main**
 
 ### Goal
 
@@ -415,7 +415,8 @@ storage failure without double-signing, inventing a head, or losing accepted sta
 
 Priority: **P0**
 
-Status: **PLANNED**
+Status: **HOLD — candidate implemented; exact receipt, independent review,
+expected-head merge, post-merge Verify, and Deploy remain required**
 
 ### Goal
 
@@ -463,7 +464,10 @@ cannot be chosen from ambient runtime defaults.
   stale root, oversized resource, and decompression/decoding bomb each fail with a
   stable bounded result.
 - [ ] Ten thousand seeded loss, reorder, duplicate, partial-fetch, and tamper
-  schedules produce zero false acceptance and deterministic outcomes.
+  schedules invoke the public recovery API end to end, including real inventory,
+  fetch, chunk verification, reconstruction, aggregate verification, and activation;
+  two executions produce byte-identical summaries with zero metadata-only or false
+  acceptance.
 - [ ] Recovery is resumable and idempotent; interruption never replaces the last
   verified local state.
 - [ ] Existing v0/v1 corpus and mortality behavior remain byte-identical unless a
@@ -802,7 +806,7 @@ The following target commands must be introduced by the owning stages:
 | --- | --- | --- |
 | `npm run test:participant-core` | S1 | Model/state-machine and adapter-boundary corpus |
 | `npm run test:durable-quorum` | S2 | Cold restart, fault injection, sign-once durability |
-| `npm run test:state-recovery` | S3 | Chunk/manifest recovery and tamper matrix |
+| `npm run test:state-package` | S3 | Chunk/manifest recovery and tamper matrix |
 | `npm run test:confidentiality` | S4 | AEAD, epoch, rotation, relay-capture matrix |
 | `npm run test:sdk` | S5 | Package/API/CLI clean-install interoperability |
 | `npm run test:capsule` | S6 | Complete bounded resource lifecycle |
@@ -922,24 +926,25 @@ If any item is missing, the status is **HOLD**, not “mostly complete.”
 
 ## 21. Current execution frontier
 
-S0 and S1 are promoted. S2 is the sole authorized implementation frontier and
+S0 through S2 are promoted. S3 is the sole authorized implementation frontier and
 remains HOLD until all of the following occur:
 
-1. successful v1→v2 migration atomically creates the v2 participant document and
-   deletes every legacy object store in the same version-change transaction;
-2. a failed migration retains the complete v1 database without a partial v2 write;
-3. authority removal leaves no legacy or v2 sign-capable key and no raw signing
-   path;
-4. the frozen replacement source passes the complete S2 fault matrix, Node/browser
-   parity, actual Chromium, full repository regression, coverage, and zero-finding
-   dependency audit;
-5. a replacement receipt binds the exact source, migration/deletion proof, commands,
-   environment, artifact digests, and negative receipt mutations;
-6. the final PR head passes mandatory policy/Verify checks and a fresh independent
-   immutable-snapshot review; and
-7. only the reviewed expected head merges, followed by exact-main Verify, Deploy,
-   and receipt/public readback where applicable.
+1. canonical manifest, input, receipt, chunk, resource, and state-root bytes are
+   reproduced by JavaScript and an independent non-JavaScript verifier;
+2. every surviving logical replica pair reconstructs the exact 1 MiB resource
+   after third-replica and primary-relay deletion;
+3. missing, changed, reordered, duplicate, wrong-size, stale, oversized, and
+   decoding inputs fail with stable bounded results;
+4. interruption remains resumable and idempotent without replacing the prior
+   verified active state;
+5. 10,000 deterministic loss/reorder/duplicate/partial/tamper schedules yield zero
+   metadata-only acceptance;
+6. v0/v1 conformance and mortality remain byte- and behavior-identical;
+7. an exact receipt binds the frozen source, commands, environment, artifacts, and
+   every strict S3 result; and
+8. the final PR head passes policy/Verify and fresh independent immutable review,
+   then only the expected head merges and passes exact-main Verify and Deploy.
 
-S3 may begin only after S2 is `PROMOTED`. S3 must not be combined with S2 remediation:
-doing so would blur the signing-authority boundary with the later state-availability
-boundary and make failure attribution non-deterministic.
+S4 may begin only after S3 is `PROMOTED`. Confidentiality and epoch keys must not be
+combined with S3 recovery because integrity/availability and secrecy/revocation need
+separate failure attribution.
