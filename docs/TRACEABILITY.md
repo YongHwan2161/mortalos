@@ -11,8 +11,8 @@ deployment contract and exact-source public Pages release are executable and
 verified. The bounded `mortalos/1` state runtime is executable and cross-language
 verified. The S1 candidate routes live, durable-reload, handoff, quorum, catch-up,
 fork, snapshot, and availability behavior through one Participant Core with a
-static adapter boundary. Crash-safe durable quorum and R3 state
-availability/recovery remain open.
+static adapter boundary. Crash-safe durable quorum is promoted. R3 bounded state
+availability/recovery is implemented as an exact-source candidate.
 
 ## 1. Test ID convention
 
@@ -177,6 +177,10 @@ A change to any invariant, message field, domain separator, validation precedenc
 | S2 any A/B/C loss and D repair | same actual-Chromium gate, `100/100` per loss: surviving pair cold-start, transition, D acceptance/repair, next transition | PASS required on exact S2 head |
 | S2 schema migration and rollback | actual IndexedDB v1→v2 migration atomically retires all legacy stores and leaves no sign-capable legacy key after authority removal; corrupt, removed-plus-key, and active-keyless upgrade abort retains v1 unchanged | PASS required on exact S2 head |
 | S2 explicit expiry/renewal/removal | Node and Chromium tests prove persisted expiry across clock rollback/cold restart; null/stale/equal renewal rejection with the expired state retained; strictly-future CAS-protected renewal; and atomic key removal with replayable public evidence | PASS required on exact S2 head |
+| S3 canonical manifest and lineage binding | `src/state/package.mjs`, `src/state/engine.mjs`, and `test/state-package.test.mjs` bind exact manifest, receipt, prior/next root, input, genome, and event payload | PASS required on exact S3 head |
+| S3 independent 1 MiB verification | `scripts/verify-state-package.mjs`, `r1/python/state_package_verify.py`, and `test/vectors/state-package-v1.json` reproduce 16 chunk digests, resource root, state root, input, manifest, and receipt bytes | PASS required on exact S3 head |
+| S3 any-two recovery and adversarial matrix | `src/state/recovery.mjs` and `test/state-package.test.mjs` delete the third replica plus relay, reconstruct exact bytes, reject tamper/order/duplicate/size/stale/limit/decoding failures, and preserve the prior active state | PASS required on exact S3 head |
+| S3 10,000 deterministic recovery schedules | fixed-seed loss/reorder/duplicate/partial/tamper planning produces deterministic bounded outcomes and zero metadata-only acceptance | PASS required on exact S3 head |
 
 The validator enforces unique eligible key IDs. It does not prove that keys belong to independent people, processes, devices, or failure domains. A `1-of-1` descriptor is explicitly unilateral; a multi-key descriptor is independently controlled only when deployment evidence shows that no domain controls its threshold.
 

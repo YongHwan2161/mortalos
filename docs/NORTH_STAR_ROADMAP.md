@@ -1,8 +1,8 @@
 # MortalOS North Star roadmap
 
-Status: **ACTIVE — S2 crash-safe durable quorum candidate**
+Status: **ACTIVE — S3 state availability and recovery candidate**
 
-Last synchronized: **2026-07-25 KST**
+Last synchronized: **2026-07-26 KST**
 
 The sole detailed implementation SSOT is the
 [post-hackathon North Star implementation plan](POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md).
@@ -27,12 +27,13 @@ browser-held non-extractable keys, A→B succession, logical `2-of-3` loss/repai
 evidence, an authority-neutral relay, and English/Korean Lab acceptance.
 
 S1 is promoted and routes the live incubator, durable reload, handoff, and logical
-quorum participants through one deterministic Participant Core. S2 adds a versioned
+quorum participants through one deterministic Participant Core. S2 is promoted and adds a versioned
 write-ahead sign-once journal, replay-only recovery, strict IndexedDB transactions,
 explicit authority policy, schema migration, process-cold handoff recovery, and
-durable one-loss/D-repair matrices. Its implementation is not promoted until the
-exact S2 receipt, immutable review, merge, post-merge Verify, and deployment agree.
-The next architectural gap is S3 exact resource reconstruction; confidentiality and
+durable one-loss/D-repair matrices. S3 now has a candidate canonical resource
+manifest, 64 KiB content-addressed chunks, exact 1 MiB reconstruction, resumable
+recovery, and an independent Python verifier. It remains unpromoted until its exact
+receipt, immutable review, merge, post-merge Verify, and deployment agree. Confidentiality and
 independent failure domains remain later stages. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
@@ -75,5 +76,5 @@ byte-identical for the portable corpus. Exactly 10,000 cases replay from seed
 `1297044052`. Any cross-runtime mismatch reopens the earliest portable gate and
 invalidates later evidence. An old green run does not cover a new SHA.
 
-S3 must not begin until the complete S2 receipt, immutable review, expected-head
+S4 must not begin until the complete S3 receipt, immutable review, expected-head
 merge, post-merge Verify, and exact-main deployment are promoted.

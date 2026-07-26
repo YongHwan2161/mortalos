@@ -5,7 +5,33 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — S2 promotion-mode receipt regression
+### ACTIVE — Implement S3 R3 state availability and recovery
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `e04a579081d96a834455abba79c66e4a102a4487`
+- Work branch: `agent/codex-protocol-kernel--s3-state-availability-recovery`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--s3-state-availability-recovery`
+- Intended shared paths: state package/recovery modules under `src/state/`; state
+  validator/rejection exports; S3 tests, corpus, Python differential verifier,
+  package commands, normative docs, exact receipt/schema/verifier/tests, and
+  matching workflow evidence.
+- Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and `WORKLOG.md`.
+- Intended change: bind a bounded raw resource to a `mortalos/1` state transition
+  through a canonical manifest and deterministic receipt; recover exact chunks
+  through a bounded transport-neutral adapter; keep availability local,
+  observer-relative, and excluded from protocol mortality.
+- Required gates: JavaScript/Python byte identity; any two logical replicas recover
+  the exact 1 MiB resource after third-replica and relay deletion; stable
+  adversarial results; interruption resume/idempotence; 10,000 deterministic
+  schedules executed twice through the public recovery path; unchanged
+  conformance/mortality; exact S3 receipt; full repository
+  suite; immutable independent review; expected-head merge; exact-main Verify and
+  Deploy.
+- Excluded: encryption or epoch keys, physical/provider independence, browser quota
+  durability, Firefox/WebKit parity, SDK/CLI, Capsule, and any availability-derived
+  death rule.
+
+### HISTORICAL — S2 promotion-mode receipt regression
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `55db1a9b73bcffeeb4a4812ad408d31b8a4e673f`
@@ -32,7 +58,7 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   sequence `1` and pulse count `1`; the verifier must await those exact public
   outcomes.
 
-### ACTIVE — Implement S2 crash-safe durable quorum
+### HISTORICAL — S2 crash-safe durable quorum implementation
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `d0a9ba0f7e4f1a3a17cb7d4af04a9c1113a09ec4`
@@ -98,7 +124,7 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   removed/null-key document, no legacy key, and no raw signing path. A fresh source,
   receipt, CI snapshot, and independent review are mandatory.
 
-### ACTIVE — S1 receipt post-squash portability correction
+### HISTORICAL — S1 receipt post-squash portability correction
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `a4d5183941c82845532a003b55b03522e3e98872`
@@ -128,7 +154,7 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 - Expected handoff: one focused hotfix PR; independent immutable-head review;
   expected-head squash merge only after PASS
 
-### ACTIVE — Implement S1 Unified Participant Core
+### HISTORICAL — Implement S1 Unified Participant Core
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `4a3ede86402ba507c49fb5f563bf932fedd5eb1c`
