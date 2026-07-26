@@ -1,6 +1,6 @@
 # MortalOS post-hackathon North Star implementation plan
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2/S3 promoted; S4 ADR REVIEW**
+Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2/S3 promoted; S4 runtime candidate**
 
 Plan authority date: **2026-07-25 KST**
 
@@ -8,7 +8,7 @@ Initial planning base: `origin/main`
 `079e37dfdea8ce94998533979546b65cc09709d6`
 
 Last reconciled main base: `origin/main`
-`1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`
+`39529337b2a739b1aee4697e680643d77704bbaa`
 
 Owner: `codex-protocol-kernel`
 
@@ -486,8 +486,7 @@ cannot be chosen from ambient runtime defaults.
 
 Priority: **P1**
 
-Status: **ADR REVIEW — implementation HOLD until the cryptographic ADR is
-independently reviewed and promoted**
+Status: **IMPLEMENTATION CANDIDATE — ADR promoted; receipt/review/merge/deploy HOLD**
 
 ### Goal
 
@@ -519,37 +518,49 @@ preserving deterministic integrity, recovery, and explicit membership changes.
 
 ### Strict PASS criteria
 
-- [ ] The crypto ADR is independently reviewed before code is merged.
-- [ ] Standard known-answer vectors and cross-runtime vectors pass.
-- [ ] Relay and remote-store captures contain no plaintext resource content,
+- [x] The crypto ADR is independently reviewed before code is merged.
+- [x] Standard known-answer vectors and cross-runtime vectors pass.
+- [x] Relay and remote-store captures contain no plaintext resource content,
   plaintext content key, private signing key, or unwrapped epoch key.
-- [ ] Current quorum participants recover and decrypt exact state after one replica
+- [x] Current quorum participants recover and decrypt exact state after one replica
   and relay loss.
-- [ ] A participant removed at epoch `N` cannot decrypt state first created at epoch
+- [x] A participant removed at epoch `N` cannot decrypt state first created at epoch
   `N+1`, while authorized survivors can.
-- [ ] Replayed, substituted, truncated, reordered, or cross-resource ciphertext
+- [x] Replayed, substituted, truncated, reordered, or cross-resource ciphertext
   fails authentication without exposing partial plaintext.
-- [ ] Nonce uniqueness is enforced through one epoch-wide linearizable counter
+- [x] Nonce uniqueness is enforced through one epoch-wide linearizable counter
   authority and tested across at least 1,000,000 records from concurrent writers
   with zero collision; cross-endpoint failover, local-only allocation,
   lost-authority, stale, rollback, and overflow all fail before
   encryption.
-- [ ] The counter authority uses an epoch-bound strict Ed25519 public key and exact
+- [x] Two actual Chromium endpoints sharing the reference authority produce
+  exactly one CAS winner; after full browser-process termination, the persistent
+  profile restores the same non-extractable sign-only key, receipt-chain digest,
+  and next counter.
+- [x] The package manifest binds `transition_id`, and creation/import recompute
+  `epoch_id` from the exact authority receipt, current encryption-key set,
+  membership, organism, epoch, and transition; a failover-local allocator is
+  rejected before reservation or WebCrypto.
+- [x] The counter authority uses an epoch-bound strict Ed25519 public key and exact
   domain-separated JCS reservation receipts; replacement keys, forged or altered
   signatures, stale chains, and receipts not committed by the package all reject.
-- [ ] A conforming authority's concurrent CAS emits one signed successor per prior
+- [x] A conforming authority's concurrent CAS emits one signed successor per prior
   tuple. Jointly observed valid overlaps create explicit authority-equivocation
   evidence and block the epoch; hidden forks and compromised-authority
   confidentiality are explicit nonclaims.
-- [ ] Every unsigned 64-bit epoch and counter is represented in JCS as a canonical
+- [x] Every unsigned 64-bit epoch and counter is represented in JCS as a canonical
   decimal string and boundary-tested across `2^53` through `2^64 - 1`; no JSON
   number coercion is accepted.
-- [ ] Rotation interrupted at every write boundary restores the old complete epoch
+- [x] Rotation interrupted at every write boundary restores the old complete epoch
   or the new complete epoch, never a mixed accepted state.
-- [ ] Authority loss or equivocation can rotate `N→N+1` with unchanged membership,
+- [x] Authority loss or equivocation can rotate `N→N+1` with unchanged membership,
   a fresh authority key, fresh AES key, complete re-encryption/rewrapping, and
   quorum-authorized atomic activation.
-- [ ] Metadata leakage and absence of retroactive secrecy are visibly documented.
+- [x] Metadata leakage and absence of retroactive secrecy are visibly documented.
+
+These checked items are exact-head candidate evidence only. S4 is not promoted until
+the exact receipt, full ordered repository suite, immutable implementation review,
+expected-head merge, and exact-main Verify plus Deploy close.
 
 ### HOLD / rollback
 

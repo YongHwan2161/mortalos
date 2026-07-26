@@ -9,6 +9,11 @@ const args = [
   "--test-coverage-include=src/primordials.mjs",
   "--test-coverage-include=src/schema-validation.mjs",
   "--test-coverage-include=src/rejection-codes.mjs",
+  "--test-coverage-include=src/confidential/format.mjs",
+  "--test-coverage-include=src/confidential/keys.mjs",
+  "--test-coverage-include=src/confidential/counter.mjs",
+  "--test-coverage-include=src/confidential/package.mjs",
+  "--test-coverage-include=src/confidential/recovery.mjs",
   "--test-coverage-include=src/state/package.mjs",
   "--test-coverage-include=src/state/recovery.mjs",
   "--test-coverage-include=src/validator.mjs",
@@ -19,6 +24,11 @@ const args = [
   "test/crypto.test.mjs",
   "test/schema-validation.test.mjs",
   "test/rejection-codes.test.mjs",
+  "test/confidential-format.test.mjs",
+  "test/confidential-counter.test.mjs",
+  "test/confidential-crypto-vectors.test.mjs",
+  "test/confidential-package.test.mjs",
+  "test/confidential-s3-recovery.test.mjs",
   "test/state-package.test.mjs",
   "test/validator.test.mjs",
   "test/lineage.test.mjs",
@@ -27,7 +37,11 @@ const args = [
 ];
 
 const result = spawnSync(process.execPath, args, {
-  env: { ...process.env, MORTALOS_SKIP_FULL_SIGNATURE_BUDGET: "1" },
+  env: {
+    ...process.env,
+    MORTALOS_SKIP_FULL_SIGNATURE_BUDGET: "1",
+    MORTALOS_SKIP_S4_MILLION_IV: "1"
+  },
   stdio: "inherit"
 });
 if (result.error) throw result.error;

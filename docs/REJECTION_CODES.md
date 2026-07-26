@@ -75,6 +75,29 @@ Reject {
 | `E_STATE_PACKAGE_RECEIPT_MISMATCH` | Receipt bytes or their domain-separated digest differ from the deterministic package receipt. |
 | `E_STATE_UNAVAILABLE` | The bounded recovery observation cannot obtain every required chunk; this is not protocol death. |
 | `E_STATE_RECOVERY_INTERRUPTED` | A staged chunk or final active-record boundary was interrupted; the prior verified active record remains. |
+| `E_CONFIDENTIAL_FORMAT` | An S4 canonical document has the wrong exact shape, format, encoding, or byte representation. |
+| `E_CONFIDENTIAL_LIMIT` | An S4 resource, package, AAD, chunk, membership, or document exceeds a fixed suite-1 ceiling. |
+| `E_CONFIDENTIAL_DECIMAL` | An epoch, counter, count, or interval is not a canonical bounded decimal string. |
+| `E_CONFIDENTIAL_CRYPTO` | Required WebCrypto support or an exact suite-1 primitive result is unavailable. |
+| `E_CONFIDENTIAL_KEY` | A custodian encryption public key has an invalid digest, encoding, algorithm, modulus, exponent, hash, or usage. |
+| `E_CONFIDENTIAL_EPOCH` | An epoch ID basis is malformed, unsorted, duplicated, or not bound to its exact authority, membership, organism, and transition. |
+| `E_CONFIDENTIAL_IV` | An IV is not the exact `MOS4 || uint64_be(counter)` value or repeats within a package. |
+| `E_CONFIDENTIAL_COUNTER_RECEIPT` | A reservation receipt has invalid canonical fields, arithmetic, chain binding, authority identity, or strict Ed25519 signature. |
+| `E_CONFIDENTIAL_COUNTER_STALE` | A reservation or receipt does not match the active next counter and prior-receipt digest. |
+| `E_CONFIDENTIAL_COUNTER_EXHAUSTED` | A reservation would exceed the suite-1 `2^32` invocation cap for one epoch key. |
+| `E_CONFIDENTIAL_COUNTER_AUTHORITY` | The bound counter authority is lost, retired, mismatched, or cannot perform its linearizable transaction. |
+| `E_CONFIDENTIAL_WRAP` | An epoch-key wrap, OAEP label, recipient/key binding, wrapped length, or unwrap operation is invalid. |
+| `E_CONFIDENTIAL_MEMBERSHIP` | The encryption membership is empty, duplicated, or inconsistent with the exact current custodian set. |
+| `E_CONFIDENTIAL_CHUNK` | A ciphertext chunk has an invalid order, counter, length, tag, encoding, or digest. |
+| `E_CONFIDENTIAL_AAD` | Canonical chunk AAD is oversized, malformed, or not bound to the exact package context. |
+| `E_CONFIDENTIAL_BINDING` | A verified package differs from an explicitly required organism, membership, epoch, resource, or prior confidential root. |
+| `E_CONFIDENTIAL_PACKAGE_ROOT` | The canonical ciphertext manifest does not reproduce its declared confidential root. |
+| `E_CONFIDENTIAL_RECEIPT` | The confidential transition receipt does not exactly bind the verified package. |
+| `E_CONFIDENTIAL_KEY_UNAVAILABLE` | Ciphertext is available but the endpoint has no exact current-recipient unwrap authority; this is not invalid lineage or death. |
+| `E_CONFIDENTIAL_REJECTED` | Authenticated decryption or the encrypted internal resource commitment fails without exposing partial plaintext or an oracle detail. |
+| `E_CONFIDENTIAL_INTERRUPTED` | S4 recovery or final confidential activation is interrupted while retaining a complete old or new epoch. |
+| `E_CONFIDENTIAL_ACTIVATION_STALE` | An atomic confidential-epoch activation compares against a different active prior root. |
+| `E_CONFIDENTIAL_ROTATION` | A rotation lacks exact quorum-validated input, a consecutive epoch, an allowed reason, or the required membership/authority binding. |
 | `E_EVENT_PAYLOAD_HASH_ENCODING` | Event payload hash is not a valid v0 SHA-256 encoding. |
 | `E_CUSTODIAN_COUNT_RANGE` | Custodian count is outside 1 through 16. |
 | `E_CUSTODIAN_DUPLICATE_KEY` | Two custodians declare the same public key. |

@@ -1,15 +1,18 @@
 # S4 confidential-state cryptography
 
-Status: **PROPOSED ADR — IMPLEMENTATION HOLD**
+Status: **PROMOTED ADR — S4 IMPLEMENTATION CANDIDATE**
 
 Decision owner: `codex-protocol-kernel`
 Independent reviewer: `reviewer-merge-gate`
 Decision base: `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`
+ADR promotion commit: `39529337b2a739b1aee4697e680643d77704bbaa`
 
-No S4 runtime code may merge until this ADR passes an immutable independent review
-and is promoted to `main`. The eventual implementation must use only the suite and
-failure rules below; a different algorithm, encoding, nonce rule, or key lifecycle
-requires a replacement ADR and fresh review.
+The ADR passed immutable independent review and was promoted to `main` before any
+runtime implementation began. The S4 runtime remains a candidate until its exact
+receipt, complete repository gates, independent immutable implementation review,
+expected-head merge, and exact-main Verify plus Deploy all pass. The implementation
+must use only the suite and failure rules below; a different algorithm, encoding,
+nonce rule, or key lifecycle requires a replacement ADR and fresh review.
 
 ## 1. Decision
 
@@ -234,6 +237,16 @@ across processes and endpoints. A future physical deployment must name the actua
 authority and durability domain in its topology receipt; S4 alone does not claim
 that domain is independently durable.
 
+The browser reference adapter persists the non-extractable Ed25519 private key and
+epoch records by structured clone in one versioned IndexedDB database. An
+origin-scoped exclusive Web Lock serializes conforming callers across tabs and
+renderer processes, while the IndexedDB record revision supplies a second
+compare-and-swap check before commit. Reopening the same persistent browser profile
+after full Chromium process termination must recover the same authority ID,
+non-extractable sign-only key, receipt-chain digest, and next counter. This proves
+reference failover within that storage/credential domain; it does not prove the S7
+independence of that domain.
+
 The authority owns a distinct WebCrypto-generated Ed25519 key pair. Its private key
 is non-extractable with `sign` usage only. Its public key is the exact strict
 32-byte RFC 8032 encoding tagged `ed25519:`. The `authority_id` is the tagged
@@ -292,9 +305,13 @@ The signature is the existing strict tagged 64-byte Ed25519 encoding. The receip
 digest is SHA-256 over
 the `MortalOS S4 counter receipt v1` domain, one `0x00` byte, and the complete
 receipt JCS bytes. Each confidential package manifest commits the exact receipt
-digest, `interval_start`, `interval_end_exclusive`, and authority ID. Its chunk at
-index `i` must use counter `interval_start + i`, and `count` must equal the package
-chunk count.
+digest, `interval_start`, `interval_end_exclusive`, authority ID, and
+`transition_id`. On creation and import, the verifier recomputes `epoch_id` from
+the receipt's authority ID/public key, sorted wrap encryption-key digests, epoch,
+membership head, organism ID, and `transition_id`. A caller-selected or
+failover-local authority therefore fails before reservation or WebCrypto. Its
+chunk at index `i` must use counter `interval_start + i`, and `count` must equal
+the package chunk count.
 
 The first reservation in an epoch has `prior_receipt_digest: null`. Every later
 reservation carries the exact digest of the previously committed receipt. The
@@ -558,6 +575,9 @@ S4 implementation remains HOLD until all of the following pass on one frozen sou
 - at least 1,000,000 IV allocations from concurrent endpoints sharing one
   epoch-wide linearizable authority with zero duplicates, plus failover,
   local-only allocation, lost-authority, rollback, stale, and overflow rejection;
+- actual Chromium two-endpoint contention with exactly one CAS winner, followed by
+  full browser-process termination and recovery of the same non-extractable
+  authority key, receipt chain, and next counter from a persistent profile;
 - conforming CAS conflict tests with exactly one signed successor per prior tuple;
   jointly observed valid overlapping receipts produce explicit authority
   equivocation and authority-only rotation, while hidden-fork detection remains an
