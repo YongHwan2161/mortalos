@@ -9,7 +9,7 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:transport && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2",
+    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:s3-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:transport && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2 && npm run verify:s3",
     "verify:license": "node scripts/verify-license.mjs",
     "verify:spec": "node scripts/verify-spec.mjs",
     "verify:links": "node scripts/verify-links.mjs",
@@ -17,6 +17,7 @@
     "test:baseline-receipt": "node --test test/baseline-receipt.test.mjs",
     "test:s1-receipt": "node --test test/s1-receipt.test.mjs",
     "test:s2-receipt": "node --test test/s2-receipt.test.mjs",
+    "test:s3-receipt": "node --test test/s3-receipt.test.mjs",
     "test:participant-core": "node --test test/participant-core.test.mjs",
     "test:participant-core:coverage": "node --test --experimental-test-coverage --test-coverage-include=lab/participant/core.mjs --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=95 test/participant-core.test.mjs",
     "verify:participant-core": "node scripts/verify-participant-core.mjs",
@@ -59,7 +60,8 @@
     "verify:h2": "node scripts/demo-trace.mjs --verify",
     "verify:baseline": "node scripts/verify-baseline-receipt.mjs",
     "verify:s1": "node scripts/verify-s1-receipt.mjs",
-    "verify:s2": "node scripts/verify-s2-receipt.mjs"
+    "verify:s2": "node scripts/verify-s2-receipt.mjs",
+    "verify:s3": "node scripts/verify-s3-receipt.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.8",

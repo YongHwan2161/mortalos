@@ -1,0 +1,242 @@
+{
+  "format": "mortalos-stage-receipt/2",
+  "stage": "S3",
+  "status": "PASS",
+  "source_commit": "9470e35e2804238f41212049ce14484c7b9e2e58",
+  "base_commit": "e04a579081d96a834455abba79c66e4a102a4487",
+  "source_committed_at": "2026-07-26T05:05:04.000Z",
+  "dependency_lock_digest": "sha256:c69b887d03595e6f734849129fd73ab0f2898ec81f848b65463d1bf7ba4b9298",
+  "protocol_versions": [
+    "mortalos/0",
+    "mortalos/1"
+  ],
+  "state_versions": [
+    "mortalos-state/1"
+  ],
+  "state_package_versions": [
+    "mortalos-state-package-input/1",
+    "mortalos-state-package-manifest/1",
+    "mortalos-state-package-receipt/1",
+    "mortalos-state-package-transition/1"
+  ],
+  "recovery_policy": "mortalos-state-recovery-policy/1",
+  "limits": {
+    "chunk_bytes": 65536,
+    "input_bytes": 4096,
+    "manifest_bytes": 32768,
+    "max_chunks": 64,
+    "receipt_bytes": 4096,
+    "reference_resource_bytes": 1048576,
+    "resource_bytes": 4194304,
+    "sources": 8,
+    "inventory_entries_per_source": 64
+  },
+  "commands": [
+    {
+      "command": "npm run test:state-package",
+      "status": "PASS",
+      "summary": "Twelve state-package, lineage-binding, any-two recovery, bounded-adversary, interruption, destination-failure, aggregate-root, and 10,000-schedule tests passed."
+    },
+    {
+      "command": "npm run verify:state-package",
+      "status": "PASS",
+      "summary": "Independent Python and JavaScript implementations reproduced the same 1 MiB resource, 16 chunks, input, manifest, receipt, resource root, and next state root."
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "summary": "The complete ordered repository chain passed without interruption on the frozen source commit."
+    },
+    {
+      "command": "npm run test:coverage",
+      "status": "PASS",
+      "summary": "Coverage including both new S3 modules passed the 90% branch gate at 95.98% lines, 92.26% branches, and 95.93% functions."
+    },
+    {
+      "command": "npm audit --audit-level=high",
+      "status": "PASS",
+      "summary": "All 177 dependency records reported zero vulnerabilities."
+    },
+    {
+      "command": "npm run verify:portable",
+      "status": "PASS",
+      "summary": "Seventeen portable modules, a 129123-byte browser bundle, and 10,000 adversarial cases were byte-identical or rejected as required."
+    },
+    {
+      "command": "npm run test:conformance",
+      "status": "PASS",
+      "summary": "All 76 existing v0/v1 conformance and mortality tests passed, including the genuine 1152-unit signature boundary."
+    },
+    {
+      "command": "npm run verify:s3",
+      "status": "PASS",
+      "summary": "Receipt schema, source lineage, exact path inventory, committed artifact digests, strict S3 results, limitations, and immutable receipt bytes read back exactly."
+    }
+  ],
+  "environment": {
+    "os": "Windows",
+    "architecture": "x64",
+    "node": "v22.12.0",
+    "npm": "10.9.0",
+    "python": "3.14.2",
+    "chromium": "149.0.7827.55",
+    "wrangler": "4.114.0",
+    "timezone": "Asia/Seoul"
+  },
+  "seeds": {
+    "state_recovery_schedule": 1395872307,
+    "state_recovery_schedule_count": 10000,
+    "property_corpus_count": 10000,
+    "participant_schedule_count": 10000,
+    "durable_handoff_trials": 100,
+    "durable_loss_trials_per_endpoint": 100
+  },
+  "started_at": "2026-07-26T05:05:05.000Z",
+  "completed_at": "2026-07-26T05:47:07.179Z",
+  "results": {
+    "state_package_tests": {
+      "passed": 12,
+      "failed": 0
+    },
+    "reference_resource": {
+      "bytes": 1048576,
+      "chunks": 16,
+      "chunk_bytes": 65536,
+      "resource_root": "sha256:_H1crgtitnrQps3Z71-BnuB3I6MrVwRbswhu6RiYF7Q",
+      "next_state_root": "sha256:qzqUy7QG1wQM-JWGhKhZTNg1dgMlMF77WXuf3CkostE"
+    },
+    "independent_verifier": {
+      "implementations": [
+        "JavaScript",
+        "Python"
+      ],
+      "byte_identical": true,
+      "records": 1
+    },
+    "any_two_recovery": {
+      "combinations": [
+        "AB",
+        "AC",
+        "BC"
+      ],
+      "passed": 3,
+      "failed": 0,
+      "third_replica_deleted": true,
+      "primary_relay_deleted": true,
+      "exact_bytes_reconstructed": 1048576
+    },
+    "adversarial_matrix": {
+      "cases": [
+        "changed_byte",
+        "reordered_chunk",
+        "duplicate_chunk",
+        "wrong_size",
+        "wrong_manifest",
+        "stale_root",
+        "oversized_resource",
+        "decoding_bomb",
+        "adapter_interruption",
+        "destination_interruption",
+        "aggregate_root_mismatch"
+      ],
+      "stable_failures": 11,
+      "unexpected_acceptances": 0,
+      "seeded_schedules": 10000,
+      "metadata_only_acceptances": 0
+    },
+    "recovery_semantics": {
+      "missing_status": "state_unavailable",
+      "missing_code": "E_STATE_UNAVAILABLE",
+      "interrupted_status": "interrupted",
+      "interrupted_code": "E_STATE_RECOVERY_INTERRUPTED",
+      "resumable": true,
+      "idempotent": true,
+      "prior_active_state_preserved": true,
+      "mortality_unchanged": true
+    },
+    "protocol_conformance": {
+      "passed": 76,
+      "failed": 0,
+      "signature_budget_units": 1152,
+      "overflow_unit_rejected": 1153
+    },
+    "property_cases": {
+      "passed": 10000,
+      "failed": 0
+    },
+    "durable_quorum": {
+      "node_tests_passed": 8,
+      "handoff_passed": 100,
+      "loss_A_passed": 100,
+      "loss_B_passed": 100,
+      "loss_C_passed": 100,
+      "stale_signer_calls": 0
+    },
+    "portable_contract": {
+      "modules": 17,
+      "browser_bundle_bytes": 129123,
+      "adversarial_rejected": 10000,
+      "adversarial_total": 10000,
+      "node_browser_byte_identical": true
+    },
+    "coverage_percent": {
+      "repository": {
+        "lines": 95.98,
+        "branches": 92.26,
+        "functions": 95.93
+      },
+      "state_package": {
+        "lines": 97.08,
+        "branches": 91.6,
+        "functions": 100
+      },
+      "state_recovery": {
+        "lines": 99.3,
+        "branches": 94.69,
+        "functions": 100
+      }
+    },
+    "dependency_vulnerabilities": {
+      "production_dependencies": 4,
+      "total_dependencies": 177,
+      "high_or_higher": 0,
+      "total": 0
+    }
+  },
+  "known_limitations": [
+    "The three replicas are deterministic logical stores in one process and administrative domain, not independent physical providers.",
+    "S3 proves integrity and bounded recovery but does not provide confidentiality or epoch-key revocation; those remain S4.",
+    "The relay and inventory are non-authoritative hints, and S3 does not prove global availability outside the bounded observation.",
+    "The supported product package and CLI contract remain S5 work.",
+    "Cross-provider burn-in and Firefox or WebKit parity remain S7 and S8 work."
+  ],
+  "failures": [],
+  "artifact_digests": {
+    "README.md": "sha256:f3a2ce4829c6898266cc3c8183dd4a5c53a8ddb529b62930f058bcc7d8e124c5",
+    "agents/codex-protocol-kernel/HANDOFF.md": "sha256:99a10934a401343a3b9f21c62e48590fe89e15070f4253730f3df84ae66195f2",
+    "agents/codex-protocol-kernel/WORKLOG.md": "sha256:3857cb267ab8509f69544ce698706f75b3c4bb637b0a4cee5e62e356efc82f02",
+    "docs/CLAIM_MATRIX.md": "sha256:9336ac9d48af4bd6e4cf697eae440071a3afe33fc1d3cb8bfcbf1e76c82d57c4",
+    "docs/NORTH_STAR_ROADMAP.md": "sha256:2dee9185bf0da8f78d0caa1af44017968f595d2beb9e14ade3bbfc79dece2613",
+    "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md": "sha256:4bbed34372cb88b26b4b13de4e6056892f790f888966ffcb6127b01b611a1e2c",
+    "docs/PROTOCOL.md": "sha256:645d5e89c2f23f69dd2b8e6a555f388a636dd1dcf5dc8fc224e101830ffe7136",
+    "docs/README.md": "sha256:2bd5ee276674625601ec265cddb22ab0d19c1301b0ea9efc305b16d71fdb4ff6",
+    "docs/REJECTION_CODES.md": "sha256:e83870dba2f0e7668d020c05d149107d36b181cba8f5cb3cd573ac838ec74cd8",
+    "docs/STAGE_TRACKING.md": "sha256:b5ae3dee398b2bf5c898db512943ff07a026628483f06a430289a892eaf0eaa7",
+    "docs/STATE_AVAILABILITY_AND_RECOVERY.md": "sha256:2080228ebef107d759bbd8d965569ab8e9f77d56e743238c44970c61f9709254",
+    "docs/THREAT_MODEL.md": "sha256:769674da53fcd1640f9bd9c2ff508901a5b05185058452f79c1b84df0bf222a4",
+    "docs/TRACEABILITY.md": "sha256:9b9778ed5c3be6340c1f8a3d22b9cba51ca4d3788684a4646fc7d2ff475fff2e",
+    "package.json": "sha256:5632c71f980a0b35e5938f9968f2a2fc7e9c51d3847de2acdbb1003604f106ac",
+    "r1/python/state_package_verify.py": "sha256:907dce1fe74c975e38b14cf5284cfdaa7e75a3ee7eaa500bb7cd101d34950411",
+    "scripts/run-coverage.mjs": "sha256:42e3815ac2acd84f0b39ed33f13fa39da4b9378ba63fb6c6bec21f5ea0117d7a",
+    "scripts/verify-state-package.mjs": "sha256:ff4c72797da14e86e5c4248562c3453656d623dadfc383c9a6d0227c05e8d37b",
+    "src/index.mjs": "sha256:1dd09ec9df3004ed590dcdaddec16881b6e579ef71de7c6dd29f3c73212aae0c",
+    "src/rejection-codes.mjs": "sha256:e43b329d1485bd748409859e708f2d244a4bea60d1a7ec0ea581780415bf7e48",
+    "src/state/engine.mjs": "sha256:a3b4ab48c675126defd1373ac35eb91018c64f127a5aab1283760230116dc2e6",
+    "src/state/package-corpus.mjs": "sha256:356a3771205f47df4a521f83e7127cf959755429d301f9beca4f0f68f6a3164f",
+    "src/state/package.mjs": "sha256:febb3366fdfc956a799f8810a7eb853c26ebc06c71558837c58944920f80363e",
+    "src/state/recovery.mjs": "sha256:1f4b43b8fd5a15cadec726c0d1e8d363ab6e68a91c861eb97581743943572921",
+    "test/state-package.test.mjs": "sha256:7a9017097287638f2e7bf890d4b6b861e610ede6789d8dcb8531dedf06443e27",
+    "test/vectors/state-package-v1.json": "sha256:894514c3f198a188f645f7242ee8cb65d262902f7ca7f5212d2a5bb78eb7bc94"
+  },
+  "review_snapshot": "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference."
+}
