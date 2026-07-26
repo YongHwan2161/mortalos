@@ -18,6 +18,7 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   `docs/STAGE_TRACKING.md`, and `docs/THREAT_MODEL.md`.
 - Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md` and
   `agents/codex-protocol-kernel/WORKLOG.md`.
+- Exact verifier-regression path: `test/s3-receipt.test.mjs`.
 - Intended change: reconcile S3 promotion evidence; specify the complete
   standards-only S4 cryptographic contract before implementation, including
   AES-256-GCM record encryption, RSA-OAEP-3072-SHA-256 epoch-key wrapping,
@@ -25,6 +26,8 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   binding, atomic rotation and recovery, removed-member semantics, metadata
   leakage, migration, and fail-closed test obligations.
 - Required gates: no runtime or dependency changes; exact doc link/spec checks;
+  the S3 synthetic merge fixture must remain pinned to the immutable S3 promotion
+  tree when later branches add files;
   crypto ADR independently reviewed at an immutable PR head; expected-head squash
   merge; post-merge Verify and Deploy. S4 implementation remains forbidden until
   the ADR is promoted.

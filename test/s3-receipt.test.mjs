@@ -111,8 +111,10 @@ test("a synthetic direct-parent squash is permanently verifiable without source 
 });
 
 test("a GitHub-style pull-request merge verifies its exact tree without masquerading as promotion", async () => {
+  const repositoryResult = await verifyS3Receipt();
   const head = git(["rev-parse", "HEAD"]);
-  const mergeCommit = syntheticPullRequestMergeCommit(head);
+  const promotionTreeish = repositoryResult.promotionCommit ?? head;
+  const mergeCommit = syntheticPullRequestMergeCommit(promotionTreeish);
   const replaceBase = "refs/s3-receipt-test-replace/";
   const replaceRef = `${replaceBase}${head}`;
   const previousReplaceBase = process.env.GIT_REPLACE_REF_BASE;

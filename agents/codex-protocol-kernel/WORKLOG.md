@@ -1465,3 +1465,9 @@ result, and reproducible verification.
   vulnerabilities; license, specification (81 relative links), release-link
   inventory (53 local and 12 HTTPS syntax-only), governance 30/30, and
   `git diff --check` are clean. Runtime and dependency files are unchanged.
+- PR #44's first Verify correctly exposed a post-promotion regression in the S3
+  receipt test fixture: its synthetic GitHub merge borrowed the mutable current
+  branch tree, so the newly added ADR path was incorrectly counted as an S3
+  promotion artifact. The fixture now obtains the immutable discovered S3
+  promotion tree (or the candidate HEAD before promotion) before constructing the
+  synthetic merge. Production receipt verification remains unchanged.
