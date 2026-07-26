@@ -9,15 +9,15 @@ import Ajv2020 from "ajv/dist/2020.js";
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const defaultReceiptPath = resolve(defaultRoot, "evidence", "stages", "s3-state-recovery.json");
 const EXPECTED_RECEIPT_DIGEST =
-  "sha256:7ef6b5f1d991e85bad9f40eac76faf3fabbceeb5653f214fcf99795050b1f603";
-const EXPECTED_SOURCE_COMMIT = "9470e35e2804238f41212049ce14484c7b9e2e58";
+  "sha256:321b886fba65cb85d6d3f1559eed904ff0af74575f47d48c3029d8de442f0e0c";
+const EXPECTED_SOURCE_COMMIT = "11fbdd814b1ae7f21080078f1b0306dbca8d77b7";
 const EXPECTED_BASE_COMMIT = "e04a579081d96a834455abba79c66e4a102a4487";
 const EXPECTED_PROMOTION_PACKAGE_DIGEST =
   "sha256:e1deb5964531af54db9760a5f559ba00b6468252a62cac1e7c38bb0d994f15d1";
 const EXPECTED_SCHEMA_DIGEST =
   "sha256:10eb65ed34ecdc43224d36659716dcb79620a1605dc49c8964258bae2fb73e0f";
 const EXPECTED_TEST_DIGEST =
-  "sha256:a2fc2e8215504aa3777e64faf72c63d78a9f6113999d499a630f00ce68ebfc42";
+  "sha256:5e455a14fc2ee41bddc390714741c3453fe83acc37e859430149e5fe12534be7";
 const EXPECTED_REVIEW_SNAPSHOT =
   "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference.";
 const EXPECTED_SOURCE_PATHS = [
@@ -245,16 +245,23 @@ function assertSemanticEvidence(receipt) {
       "changed_byte",
       "reordered_chunk",
       "duplicate_chunk",
+      "duplicate_chunk_constructor",
       "wrong_size",
       "wrong_manifest",
       "stale_root",
+      "unknown_input_format",
+      "unsupported_input_operation",
+      "invalid_transition_id",
+      "quorum_rebound_input",
       "oversized_resource",
       "decoding_bomb",
       "adapter_interruption",
       "destination_interruption",
+      "activation_before_interruption",
+      "activation_after_interruption",
       "aggregate_root_mismatch"
     ],
-    stable_failures: 11,
+    stable_failures: 18,
     unexpected_acceptances: 0,
     seeded_schedules: 10000,
     metadata_only_acceptances: 0
@@ -267,6 +274,9 @@ function assertSemanticEvidence(receipt) {
     resumable: true,
     idempotent: true,
     prior_active_state_preserved: true,
+    activation_before_prior_preserved: true,
+    activation_after_prior_preserved: true,
+    commit_failure_unpublished: true,
     mortality_unchanged: true
   });
   assert.deepEqual(receipt.results.protocol_conformance, {
@@ -286,14 +296,14 @@ function assertSemanticEvidence(receipt) {
   });
   assert.deepEqual(receipt.results.portable_contract, {
     modules: 17,
-    browser_bundle_bytes: 129123,
+    browser_bundle_bytes: 129501,
     adversarial_rejected: 10000,
     adversarial_total: 10000,
     node_browser_byte_identical: true
   });
   assert.deepEqual(receipt.results.coverage_percent, {
-    repository: { lines: 95.98, branches: 92.26, functions: 95.93 },
-    state_package: { lines: 97.08, branches: 91.6, functions: 100 },
+    repository: { lines: 95.99, branches: 92.26, functions: 95.95 },
+    state_package: { lines: 97.15, branches: 91.53, functions: 100 },
     state_recovery: { lines: 99.3, branches: 94.69, functions: 100 }
   });
   assert.deepEqual(receipt.results.dependency_vulnerabilities, {

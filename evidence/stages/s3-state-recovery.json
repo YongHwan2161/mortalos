@@ -2,9 +2,9 @@
   "format": "mortalos-stage-receipt/2",
   "stage": "S3",
   "status": "PASS",
-  "source_commit": "9470e35e2804238f41212049ce14484c7b9e2e58",
+  "source_commit": "11fbdd814b1ae7f21080078f1b0306dbca8d77b7",
   "base_commit": "e04a579081d96a834455abba79c66e4a102a4487",
-  "source_committed_at": "2026-07-26T05:05:04.000Z",
+  "source_committed_at": "2026-07-26T08:05:54.000Z",
   "dependency_lock_digest": "sha256:c69b887d03595e6f734849129fd73ab0f2898ec81f848b65463d1bf7ba4b9298",
   "protocol_versions": [
     "mortalos/0",
@@ -35,7 +35,7 @@
     {
       "command": "npm run test:state-package",
       "status": "PASS",
-      "summary": "Twelve state-package, lineage-binding, any-two recovery, bounded-adversary, interruption, destination-failure, aggregate-root, and 10,000-schedule tests passed."
+      "summary": "Twelve state-package, strict semantic-input, constructor-duplicate, lineage-binding, any-two recovery, activation-boundary, bounded-adversary, aggregate-root, and 10,000-schedule tests passed."
     },
     {
       "command": "npm run verify:state-package",
@@ -50,7 +50,7 @@
     {
       "command": "npm run test:coverage",
       "status": "PASS",
-      "summary": "Coverage including both new S3 modules passed the 90% branch gate at 95.98% lines, 92.26% branches, and 95.93% functions."
+      "summary": "Coverage including both S3 modules passed the 90% branch gate at 95.99% lines, 92.26% branches, and 95.95% functions."
     },
     {
       "command": "npm audit --audit-level=high",
@@ -60,7 +60,7 @@
     {
       "command": "npm run verify:portable",
       "status": "PASS",
-      "summary": "Seventeen portable modules, a 129123-byte browser bundle, and 10,000 adversarial cases were byte-identical or rejected as required."
+      "summary": "Seventeen portable modules, a 129501-byte browser bundle, and 10,000 adversarial cases were byte-identical or rejected as required."
     },
     {
       "command": "npm run test:conformance",
@@ -91,8 +91,8 @@
     "durable_handoff_trials": 100,
     "durable_loss_trials_per_endpoint": 100
   },
-  "started_at": "2026-07-26T05:05:05.000Z",
-  "completed_at": "2026-07-26T05:47:07.179Z",
+  "started_at": "2026-07-26T08:05:55.000Z",
+  "completed_at": "2026-07-26T08:44:31.581Z",
   "results": {
     "state_package_tests": {
       "passed": 12,
@@ -130,16 +130,23 @@
         "changed_byte",
         "reordered_chunk",
         "duplicate_chunk",
+        "duplicate_chunk_constructor",
         "wrong_size",
         "wrong_manifest",
         "stale_root",
+        "unknown_input_format",
+        "unsupported_input_operation",
+        "invalid_transition_id",
+        "quorum_rebound_input",
         "oversized_resource",
         "decoding_bomb",
         "adapter_interruption",
         "destination_interruption",
+        "activation_before_interruption",
+        "activation_after_interruption",
         "aggregate_root_mismatch"
       ],
-      "stable_failures": 11,
+      "stable_failures": 18,
       "unexpected_acceptances": 0,
       "seeded_schedules": 10000,
       "metadata_only_acceptances": 0
@@ -152,6 +159,9 @@
       "resumable": true,
       "idempotent": true,
       "prior_active_state_preserved": true,
+      "activation_before_prior_preserved": true,
+      "activation_after_prior_preserved": true,
+      "commit_failure_unpublished": true,
       "mortality_unchanged": true
     },
     "protocol_conformance": {
@@ -174,20 +184,20 @@
     },
     "portable_contract": {
       "modules": 17,
-      "browser_bundle_bytes": 129123,
+      "browser_bundle_bytes": 129501,
       "adversarial_rejected": 10000,
       "adversarial_total": 10000,
       "node_browser_byte_identical": true
     },
     "coverage_percent": {
       "repository": {
-        "lines": 95.98,
+        "lines": 95.99,
         "branches": 92.26,
-        "functions": 95.93
+        "functions": 95.95
       },
       "state_package": {
-        "lines": 97.08,
-        "branches": 91.6,
+        "lines": 97.15,
+        "branches": 91.53,
         "functions": 100
       },
       "state_recovery": {
@@ -222,7 +232,7 @@
     "docs/README.md": "sha256:2bd5ee276674625601ec265cddb22ab0d19c1301b0ea9efc305b16d71fdb4ff6",
     "docs/REJECTION_CODES.md": "sha256:e83870dba2f0e7668d020c05d149107d36b181cba8f5cb3cd573ac838ec74cd8",
     "docs/STAGE_TRACKING.md": "sha256:b5ae3dee398b2bf5c898db512943ff07a026628483f06a430289a892eaf0eaa7",
-    "docs/STATE_AVAILABILITY_AND_RECOVERY.md": "sha256:2080228ebef107d759bbd8d965569ab8e9f77d56e743238c44970c61f9709254",
+    "docs/STATE_AVAILABILITY_AND_RECOVERY.md": "sha256:faaafae2b7752b8ee5fc0f6d656a49dc299ae71a66353cfbf5fd3c9d06a47b1d",
     "docs/THREAT_MODEL.md": "sha256:769674da53fcd1640f9bd9c2ff508901a5b05185058452f79c1b84df0bf222a4",
     "docs/TRACEABILITY.md": "sha256:9b9778ed5c3be6340c1f8a3d22b9cba51ca4d3788684a4646fc7d2ff475fff2e",
     "package.json": "sha256:5632c71f980a0b35e5938f9968f2a2fc7e9c51d3847de2acdbb1003604f106ac",
@@ -233,9 +243,9 @@
     "src/rejection-codes.mjs": "sha256:e43b329d1485bd748409859e708f2d244a4bea60d1a7ec0ea581780415bf7e48",
     "src/state/engine.mjs": "sha256:a3b4ab48c675126defd1373ac35eb91018c64f127a5aab1283760230116dc2e6",
     "src/state/package-corpus.mjs": "sha256:356a3771205f47df4a521f83e7127cf959755429d301f9beca4f0f68f6a3164f",
-    "src/state/package.mjs": "sha256:febb3366fdfc956a799f8810a7eb853c26ebc06c71558837c58944920f80363e",
-    "src/state/recovery.mjs": "sha256:1f4b43b8fd5a15cadec726c0d1e8d363ab6e68a91c861eb97581743943572921",
-    "test/state-package.test.mjs": "sha256:7a9017097287638f2e7bf890d4b6b861e610ede6789d8dcb8531dedf06443e27",
+    "src/state/package.mjs": "sha256:0921b8b22cc9e2fb09425da9d8159e800d7803e0cf90ff56e2b71e4e8fd765e1",
+    "src/state/recovery.mjs": "sha256:9bfde52d058fe400a78bf23a2141866838de57eac469e0bd0e72c93d9f71262e",
+    "test/state-package.test.mjs": "sha256:d5ee5f057af7644a44f55c7056591a9cc54a0100f2ecc425edcacbea07cb8167",
     "test/vectors/state-package-v1.json": "sha256:894514c3f198a188f645f7242ee8cb65d262902f7ca7f5212d2a5bb78eb7bc94"
   },
   "review_snapshot": "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference."
