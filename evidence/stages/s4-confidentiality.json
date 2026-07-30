@@ -1,0 +1,277 @@
+{
+  "format": "mortalos-stage-receipt/2",
+  "stage": "S4",
+  "status": "PASS",
+  "source_commit": "5655db34880fb29fcad9e1a9d2d01ec046d8cf24",
+  "base_commit": "39529337b2a739b1aee4697e680643d77704bbaa",
+  "source_committed_at": "2026-07-30T14:06:39.000Z",
+  "dependency_lock_digest": "sha256:c69b887d03595e6f734849129fd73ab0f2898ec81f848b65463d1bf7ba4b9298",
+  "suite": "mortalos-confidential-state-suite/1",
+  "formats": [
+    "mortalos-confidential-active-epoch/1",
+    "mortalos-confidential-epoch-id/1",
+    "mortalos-confidential-package/1",
+    "mortalos-confidential-package-manifest/1",
+    "mortalos-confidential-rotation/1",
+    "mortalos-confidential-rotation-authorization/1",
+    "mortalos-counter-reservation-basis/1",
+    "mortalos-counter-reservation-receipt/1",
+    "mortalos-epoch-key-wrap/1",
+    "mortalos-epoch-wrap-label/1"
+  ],
+  "limits": {
+    "aad_bytes": 4096,
+    "chunk_plaintext_bytes": 65536,
+    "counter_max_exclusive": "4294967296",
+    "epoch_max": "18446744073709551615",
+    "max_chunks": 64,
+    "package_bytes": 5000000,
+    "reference_resource_bytes": 1048576,
+    "rsa_wrapped_key_bytes": 384
+  },
+  "commands": [
+    {
+      "command": "npm run test:confidentiality",
+      "status": "PASS",
+      "summary": "Twenty-two confidentiality tests plus actual Chromium persistent loss and equivocation rotations passed."
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "summary": "The complete ordered repository chain passed without interruption on the frozen source commit."
+    },
+    {
+      "command": "npm run test:coverage",
+      "status": "PASS",
+      "summary": "All five S4 modules and the repository passed the 90 percent branch gate."
+    },
+    {
+      "command": "npm audit --json",
+      "status": "PASS",
+      "summary": "All 177 dependency records reported zero vulnerabilities."
+    },
+    {
+      "command": "npm run verify:portable",
+      "status": "PASS",
+      "summary": "Twenty-two portable modules, a 131736-byte browser bundle, and 10000 adversarial cases passed."
+    },
+    {
+      "command": "npm run test:durable-quorum",
+      "status": "PASS",
+      "summary": "The pre-existing S2 durable handoff and endpoint-loss acceptance remained green."
+    },
+    {
+      "command": "npm run test:state-package",
+      "status": "PASS",
+      "summary": "The pre-existing S3 state-package recovery acceptance remained green."
+    },
+    {
+      "command": "npm run verify:s4",
+      "status": "PASS",
+      "summary": "Receipt schema, source lineage, exact artifact inventory, strict S4 results, limitations, and immutable bytes read back exactly."
+    }
+  ],
+  "environment": {
+    "os": "Windows",
+    "architecture": "x64",
+    "node": "v22.12.0",
+    "npm": "10.9.0",
+    "python": "3.14.2",
+    "chromium": "149.0.7827.55",
+    "wrangler": "4.114.0",
+    "timezone": "Asia/Seoul"
+  },
+  "seeds": {
+    "million_iv_workers": 16,
+    "million_iv_reservations": 15625,
+    "million_iv_records": 1000000,
+    "property_corpus_count": 10000,
+    "participant_schedule_count": 10000,
+    "state_recovery_schedule_count": 10000
+  },
+  "started_at": "2026-07-30T14:07:07.7462058Z",
+  "completed_at": "2026-07-30T15:02:13.4728114Z",
+  "results": {
+    "confidential_tests": {
+      "passed": 22,
+      "failed": 0
+    },
+    "cryptography": {
+      "content_cipher": "AES-256-GCM",
+      "key_wrap": "RSA-OAEP-3072-SHA-256",
+      "counter_signature": "Ed25519",
+      "iv_prefix_hex": "4d4f5334",
+      "iv_bytes": 12,
+      "authentication_tag_bytes": 16,
+      "private_unwrap_key_extractable": false,
+      "recovered_epoch_key_extractable": false,
+      "recovered_epoch_key_decrypt_only": true,
+      "counter_signing_key_extractable": false
+    },
+    "published_vectors": {
+      "wycheproof_commit": "b61843a9a5115bb758134b6a1f5d5e502d445342",
+      "wycheproof_case": "rsa_oaep_3072_sha256_mgf1_sha256_tcId_1",
+      "nist_aes_256_gcm_ciphertext_and_tag": "cea7403d4d606b6e074ec5d3baf39d18d0d1c8a799996bf0265b98b5d48ab919",
+      "accepted": 2,
+      "failed": 0
+    },
+    "nonce_uniqueness": {
+      "records": 1000000,
+      "writers": 16,
+      "reservations": 15625,
+      "duplicate_ivs": 0,
+      "counter_start": "0",
+      "counter_end_exclusive": "1000000",
+      "single_cas_winner": 1,
+      "stale_cas_rejections": 31
+    },
+    "browser_counter_authority": {
+      "endpoints": 2,
+      "cas_winners": 1,
+      "stale_rejections": 1,
+      "full_process_restart": true,
+      "same_authority_id": true,
+      "same_nonextractable_sign_only_key": true,
+      "next_counter_before_restart": "1",
+      "next_counter_after_restart": "2",
+      "private_record_branded": true,
+      "store_capability_private_record": true,
+      "own_method_replacement_rejected": true,
+      "prototype_method_replacement_ignored": true,
+      "retirement_persisted": true,
+      "post_retirement_reservation_rejected": true,
+      "lost_rotation_completed": true,
+      "equivocation_rotation_completed": true,
+      "old_authority_blocked_after_equivocation": true
+    },
+    "ciphertext_capture": {
+      "relay_plaintext_occurrences": 0,
+      "store_plaintext_occurrences": 0,
+      "raw_epoch_key_occurrences": 0,
+      "private_key_occurrences": 0,
+      "ciphertext_only_s3": true
+    },
+    "any_two_recovery": {
+      "combinations": ["AB", "AC", "BC"],
+      "passed": 3,
+      "failed": 0,
+      "third_replica_deleted": true,
+      "primary_relay_deleted": true,
+      "exact_bytes_decrypted": 1048576
+    },
+    "membership_and_rotation": {
+      "removed_member_future_epoch_denied": true,
+      "authorized_survivor_succeeded": true,
+      "old_epoch_remained_atomic_on_fault": true,
+      "new_epoch_activated_atomically": true,
+      "authority_loss_requires_fresh_authority": true,
+      "observed_equivocation_blocks_activation": true,
+      "observed_equivocation_retires_bound_authority": true,
+      "forged_equivocation_evidence_rejected": true,
+      "fake_lost_authority_rejected": true,
+      "subclass_authority_rejected": true,
+      "proxy_authority_rejected": true,
+      "public_method_override_ignored": true,
+      "persistent_facade_rotation_supported": true,
+      "rotation_requires_validator_branded_head": true,
+      "rotation_requires_current_quorum_signatures": true,
+      "hidden_fork_global_detection_claimed": false
+    },
+    "failure_matrix": {
+      "stable_rejection_codes": 23,
+      "unexpected_acceptances": 0,
+      "failover_local_reservation_calls": 0,
+      "wrong_key_rejected": true,
+      "wrong_epoch_rejected": true,
+      "wrong_label_rejected": true,
+      "duplicate_wrap_rejected": true,
+      "authentication_tag_rejected": true,
+      "counter_rollback_rejected": true,
+      "counter_overflow_rejected": true
+    },
+    "status_separation": {
+      "state_unavailable_is_not_decryption_failure": true,
+      "decryption_failure_is_not_mortality": true,
+      "missing_authority_is_not_reconstructed_from_ciphertext": true
+    },
+    "protocol_conformance": {
+      "passed": 76,
+      "failed": 0
+    },
+    "property_cases": {
+      "passed": 10000,
+      "failed": 0
+    },
+    "portable_contract": {
+      "modules": 22,
+      "browser_bundle_bytes": 131734,
+      "adversarial_rejected": 10000,
+      "adversarial_total": 10000,
+      "node_browser_byte_identical": true
+    },
+    "coverage_percent": {
+      "repository": { "lines": 95.3, "branches": 91.91, "functions": 94.53 },
+      "counter": { "lines": 94, "branches": 93.43, "functions": 79.59 },
+      "format": { "lines": 96.43, "branches": 90.57, "functions": 100 },
+      "keys": { "lines": 97.81, "branches": 93.88, "functions": 100 },
+      "package": { "lines": 94.69, "branches": 87.5, "functions": 100 },
+      "recovery": { "lines": 88.77, "branches": 84.95, "functions": 100 }
+    },
+    "dependency_vulnerabilities": {
+      "production_dependencies": 4,
+      "total_dependencies": 177,
+      "critical": 0,
+      "high": 0,
+      "moderate": 0,
+      "low": 0,
+      "total": 0
+    }
+  },
+  "known_limitations": [
+    "The reference counter authority is one browser-profile IndexedDB database and Web Locks domain, not a globally replicated Byzantine-fault-tolerant service.",
+    "A hidden authority fork cannot be detected until conflicting valid receipts are jointly observed.",
+    "Forward revocation does not erase old keys, plaintext, or ciphertext already retained by a formerly authorized custodian.",
+    "Traffic timing, ciphertext length, participant count, membership changes, and access patterns are not hidden.",
+    "The three S3 replicas remain logical stores in one process and administrative domain rather than independent physical providers.",
+    "The supported product package, cross-provider burn-in, and Firefox or WebKit parity remain later-stage work."
+  ],
+  "failures": [],
+  "artifact_digests": {
+    ".github/workflows/deploy-lab.yml": "sha256:b05c8df44383358c2c97f7c65917bbbebf65c09ed0825f3a18ea8e277ae00050",
+    ".github/workflows/verify.yml": "sha256:f72a2231eb2d452c35c60e035169230a8e3104bf740276be70ff1f427dff8d40",
+    "README.md": "sha256:67c6087addcaff66354c35d0b2a24dc77a59414d2b66e3ad2aa0d6ddf2aa3e09",
+    "agents/codex-protocol-kernel/HANDOFF.md": "sha256:6c101bc06cd10b065d858e52d286efd664dfc57dee36ca93fed2f1d99bef4e0f",
+    "agents/codex-protocol-kernel/MEMORY.md": "sha256:1275c7f939e706fc6d0fcc144be4bb8511699816e7474051a664d3c16285fd8b",
+    "agents/codex-protocol-kernel/WORKLOG.md": "sha256:cad4119b33059c7bdd15a01f90ad66e29e6a832a7bbdd3ba88f42a4692c0258e",
+    "docs/CLAIM_MATRIX.md": "sha256:a0c0e2ce2bb3c9f8b353391f90fd58caa8684ce1eeb9484fe683a9f5c0ce66a1",
+    "docs/CONFIDENTIAL_STATE_CRYPTOGRAPHY.md": "sha256:f891265e8e3816357ba84d8b1b3edc77e4b67ed427bc02ed37e71210b8493976",
+    "docs/NORTH_STAR_ROADMAP.md": "sha256:ccba75b92340be6d2726bde190008c8f412dfcafd9da1ea85715cf0033fce987",
+    "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md": "sha256:42e95a5f5fff2a2615f5db51b5220d21d2c6c536985f5087a271defbc0065a9b",
+    "docs/README.md": "sha256:b19a84b1d90d8335a5feb12c98c4b47054b57362574ffc0d83b81bfa74151fe4",
+    "docs/REJECTION_CODES.md": "sha256:790e7cfc7c133bcaec2e285c8a81d81df0d6fa172eaf44716ae5628470c8e8aa",
+    "docs/STAGE_TRACKING.md": "sha256:3c67311a429b2f4767208e1eb25d678f0d988b1c45256e7ecb6436ad5254d99a",
+    "docs/THREAT_MODEL.md": "sha256:1ee37bd8a270279f41c0c120bbd45bd5206cde80a62a9a12a8b109be97000b50",
+    "docs/TRACEABILITY.md": "sha256:db581b916a5d16b6b01785af215c923fa16b3ed99a0f6ed695a9bd1184333da1",
+    "lab/storage/confidential-counter-authority-store.mjs": "sha256:8a5cec7db0b1f125b5ca6ff97b2fcf5ac56b2e0ee83d74368878fa11a439bdd5",
+    "package.json": "sha256:702ce38a8fc76c7ad4de99790201c80b773d77d3e02f72cb2e728c6639e61241",
+    "scripts/run-coverage.mjs": "sha256:13796a577e89832d3fc6a3a4d083968e7fe3f5ec81f1789ec9104282e9b62dcb",
+    "scripts/verify-confidential-chromium.mjs": "sha256:7fd1ba0324ab7070f83a2282e854bc25ccd053410dc780949cf388225c205fb2",
+    "src/confidential/counter.mjs": "sha256:9610075d98504774d19f161e1017acea295a05b50844a10d1816c8bd2273d04e",
+    "src/confidential/format.mjs": "sha256:f780ccc0f8872aa25cb585bb9731e12278437e9af4a11bec11cbc2831995e9c1",
+    "src/confidential/keys.mjs": "sha256:eb95d1e7535672a1f33ac0cf3ee6f36e3725c19678cdd318d73b13f6079bedaf",
+    "src/confidential/package.mjs": "sha256:90da43d25275f3651a94f780f020943d8462948f9eae219bf7c6612e6c6dc0fd",
+    "src/confidential/recovery.mjs": "sha256:110d312e623426e3c79f7e0061536b74ffd22acc45d5ca0f53dc68c5f49af609",
+    "src/index.mjs": "sha256:e57760cbfe35f8b931753021b82a27806a4920d4b50eb0404d937b748a509998",
+    "src/rejection-codes.mjs": "sha256:0687a1281fca746f3b35e6b2462d9bb35fc5070ad1c4fa79d72eeb6ac77c712e",
+    "test/confidential-browser-entry.mjs": "sha256:cf4a0ca1ca3f20800a3b1bd61b605a57984e295d4e46e66a49e666d3b37ca0c6",
+    "test/confidential-counter.test.mjs": "sha256:55590681dcfb07334a9cef603644284599c8342dc6c961e96e8387ce883602ab",
+    "test/confidential-crypto-vectors.test.mjs": "sha256:bf8233ad3790a77b9d74edf8572aec9b997e63536cc2f2a14d512d309a97e7fd",
+    "test/confidential-format.test.mjs": "sha256:65fa0d761f4340263f3400e45911f7023f9ae7517b478e81806f07f250cbf5f7",
+    "test/confidential-helpers.mjs": "sha256:e536083ea0c809a079f33a19140a8ff535aa3e18cdde36568b3347332f1181e4",
+    "test/confidential-package.test.mjs": "sha256:ef00f1e56d470561f04bcb154e9da5295fc92fe12385be21725736b4cec39802",
+    "test/confidential-s3-recovery.test.mjs": "sha256:7561f3cb115b5010fe20c4d4b99e47996d4d9d598e698cd08d5f43b53e18ada9",
+    "test/confidential-vector-runner.mjs": "sha256:f4e39b740d071865ea3cbd53ecee08fe9b0589fff64d63df0cbdf81b5fa1adeb",
+    "test/vectors/wycheproof-rsa-oaep-3072-sha256.mjs": "sha256:c5925b132ca3d0d5741346b49ebfa78d307807179679ab7c6d498b0d8c180057"
+  },
+  "review_snapshot": "PENDING: external reviewer-merge-gate attestation must bind the immutable PR head; this receipt does not self-reference."
+}
