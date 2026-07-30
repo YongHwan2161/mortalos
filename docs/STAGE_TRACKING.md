@@ -30,10 +30,15 @@ Anything less is **HOLD**.
 S1, S2, and S3 are promoted on `main` with main-history-portable receipts,
 independent immutable review, expected-head merge, post-merge Verify, and exact-main
 Deploy. S3 closed issue #32 at main
-`1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`.
+`1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`. The independently reviewed S4
+cryptographic ADR was then promoted at
+`39529337b2a739b1aee4697e680643d77704bbaa`.
 
-S4 is in ADR review on `agent/codex-protocol-kernel--s4-crypto-adr`.
-Cryptographic implementation is **HOLD** until
-[`CONFIDENTIAL_STATE_CRYPTOGRAPHY.md`](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is
-independently reviewed, expected-head merged, and passes post-merge Verify plus
-Deploy.
+S4 runtime implementation is an exact-head candidate on
+`agent/codex-protocol-kernel--s4-confidential-state`. Focused Node, one-million-IV,
+capture, any-two S3 recovery/decryption, removal/rotation, fault, coverage, and
+actual-Chromium gates pass. Promotion remains **HOLD** pending the exact
+`s4-confidentiality.json` receipt, frozen-source ordered rerun, immutable
+implementation review, expected-head merge, and exact-main Verify plus Deploy.
+The complete pre-freeze ordered suite passes, including the expanded actual
+Chromium authority contention and process-restart gate.
