@@ -101,11 +101,17 @@ Base: `44771ae83e2d7450ff9cad654e7a0fae6d144c9e`
 
 ## Current priority
 
-1. Publish and independently review the canonical localized-index verifier repair.
-2. Merge only its expected head and require official exact-main Deploy success.
-3. Verify relay, Pages manifest/source, and public EN/KO multi-browser acceptance.
-4. Promote the Devpost story or video only after public acceptance.
-5. Keep the last accepted deployment and existing compliant video as rollback.
+1. Freeze the S4 authority-boundary remediation as a new direct child of
+   `39529337b2a739b1aee4697e680643d77704bbaa`; PR #45 and PR #46 remain blocked
+   evidence and must not be promoted.
+2. Require the uninterrupted exact-source suite, including one million IVs,
+   module-private authority-boundary adversarial tests, facade-based loss and
+   equivocation rotation, and actual-Chromium IndexedDB facade retirement.
+3. Author a fresh source-bound S4 receipt only after that run; verify receipt
+   mutation negatives and the full promotion tree from the beginning.
+4. Request an immutable independent review of the new exact head. Merge only a
+   published PASS bound to that head, then require exact-main Verify and Deploy.
+5. Continue with S5 only after S4 public source/manifest readback is exact.
 
 ## Memory maintenance
 

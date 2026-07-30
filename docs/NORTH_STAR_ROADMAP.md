@@ -1,6 +1,6 @@
 # MortalOS North Star roadmap
 
-Status: **ACTIVE — S3 promoted; S4 cryptographic ADR review**
+Status: **ACTIVE — S3 promoted; S4 runtime candidate**
 
 Last synchronized: **2026-07-26 KST**
 
@@ -34,9 +34,13 @@ handoff recovery, and durable one-loss/D-repair matrices. S3 is promoted at
 `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d` with a canonical resource manifest,
 64 KiB content-addressed chunks, exact 1 MiB reconstruction, resumable recovery,
 an independent Python verifier, exact-main Verify `30202501790/1`, and Deploy
-`30202501782/2`. S4 implementation remains blocked while the
-[confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is under
-independent review. Independent failure domains remain a later stage. The
+`30202501782/2`. The S4 cryptographic ADR is promoted at `39529337…`; its runtime
+candidate now implements ciphertext-only S3 packages, non-extractable RSA/AES key
+handling, epoch-wide signed counter reservations, any-two recovery/decryption,
+removed-member denial, and authority-only rotation. S4 promotion remains gated by
+its exact receipt, frozen-source rerun, independent review, merge, and exact-main
+deployment; the complete pre-freeze ordered suite passes. Independent failure
+domains remain a later stage. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
 

@@ -406,19 +406,45 @@ Resource contribution must be explicit and revocable in later participant-runtim
   is S4 work; independent provider/domain evidence is S7 work; browser-engine parity
   is S8 work.
 
-## 18. S4 confidential-state ADR boundary
+## 18. S4 confidential-state boundary
 
-S4 implementation remains HOLD until the
-[confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is
-independently promoted. The proposed boundary uses AES-256-GCM only for bounded
+The [confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) was
+independently promoted before runtime work began. The exact-head implementation
+candidate uses AES-256-GCM only for bounded
 chunk authenticated encryption and RSA-OAEP-3072-SHA-256 only for recipient-specific
 epoch-key wrapping through WebCrypto.
 
 - Signing authority and confidentiality keys remain distinct.
 - GCM IVs are unique under one epoch key through a durable 64-bit invocation
   counter; gaps are safe and reuse is forbidden.
+- The browser reference authority stores its non-extractable sign-only key and
+  counter chain in IndexedDB and serializes same-origin endpoint callers with Web
+  Locks plus a storage revision CAS. Actual Chromium contention and full process
+  restart are required evidence; this is one credential/storage domain, not S7
+  physical independence.
+- Authority records resolve immutable constructor-registered store capabilities,
+  never caller-visible store methods. Own or prototype method replacement cannot
+  forge authority loss or retirement; actual Chromium must complete both loss and
+  equivocation rotations through the persistent IndexedDB/Web Locks facade.
+- Rotation captures the successor request once as an inert own-data record.
+  Current and successor membership arrays plus every recipient descriptor become
+  frozen owned records before authorization or any asynchronous callback. The
+  approved descriptor and package reservation resolve through the same exact,
+  WeakMap-branded authority capability; caller wrappers, accessors, repeated
+  public `descriptor` or `reserveRange` reads, and post-authorization array
+  mutation cannot substitute a different authority or recipient set. Actual
+  Chromium must reject the stateful `X`-then-`Y` authority substitution before
+  either authority reserves a counter and must keep the quorum-approved wrap set
+  despite a pre-construction recipient-array mutation.
 - Canonical AAD binds organism, membership head, epoch, resource, chunk position,
   prior confidential root, plaintext length, and invocation counter.
+- The S4 plaintext ceiling is 3,098,890 bytes for 1–16 custodians; its worst legal
+  16-wrap encoding is 4,194,303 bytes and therefore fits the S3 4,194,304-byte
+  raw-resource ceiling. Exact max, max+1, and custodian 17 are executable gates.
+- The confidential manifest carries `transition_id`; creation and import recompute
+  `epoch_id` from the exact receipt authority, current wrap-key set, membership,
+  organism, epoch, and transition. A failover-local allocator cannot merely repeat
+  the declared epoch ID.
 - Membership change creates a fresh epoch key and wraps it for every and only the
   new membership.
 - Decryption success is never protocol acceptance.
@@ -428,9 +454,15 @@ epoch-key wrapping through WebCrypto.
 - Rotation activation is atomic old-or-new; any mixed membership/key/package state
   fails closed while the prior complete epoch remains readable.
 
-The implementation must add relay/store capture evidence, standard and
-cross-runtime vectors, one-million-record IV uniqueness, removed-member denial, and
-every-write-boundary rotation faults before any confidentiality claim is promoted.
+The candidate has focused relay/store capture evidence, standard and cross-runtime
+vectors, one-million-record IV uniqueness, actual IndexedDB/Web Locks endpoint
+contention, browser-process restart recovery, persistent loss/equivocation
+rotation, mutable-store attack rejection, successor-substitution rejection,
+recipient-substitution rejection, failover-local authority rejection,
+removed-member denial, authority-only rotation, and
+every-write-boundary old-or-new fault evidence. These do not become a promoted
+confidentiality claim until the exact receipt, full suite, independent
+implementation review, merge, and exact-main deployment all pass.
 
 ## 19. Threat-model change control
 
