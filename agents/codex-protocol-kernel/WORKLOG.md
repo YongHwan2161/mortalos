@@ -1503,3 +1503,140 @@ result, and reproducible verification.
   unchanged-membership `N→N+1` rotation with fresh authority and AES keys,
   re-encryption, rewrapping, and old-or-new atomic recovery. Hidden forks and prior
   exposure remain explicit nonclaims.
+
+## 2026-07-27 — S4 confidential-state runtime candidate
+
+- Base: exact promoted ADR main
+  `39529337b2a739b1aee4697e680643d77704bbaa`.
+- Branch/worktree:
+  `agent/codex-protocol-kernel--s4-confidential-state` /
+  `codex-protocol-kernel--s4-confidential-state`.
+- Implemented `mortalos-confidential-state-suite/1` under `src/confidential/`:
+  canonical unsigned-64 decimal surfaces, strict Ed25519/JCS counter receipts,
+  one epoch-wide CAS authority, `MOS4 || uint64_be(counter)` IVs,
+  AES-256-GCM chunks, RSA-OAEP-3072-SHA-256 recipient wraps, ciphertext-only S3
+  layering, authorized recovery/decryption, and old-or-new epoch activation.
+- Custodian RSA private keys and recovered AES keys are non-extractable. S3 receives
+  the canonical confidential package bytes, not application plaintext or its
+  domain-separated internal commitment.
+- Focused exact-head evidence passed: 32-way CAS produced one success; sixteen
+  concurrent writer loops allocated exactly 1,000,000 distinct IVs with zero
+  collisions; valid joint forks exposed explicit authority equivocation; lost,
+  stale, rollback, overflow, replacement-key, and malformed-receipt paths failed
+  closed.
+- Pinned C2SP/Wycheproof RSA-OAEP-3072/SHA-256 tcId 1 at upstream commit
+  `b61843a9a5115bb758134b6a1f5d5e502d445342` and the NIST AES-256-GCM zero vector
+  pass in Node and actual Chromium with byte-identical JCS fixtures.
+- Relay/store capture contains no reference plaintext marker or public plaintext
+  commitment. Every `AB`, `AC`, and `BC` logical S3 replica pair reconstructed the
+  ciphertext package and an authorized current custodian decrypted the exact
+  one-MiB resource after third-replica and relay deletion.
+- Membership rotation omitted the removed `N` recipient from all `N+1` wraps;
+  its complete old capture and private key could not decrypt future state while a
+  survivor could. Joint authority equivocation also rotated unchanged membership
+  with a fresh authority, epoch ID, AES key, complete re-encryption, and rewrap.
+- Injected failure after counter commit, every wrap, every chunk, package
+  verification, rotation recovery/successor construction, and before/after active
+  commit retained either the complete old or complete new epoch.
+- Focused S4 coverage is 96.59% lines / 90.58% branches / 100% functions. The full
+  repository coverage gate also passed at 96.22% / 92.17% / 96.75%. Dependency
+  audit covers 177 records with zero findings; spec checks bind 101 rejection codes
+  and all documentation links.
+- Remaining release work: freeze the complete source commit; run the full ordered
+  `npm test`; create and negatively test the exact S4 receipt; rerun all immutable
+  gates; obtain independent implementation review; expected-head merge; and require
+  exact-main Verify plus Deploy. No S4 promotion claim exists before those gates.
+- The first full ordered candidate run reached the final portability gate after all
+  S2, protocol, S3, S4, transport, relay, multi-browser, Lab, cost, R1, build, and
+  UX gates passed. It correctly failed because the static portable scan treated a
+  local variable named `document` in `src/confidential/package.mjs` as a DOM
+  dependency. Renaming that value to `parsedPackage` changed no bytes or behavior;
+  the focused portable rerun passed 22 modules, Node/browser byte identity, and
+  10,000/10,000 adversarial rejections.
+- Source-freeze review then found a real architectural gap: the million-IV test
+  used logical endpoint loops against only the in-memory authority, and package
+  verification accepted a declared `epoch_id` without recomputing its authority
+  basis. The candidate now includes a versioned IndexedDB/Web Locks authority
+  adapter. Actual Chromium proves exactly one winner across two endpoint pages and,
+  after complete browser-process termination, restores the same non-extractable
+  Ed25519 key and advances the persisted receipt chain from counter 1 to 2.
+- Confidential manifests now include `transition_id`. Creation and import
+  recompute `epoch_id` from the signed receipt authority, sorted current wrap-key
+  set, epoch, membership, organism, and transition. A substituted local authority
+  is rejected before its reservation method is invoked. The strengthened Node
+  package/S3 suite passes 11/11 and the expanded actual-Chromium vector/failover
+  verifier passes. A new complete ordered run remains required before source
+  freeze.
+- The complete strengthened pre-freeze `npm test` then passed in one uninterrupted
+  ordered chain. It included S0/S1/S2/S3 receipt negatives, Participant Core
+  100/94.83/100 coverage and 10,000 Node/Chromium schedules, S2 actual Chromium
+  handoff plus every A/B/C loss at `100/100`, 76 protocol tests, 10,000 property
+  cases, 10,000 deterministic state transitions, 10,000 S3 recovery schedules,
+  exactly 1,000,000 distinct S4 IVs with zero duplicate, all 20 confidential-state
+  cases, the expanded actual-Chromium durable authority gate, relay,
+  multi-browser, Lab/API/cost/R1, build/UX, 22-module portable parity with
+  10,000/10,000 adversarial rejections, independent Python state/state-package/R1,
+  singleton/H2, and the promoted S3 receipt. This run proves the candidate tree,
+  not yet the post-commit temporal receipt; the frozen source must rerun before S4
+  evidence is authored.
+
+## 2026-07-27 — S4 independent-review security remediation
+
+- Independent review froze PR #45 at head
+  `9f2236dc60ed826ccb7639e2b0f165385976972a` and returned **BLOCK**. No PASS
+  comment, merge, deployment, or promotion claim was made.
+- Four findings were reproduced: recovered AES handles retained encrypt usage;
+  jointly observed valid forks left their authority writable; rotation accepted a
+  caller-authored `quorum_validation: "accepted"` literal; and the last-character
+  Base64URL mutation could be a no-op.
+- Remediation makes recovered AES handles non-extractable and decrypt-only;
+  deterministically flips a decoded ciphertext byte; requires module-private
+  validator-branded current and direct-child membership heads plus exact
+  current-quorum Ed25519 signatures over a domain-separated rotation basis; and
+  binds reason, old/new epochs, membership heads, next authority ID, and resulting
+  encryption-key digests.
+- Joint-fork observation now accepts only an actual bound
+  `LinearizableCounterAuthority`, retires it, confirms the retired record, and
+  returns WeakSet-branded evidence. Cloned or forged evidence cannot authorize
+  rotation. Lost-authority rotation likewise requires an actual bound authority,
+  rejects reuse and membership changes, and succeeds only after its state is
+  genuinely inaccessible.
+- Focused remediation evidence: package/rotation tests pass `9/9`; the combined
+  counter run allocated exactly 1,000,000 distinct IVs with zero duplicates and
+  passed its remaining counter cases. The combined run's sole failure was a
+  misplaced new test block; after relocating it, the package suite passed. A new
+  frozen source, full ordered suite, fresh receipt, replacement PR, independent
+  review, merge, and exact-main Verify/Deploy remain required.
+- The first clean-worktree full source run passed specification, governance, and
+  S0-S3 receipt gates, then failed closed because `package.json` invoked the not-yet
+  authored S4 receipt test. Source and evidence phases are now explicit: the source
+  commit runs the complete runtime suite without S4 receipt/verification commands;
+  the later evidence commit alone adds the S4 receipt, verifier, negative tests,
+  and Verify/Deploy receipt gates.
+
+## 2026-07-27 — S4 second independent-review authority-boundary remediation
+
+- Independent review froze replacement PR #46 at head
+  `a16e2326a0bfda21660cf02bbca770f8c9108884` and returned **BLOCK** in
+  review `4782830849`. No merge, deployment, or PASS attestation was made.
+- The reviewer reproduced two related gaps. A subclass could override public
+  `descriptor`, `inspect`, and `retire`, authorize a false lost-state rotation,
+  or brand equivocation without retiring the real store. The actual persistent
+  `IndexedDbCounterAuthority` wrapper also failed the `instanceof` gate, so the
+  browser implementation could not perform the claimed recovery paths.
+- The remediation rejects subclass construction, freezes exact authority
+  instances, and binds exact authorities plus persistent facades to a
+  module-private WeakMap record. Rotation and equivocation use direct record-backed
+  descriptor, inspection, and retirement operations; they never call overrideable
+  public methods. Proxies, prototype lookalikes, arbitrary caller objects, and
+  unbranded wrappers fail closed.
+- The IndexedDB adapter now returns a frozen facade whose hidden record resolves to
+  the exact underlying authority. Focused Node tests cover subclass/proxy/lookalike
+  rejection, prototype override resistance, real store retirement, and successful
+  lost/equivocation rotation through a facade. The actual-Chromium gate additionally
+  requires the persistent facade to be internally branded, directly retired, and
+  unable to reserve after retirement.
+- The blocked source/receipt pair remains invalid. This remediated tree must be
+  frozen as a new direct-main source commit, then pass an uninterrupted exact-source
+  suite before a fresh receipt promotion, replacement PR, immutable independent
+  review, expected-head merge, exact-main verification, and deployment.

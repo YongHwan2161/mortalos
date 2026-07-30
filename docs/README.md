@@ -24,8 +24,9 @@ event. `mortalos/1` binds exact bounded state artifacts and deterministic
 transitions. The [R3 state availability ADR](STATE_AVAILABILITY_AND_RECOVERY.md)
 adds the promoted bounded manifest/chunk recovery protocol, but does not prove
 physical-domain durability or global availability. The
-[S4 confidential-state ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is proposed only;
-it grants no implementation or confidentiality claim before independent promotion.
+[S4 confidential-state ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is promoted. Its
+runtime is an exact-head candidate and grants no promoted confidentiality claim
+before its receipt, full suite, review, merge, and exact-main deployment pass.
 
 ## Architecture and compatibility
 
@@ -54,8 +55,8 @@ The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
 `2-of-3` loss/repair, the merged S1 Participant Core, S2 crash-safe durable quorum,
 and S3 exact logical resource recovery within the qualifications in the claim
-matrix. The S4 cryptographic ADR is proposed, but implementation remains HOLD until
-that ADR is independently promoted.
+matrix. The S4 ADR is promoted and the runtime candidate has focused evidence, but
+S4 promotion remains HOLD on its complete release chain.
 
 It does not yet promote confidential replicated state, independent failure
 domains, a public SDK/CLI,

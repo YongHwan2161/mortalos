@@ -11,8 +11,9 @@ relay, host, UI, or model as the source of truth.
 - Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos)
 - Current North Star: [post-hackathon roadmap](docs/NORTH_STAR_ROADMAP.md)
 
-The repository contains a promoted multi-browser baseline and unified Participant
-Core plus a receipt-gated crash-safe durable-quorum implementation. The
+The repository contains a promoted multi-browser baseline, unified Participant
+Core, crash-safe durable quorum, exact logical S3 recovery, and an S4 confidential
+state implementation candidate. The
 [claim matrix](docs/CLAIM_MATRIX.md) distinguishes
 implemented, exact-head verified, physically verified, promoted, and explicitly
 unclaimed behavior.
@@ -40,7 +41,8 @@ proof.
 | L2 — live endpoint succession | A→B custody handoff is accepted; after A closes, B signs the next state transition for the same identity. |
 | L3 — quorum resilience | A/B/C hold distinct keys under `2-of-3`; every complementary pair continues after the third endpoint is lost, and a new D can repair membership. |
 | L4 — deterministic state | JavaScript and an independently written Python verifier reproduce byte-identical next-state and receipt records; tamper and limits fail atomically. |
-| L5 — recoverable resource state | A canonical manifest binds a bounded resource to lineage; any two logical replicas reconstruct the exact 1 MiB reference after the third replica and primary relay are deleted. S3 promotion remains receipt/review/merge/deploy gated. |
+| L5 — recoverable resource state | A canonical manifest binds a bounded resource to lineage; any two logical replicas reconstruct the exact 1 MiB reference after the third replica and primary relay are deleted. S3 is promoted. |
+| S4 candidate — confidential resource state | S3 stores only a canonical ciphertext package; an authorized current custodian unwraps a non-extractable epoch key and decrypts exact bytes. One-million-IV, removal, rotation, capture, and actual-Chromium evidence are candidate-only until S4 promotion. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
