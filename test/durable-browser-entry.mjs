@@ -3,8 +3,7 @@ import {
 } from "../lab/participant/durable-quorum-endpoint.mjs";
 import {
   deleteDurableStore,
-  IndexedDbDurableStore,
-  readDurableStore
+  IndexedDbDurableStore
 } from "../lab/storage/durable-store.mjs";
 import {
   MemoryDurableStore
@@ -13,8 +12,13 @@ import {
   createEvidenceBundle
 } from "../lab/evidence-export.mjs";
 import {
+  createStoredWebCryptoKey,
   signBytes
 } from "../lab/participant/webcrypto-key-store.mjs";
+import {
+  createAuthorityPolicy,
+  createKeyReadyDocument
+} from "../lab/storage/durable-document.mjs";
 
 function seed(value) {
   return new Uint8Array(16).fill(value);
@@ -458,13 +462,22 @@ async function rejectedVersionOneMigration(databaseName, endpointId, snapshot) {
 }
 
 async function verifyVersionOneMigration() {
-  const legacyStore = new MemoryDurableStore();
+  console.log("migration fixture: key");
+  const legacyKey = await createStoredWebCryptoKey();
+  const legacyStore = new MemoryDurableStore({
+    document: createKeyReadyDocument({
+      endpointId: "legacy",
+      key: legacyKey,
+      policy: createAuthorityPolicy({ expiresAt: 1_900_000_000_000 })
+    })
+  });
   const legacy = new DurableQuorumEndpoint({
     endpointId: "legacy",
     store: legacyStore,
     clock: () => 1_800_000_000_000
   });
-  await legacy.initializeKey({ expiresAt: 1_900_000_000_000 });
+  await legacy.restore();
+  console.log("migration fixture: genesis");
   const body = legacy.createGenesisBody({
     custodians: [legacy.custodian],
     initialStateSeed: seed(91),
@@ -473,7 +486,7 @@ async function verifyVersionOneMigration() {
   });
   const approval = await legacy.approveGenesis(body);
   await legacy.commissionGenesis(body, [approval]);
-  const document = await readDurableStore(legacyStore);
+  console.log("migration valid: create v1");
   const validName = "mortalos-s2-migration-valid";
   await createVersionOneDatabase(validName, {
     evidence: {
@@ -482,9 +495,9 @@ async function verifyVersionOneMigration() {
     },
     keys: {
       id: "active",
-      key_id: document.key.key_id,
-      private_key: document.key.private_key,
-      public_key_raw: document.key.public_key_raw
+      key_id: legacyKey.key_id,
+      private_key: legacyKey.private_key,
+      public_key_raw: legacyKey.public_key_raw
     },
     meta: {
       authority_removed: false,
@@ -504,14 +517,18 @@ async function verifyVersionOneMigration() {
     store: migratedStore,
     clock: () => 1_800_000_000_001
   });
+  console.log("migration valid: restore v2");
   await migrated.restore();
+  console.log("migration valid: inspect v2");
   const afterMigration = await inspectMigratedDatabase(validName);
+  console.log("migration valid: remove authority");
   await migrated.removeAuthority();
   const removedState = {
     key_present: Boolean(migrated.document.key),
     status: migrated.document.policy.status
   };
   migratedStore.close();
+  console.log("migration valid: inspect removed");
   const afterRemoval = await inspectMigratedDatabase(validName);
   const valid = {
     after_migration: afterMigration,
@@ -524,6 +541,7 @@ async function verifyVersionOneMigration() {
   };
 
   const emptyName = "mortalos-s2-migration-empty";
+  console.log("migration empty: create v1");
   await createVersionOneDatabase(emptyName, {});
   const emptyStore = new IndexedDbDurableStore({
     databaseName: emptyName,
@@ -532,6 +550,7 @@ async function verifyVersionOneMigration() {
   });
   const emptyDocument = await emptyStore.read();
   emptyStore.close();
+  console.log("migration empty: inspect v2");
   const empty = {
     document_absent: emptyDocument === null,
     inspection: await inspectMigratedDatabase(emptyName)
@@ -543,10 +562,11 @@ async function verifyVersionOneMigration() {
   };
   const commonKey = {
     id: "active",
-    key_id: document.key.key_id,
-    private_key: document.key.private_key,
-    public_key_raw: document.key.public_key_raw
+    key_id: legacyKey.key_id,
+    private_key: legacyKey.private_key,
+    public_key_raw: legacyKey.public_key_raw
   };
+  console.log("migration rejected: corrupt");
   const corrupt = await rejectedVersionOneMigration(
     "mortalos-s2-migration-corrupt",
     "legacy",
@@ -577,6 +597,7 @@ async function verifyVersionOneMigration() {
       }
     }
   );
+  console.log("migration rejected: active without key");
   const activeWithoutKey = await rejectedVersionOneMigration(
     "mortalos-s2-migration-active-without-key",
     "legacy",

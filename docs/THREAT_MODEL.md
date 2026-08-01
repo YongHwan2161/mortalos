@@ -4,9 +4,11 @@ Current candidate note (2026-08-01): S2/S4 claim authority is reopened. A brande
 outer authority is insufficient when the store or method behind it is mutable.
 Security-sensitive async entrypoints must capture complete transitive invocation
 data and module-private capabilities before the first await, and authority-changing
-commits require exact readback. Token-aware static audit rejects marker-shaped
-comments/strings and borrowed-identifier reads after suspension. Historical receipts
-do not cover this source.
+commits require exact readback. The AST-based suspension audit rejects
+marker-shaped comments/strings, same-expression comma and conditional escapes,
+template interpolation, repeating-loop reads, deferred closures, and ordinary
+borrowed-identifier reads after suspension. Historical receipts do not cover this
+source.
 
 Status: **Normative for v0 and the Minimum Viable Life claim**  
 Protocol: `mortalos/0`, state extension `mortalos/1`

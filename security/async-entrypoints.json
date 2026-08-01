@@ -7,7 +7,7 @@
   ],
   "entries": [
     {
-      "file": "lab/participant/durable-quorum-endpoint.mjs",
+      "file": "lab/storage/durable-store.mjs",
       "entrypoint": "async #signDurably",
       "ownership_marker": "const invocation = Object.freeze",
       "post_await_forbidden": ["body", "kind", "proposal", "request"],
@@ -25,7 +25,7 @@
     {
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function createConfidentialStatePackage",
-      "ownership_marker": "const ownedInputBytes = createUint8Array",
+      "ownership_marker": "const confidentialSnapshot = Object.freeze",
       "post_await_forbidden": ["confidential", "inputBytes"],
       "test_file": "test/confidential-s3-recovery.test.mjs",
       "test_marker": "confidential/S3 constructor"

@@ -128,8 +128,7 @@ function confidentialEpochStoreCapability(store) {
   return capability;
 }
 
-async function commitConfidentialActive(store, options) {
-  const capability = confidentialEpochStoreCapability(store);
+async function commitConfidentialActive(capability, options) {
   let committed;
   try {
     committed = await capability.commitActive(options);
@@ -351,7 +350,53 @@ export async function createConfidentialStatePackage({
   }
   const ownedInputBytes = createUint8Array(inputLength);
   typedArraySet(ownedInputBytes, inputView, 0);
-  const confidentialPackage = await createConfidentialPackage(confidential);
+  let confidentialValues;
+  try {
+    confidentialValues = snapshotNamedOwnDataValues(
+      confidential,
+      [
+        "authority",
+        "custodians",
+        "epoch",
+        "epochId",
+        "expectedNextCounter",
+        "expectedPriorReceiptDigest",
+        "fault",
+        "membershipHead",
+        "organismId",
+        "priorConfidentialRoot",
+        "resourceBytes",
+        "resourceId",
+        "transitionId"
+      ],
+      "confidential package input"
+    );
+  } catch {
+    confidentialFail("E_CONFIDENTIAL_FORMAT", "/confidential", "own-data-record");
+  }
+  const resourceView = asBytes(confidentialValues[10]);
+  const resourceLength = resourceView === null ? null : byteLengthOfBytes(resourceView);
+  if (resourceLength === null) {
+    confidentialFail("E_CONFIDENTIAL_FORMAT", "/resource", "bytes-required");
+  }
+  const ownedResourceBytes = createUint8Array(resourceLength);
+  typedArraySet(ownedResourceBytes, resourceView, 0);
+  const confidentialSnapshot = Object.freeze({
+    authority: confidentialValues[0],
+    custodians: snapshotConfidentialCustodians(confidentialValues[1]),
+    epoch: confidentialValues[2],
+    epochId: confidentialValues[3],
+    expectedNextCounter: confidentialValues[4] ?? "0",
+    expectedPriorReceiptDigest: confidentialValues[5] ?? null,
+    fault: confidentialValues[6] ?? null,
+    membershipHead: confidentialValues[7],
+    organismId: confidentialValues[8],
+    priorConfidentialRoot: confidentialValues[9],
+    resourceBytes: ownedResourceBytes,
+    resourceId: confidentialValues[11],
+    transitionId: confidentialValues[12]
+  });
+  const confidentialPackage = await createConfidentialPackage(confidentialSnapshot);
   const statePackage = createStatePackage({
     genomeHash,
     inputBytes: ownedInputBytes,
@@ -375,6 +420,7 @@ export async function recoverAndDecryptConfidentialState({
   let expectedValues;
   let expectedCustodians;
   let ownedCustodian;
+  let confidentialCommitCapability;
   try {
     expectedValues = snapshotNamedOwnDataValues(
       expected,
@@ -394,7 +440,7 @@ export async function recoverAndDecryptConfidentialState({
     );
     expectedCustodians = snapshotConfidentialCustodians(expectedValues[0]);
     ownedCustodian = snapshotConfidentialCustodians([custodian])[0];
-    confidentialEpochStoreCapability(confidentialDestination);
+    confidentialCommitCapability = confidentialEpochStoreCapability(confidentialDestination);
   } catch {
     return Object.freeze({
       code: "E_CONFIDENTIAL_REJECTED",
@@ -413,7 +459,7 @@ export async function recoverAndDecryptConfidentialState({
     priorStateRoot: expectedValues[8],
     resourceId: expectedValues[9]
   });
-  const recovered = await recoverStatePackage({
+  const recoveryPromise = recoverStatePackage({
     destination,
     expectedGenomeHash: expectedSnapshot.genomeHash,
     expectedNextStateRoot: expectedSnapshot.nextStateRoot,
@@ -423,6 +469,7 @@ export async function recoverAndDecryptConfidentialState({
     receiptBytes,
     sources
   });
+  const recovered = await recoveryPromise;
   if (recovered.status !== "available") return recovered;
   let decrypted;
   try {
@@ -462,7 +509,7 @@ export async function recoverAndDecryptConfidentialState({
     status: "verified"
   });
   try {
-    await commitConfidentialActive(confidentialDestination, {
+    await commitConfidentialActive(confidentialCommitCapability, {
       candidate,
       expectedPriorConfidentialRoot: expectedSnapshot.priorConfidentialRoot
     });

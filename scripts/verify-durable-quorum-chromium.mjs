@@ -43,6 +43,9 @@ if (engineName === "chromium" && process.env.MORTALOS_CHROMIUM_EXECUTABLE) {
 
 async function pageWithHarness(context) {
   const page = await context.newPage();
+  page.on("console", (message) => {
+    console.log(`S2 ${engineName} browser: ${message.text()}`);
+  });
   await page.goto(server.url, { waitUntil: "domcontentloaded" });
   await page.addScriptTag({ url: `${server.url}/durable-browser-test.js` });
   await page.waitForFunction(() => Boolean(globalThis.__MORTALOS_DURABLE_BROWSER__));
@@ -77,16 +80,20 @@ try {
 
   context = await browserType.launchPersistentContext(profileDirectory, launchOptions);
   page = await pageWithHarness(context);
+  console.log(`S2 ${engineName} compare-and-swap: START`);
   const compareAndSwap = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyIndexedDbCompareAndSwap());
+  console.log(`S2 ${engineName} compare-and-swap: COMPLETE`);
   assert.equal(compareAndSwap.accepted_signature, true);
   assert.equal(compareAndSwap.stale_code, "E_DURABLE_CONFLICT");
   assert.equal(compareAndSwap.stale_signer_calls, 0);
   assert.equal(compareAndSwap.primary_signer_calls, 1);
   assert.equal(compareAndSwap.persisted_pulse_entries, 1);
   assert.equal(compareAndSwap.conflicting_code, "E_DURABLE_EQUIVOCATION");
+  console.log(`S2 ${engineName} expiry rollback latch: START`);
   const expiry = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyExpiryRollbackLatch());
+  console.log(`S2 ${engineName} expiry rollback latch: COMPLETE`);
   assert.equal(expiry.at_expiry_code, "E_DURABLE_EXPIRED");
   assert.equal(expiry.persisted_status, "expired");
   assert.equal(expiry.rollback_authority, false);
@@ -95,8 +102,10 @@ try {
   assert.equal(expiry.stale_renewal_code, "E_DURABLE_POLICY");
   assert.equal(expiry.status_after_rejected_renewals, "expired");
   assert.equal(expiry.renewed_authority, true);
+  console.log(`S2 ${engineName} v1 migration: START`);
   const migration = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyVersionOneMigration());
+  console.log(`S2 ${engineName} v1 migration: COMPLETE`);
   assert.equal(migration.valid.schema_version, 2);
   assert.equal(migration.valid.from_schema, 1);
   assert.equal(migration.valid.signing_authority, false);
@@ -169,5 +178,10 @@ try {
   console.log("- corrupt/removed+key/active-keyless v1 copies stayed at version 1");
 } finally {
   await server.close();
-  await rm(temporaryRoot, { force: true, recursive: true });
+  await rm(temporaryRoot, {
+    force: true,
+    maxRetries: 8,
+    recursive: true,
+    retryDelay: 250
+  });
 }

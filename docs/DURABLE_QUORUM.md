@@ -3,12 +3,13 @@
 Status: **S2 CLAIM REOPENED; hardened implementation promotion is bound to a new exact S2 receipt,
 independent review, merge, and post-merge evidence**
 
-The current candidate moved durable reads/writes into module-private store
-capabilities, owns the full signing invocation before its first await, and redacts
-the private `CryptoKey` from both endpoint and store diagnostics. Public documents
-are built from a key-free graph, public raw writes fail closed, signing uses captured
-native WebCrypto operations, and the optional test boundary receives only a phase
-string. The historical S2
+The current candidate co-locates the durable endpoint implementation and its
+WeakMap-registered raw store capability in one ES module closure. No production
+export can read or write a raw durable document. The endpoint owns the full signing
+invocation before its first await and redacts the private `CryptoKey` from both
+endpoint and store diagnostics. Public documents are built from a key-free graph,
+public raw writes fail closed, signing uses captured native WebCrypto operations,
+and the optional test boundary receives only a phase string. The historical S2
 receipt does not cover these edits and cannot promote the new source.
 
 Contract versions:
@@ -43,6 +44,11 @@ the consecutive revision inside the same strict transaction. A stale writer rece
 `E_DURABLE_CONFLICT` before its signer can run. The Node adapter is a
 failure-semantics test adapter, not a production Node key-custody claim. Selecting a
 production Node key store requires a separate platform-security ADR.
+
+`lab/participant/durable-quorum-endpoint.mjs` is only a compatibility re-export.
+The class, private document accessors, store registration map, and sign-once commit
+path live together in `lab/storage/durable-store.mjs`; its public module namespace
+is regression-tested to contain no raw read/write capability.
 
 ## Write-ahead signing
 
@@ -134,6 +140,8 @@ The gate covers:
 - exact old/pending/new crash outcomes and signer-call accounting;
 - unknown/corrupt schema, key, evidence, journal, state, custody, and migration
   rejection;
+- the public durable-store module namespace contains no raw document read/write
+  capability, and public store methods cannot be replaced to affect endpoint I/O;
 - explicit renewal, expiry, and atomic authority removal;
 - actual Chromium IndexedDB migration with atomic legacy-store retirement and no
   sign-capable legacy key after removal, plus non-destructive corrupt,

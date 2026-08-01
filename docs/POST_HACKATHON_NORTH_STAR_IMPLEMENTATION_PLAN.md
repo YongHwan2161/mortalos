@@ -42,7 +42,7 @@ Capsule activation, fuzzing, documentation, and promotion evidence.
 | Stage | Candidate state | Local evidence | Promotion state |
 | --- | --- | --- | --- |
 | S0/S1 | Historical baseline and Participant Core retained | Existing exact-commit receipts | Historical promotion only |
-| S2 | Durable store capability captured privately; public document redacts `CryptoKey`; sign invocation owned before await | Node durable matrix and Chromium/Firefox persistent-profile matrix pass | **REOPENED / HOLD** until new exact-head receipt and review |
+| S2 | Endpoint and raw store capability share one module-private closure with no raw exports; public document redacts `CryptoKey`; sign invocation owned before await | Node durable matrix and Chromium/Firefox persistent-profile matrix pass | **REOPENED / HOLD** until new exact-head receipt and review |
 | S3 | Limits generated from one protocol profile; real relay fragment data plane; activation CAS/readback is idempotent | 1 MiB reconstruction, 10,000 recovery corpus, real relay message test pass | Existing promotion remains historical; new data plane is candidate |
 | S4 | Recovery inputs owned; epoch activation uses private capability and exact readback; public decrypt/recovery results omit epoch keys | Node, Chromium, and Firefox cryptographic/rotation gates pass | **REOPENED / HOLD** until new exact-head receipt and review |
 | S5 | Authority-free `@mortal-os/core` export map and `mortalos` CLI | SDK allowlist, CLI, and package allowlist pass | Candidate only |
@@ -127,6 +127,10 @@ supported public result exposes a usable signing key.
 Implemented work:
 
 - registered durable stores hold module-private read/write closures;
+- the endpoint implementation and raw store capability are co-located in that
+  closure; the former endpoint module is only a safe compatibility re-export;
+- the production module namespace exposes no raw document read/write function, and
+  tests create their own authority fixtures instead of extracting store internals;
 - endpoint code ignores replaced own/prototype `read` and `write` methods;
 - body, proposal, purpose, key id, and message are owned before the first await;
 - endpoint and store diagnostics are constructed without placing the private key in
@@ -143,7 +147,9 @@ Pass criteria:
   actual Chromium and Firefox;
 - accessor/Proxy/prototype/store/array fuzz releases no duplicate signature;
 - endpoint and store diagnostic graphs contain no private `CryptoKey`, and neither
-  surface permits raw durable writes.
+  surface permits raw durable writes;
+- the public module namespace contains no raw store capability and hostile
+  replacement of public `read`/`write` methods cannot affect endpoint commits.
 
 ## 9. S3 — Protocol profile and real chunk data plane
 

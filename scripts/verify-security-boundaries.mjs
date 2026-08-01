@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
+import {
+  analyzeFunctionOwnership,
+  analyzePostAwaitBorrowedIdentifiers,
+  findSecurityEntrypoint,
+  parseSecurityModule
+} from "./security-boundary-ast.mjs";
 
 const root = new URL("../", import.meta.url);
 const registry = JSON.parse(await readFile(new URL("security/async-entrypoints.json", root), "utf8"));
@@ -13,7 +19,7 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "src/transport/chunk-data-plane.mjs"
 ]);
 const REQUIRED_ENTRYPOINTS = Object.freeze([
-  "lab/participant/durable-quorum-endpoint.mjs:async #signDurably",
+  "lab/storage/durable-store.mjs:async #signDurably",
   "src/confidential/recovery.mjs:export async function createConfidentialStatePackage",
   "src/confidential/recovery.mjs:export async function recoverAndDecryptConfidentialState",
   "src/confidential/recovery.mjs:export async function rotateConfidentialState",
@@ -104,71 +110,7 @@ async function runtimeModules(relativeDirectory) {
 }
 
 export function postAwaitBorrowedIdentifiers(source, forbidden) {
-  const tokens = tokenizeJavaScript(source);
-  const firstAwait = tokens.findIndex(({ value }) => value === "await");
-  if (firstAwait === -1) return { boundary: -1, firstAwait, identifiers: [] };
-  const boundary = tokens.findIndex(
-    ({ value }, index) => index > firstAwait && value === ";"
-  );
-  if (boundary === -1) return { boundary, firstAwait, identifiers: [] };
-  const identifiers = [];
-  for (let index = boundary + 1; index < tokens.length; index += 1) {
-    const token = tokens[index];
-    if (!forbidden.includes(token.value)) continue;
-    const previous = tokens[index - 1]?.value;
-    const next = tokens[index + 1]?.value;
-    if (previous !== "." && next !== ":") identifiers.push(token.value);
-  }
-  return { boundary, firstAwait, identifiers };
-}
-
-function functionBody(source, start, label) {
-  const signatureClose = source.indexOf(") {", start);
-  const open = signatureClose === -1 ? -1 : signatureClose + 2;
-  assert.notEqual(open, -1, `${label}: missing function body`);
-  let depth = 0;
-  let quote = null;
-  let escaped = false;
-  let lineComment = false;
-  let blockComment = false;
-  for (let index = open; index < source.length; index += 1) {
-    const character = source[index];
-    const next = source[index + 1];
-    if (lineComment) {
-      if (character === "\n") lineComment = false;
-      continue;
-    }
-    if (blockComment) {
-      if (character === "*" && next === "/") {
-        blockComment = false;
-        index += 1;
-      }
-      continue;
-    }
-    if (quote !== null) {
-      if (escaped) escaped = false;
-      else if (character === "\\") escaped = true;
-      else if (character === quote) quote = null;
-      continue;
-    }
-    if (character === "/" && next === "/") {
-      lineComment = true;
-      index += 1;
-      continue;
-    }
-    if (character === "/" && next === "*") {
-      blockComment = true;
-      index += 1;
-      continue;
-    }
-    if (character === '"' || character === "'" || character === "`") {
-      quote = character;
-      continue;
-    }
-    if (character === "{") depth += 1;
-    if (character === "}" && --depth === 0) return source.slice(open + 1, index);
-  }
-  assert.fail(`${label}: unterminated function body`);
+  return analyzePostAwaitBorrowedIdentifiers(source, forbidden);
 }
 
 const registeredExports = new Set(
@@ -189,17 +131,18 @@ assert.deepEqual(
   "every exported async function in the security scope must be registered"
 );
 
-const RAW_DURABLE_CAPABILITY_CONSUMERS = new Set([
-  "lab/participant/durable-quorum-endpoint.mjs",
-  "lab/storage/durable-store.mjs"
-]);
+const RAW_DURABLE_CAPABILITY_CONSUMERS = new Set(["lab/storage/durable-store.mjs"]);
 for (const file of (await Promise.all(
   ["cli", "lab", "sdk", "src"].map(runtimeModules)
 )).flat()) {
   const source = await readFile(new URL(file, root), "utf8");
   const identifiers = new Set(tokenizeJavaScript(source).map(({ value }) => value));
   if (
-    (identifiers.has("readDurableStore") || identifiers.has("writeDurableStore")) &&
+    (
+      identifiers.has("readPrivateDurableDocument") ||
+      identifiers.has("commitPrivateDurableDocument") ||
+      identifiers.has("durableStoreCapability")
+    ) &&
     !RAW_DURABLE_CAPABILITY_CONSUMERS.has(file)
   ) {
     assert.fail(`${file}: raw durable capability escaped its endpoint/storage modules`);
@@ -208,33 +151,32 @@ for (const file of (await Promise.all(
 
 for (const entry of registry.entries) {
   const source = await readFile(new URL(entry.file, root), "utf8");
-  const sourceTokens = tokenizeJavaScript(source);
-  const entrypointIndex = tokenSequenceIndex(sourceTokens, markerTokens(entry.entrypoint));
-  assert.notEqual(entrypointIndex, -1, `${entry.file}: missing ${entry.entrypoint}`);
-  const start = sourceTokens[entrypointIndex].start;
-  const body = functionBody(source, start, `${entry.file}:${entry.entrypoint}`);
+  const ast = parseSecurityModule(source);
+  const functionNode = findSecurityEntrypoint(ast, entry.entrypoint);
+  assert.ok(functionNode, `${entry.file}: missing ${entry.entrypoint}`);
+  const body = source.slice(functionNode.body.start + 1, functionNode.body.end - 1);
   const bodyTokens = tokenizeJavaScript(body);
   const ownership = tokenSequenceIndex(bodyTokens, markerTokens(entry.ownership_marker));
-  const firstAwait = bodyTokens.findIndex(({ value }) => value === "await");
+  const audit = analyzeFunctionOwnership(functionNode, entry.post_await_forbidden);
+  const ownershipPosition = functionNode.body.start + 1 + bodyTokens[ownership]?.start;
   assert.notEqual(ownership, -1, `${entry.file}: missing ownership marker`);
-  assert.notEqual(firstAwait, -1, `${entry.file}: security entrypoint must be async`);
+  assert.notEqual(audit.firstAwait, -1, `${entry.file}: security entrypoint must be async`);
   assert.ok(
-    ownership < firstAwait,
+    ownershipPosition < audit.firstAwait,
     `${entry.file}: ${entry.entrypoint} reaches await before transitive ownership`
   );
   assert.ok(
     Array.isArray(entry.post_await_forbidden) && entry.post_await_forbidden.length > 0,
     `${entry.file}: post-await borrowed-identifier policy is required`
   );
-  const postAwait = postAwaitBorrowedIdentifiers(body, entry.post_await_forbidden);
-  const firstAwaitBoundary = postAwait.boundary;
+  const firstAwaitBoundary = audit.boundary;
   assert.notEqual(
     firstAwaitBoundary,
     -1,
     `${entry.file}: first await statement must have an auditable boundary`
   );
   assert.deepEqual(
-    postAwait.identifiers,
+    audit.identifiers,
     [],
     `${entry.file}: ${entry.entrypoint} re-reads borrowed identifiers after its first await`
   );

@@ -7,14 +7,15 @@ import {
   MemoryDurableStore
 } from "../lab/storage/memory-durable-store.mjs";
 import {
-  readDurableStore,
-  writeDurableStore
-} from "../lab/storage/durable-store.mjs";
-import {
   assertDurableDocumentStructure,
+  createAuthorityPolicy,
+  createKeyReadyDocument,
   migrateLegacyDurableSnapshot,
   replayDurableDocument
 } from "../lab/storage/durable-document.mjs";
+import {
+  createStoredWebCryptoKey
+} from "../lab/participant/webcrypto-key-store.mjs";
 function seed(value) {
   return new Uint8Array(16).fill(value);
 }
@@ -329,21 +330,15 @@ test("private CryptoKey never reaches public signer hooks or mutable WebCrypto f
 });
 
 test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {
-  const { endpoints, nodes } = await createCluster(50);
-  const baseDocument = await readDurableStore(nodes[0].store);
-  const proposal = endpoints[0].createStateProposal(1);
-  const peerApproval = await endpoints[1].approveProposal(proposal);
-
-  for (const boundary of ["reserve:before", "reserve:after", "signature:before", "signature:after"]) {
+  const signingBoundaries = ["reserve:before", "reserve:after", "signature:before", "signature:after"];
+  for (const [index, boundary] of signingBoundaries.entries()) {
+    const { endpoints, nodes } = await createCluster(500 + index);
+    const proposal = endpoints[0].createStateProposal(1);
+    await endpoints[1].approveProposal(proposal);
     let signerCalls = 0;
-    const store = new MemoryDurableStore({
-      document: baseDocument,
-      fault: (name) => {
-        if (name === boundary) throw new Error(`crash:${boundary}`);
-      }
-    });
+    const store = nodes[0].store;
     const crashed = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${500 + index}`,
       store,
       clock: () => 1_800_000_000_000,
       signingBoundary: async (observed) => {
@@ -352,11 +347,14 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
       }
     });
     await crashed.restore();
+    store.setFault((name) => {
+      if (name === boundary) throw new Error(`crash:${boundary}`);
+    });
     await assert.rejects(() => crashed.approveProposal(proposal), new RegExp(`crash:${boundary}`));
     store.clearFault();
     let recoverySignerCalls = 0;
     const recovered = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${500 + index}`,
       store,
       clock: () => 1_800_000_000_000,
       signingBoundary: async (observed) => {
@@ -376,34 +374,28 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
     assert.equal(signerCalls, boundary.startsWith("signature:") ? 1 : 0);
   }
 
-  const signedStore = new MemoryDurableStore({ document: baseDocument });
-  const signer = new DurableQuorumEndpoint({
-    endpointId: "A50",
-    store: signedStore,
-    clock: () => 1_800_000_000_000
-  });
-  await signer.restore();
-  const ownApproval = await signer.approveProposal(proposal);
-  for (const boundary of ["commit:before", "commit:after"]) {
-    const store = new MemoryDurableStore({
-      document: await readDurableStore(signedStore),
-      fault: (name) => {
-        if (name === boundary) throw new Error(`crash:${boundary}`);
-      }
-    });
+  for (const [index, boundary] of ["commit:before", "commit:after"].entries()) {
+    const { endpoints, nodes } = await createCluster(510 + index);
+    const proposal = endpoints[0].createStateProposal(1);
+    const ownApproval = await endpoints[0].approveProposal(proposal);
+    const peerApproval = await endpoints[1].approveProposal(proposal);
+    const store = nodes[0].store;
     const crashed = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${510 + index}`,
       store,
       clock: () => 1_800_000_000_000
     });
     await crashed.restore();
+    store.setFault((name) => {
+      if (name === boundary) throw new Error(`crash:${boundary}`);
+    });
     await assert.rejects(
       () => crashed.commitProposal(proposal, [ownApproval, peerApproval]),
       new RegExp(`crash:${boundary}`)
     );
     store.clearFault();
     const recovered = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${510 + index}`,
       store,
       clock: () => 1_800_000_000_000
     });
@@ -416,48 +408,41 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
   }
 });
 
-test("every durable adapter write exposes atomic before/after failure semantics", async () => {
-  const { nodes } = await createCluster(55);
-  const prior = await readDurableStore(nodes[0].store);
-  for (const operation of [
-    "initialize",
-    "expire",
-    "reserve",
-    "signature",
-    "commit",
-    "observe",
-    "sync",
-    "renew",
-    "remove"
-  ]) {
-    for (const side of ["before", "after"]) {
-      const candidate = structuredClone(prior);
-      candidate.revision = operation === "initialize" ? 0 : prior.revision + 1;
-      const store = new MemoryDurableStore({
-        document: operation === "initialize" ? null : prior,
-        fault: (boundary) => {
-          if (boundary === `${operation}:${side}`) throw new Error(`crash:${operation}:${side}`);
-        }
-      });
-      await assert.rejects(
-        () => writeDurableStore(store, operation, candidate, {
-          expectedRevision: operation === "initialize" ? null : prior.revision
-        }),
-        new RegExp(`crash:${operation}:${side}`)
-      );
-      const stored = await readDurableStore(store);
-      if (side === "before") {
-        assert.equal(stored?.revision ?? null, operation === "initialize" ? null : prior.revision);
-      } else {
-        assert.equal(stored.revision, candidate.revision);
-      }
-    }
-  }
+test("durable module exports no raw read or write authority", async () => {
+  const durableStoreModule = await import("../lab/storage/durable-store.mjs");
+  assert.equal(Object.hasOwn(durableStoreModule, "readDurableStore"), false);
+  assert.equal(Object.hasOwn(durableStoreModule, "writeDurableStore"), false);
+  assert.equal(Object.hasOwn(durableStoreModule, "readPrivateDurableDocument"), false);
+  assert.equal(Object.hasOwn(durableStoreModule, "commitPrivateDurableDocument"), false);
 });
 
 test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and migration failure fail closed", async () => {
-  const { nodes } = await createCluster(60);
-  const valid = await readDurableStore(nodes[0].store);
+  const firstKey = await createStoredWebCryptoKey();
+  const firstStore = new MemoryDurableStore({
+    document: createKeyReadyDocument({
+      endpointId: "A60",
+      key: firstKey,
+      policy: createAuthorityPolicy()
+    })
+  });
+  const first = new DurableQuorumEndpoint({
+    endpointId: "A60",
+    store: firstStore,
+    clock: () => 1_800_000_000_000
+  });
+  await first.restore();
+  const peers = await Promise.all([createEndpoint("B60"), createEndpoint("C60")]);
+  const endpoints = [first, ...peers.map(({ endpoint }) => endpoint)];
+  const body = first.createGenesisBody({
+    custodians: publicCustodians(endpoints),
+    initialStateSeed: seed(70),
+    nonceSeed: seed(80),
+    threshold: 2
+  });
+  const approvals = [];
+  for (const endpoint of endpoints) approvals.push(await endpoint.approveGenesis(body));
+  for (const endpoint of endpoints) await endpoint.commissionGenesis(body, approvals);
+  const valid = { ...first.document, key: firstKey };
   const structuralMutations = [
     (value) => { value.extra = true; },
     (value) => { value.schema_version = 99; },
@@ -487,9 +472,8 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
   badKey.key.public_key_raw = new ArrayBuffer(32);
   await assert.rejects(() => replayDurableDocument(badKey), (error) => error.code === "E_DURABLE_KEY");
 
-  const { store: outsiderStore } = await createEndpoint("outside");
   const wrongCustody = structuredClone(valid);
-  wrongCustody.key = (await readDurableStore(outsiderStore)).key;
+  wrongCustody.key = await createStoredWebCryptoKey();
   await assert.rejects(
     () => replayDurableDocument(wrongCustody),
     (error) => error.code === "E_DURABLE_CUSTODY"
@@ -551,10 +535,9 @@ test("public endpoint and store diagnostics redact private CryptoKey authority",
       Object.hasOwn(descriptor, "value") && containsPrivateCryptoKey(descriptor.value));
   }
   assert.equal(containsPrivateCryptoKey(publicStoreDocument), false);
-  const rawDocument = await readDurableStore(nodes[0].store);
   await assert.rejects(
-    () => nodes[0].store.write("commit", rawDocument, {
-      expectedRevision: rawDocument.revision
+    () => nodes[0].store.write("commit", publicStoreDocument, {
+      expectedRevision: publicStoreDocument.revision
     }),
     /raw durable store writes are internal/u
   );

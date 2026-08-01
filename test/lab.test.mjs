@@ -251,7 +251,6 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(combined, /exportKey\("pkcs8", generated\.privateKey\)/);
 
   const durableSource = await readFile(new URL("../lab/participant/durable-participant.mjs", import.meta.url), "utf8");
-  const durableEndpointSource = await readFile(new URL("../lab/participant/durable-quorum-endpoint.mjs", import.meta.url), "utf8");
   const durableDocumentSource = await readFile(new URL("../lab/storage/durable-document.mjs", import.meta.url), "utf8");
   const keyStoreSource = await readFile(new URL("../lab/participant/webcrypto-key-store.mjs", import.meta.url), "utf8");
   const durableStoreSource = await readFile(new URL("../lab/storage/durable-store.mjs", import.meta.url), "utf8");
@@ -261,13 +260,13 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.match(durableSource, /threshold: 1/);
   assert.match(keyStoreSource, /reflectApply\(subtleExportKey, subtle, \["pkcs8", privateKey\]\)/);
   assert.match(
-    durableEndpointSource,
+    durableStoreSource,
     /#commitDocument\("reserve", reserved\.document\)[\s\S]*?signBytes\(/
   );
-  assert.doesNotMatch(durableEndpointSource, /signer\s*[:=]|#signer/u);
+  assert.doesNotMatch(durableStoreSource, /signer\s*[:=]|#signer/u);
   assert.match(
-    durableEndpointSource,
-    /expectedRevision = this\.#document\?\.revision \?\? null;[\s\S]*?writeDurableStore\(this\.#store, operation, document, \{ expectedRevision \}\)/
+    durableStoreSource,
+    /expectedRevision = this\.#document\?\.revision \?\? null;[\s\S]*?commitPrivateDurableDocument\(this\.#store, operation, document, \{ expectedRevision \}\)/
   );
   assert.match(durableDocumentSource, /next\.pending = null[\s\S]*?next\.revision \+= 1/);
   assert.match(durableStoreSource, /database\.transaction\(\[DOCUMENT_STORE\], "readwrite", \{ durability: "strict" \}\)/);

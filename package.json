@@ -55,7 +55,7 @@
     "test:protocol-profile": "node --test test/protocol-profile.test.mjs",
     "test:distributed-counter": "node --test test/distributed-counter.test.mjs && node scripts/verify-independent-counter-topology.mjs",
     "test:security-fuzz": "node --test test/security-stateful-fuzz.test.mjs",
-    "verify:security-boundaries": "node scripts/verify-security-boundaries.mjs",
+    "verify:security-boundaries": "node --test test/security-boundary-verifier.test.mjs",
     "verify:ruleset-policy": "node scripts/verify-ruleset-policy.mjs",
     "test:transport": "node --test test/transport.test.mjs",
     "test:sdk": "node --test test/sdk.test.mjs",
@@ -95,6 +95,8 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.8",
+    "acorn": "8.18.0",
+    "acorn-walk": "8.3.5",
     "ajv": "8.20.0",
     "axe-core": "4.12.1",
     "esbuild": "0.28.1",
