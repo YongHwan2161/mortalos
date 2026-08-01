@@ -4,6 +4,19 @@ import { PROTOCOL_PROFILE } from "../src/generated/protocol-profile.mjs";
 
 const ENGINES = Object.freeze({ chromium, firefox, webkit });
 
+async function evaluateInFreshBrowser(browserType, url, evaluator, argument) {
+  const browser = await browserType.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(url);
+    return argument === undefined
+      ? await page.evaluate(evaluator)
+      : await page.evaluate(evaluator, argument);
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
 export async function probeBrowserCapabilities(name) {
   const browserType = ENGINES[name];
   if (!browserType) throw new Error(`unsupported browser engine: ${name}`);
@@ -16,11 +29,9 @@ export async function probeBrowserCapabilities(name) {
     server.listen(0, "127.0.0.1", resolve);
   });
   const address = server.address();
-  const browser = await browserType.launch({ headless: true });
+  const url = `http://127.0.0.1:${address.port}/`;
   try {
-    const page = await browser.newPage();
-    await page.goto(`http://127.0.0.1:${address.port}/`);
-    return await page.evaluate(async (protocolMessageBytes) => {
+    const result = await evaluateInFreshBrowser(browserType, url, async () => {
       const result = {};
       try {
         const database = await new Promise((resolve, reject) => {
@@ -48,31 +59,6 @@ export async function probeBrowserCapabilities(name) {
           type: signing.privateKey.type,
           usages: [...signing.privateKey.usages]
         };
-        try {
-          for (const length of [1, 1024, protocolMessageBytes]) {
-            const message = new Uint8Array(length);
-            for (let index = 0; index < message.length; index += 1) {
-              message[index] = index % 251;
-            }
-            const signature = await crypto.subtle.sign(
-              "Ed25519",
-              signing.privateKey,
-              message
-            );
-            if (!await crypto.subtle.verify(
-              "Ed25519",
-              signing.publicKey,
-              signature,
-              message
-            )) {
-              throw new Error(`Ed25519 verification failed at ${length} bytes`);
-            }
-          }
-          result.ed25519.protocol_message_bytes = protocolMessageBytes;
-          result.ed25519.protocol_sign_verify = true;
-        } catch (error) {
-          result.ed25519.protocol_sign_verify = `${error.name}:${error.message}`;
-        }
       } catch (error) {
         result.ed25519 = `${error.name}:${error.message}`;
       }
@@ -110,9 +96,48 @@ export async function probeBrowserCapabilities(name) {
         result.locks = `${error.name}:${error.message}`;
       }
       return result;
-    }, PROTOCOL_PROFILE.transport.message_bytes);
+    });
+    if (result.ed25519 && typeof result.ed25519 === "object") {
+      result.ed25519.protocol_message_bytes = PROTOCOL_PROFILE.transport.message_bytes;
+      try {
+        result.ed25519.protocol_sign_verify = await evaluateInFreshBrowser(
+          browserType,
+          url,
+          async (protocolMessageBytes) => {
+            const signing = await crypto.subtle.generateKey(
+              { name: "Ed25519" },
+              false,
+              ["sign", "verify"]
+            );
+            for (const length of [1, 1024, protocolMessageBytes]) {
+              const message = new Uint8Array(length);
+              for (let index = 0; index < message.length; index += 1) {
+                message[index] = index % 251;
+              }
+              const signature = await crypto.subtle.sign(
+                "Ed25519",
+                signing.privateKey,
+                message
+              );
+              if (!await crypto.subtle.verify(
+                "Ed25519",
+                signing.publicKey,
+                signature,
+                message
+              )) {
+                throw new Error(`Ed25519 verification failed at ${length} bytes`);
+              }
+            }
+            return true;
+          },
+          PROTOCOL_PROFILE.transport.message_bytes
+        );
+      } catch (error) {
+        result.ed25519.protocol_sign_verify = `BrowserClosedError:${error.message}`;
+      }
+    }
+    return result;
   } finally {
-    await browser.close();
     await new Promise((resolve) => server.close(resolve));
   }
 }

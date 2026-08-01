@@ -52,8 +52,10 @@ corruption boundaries in the current candidate. It remains unpromoted until the
   generation alone never grants custody. The Windows Playwright WebKit 26.5 build
   rejects Ed25519 with `NotSupportedError`. The Ubuntu build creates a valid
   non-extractable key and signs smaller vectors, but returned `OperationError` in the
-  full S2 quorum path, so both builds are verifier-only. User-agent detection and
-  exportable-key fallback are forbidden.
+  full S2 quorum path, so both builds are verifier-only. The protocol-ceiling stress
+  probe runs in a disposable browser process; a signer crash is classified as missing
+  custody capability without taking down the portable verifier. User-agent detection
+  and exportable-key fallback are forbidden.
 
 ## Reproducible evidence
 
