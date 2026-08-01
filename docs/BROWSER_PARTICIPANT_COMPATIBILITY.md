@@ -47,20 +47,22 @@ Ephemeral Demo available and does not silently create a weaker or extractable ke
 Firefox now passes the same actual-engine creation, non-extractable-key, concurrent
 CAS, full process restart, expiry/removal, A/B/C loss, D repair, S4 rotation, and
 corruption boundaries in the current candidate. It remains unpromoted until the
-exact-head release gate passes. The Windows Playwright WebKit 26.5 build supports
-IndexedDB, Web Locks, RSA-OAEP-3072, and `CryptoKey` structured cloning but rejects
-WebCrypto Ed25519 with `NotSupportedError`, so that runtime is verifier-only. The
-Ubuntu runner has produced a valid non-extractable Ed25519 key and is therefore
-routed to the complete S2/S4 custody matrix; its new exact-head result is still
-required. User-agent detection and exportable-key fallback are forbidden.
+  exact-head release gate passes. The capability gate requires actual Ed25519
+  sign/verify at 1, 1,024, and the canonical 65,536-byte message ceiling; key
+  generation alone never grants custody. The Windows Playwright WebKit 26.5 build
+  rejects Ed25519 with `NotSupportedError`. The Ubuntu build creates a valid
+  non-extractable key and signs smaller vectors, but returned `OperationError` in the
+  full S2 quorum path, so both builds are verifier-only. User-agent detection and
+  exportable-key fallback are forbidden.
 
 ## Reproducible evidence
 
 `npm run verify:lab` runs the Chromium lifecycle in a clean isolated profile.
 `npm run test:browser-parity` applies the portable corpus plus the complete S2/S4
-scenario family to Chromium and Firefox. WebKit runs that same family when the
-capability probe finds a native non-extractable signer; otherwise only the portable
-verifier runs and signing stays visibly disabled:
+scenario family to Chromium and Firefox. WebKit runs that same family only when the
+capability probe finds a native non-extractable signer that also passes the protocol-
+ceiling sign/verify gate; otherwise only the portable verifier runs and signing stays
+visibly disabled:
 
 1. storage is zero before consent;
 2. one non-extractable key and v1 Genesis are created in durable schema v2;

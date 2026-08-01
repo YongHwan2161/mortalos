@@ -62,9 +62,10 @@ people, organizations, or physical devices independently control the keys.
 - A single-browser logical quorum is one physical failure domain.
 - Finite evidence cannot prove that every hidden copy worldwide is gone.
 - Chromium and Firefox durable-key paths pass actual-engine candidate gates. WebKit
-  is routed by a runtime capability probe: the Windows Playwright 26.5 build remains
-  verifier-only when Ed25519 is absent, while a signer-capable build must run the
-  complete S2/S4 custody matrix. Exact-head CI evidence for that full route is HOLD.
+  is routed by a runtime capability probe that requires sign/verify through the
+  canonical 65,536-byte message ceiling, not merely key generation. Current Windows
+  and Ubuntu Playwright 26.5 builds are verifier-only for different measured reasons;
+  any future full signer-capable build must run the complete S2/S4 custody matrix.
 
 ## Run locally
 

@@ -50,8 +50,10 @@ generated protocol profile, real relay chunk fragmentation, an S5 package/CLI, S
 Capsules, an S7 process-isolated replicated counter model, and S8 stateful custody
 fuzzing. Chromium and Firefox pass full candidate browser paths. WebKit is no longer
 classified by engine name: a capability probe runs the full custody path when a
-non-extractable Ed25519 signer exists and otherwise fails closed to verifier-only.
-Windows currently takes the latter path; exact-head Ubuntu full-route CI is pending. The
+non-extractable Ed25519 signer passes the canonical 65,536-byte message ceiling and
+otherwise fails closed to verifier-only. Windows lacks Ed25519; Ubuntu WebKit creates
+a key but fails the full protocol signing envelope, so both current builds take the
+verifier-only path. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
 
@@ -66,7 +68,8 @@ verified, promoted, and explicitly unclaimed behavior.
 4. **P1 — GitHub merge authority:** live ruleset plus a separately provisioned
    reviewer identity that gives native exact-head approvals.
 5. **P2 — WebKit signer parity:** close the capability-routed full S2/S4 matrix on
-   every signer-capable release runner; never fall back to exportable private bytes.
+   a release runner that passes the protocol-ceiling signing probe; never infer full
+   capability from key generation or fall back to exportable private bytes.
 
 ## Promotion invariant
 

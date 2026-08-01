@@ -28,7 +28,11 @@ for (const name of requested) {
       expectedWithoutSigner
     );
     if (name === "webkit" && !signerCapable) {
-      assert.match(result.ed25519, /^NotSupportedError:/u);
+      if (typeof result.ed25519 === "string") {
+        assert.match(result.ed25519, /^NotSupportedError:/u);
+      } else {
+        assert.match(result.ed25519.protocol_sign_verify, /^(?:NotSupported|Operation)Error:/u);
+      }
     } else {
       assert.equal(signerCapable, true);
     }

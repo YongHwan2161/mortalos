@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { chromium, firefox, webkit } from "playwright";
+import { PROTOCOL_PROFILE } from "../src/generated/protocol-profile.mjs";
 
 const ENGINES = Object.freeze({ chromium, firefox, webkit });
 
@@ -19,7 +20,7 @@ export async function probeBrowserCapabilities(name) {
   try {
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${address.port}/`);
-    return await page.evaluate(async () => {
+    return await page.evaluate(async (protocolMessageBytes) => {
       const result = {};
       try {
         const database = await new Promise((resolve, reject) => {
@@ -47,6 +48,31 @@ export async function probeBrowserCapabilities(name) {
           type: signing.privateKey.type,
           usages: [...signing.privateKey.usages]
         };
+        try {
+          for (const length of [1, 1024, protocolMessageBytes]) {
+            const message = new Uint8Array(length);
+            for (let index = 0; index < message.length; index += 1) {
+              message[index] = index % 251;
+            }
+            const signature = await crypto.subtle.sign(
+              "Ed25519",
+              signing.privateKey,
+              message
+            );
+            if (!await crypto.subtle.verify(
+              "Ed25519",
+              signing.publicKey,
+              signature,
+              message
+            )) {
+              throw new Error(`Ed25519 verification failed at ${length} bytes`);
+            }
+          }
+          result.ed25519.protocol_message_bytes = protocolMessageBytes;
+          result.ed25519.protocol_sign_verify = true;
+        } catch (error) {
+          result.ed25519.protocol_sign_verify = `${error.name}:${error.message}`;
+        }
       } catch (error) {
         result.ed25519 = `${error.name}:${error.message}`;
       }
@@ -84,7 +110,7 @@ export async function probeBrowserCapabilities(name) {
         result.locks = `${error.name}:${error.message}`;
       }
       return result;
-    });
+    }, PROTOCOL_PROFILE.transport.message_bytes);
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
@@ -95,6 +121,8 @@ export function hasNativeSignerCapability(result) {
   return (
     result?.ed25519?.extractable === false &&
     result.ed25519.type === "private" &&
-    JSON.stringify(result.ed25519.usages) === JSON.stringify(["sign"])
+    JSON.stringify(result.ed25519.usages) === JSON.stringify(["sign"]) &&
+    result.ed25519.protocol_message_bytes === PROTOCOL_PROFILE.transport.message_bytes &&
+    result.ed25519.protocol_sign_verify === true
   );
 }

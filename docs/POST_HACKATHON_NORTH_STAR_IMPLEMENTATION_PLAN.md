@@ -257,13 +257,14 @@ Pass criteria:
 - Chromium and Firefox pass portable validation, S2 durable restart/loss, and S4
   counter/rotation in actual engines;
 - WebKit passes portable validation and capability detection; runtimes with native
-  non-extractable Ed25519 must run the full S2/S4 family, while runtimes reporting
-  `NotSupportedError` remain verifier-only;
+  non-extractable Ed25519 must also sign and verify through the canonical 65,536-byte
+  ceiling before running the full S2/S4 family; `NotSupportedError` or
+  `OperationError` keeps the runtime verifier-only;
 - no user-agent string grants support and no fallback exports raw key material.
 
-WebKit full signing parity is therefore **HOLD** until the signer-capable CI route
-passes on the exact head; non-capable runtimes remain an explicit verifier-only
-profile. Weakening key containment is not an acceptable workaround.
+WebKit full signing parity is therefore **HOLD**: the current Ubuntu build creates a
+key but fails the full protocol envelope. Non-capable runtimes remain an explicit
+verifier-only profile. Weakening key containment is not an acceptable workaround.
 
 ## 15. GitHub merge authority
 
