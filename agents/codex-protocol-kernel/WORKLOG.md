@@ -1662,3 +1662,34 @@ result, and reproducible verification.
 - Credentials are forbidden from repository files and PR-executing workflows. The
   operational runner is provisioned outside the checkout. The policy still does not
   claim separate human, administrator, provider, host, or custody control.
+
+## 2026-08-02 — Independent-review P0 remediation and runner issuer binding
+
+- Independent review froze PR #51 at base `49c5302…`, head `a7ea8b8…`, and PR-body
+  SHA-256 `9f41f4…`, then returned BLOCK. A same-endpoint/same-body barrier produced
+  signer calls `2`, fulfilled promises `2`, and write trace
+  `initialize,reserve,signature,signature`. Alias and shallow-freeze ownership
+  bypasses also returned an empty violation list in the old AST checker.
+- The durable endpoint now snapshots the full invocation before suspension,
+  serializes owned signing operations on a module-private tail, and captures exact
+  revisions for reservation and signature commits. The regression requires the two
+  concurrent callers to receive the same approval while the signer and signature
+  WAL each run exactly once.
+- The ownership verifier now performs transitive identifier taint across alias,
+  object/property, spread, destructuring, loop, and deferred-closure paths. Only a
+  verifier-maintained deep-own/brand-clear allowlist can remove taint. Nine security
+  modules are automatically inventoried; all 56 exported async functions and class
+  methods must be directly audited or carry a concrete reviewed classification.
+  Sixteen high-risk entrypoints are directly checked and hostile negative corpus
+  covers the prior bypasses.
+- Runtime hardening found by the stronger audit copies WebCrypto signing bytes,
+  custodian wrap descriptors, AES vector buffers, and rotation records/arrays before
+  suspension or reuse. All S4 ceilings now generate from the protocol profile and
+  the exact mapping is tested. The external runner verifies GitHub Actions App ID
+  `15368`, exact run/job identities, and its own repository-pinned SHA-256 before it
+  can attest or approve.
+- Focused evidence before source freeze: durable suite `12/12`, confidential package
+  suite `11/11`, ownership AST `7/7` plus 16-entrypoint audit, protocol/format `5/5`,
+  and ruleset-policy PASS. A new uninterrupted full suite, commit/push, exact-head
+  CI, fresh independent review, App check, and machine-user native approval remain
+  required. App Checks permission remains a user-owned live configuration HOLD.

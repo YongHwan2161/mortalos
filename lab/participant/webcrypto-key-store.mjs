@@ -21,6 +21,7 @@ const cryptoKeyAlgorithm = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "
 const cryptoKeyExtractable = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "extractable").get;
 const cryptoKeyType = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "type").get;
 const cryptoKeyUsages = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "usages").get;
+const uint8ArrayConstructor = Uint8Array;
 
 function keyProperty(getter, key) {
   return reflectApply(getter, key, []);
@@ -28,6 +29,10 @@ function keyProperty(getter, key) {
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function ownSigningBytes(value) {
+  return new uint8ArrayConstructor(value);
 }
 
 export function custodianFromPublicKeyBytes(raw) {
@@ -74,11 +79,12 @@ export async function signBytes(keyId, privateKey, message) {
   if (typeof keyId !== "string" || !(message instanceof Uint8Array)) {
     throw new TypeError("bounded key ID and signing bytes required");
   }
+  const ownedMessage = ownSigningBytes(message);
   await assertNonExtractableSigningKey(privateKey);
-  const signature = await reflectApply(subtleSign, subtle, ["Ed25519", privateKey, message]);
+  const signature = await reflectApply(subtleSign, subtle, ["Ed25519", privateKey, ownedMessage]);
   return Object.freeze({
     key_id: keyId,
-    signature: `ed25519:${encodeBase64Url(new Uint8Array(signature))}`
+    signature: `ed25519:${encodeBase64Url(new uint8ArrayConstructor(signature))}`
   });
 }
 

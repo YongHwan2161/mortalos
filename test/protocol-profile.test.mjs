@@ -12,6 +12,7 @@ import {
   statePackageChunkDigest
 } from "../src/state/package.mjs";
 import { canonicalBytes } from "../src/codec.mjs";
+import { CONFIDENTIAL_LIMITS } from "../src/confidential/format.mjs";
 
 test("canonical protocol profile is the exact generated cross-layer source", async () => {
   const source = JSON.parse(await readFile(
@@ -25,6 +26,23 @@ test("canonical protocol profile is the exact generated cross-layer source", asy
   assert.equal(
     Math.ceil(source.state.chunk_bytes / source.transport.data_fragment_bytes),
     2
+  );
+  assert.deepEqual(
+    {
+      aad_bytes: CONFIDENTIAL_LIMITS.aad_bytes,
+      chunk_plaintext_bytes: CONFIDENTIAL_LIMITS.chunk_plaintext_bytes,
+      counter_max_exclusive: String(CONFIDENTIAL_LIMITS.counter_max_exclusive),
+      epoch_max: String(CONFIDENTIAL_LIMITS.epoch_max),
+      manifest_bytes: CONFIDENTIAL_LIMITS.manifest_bytes,
+      max_chunks: CONFIDENTIAL_LIMITS.max_chunks,
+      max_custodians: CONFIDENTIAL_LIMITS.max_custodians,
+      package_bytes: CONFIDENTIAL_LIMITS.package_bytes,
+      reservation_count_max: String(CONFIDENTIAL_LIMITS.reservation_count_max),
+      resource_bytes: CONFIDENTIAL_LIMITS.resource_bytes,
+      rsa_wrapped_bytes: CONFIDENTIAL_LIMITS.rsa_wrapped_bytes
+    },
+    source.confidential,
+    "every S4 envelope and numeric ceiling must be generated from the profile"
   );
 });
 

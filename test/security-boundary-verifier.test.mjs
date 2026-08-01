@@ -22,7 +22,7 @@ test("security boundary audit detects a borrowed identifier after suspension", (
     await publish(owned);
     const size = borrowed.byteLength;
     const safe = owned.byteLength;
-  `, ["borrowed"]);
+  `, ["borrowed"], ["ownBorrowed"]);
   assert.deepEqual(audit.identifiers, ["borrowed"]);
 });
 
@@ -45,14 +45,55 @@ test("security boundary AST rejects borrowed loop state and deferred closures", 
       await publish(owned);
     }
   `, ["borrowed"]);
-  assert.deepEqual(loop.identifiers, ["borrowed"]);
+  assert.deepEqual(loop.identifiers, ["borrowed", "index"]);
 
   const closure = postAwaitBorrowedIdentifiers(`
     const deferred = () => borrowed.byteLength;
     await publish(owned);
     return deferred();
   `, ["borrowed"]);
-  assert.deepEqual(closure.identifiers, ["borrowed"]);
+  assert.deepEqual(closure.identifiers, ["borrowed", "deferred"]);
+});
+
+test("security boundary AST propagates alias, shallow-freeze, spread, and destructuring taint", () => {
+  const corpus = [
+    {
+      expected: "alias",
+      source: "const alias = borrowed; await pause(); return alias.body;"
+    },
+    {
+      expected: "invocation",
+      source: "const invocation = Object.freeze({ request: borrowed }); await pause(); return invocation.request.body;"
+    },
+    {
+      expected: "spread",
+      source: "const spread = { ...borrowed }; await pause(); return spread.body;"
+    },
+    {
+      expected: "body",
+      source: "const { body } = borrowed; await pause(); return body;"
+    }
+  ];
+  for (const { expected, source } of corpus) {
+    const audit = postAwaitBorrowedIdentifiers(source, ["borrowed"]);
+    assert.deepEqual(audit.identifiers, [expected], source);
+  }
+});
+
+test("security boundary AST clears taint only through an allowlisted deep ownership primitive", () => {
+  const source = `
+    const owned = deepOwn(borrowed);
+    await pause();
+    return owned.body;
+  `;
+  assert.deepEqual(
+    postAwaitBorrowedIdentifiers(source, ["borrowed"]).identifiers,
+    ["owned"]
+  );
+  assert.deepEqual(
+    postAwaitBorrowedIdentifiers(source, ["borrowed"], ["deepOwn"]).identifiers,
+    []
+  );
 });
 
 test("security boundary AST does not confuse property names with borrowed references", () => {

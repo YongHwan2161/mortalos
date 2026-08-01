@@ -3,6 +3,7 @@ import {
   encodeBase64Url
 } from "../bytes.mjs";
 import { canonicalBytes } from "../codec.mjs";
+import { snapshotNamedOwnDataValues } from "../primordials.mjs";
 import {
   CONFIDENTIAL_DOMAINS,
   CONFIDENTIAL_FORMATS,
@@ -146,15 +147,30 @@ export async function wrapEpochKey({
   organismId,
   stagingKey
 }) {
-  const publicKey = await importCustodianPublicKey(custodian);
+  let custodianValues;
+  try {
+    custodianValues = snapshotNamedOwnDataValues(
+      custodian,
+      ["custodian_id", "encryption_key_digest", "encryption_public_key"],
+      "epoch-key wrap custodian"
+    );
+  } catch {
+    confidentialFail("E_CONFIDENTIAL_WRAP", "/custodian", "owned-data");
+  }
+  const ownedCustodian = Object.freeze({
+    custodian_id: custodianValues[0],
+    encryption_key_digest: custodianValues[1],
+    encryption_public_key: custodianValues[2]
+  });
   const label = createWrapLabel({
-    custodian,
+    custodian: ownedCustodian,
     epoch,
     epochId,
     membershipHead,
     organismId
   });
   const labelBytes = canonicalBytes(label);
+  const publicKey = await importCustodianPublicKey(ownedCustodian);
   let wrapped;
   try {
     wrapped = new Uint8Array(
@@ -172,8 +188,8 @@ export async function wrapEpochKey({
     confidentialFail("E_CONFIDENTIAL_WRAP", "/wrap", "wrapped-length");
   }
   return Object.freeze({
-    custodian_encryption_key: custodian.encryption_key_digest,
-    custodian_id: custodian.custodian_id,
+    custodian_encryption_key: ownedCustodian.encryption_key_digest,
+    custodian_id: ownedCustodian.custodian_id,
     epoch,
     epoch_id: epochId,
     format: CONFIDENTIAL_FORMATS.wrap,

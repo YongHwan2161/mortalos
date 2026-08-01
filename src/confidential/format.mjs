@@ -26,17 +26,17 @@ export const CONFIDENTIAL_FORMATS = Object.freeze({
 });
 
 export const CONFIDENTIAL_LIMITS = Object.freeze({
-  aad_bytes: 4_096,
+  aad_bytes: PROTOCOL_PROFILE.confidential.aad_bytes,
   chunk_plaintext_bytes: PROTOCOL_PROFILE.confidential.chunk_plaintext_bytes,
-  counter_max_exclusive: 4_294_967_296n,
-  epoch_max: 18_446_744_073_709_551_615n,
-  manifest_bytes: 131_072,
-  max_custodians: 16,
+  counter_max_exclusive: BigInt(PROTOCOL_PROFILE.confidential.counter_max_exclusive),
+  epoch_max: BigInt(PROTOCOL_PROFILE.confidential.epoch_max),
+  manifest_bytes: PROTOCOL_PROFILE.confidential.manifest_bytes,
+  max_custodians: PROTOCOL_PROFILE.confidential.max_custodians,
   max_chunks: PROTOCOL_PROFILE.confidential.max_chunks,
   package_bytes: PROTOCOL_PROFILE.confidential.package_bytes,
-  reservation_count_max: 64n,
+  reservation_count_max: BigInt(PROTOCOL_PROFILE.confidential.reservation_count_max),
   resource_bytes: PROTOCOL_PROFILE.confidential.resource_bytes,
-  rsa_wrapped_bytes: 384
+  rsa_wrapped_bytes: PROTOCOL_PROFILE.confidential.rsa_wrapped_bytes
 });
 
 export const CONFIDENTIAL_DOMAINS = Object.freeze({

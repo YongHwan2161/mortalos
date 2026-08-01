@@ -1,23 +1,101 @@
 {
-  "format": "mortalos-async-security-entrypoints/1",
+  "format": "mortalos-async-security-entrypoints/2",
   "export_scopes": [
+    "lab/participant/webcrypto-key-store.mjs",
+    "lab/storage/durable-document.mjs",
+    "src/confidential/counter.mjs",
+    "src/confidential/keys.mjs",
+    "src/confidential/package.mjs",
     "src/confidential/recovery.mjs",
+    "src/distributed/quorum-counter-store.mjs",
     "src/state/recovery.mjs",
     "src/transport/chunk-data-plane.mjs"
   ],
   "entries": [
     {
+      "file": "lab/participant/webcrypto-key-store.mjs",
+      "entrypoint": "export async function signBytes",
+      "ownership_primitives": ["ownSigningBytes"],
+      "post_await_forbidden": ["message"],
+      "test_file": "test/durable-quorum.test.mjs",
+      "test_marker": "private CryptoKey never reaches public signer hooks"
+    },
+    {
+      "file": "lab/storage/durable-document.mjs",
+      "entrypoint": "export async function replayDurableDocument",
+      "ownership_primitives": ["clone"],
+      "post_await_forbidden": ["document"],
+      "test_file": "test/durable-quorum.test.mjs",
+      "test_marker": "unknown schema, corrupt key/evidence/journal/state"
+    },
+    {
+      "file": "src/confidential/keys.mjs",
+      "entrypoint": "export async function importCustodianPublicKey",
+      "ownership_primitives": ["taggedBytes"],
+      "post_await_forbidden": ["descriptor"],
+      "test_file": "test/confidential-package.test.mjs",
+      "test_marker": "public-key substitution, malformed SPKI"
+    },
+    {
+      "file": "src/confidential/keys.mjs",
+      "entrypoint": "export async function wrapEpochKey",
+      "ownership_primitives": ["snapshotNamedOwnDataValues"],
+      "post_await_forbidden": ["custodian"],
+      "test_file": "test/confidential-package.test.mjs",
+      "test_marker": "public-key substitution, malformed SPKI"
+    },
+    {
+      "file": "src/confidential/keys.mjs",
+      "entrypoint": "export async function unwrapEpochKey",
+      "ownership_primitives": ["createWrapLabel", "decodeBase64Url"],
+      "post_await_forbidden": ["custodian", "wrap"],
+      "test_file": "test/confidential-package.test.mjs",
+      "test_marker": "public-key substitution, malformed SPKI"
+    },
+    {
+      "file": "src/confidential/package.mjs",
+      "entrypoint": "export async function createConfidentialPackage",
+      "ownership_primitives": ["reserveCounterAuthority", "resourcePlaintextParts", "snapshotConfidentialCustodians"],
+      "post_await_forbidden": ["custodians", "resourceBytes"],
+      "test_file": "test/confidential-package.test.mjs",
+      "test_marker": "ciphertext package round-trips only for exact current custodians"
+    },
+    {
+      "file": "src/confidential/package.mjs",
+      "entrypoint": "async function decryptConfidentialPackageWithEpochKey",
+      "ownership_primitives": ["snapshotConfidentialCustodians", "unwrapEpochKey", "verifyConfidentialPackage"],
+      "post_await_forbidden": ["custodian", "expectedCustodians", "packageBytes"],
+      "test_file": "test/confidential-package.test.mjs",
+      "test_marker": "tamper, substitution, truncation, reorder"
+    },
+    {
+      "file": "src/confidential/package.mjs",
+      "entrypoint": "export async function decryptConfidentialPackage",
+      "ownership_primitives": ["decryptConfidentialPackageWithEpochKey"],
+      "post_await_forbidden": ["options"],
+      "test_file": "test/confidential-package.test.mjs",
+      "test_marker": "ciphertext package round-trips only for exact current custodians"
+    },
+    {
+      "file": "src/confidential/package.mjs",
+      "entrypoint": "export async function aesGcmKnownAnswer",
+      "ownership_primitives": ["ownCryptoInputBytes", "ownOptionalCryptoInputBytes"],
+      "post_await_forbidden": ["additionalData", "ciphertext", "iv", "key", "plaintext"],
+      "test_file": "test/confidential-vector-runner.mjs",
+      "test_marker": "aesGcmKnownAnswer"
+    },
+    {
       "file": "lab/storage/durable-store.mjs",
       "entrypoint": "async #signDurably",
-      "ownership_marker": "const invocation = Object.freeze",
-      "post_await_forbidden": ["body", "kind", "proposal", "request"],
+      "ownership_primitives": ["clone", "snapshotNamedOwnDataValues"],
+      "post_await_forbidden": ["body", "proposal", "request"],
       "test_file": "test/durable-quorum.test.mjs",
       "test_marker": "private CryptoKey never reaches public signer hooks"
     },
     {
       "file": "src/state/recovery.mjs",
       "entrypoint": "export async function recoverStatePackage",
-      "ownership_marker": "invocation = snapshotRecoveryInvocation",
+      "ownership_primitives": ["snapshotRecoveryInvocation", "verifyStatePackage"],
       "post_await_forbidden": ["destination", "inputBytes", "manifestBytes", "receiptBytes", "sources"],
       "test_file": "test/state-package.test.mjs",
       "test_marker": "store and destination failure boundaries remain stable before activation"
@@ -25,7 +103,7 @@
     {
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function createConfidentialStatePackage",
-      "ownership_marker": "const confidentialSnapshot = Object.freeze",
+      "ownership_primitives": ["createUint8Array", "snapshotConfidentialCustodians", "snapshotNamedOwnDataValues"],
       "post_await_forbidden": ["confidential", "inputBytes"],
       "test_file": "test/confidential-s3-recovery.test.mjs",
       "test_marker": "confidential/S3 constructor"
@@ -33,7 +111,7 @@
     {
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function recoverAndDecryptConfidentialState",
-      "ownership_marker": "const expectedSnapshot = Object.freeze",
+      "ownership_primitives": ["confidentialEpochStoreCapability", "recoverStatePackage", "snapshotConfidentialCustodians", "snapshotNamedOwnDataValues"],
       "post_await_forbidden": ["custodian", "destination", "expected", "inputBytes", "manifestBytes", "receiptBytes", "sources"],
       "test_file": "test/security-stateful-fuzz.test.mjs",
       "test_marker": "stateful S4 recovery corpus snapshots transitive authority"
@@ -41,7 +119,7 @@
     {
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function rotateConfidentialState",
-      "ownership_marker": "const nextSnapshot = Object.freeze",
+      "ownership_primitives": ["createUint8Array", "snapshotConfidentialCustodians", "snapshotNamedOwnDataValues", "snapshotObservedCounterAuthorityEquivocation", "verifyConfidentialRotationAuthorization"],
       "post_await_forbidden": ["activePackageBytes", "authorization", "currentCustodian", "currentCustodians", "currentHead", "equivocationEvidence", "next", "nextMembershipHead"],
       "test_file": "test/confidential-package.test.mjs",
       "test_marker": "membership rotation omits the removed member"
@@ -49,7 +127,7 @@
     {
       "file": "src/transport/chunk-data-plane.mjs",
       "entrypoint": "export async function publishStateChunk",
-      "ownership_marker": "const ownedChunkBytes = ownChunkBytes",
+      "ownership_primitives": ["ownChunkBytes", "snapshotDataMethod"],
       "post_await_forbidden": ["chunkBytes", "transport"],
       "test_file": "test/transport.test.mjs",
       "test_marker": "single chunk publisher never re-reads borrowed bytes after await"
@@ -57,10 +135,60 @@
     {
       "file": "src/transport/chunk-data-plane.mjs",
       "entrypoint": "export async function publishStatePackageChunks",
-      "ownership_marker": "const ownedChunks = createArray",
+      "ownership_primitives": ["copyBoundedOwnDataArray", "ownChunkBytes", "ownDataArrayLength", "snapshotDataMethod"],
       "post_await_forbidden": ["chunkBytes", "transport"],
       "test_file": "test/transport.test.mjs",
       "test_marker": "package publisher owns every chunk before the first transport await"
     }
+  ],
+  "classifications": [
+    { "file": "lab/participant/webcrypto-key-store.mjs", "entrypoint": "WebCryptoKeyStore.async create", "mode": "no-borrowed-mutable-input", "reason": "Creates fresh native key material from module-private WebCrypto intrinsics." },
+    { "file": "lab/participant/webcrypto-key-store.mjs", "entrypoint": "WebCryptoKeyStore.async describe", "mode": "module-private-owned-state", "reason": "Returns only a redacted clone of module-private key-store state." },
+    { "file": "lab/participant/webcrypto-key-store.mjs", "entrypoint": "WebCryptoKeyStore.async destroy", "mode": "module-private-owned-state", "reason": "Clears only module-private key-store state and accepts no caller value." },
+    { "file": "lab/participant/webcrypto-key-store.mjs", "entrypoint": "WebCryptoKeyStore.async sign", "mode": "delegates-to-audited-boundary", "reason": "Validates synchronously and delegates bytes to the audited signBytes boundary." },
+    { "file": "lab/participant/webcrypto-key-store.mjs", "entrypoint": "export async function assertNonExtractableSigningKey", "mode": "branded-immutable-capability", "reason": "Consumes only a native branded CryptoKey through captured prototype getters." },
+    { "file": "lab/participant/webcrypto-key-store.mjs", "entrypoint": "export async function createStoredWebCryptoKey", "mode": "no-borrowed-mutable-input", "reason": "Accepts no caller input and creates fresh non-extractable key material." },
+
+    { "file": "src/confidential/counter.mjs", "entrypoint": "LinearizableCounterAuthority.async #reserveRange", "mode": "branded-immutable-capability", "reason": "Receives validated scalar bindings and uses private key and store capabilities." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "LinearizableCounterAuthority.async inspect", "mode": "delegates-to-audited-boundary", "reason": "Delegates a scalar epoch identifier to the module-private inspect capability." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "LinearizableCounterAuthority.async reserveRange", "mode": "delegates-to-audited-boundary", "reason": "Delegates immediately to the private reserve boundary before suspension." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "LinearizableCounterAuthority.async retire", "mode": "delegates-to-audited-boundary", "reason": "Delegates a scalar epoch identifier to the branded retirement boundary." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "LinearizableCounterAuthority.static async create", "mode": "branded-immutable-capability", "reason": "Consumes a registered store capability and creates fresh private key material." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "MemoryCounterAuthorityStore.async #inspect", "mode": "module-private-owned-state", "reason": "Reads cloned module-private records under the store serialization lane." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "MemoryCounterAuthorityStore.async #lose", "mode": "module-private-owned-state", "reason": "Deletes module-private records under the store serialization lane." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "MemoryCounterAuthorityStore.async #transact", "mode": "module-private-owned-state", "reason": "Serializes operations over cloned module-private authority records." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "MemoryCounterAuthorityStore.async inspect", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates directly to the private serialized inspect path." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "MemoryCounterAuthorityStore.async lose", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates directly to the private serialized loss path." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "MemoryCounterAuthorityStore.async transact", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates directly to the private serialized transaction path." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "export async function generateCounterAuthorityKeyMaterial", "mode": "no-borrowed-mutable-input", "reason": "Accepts no caller input and creates fresh signing key material." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "export async function inspectCounterAuthority", "mode": "branded-immutable-capability", "reason": "Resolves a WeakMap-branded authority record before invoking its capability." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "export async function observeCounterAuthorityEquivocation", "mode": "branded-immutable-capability", "reason": "Verifies receipts synchronously and uses only branded authority operations after." },
+    { "file": "src/confidential/counter.mjs", "entrypoint": "export async function retireCounterAuthority", "mode": "branded-immutable-capability", "reason": "Resolves a WeakMap-branded transaction capability before suspension." },
+
+    { "file": "src/confidential/keys.mjs", "entrypoint": "export async function generateCustodianEncryptionKeyPair", "mode": "no-borrowed-mutable-input", "reason": "Accepts only a validated scalar custodian identifier and creates fresh keys." },
+    { "file": "src/confidential/keys.mjs", "entrypoint": "export async function generateStagingEpochKey", "mode": "no-borrowed-mutable-input", "reason": "Accepts no caller input and creates a fresh staging key handle." },
+
+    { "file": "src/confidential/recovery.mjs", "entrypoint": "MemoryConfidentialEpochStore.async #commitActive", "mode": "module-private-owned-state", "reason": "Commits a cloned candidate through a registered module-private capability." },
+    { "file": "src/confidential/recovery.mjs", "entrypoint": "MemoryConfidentialEpochStore.async commitActive", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates directly to the private activation commit path." },
+
+    { "file": "src/distributed/quorum-counter-store.mjs", "entrypoint": "QuorumCounterAuthorityStore.async #inspect", "mode": "module-private-owned-state", "reason": "Operates on private replica records and returns a detached cloned value." },
+    { "file": "src/distributed/quorum-counter-store.mjs", "entrypoint": "QuorumCounterAuthorityStore.async #transact", "mode": "module-private-owned-state", "reason": "Serializes a module-owned operation over detached quorum observations." },
+
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async #commitActive", "mode": "module-private-owned-state", "reason": "Commits detached active state through a private compare-and-swap path." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async #get", "mode": "module-private-owned-state", "reason": "Reads and copies bytes held in the module-private content map." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async #inventory", "mode": "module-private-owned-state", "reason": "Enumerates only module-private digest and size records." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async #put", "mode": "module-private-owned-state", "reason": "Stores an owned byte copy in the module-private content map." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async #readActive", "mode": "module-private-owned-state", "reason": "Returns a detached clone of module-private active state." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async commitActive", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates to the private compare-and-swap activation path." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async get", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates directly to the private detached byte read." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async inventory", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates directly to private inventory generation." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async put", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates to the private byte-copying storage boundary." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "MemoryContentAddressedStore.async readActive", "mode": "delegates-to-audited-boundary", "reason": "Public facade delegates directly to the private detached active read." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "ReplicaRecoveryAdapter.async inventory", "mode": "branded-immutable-capability", "reason": "Invokes a snapshotted replica inventory method and normalizes its result." },
+    { "file": "src/state/recovery.mjs", "entrypoint": "ReplicaRecoveryAdapter.async readChunk", "mode": "branded-immutable-capability", "reason": "Invokes a snapshotted replica read method and copies returned bytes." },
+
+    { "file": "src/transport/chunk-data-plane.mjs", "entrypoint": "RelayChunkRecoveryAdapter.async #loadFrames", "mode": "module-private-owned-state", "reason": "Loads through a snapshotted transport method into private frame state." },
+    { "file": "src/transport/chunk-data-plane.mjs", "entrypoint": "RelayChunkRecoveryAdapter.async inventory", "mode": "module-private-owned-state", "reason": "Builds inventory exclusively from validated module-private frames." },
+    { "file": "src/transport/chunk-data-plane.mjs", "entrypoint": "RelayChunkRecoveryAdapter.async readChunk", "mode": "module-private-owned-state", "reason": "Reassembles bytes exclusively from validated module-private frames." }
   ]
 }

@@ -54,6 +54,7 @@ assert.equal(identity.attestation_check.github_app.slug, "mortalos-review-gate")
 assert.equal(identity.attestation_check.required, true);
 assert.equal(identity.attestation_check.exact_head_required, true);
 assert.equal(identity.runner.version, "mortalos-reviewer-gate/1");
+assert.match(identity.runner.binary_sha256, /^[0-9a-f]{64}$/u);
 assert.equal(identity.runner.execution_boundary, "outside_pr_controlled_github_actions");
 assert.equal(identity.runner.repository_secret_forbidden, true);
 assert.deepEqual(identity.runner.required_snapshot_fields, [

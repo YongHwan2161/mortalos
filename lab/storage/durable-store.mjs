@@ -356,6 +356,7 @@ export class DurableQuorumEndpoint {
   #endpointId;
   #maxObservedNow = 0;
   #signingBoundary;
+  #signingTail = null;
   #store;
 
   constructor({ endpointId, store, clock = () => Date.now(), signingBoundary = null }) {
@@ -640,35 +641,54 @@ export class DurableQuorumEndpoint {
         purpose: requestValues[2]
       })
     });
-    await this.#enforceSigningPolicy();
-    const reserved = reserveSigningIntent(this.#document, {
-      body: invocation.body,
-      keyId: invocation.request.key_id,
-      kind: invocation.kind,
-      message: invocation.request.message,
-      proposal: invocation.proposal,
-      purpose: invocation.request.purpose
-    });
-    if (!reserved.existing) {
-      await this.#commitDocument("reserve", reserved.document);
-    } else {
-      this.#document = reserved.document;
-    }
-    const existing = pendingSignature(this.#document, reserved.entry.tuple);
-    if (existing) return clone(existing);
-    await this.#signingBoundary?.("before");
-    const signature = await signBytes(
-      this.#document.key.key_id,
-      this.#document.key.private_key,
-      invocation.request.message
-    );
-    const signed = recordDurableSignature(this.#document, reserved.entry.tuple, signature);
-    await this.#commitDocument("signature", signed);
-    return clone(signature);
+    const previous = this.#signingTail;
+    const queued = (async () => {
+      if (previous !== null) {
+        try {
+          await previous;
+        } catch {
+          // A durable reservation can survive a failed predecessor. The next
+          // owned invocation must replay that state instead of poisoning the
+          // endpoint's signing lane forever.
+        }
+      }
+      await this.#enforceSigningPolicy();
+      const operationRevision = this.#document.revision;
+      const reserved = reserveSigningIntent(this.#document, {
+        body: invocation.body,
+        keyId: invocation.request.key_id,
+        kind: invocation.kind,
+        message: invocation.request.message,
+        proposal: invocation.proposal,
+        purpose: invocation.request.purpose
+      });
+      if (!reserved.existing) {
+        await this.#commitDocument("reserve", reserved.document, operationRevision);
+      } else {
+        this.#document = reserved.document;
+      }
+      const existing = pendingSignature(this.#document, reserved.entry.tuple);
+      if (existing) return clone(existing);
+      await this.#signingBoundary?.("before");
+      const signingRevision = this.#document.revision;
+      const signature = await signBytes(
+        this.#document.key.key_id,
+        this.#document.key.private_key,
+        invocation.request.message
+      );
+      const signed = recordDurableSignature(this.#document, reserved.entry.tuple, signature);
+      await this.#commitDocument("signature", signed, signingRevision);
+      return clone(signature);
+    })();
+    this.#signingTail = queued;
+    return await queued;
   }
 
-  async #commitDocument(operation, document) {
-    const expectedRevision = this.#document?.revision ?? null;
+  async #commitDocument(
+    operation,
+    document,
+    expectedRevision = this.#document?.revision ?? null
+  ) {
     await commitPrivateDurableDocument(this.#store, operation, document, { expectedRevision });
     this.#document = document;
   }

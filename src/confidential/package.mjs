@@ -61,6 +61,15 @@ const MANIFEST_KEYS = [
   "transition_id",
   "wraps"
 ];
+const uint8ArrayConstructor = Uint8Array;
+
+function ownCryptoInputBytes(value) {
+  return new uint8ArrayConstructor(new uint8ArrayConstructor(value));
+}
+
+function ownOptionalCryptoInputBytes(value) {
+  return value === undefined ? undefined : ownCryptoInputBytes(value);
+}
 const CHUNK_KEYS = [
   "aad",
   "aad_digest",
@@ -755,6 +764,7 @@ async function decryptConfidentialPackageWithEpochKey({
   packageBytes,
   privateKey
 }) {
+  const ownedCustodian = snapshotConfidentialCustodians([custodian])[0];
   let verified;
   try {
     verified = verifyConfidentialPackage({
@@ -772,8 +782,8 @@ async function decryptConfidentialPackageWithEpochKey({
   }
   const wrap = verified.manifest.wraps.find(
     (entry) =>
-      entry.custodian_id === custodian?.custodian_id &&
-      entry.custodian_encryption_key === custodian?.encryption_key_digest
+      entry.custodian_id === ownedCustodian.custodian_id &&
+      entry.custodian_encryption_key === ownedCustodian.encryption_key_digest
   );
   if (!wrap) {
     confidentialFail("E_CONFIDENTIAL_KEY_UNAVAILABLE", "/wrap", "recipient");
@@ -781,7 +791,7 @@ async function decryptConfidentialPackageWithEpochKey({
   let epochKey;
   try {
     epochKey = await unwrapEpochKey({
-      custodian,
+      custodian: ownedCustodian,
       epoch: verified.manifest.epoch,
       epochId: verified.manifest.epoch_id,
       membershipHead: verified.manifest.membership_head,
@@ -886,28 +896,33 @@ export async function aesGcmKnownAnswer({
   key,
   plaintext
 }) {
+  const ownedAdditionalData = ownCryptoInputBytes(additionalData);
+  const ownedCiphertext = ownOptionalCryptoInputBytes(ciphertext);
+  const ownedIv = ownCryptoInputBytes(iv);
+  const ownedKey = ownCryptoInputBytes(key);
+  const ownedPlaintext = ownCryptoInputBytes(plaintext);
   const subtle = assertWebCrypto();
   const cryptoKey = await subtle.importKey(
     "raw",
-    key,
+    ownedKey,
     { name: "AES-GCM" },
     false,
     ["encrypt", "decrypt"]
   );
-  const encrypted = new Uint8Array(
+  const encrypted = new uint8ArrayConstructor(
     await subtle.encrypt(
       {
-        additionalData,
-        iv,
+        additionalData: ownedAdditionalData,
+        iv: ownedIv,
         name: "AES-GCM",
         tagLength: 128
       },
       cryptoKey,
-      plaintext
+      ownedPlaintext
     )
   );
-  if (ciphertext !== undefined) {
-    const expected = new Uint8Array(ciphertext);
+  if (ownedCiphertext !== undefined) {
+    const expected = ownedCiphertext;
     if (
       expected.byteLength !== encrypted.byteLength ||
       expected.some((byte, index) => byte !== encrypted[index])
@@ -915,11 +930,11 @@ export async function aesGcmKnownAnswer({
       confidentialFail("E_CONFIDENTIAL_CRYPTO", "/vector", "ciphertext");
     }
   }
-  const recovered = new Uint8Array(
+  const recovered = new uint8ArrayConstructor(
     await subtle.decrypt(
       {
-        additionalData,
-        iv,
+        additionalData: ownedAdditionalData,
+        iv: ownedIv,
         name: "AES-GCM",
         tagLength: 128
       },

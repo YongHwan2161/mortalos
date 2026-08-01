@@ -60,6 +60,24 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   and probes Chromium, Firefox, and WebKit, runs full custody where the native
   signer capability exists, and enforces the WebKit verifier-only fail-closed
   profile instead of accepting an extractable software-key fallback.
+- Independent review HOLD (2026-08-02): exact head `a7ea8b8…` was blocked after a
+  same-endpoint/same-body barrier reproduced two native signing calls and two
+  signature WAL commits. The same review proved the seven-entrypoint ownership
+  checker accepted alias and shallow-freeze escapes. The remediation serializes
+  every owned signing invocation on a module-private Promise tail, binds reserve
+  and signature commits to captured revisions, and adds a one-signer/one-WAL
+  regression. The AST gate now propagates parameter taint through aliases,
+  properties, spread, destructuring, loops, and closures; only verifier-allowlisted
+  deep-own or branded-capability calls clear it. It auto-discovers and forces an
+  audit/classification for every async export and exported-class method across nine
+  security modules, with sixteen high-risk boundaries under direct taint audit.
+- The same remediation moves every confidential S4 ceiling into
+  `protocol/profile.v1.json`, snapshots wrap/rotation inputs and WebCrypto signing
+  bytes before suspension, binds every required CI check to GitHub Actions App ID
+  `15368` plus exact run/job IDs, and pins the external runner binary digest in the
+  repository policy. This changes the candidate head; all prior CI and reviews are
+  invalid. App Checks permission is still live-HOLD at read-only until the App owner
+  changes it to read/write and approves the installation update.
 
 ### HISTORICAL — Implement S4 confidential state and epoch-key recovery
 

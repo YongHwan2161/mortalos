@@ -14,7 +14,8 @@ import {
   replayDurableDocument
 } from "../lab/storage/durable-document.mjs";
 import {
-  createStoredWebCryptoKey
+  createStoredWebCryptoKey,
+  signBytes
 } from "../lab/participant/webcrypto-key-store.mjs";
 function seed(value) {
   return new Uint8Array(16).fill(value);
@@ -270,6 +271,50 @@ test("same-revision endpoints CAS before signing and cannot release conflicting 
   assert.equal(endpoints[0].publicState.sequence, "0");
 });
 
+test("same endpoint coalesces concurrent same-body signing into one signer and WAL release", async () => {
+  const { endpoints, nodes } = await createCluster(46);
+  let releaseSigner;
+  let signerEntered;
+  const entered = new Promise((resolve) => {
+    signerEntered = resolve;
+  });
+  const release = new Promise((resolve) => {
+    releaseSigner = resolve;
+  });
+  let signerCalls = 0;
+  const endpoint = new DurableQuorumEndpoint({
+    endpointId: "A46",
+    store: nodes[0].store,
+    clock: () => 1_800_000_000_000,
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
+      signerCalls += 1;
+      signerEntered();
+      await release;
+    }
+  });
+  await endpoint.restore();
+  const proposal = endpoint.createStateProposal(1);
+  const signatureWritesBefore = nodes[0].store.writeTrace.filter((entry) =>
+    entry === "signature").length;
+  const first = endpoint.approveProposal(proposal);
+  await entered;
+  const second = endpoint.approveProposal(structuredClone(proposal));
+  releaseSigner();
+  const [firstApproval, secondApproval] = await Promise.all([first, second]);
+
+  assert.deepEqual(secondApproval, firstApproval);
+  assert.equal(signerCalls, 1);
+  assert.equal(
+    nodes[0].store.writeTrace.filter((entry) => entry === "signature").length,
+    signatureWritesBefore + 1
+  );
+  assert.equal(
+    endpoint.document.journal.filter((entry) => entry.purpose === "pulse-approval").length,
+    1
+  );
+});
+
 test("private CryptoKey never reaches public signer hooks or mutable WebCrypto facades", async () => {
   const store = new MemoryDurableStore();
   let legacySignerCalls = 0;
@@ -327,6 +372,20 @@ test("private CryptoKey never reaches public signer hooks or mutable WebCrypto f
   assert.equal(mutableCloneInputs.some(containsCryptoKey), false);
   assert.deepEqual(observed, [["before"]]);
   assert.equal(endpoint.document.key.private_key, undefined);
+});
+
+test("signBytes owns caller message bytes before its first WebCrypto await", async () => {
+  const key = await createStoredWebCryptoKey();
+  const message = new Uint8Array([1, 2, 3, 4]);
+  const pending = signBytes(key.key_id, key.private_key, message);
+  message.fill(9);
+  const actual = await pending;
+  const expected = await signBytes(
+    key.key_id,
+    key.private_key,
+    new Uint8Array([1, 2, 3, 4])
+  );
+  assert.deepEqual(actual, expected);
 });
 
 test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {

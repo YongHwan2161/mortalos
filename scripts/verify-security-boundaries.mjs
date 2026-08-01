@@ -3,18 +3,26 @@ import { readdir, readFile } from "node:fs/promises";
 import {
   analyzeFunctionOwnership,
   analyzePostAwaitBorrowedIdentifiers,
+  discoverExportedAsyncSecurityEntrypoints,
   findSecurityEntrypoint,
   parseSecurityModule
 } from "./security-boundary-ast.mjs";
 
 const root = new URL("../", import.meta.url);
 const registry = JSON.parse(await readFile(new URL("security/async-entrypoints.json", root), "utf8"));
-assert.equal(registry.format, "mortalos-async-security-entrypoints/1");
+assert.equal(registry.format, "mortalos-async-security-entrypoints/2");
 assert.ok(Array.isArray(registry.entries) && registry.entries.length >= 7);
-assert.ok(Array.isArray(registry.export_scopes) && registry.export_scopes.length >= 3);
+assert.ok(Array.isArray(registry.export_scopes) && registry.export_scopes.length >= 9);
+assert.ok(Array.isArray(registry.classifications));
 
 const SECURITY_EXPORT_SCOPES = Object.freeze([
+  "lab/participant/webcrypto-key-store.mjs",
+  "lab/storage/durable-document.mjs",
+  "src/confidential/counter.mjs",
+  "src/confidential/keys.mjs",
+  "src/confidential/package.mjs",
   "src/confidential/recovery.mjs",
+  "src/distributed/quorum-counter-store.mjs",
   "src/state/recovery.mjs",
   "src/transport/chunk-data-plane.mjs"
 ]);
@@ -27,17 +35,45 @@ const REQUIRED_ENTRYPOINTS = Object.freeze([
   "src/transport/chunk-data-plane.mjs:export async function publishStateChunk",
   "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks"
 ]);
+const DEEP_OWNERSHIP_PRIMITIVES = new Set([
+  "clone",
+  "confidentialEpochStoreCapability",
+  "copyBoundedOwnDataArray",
+  "createUint8Array",
+  "createWrapLabel",
+  "decodeBase64Url",
+  "decryptConfidentialPackageWithEpochKey",
+  "ownChunkBytes",
+  "ownDataArrayLength",
+  "ownCryptoInputBytes",
+  "ownOptionalCryptoInputBytes",
+  "ownSigningBytes",
+  "recoverStatePackage",
+  "reserveCounterAuthority",
+  "resourcePlaintextParts",
+  "snapshotConfidentialCustodians",
+  "snapshotDataMethod",
+  "snapshotNamedOwnDataValues",
+  "snapshotObservedCounterAuthorityEquivocation",
+  "snapshotRecoveryInvocation",
+  "taggedBytes",
+  "unwrapEpochKey",
+  "verifyConfidentialPackage",
+  "verifyConfidentialRotationAuthorization",
+  "verifyStatePackage"
+]);
 
 assert.deepEqual(
   [...registry.export_scopes].sort(),
   [...SECURITY_EXPORT_SCOPES].sort(),
   "security export scopes are verifier-owned, not registry-extensible"
 );
-assert.deepEqual(
-  registry.entries.map(({ file, entrypoint }) => `${file}:${entrypoint}`).sort(),
-  [...REQUIRED_ENTRYPOINTS].sort(),
-  "security entrypoint inventory is verifier-owned"
+const registeredEntrypoints = new Set(
+  registry.entries.map(({ file, entrypoint }) => `${file}:${entrypoint}`)
 );
+for (const required of REQUIRED_ENTRYPOINTS) {
+  assert.ok(registeredEntrypoints.has(required), `missing verifier-required entrypoint ${required}`);
+}
 
 export function tokenizeJavaScript(source) {
   const tokens = [];
@@ -109,27 +145,42 @@ async function runtimeModules(relativeDirectory) {
   return discovered;
 }
 
-export function postAwaitBorrowedIdentifiers(source, forbidden) {
-  return analyzePostAwaitBorrowedIdentifiers(source, forbidden);
+export function postAwaitBorrowedIdentifiers(source, forbidden, ownershipPrimitives = []) {
+  return analyzePostAwaitBorrowedIdentifiers(source, forbidden, ownershipPrimitives);
 }
 
-const registeredExports = new Set(
-  registry.entries
-    .filter(({ entrypoint }) => entrypoint.startsWith("export async function "))
-    .map(({ file, entrypoint }) => `${file}:${entrypoint.split(" ").at(-1)}`)
-);
 const discoveredExports = new Set();
 for (const file of SECURITY_EXPORT_SCOPES) {
   const source = await readFile(new URL(file, root), "utf8");
-  for (const match of source.matchAll(/export\s+async\s+function\s+([A-Za-z_$][\w$]*)/gu)) {
-    discoveredExports.add(`${file}:${match[1]}`);
+  const ast = parseSecurityModule(source);
+  for (const entrypoint of discoverExportedAsyncSecurityEntrypoints(ast)) {
+    discoveredExports.add(`${file}:${entrypoint}`);
   }
 }
+const classifiedExports = new Set([
+  ...registry.entries
+    .map(({ file, entrypoint }) => `${file}:${entrypoint}`)
+    .filter((entrypoint) => discoveredExports.has(entrypoint)),
+  ...registry.classifications.map(({ file, entrypoint }) => `${file}:${entrypoint}`)
+]);
 assert.deepEqual(
-  [...registeredExports].sort(),
+  [...classifiedExports].sort(),
   [...discoveredExports].sort(),
-  "every exported async function in the security scope must be registered"
+  "every exported async security function and class method must be audited or explicitly classified"
 );
+const CLASSIFICATION_MODES = new Set([
+  "branded-immutable-capability",
+  "delegates-to-audited-boundary",
+  "module-private-owned-state",
+  "no-borrowed-mutable-input"
+]);
+for (const classification of registry.classifications) {
+  assert.ok(CLASSIFICATION_MODES.has(classification.mode), "recognized classification mode required");
+  assert.ok(
+    typeof classification.reason === "string" && classification.reason.length >= 20,
+    `${classification.file}: classification requires a concrete review reason`
+  );
+}
 
 const RAW_DURABLE_CAPABILITY_CONSUMERS = new Set(["lab/storage/durable-store.mjs"]);
 for (const file of (await Promise.all(
@@ -154,15 +205,34 @@ for (const entry of registry.entries) {
   const ast = parseSecurityModule(source);
   const functionNode = findSecurityEntrypoint(ast, entry.entrypoint);
   assert.ok(functionNode, `${entry.file}: missing ${entry.entrypoint}`);
+  assert.ok(
+    Array.isArray(entry.ownership_primitives) && entry.ownership_primitives.length > 0,
+    `${entry.file}: allowlisted ownership primitive is required`
+  );
+  for (const primitive of entry.ownership_primitives) {
+    assert.ok(
+      DEEP_OWNERSHIP_PRIMITIVES.has(primitive),
+      `${entry.file}: unrecognized ownership primitive ${primitive}`
+    );
+  }
+  const audit = analyzeFunctionOwnership(
+    functionNode,
+    entry.post_await_forbidden,
+    entry.ownership_primitives
+  );
   const body = source.slice(functionNode.body.start + 1, functionNode.body.end - 1);
   const bodyTokens = tokenizeJavaScript(body);
-  const ownership = tokenSequenceIndex(bodyTokens, markerTokens(entry.ownership_marker));
-  const audit = analyzeFunctionOwnership(functionNode, entry.post_await_forbidden);
-  const ownershipPosition = functionNode.body.start + 1 + bodyTokens[ownership]?.start;
-  assert.notEqual(ownership, -1, `${entry.file}: missing ownership marker`);
+  const ownershipPositions = entry.ownership_primitives.map((primitive) =>
+    tokenSequenceIndex(bodyTokens, markerTokens(primitive))
+  );
+  assert.ok(
+    ownershipPositions.every((position) => position !== -1),
+    `${entry.file}: missing allowlisted ownership primitive call`
+  );
   assert.notEqual(audit.firstAwait, -1, `${entry.file}: security entrypoint must be async`);
   assert.ok(
-    ownershipPosition < audit.firstAwait,
+    ownershipPositions.every((position) =>
+      functionNode.body.start + 1 + bodyTokens[position].start < audit.boundary),
     `${entry.file}: ${entry.entrypoint} reaches await before transitive ownership`
   );
   assert.ok(
@@ -188,4 +258,7 @@ for (const entry of registry.entries) {
   );
 }
 
-console.log(`MortalOS async security boundary audit: PASS (${registry.entries.length} entrypoints)`);
+console.log(
+  `MortalOS async security boundary audit: PASS (${registry.entries.length} direct / ` +
+  `${discoveredExports.size} auto-discovered exports and class methods)`
+);

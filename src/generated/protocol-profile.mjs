@@ -1,10 +1,17 @@
 // Generated from protocol/profile.v1.json. Run npm run generate:protocol-profile.
 const profile = {
   confidential: {
+    aad_bytes: 4096,
     chunk_plaintext_bytes: 65536,
+    counter_max_exclusive: "4294967296",
+    epoch_max: "18446744073709551615",
+    manifest_bytes: 131072,
     max_chunks: 64,
+    max_custodians: 16,
     package_bytes: 4194304,
-    resource_bytes: 3098890
+    reservation_count_max: "64",
+    resource_bytes: 3098890,
+    rsa_wrapped_bytes: 384
   },
   format: "mortalos-protocol-profile/1",
   provider: {

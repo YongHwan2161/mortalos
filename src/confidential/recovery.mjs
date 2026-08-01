@@ -9,7 +9,10 @@ import {
 import { canonicalBytes } from "../codec.mjs";
 import { verifyEd25519 } from "../crypto.mjs";
 import {
+  copyBoundedOwnDataArray,
   createUint8Array,
+  freeze,
+  ownDataArrayLength,
   realmIntrinsicsIntact,
   snapshotNamedOwnDataValues,
   typedArraySet
@@ -160,50 +163,75 @@ async function commitConfidentialActive(capability, options) {
 }
 
 export function validateConfidentialRotationInput(input) {
+  const names = [
+    "approved_membership_head",
+    "current_membership_head",
+    "format",
+    "from_epoch",
+    "next_authority_id",
+    "next_custodian_key_digests",
+    "reason",
+    "suite",
+    "to_epoch"
+  ];
   exactObjectKeys(
     input,
-    [
-      "approved_membership_head",
-      "current_membership_head",
-      "format",
-      "from_epoch",
-      "next_authority_id",
-      "next_custodian_key_digests",
-      "reason",
-      "suite",
-      "to_epoch"
-    ],
+    names,
     "/rotation"
   );
+  let inputSnapshot;
+  try {
+    const values = snapshotNamedOwnDataValues(input, names, "confidential rotation");
+    const digestCount = ownDataArrayLength(
+      values[5],
+      "confidential rotation custodian key digests"
+    );
+    inputSnapshot = freeze({
+      approved_membership_head: values[0],
+      current_membership_head: values[1],
+      format: values[2],
+      from_epoch: values[3],
+      next_authority_id: values[4],
+      next_custodian_key_digests: freeze(copyBoundedOwnDataArray(
+        values[5],
+        digestCount,
+        "confidential rotation custodian key digests"
+      )),
+      reason: values[6],
+      suite: values[7],
+      to_epoch: values[8]
+    });
+  } catch {
+    confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation", "owned-data");
+  }
   if (
-    input.format !== CONFIDENTIAL_FORMATS.rotation ||
-    input.suite !== CONFIDENTIAL_SUITE ||
+    inputSnapshot.format !== CONFIDENTIAL_FORMATS.rotation ||
+    inputSnapshot.suite !== CONFIDENTIAL_SUITE ||
     ![
       "membership_change",
       "counter_authority_lost",
       "counter_authority_equivocation"
-    ].includes(input.reason)
+    ].includes(inputSnapshot.reason)
   ) {
     confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation", "authorization");
   }
-  const from = parseEpoch(input.from_epoch, "/rotation/from_epoch");
-  const to = parseEpoch(input.to_epoch, "/rotation/to_epoch");
+  const from = parseEpoch(inputSnapshot.from_epoch, "/rotation/from_epoch");
+  const to = parseEpoch(inputSnapshot.to_epoch, "/rotation/to_epoch");
   if (to !== from + 1n) {
     confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation/to_epoch", "successor");
   }
   assertDigest(
-    input.approved_membership_head,
+    inputSnapshot.approved_membership_head,
     "/rotation/approved_membership_head"
   );
   assertDigest(
-    input.current_membership_head,
+    inputSnapshot.current_membership_head,
     "/rotation/current_membership_head"
   );
-  assertDigest(input.next_authority_id, "/rotation/next_authority_id");
+  assertDigest(inputSnapshot.next_authority_id, "/rotation/next_authority_id");
   if (
-    !Array.isArray(input.next_custodian_key_digests) ||
-    input.next_custodian_key_digests.length < 1 ||
-    input.next_custodian_key_digests.length > 16
+    inputSnapshot.next_custodian_key_digests.length < 1 ||
+    inputSnapshot.next_custodian_key_digests.length > 16
   ) {
     confidentialFail(
       "E_CONFIDENTIAL_ROTATION",
@@ -211,11 +239,11 @@ export function validateConfidentialRotationInput(input) {
       "count"
     );
   }
-  const sorted = [...input.next_custodian_key_digests].sort();
+  const sorted = [...inputSnapshot.next_custodian_key_digests].sort();
   for (let index = 0; index < sorted.length; index += 1) {
     assertDigest(sorted[index], `/rotation/next_custodian_key_digests/${index}`);
     if (
-      sorted[index] !== input.next_custodian_key_digests[index] ||
+      sorted[index] !== inputSnapshot.next_custodian_key_digests[index] ||
       (index > 0 && sorted[index] === sorted[index - 1])
     ) {
       confidentialFail(
@@ -225,7 +253,7 @@ export function validateConfidentialRotationInput(input) {
       );
     }
   }
-  return Object.freeze(input);
+  return inputSnapshot;
 }
 
 export function confidentialRotationAuthorizationMessage(rotationInput) {
@@ -235,6 +263,17 @@ export function confidentialRotationAuthorizationMessage(rotationInput) {
     new Uint8Array([0]),
     canonicalBytes(rotation)
   );
+}
+
+function snapshotObservedCounterAuthorityEquivocation(evidence) {
+  if (!isObservedCounterAuthorityEquivocation(evidence)) return null;
+  const values = snapshotNamedOwnDataValues(
+    evidence,
+    ["authority_id", "epoch_id", "receipt_digests", "status"],
+    "observed counter authority equivocation"
+  );
+  if (values[3] !== "counter_authority_equivocation") return null;
+  return freeze({ authorityId: values[0], epochId: values[1] });
 }
 
 export function verifyConfidentialRotationAuthorization({
@@ -549,12 +588,9 @@ export async function rotateConfidentialState({
   }
   const ownedActivePackageBytes = createUint8Array(activePackageLength);
   typedArraySet(ownedActivePackageBytes, activePackageView, 0);
-  const observedEquivocation = isObservedCounterAuthorityEquivocation(equivocationEvidence)
-    ? Object.freeze({
-        authorityId: equivocationEvidence.authority_id,
-        epochId: equivocationEvidence.epoch_id
-      })
-    : null;
+  const observedEquivocation = snapshotObservedCounterAuthorityEquivocation(
+    equivocationEvidence
+  );
   let nextValues;
   try {
     nextValues = snapshotNamedOwnDataValues(

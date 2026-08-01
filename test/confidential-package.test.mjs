@@ -266,6 +266,49 @@ test("public-key substitution, malformed SPKI, wrap misuse, label mismatch, and 
   );
 });
 
+test("wrap and rotation validators detach nested caller state before suspension or reuse", async () => {
+  const value = await fixture();
+  const originalCustodian = value.custodians[0];
+  const mutableCustodian = { ...originalCustodian };
+  const stagingKey = await generateStagingEpochKey();
+  const pendingWrap = wrapEpochKey({
+    custodian: mutableCustodian,
+    epoch: value.epoch,
+    epochId: value.epochId,
+    membershipHead: value.membershipHead,
+    organismId: value.organismId,
+    stagingKey
+  });
+  mutableCustodian.custodian_id = randomTagged("mortalos-key:");
+  mutableCustodian.encryption_key_digest = randomTagged("sha256:");
+  const wrapped = await pendingWrap;
+  assert.equal(wrapped.custodian_id, originalCustodian.custodian_id);
+  assert.equal(
+    wrapped.custodian_encryption_key,
+    originalCustodian.encryption_key_digest
+  );
+
+  const digest = randomTagged("sha256:");
+  const digests = [digest];
+  const rotation = {
+    approved_membership_head: randomTagged("sha256:"),
+    current_membership_head: randomTagged("sha256:"),
+    format: "mortalos-confidential-rotation/1",
+    from_epoch: "0",
+    next_authority_id: randomTagged("sha256:"),
+    next_custodian_key_digests: digests,
+    reason: "counter_authority_lost",
+    suite: "mortalos-confidential-state-suite/1",
+    to_epoch: "1"
+  };
+  const ownedRotation = validateConfidentialRotationInput(rotation);
+  digests[0] = randomTagged("sha256:");
+  rotation.reason = "membership_change";
+  assert.equal(ownedRotation.next_custodian_key_digests[0], digest);
+  assert.equal(ownedRotation.reason, "counter_authority_lost");
+  assert.notEqual(ownedRotation, rotation);
+});
+
 test("tamper, substitution, truncation, reorder, duplicate wrap, and wrong binding release no plaintext", async () => {
   const value = await fixture();
   const original = value.confidentialPackage.package;
