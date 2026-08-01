@@ -1,25 +1,59 @@
 {
   "format": "mortalos-async-security-entrypoints/1",
+  "export_scopes": [
+    "src/confidential/recovery.mjs",
+    "src/state/recovery.mjs",
+    "src/transport/chunk-data-plane.mjs"
+  ],
   "entries": [
     {
       "file": "lab/participant/durable-quorum-endpoint.mjs",
       "entrypoint": "async #signDurably",
-      "ownership_marker": "const invocation = Object.freeze"
+      "ownership_marker": "const invocation = Object.freeze",
+      "test_file": "test/durable-quorum.test.mjs",
+      "test_marker": "private CryptoKey never reaches public signer hooks"
     },
     {
       "file": "src/state/recovery.mjs",
       "entrypoint": "export async function recoverStatePackage",
-      "ownership_marker": "invocation = snapshotRecoveryInvocation"
+      "ownership_marker": "invocation = snapshotRecoveryInvocation",
+      "test_file": "test/state-package.test.mjs",
+      "test_marker": "store and destination failure boundaries remain stable before activation"
+    },
+    {
+      "file": "src/confidential/recovery.mjs",
+      "entrypoint": "export async function createConfidentialStatePackage",
+      "ownership_marker": "const ownedInputBytes = createUint8Array",
+      "test_file": "test/confidential-s3-recovery.test.mjs",
+      "test_marker": "confidential/S3 constructor"
     },
     {
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function recoverAndDecryptConfidentialState",
-      "ownership_marker": "const expectedSnapshot = Object.freeze"
+      "ownership_marker": "const expectedSnapshot = Object.freeze",
+      "test_file": "test/security-stateful-fuzz.test.mjs",
+      "test_marker": "stateful S4 recovery corpus snapshots transitive authority"
     },
     {
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function rotateConfidentialState",
-      "ownership_marker": "const nextSnapshot = Object.freeze"
+      "ownership_marker": "const nextSnapshot = Object.freeze",
+      "test_file": "test/confidential-package.test.mjs",
+      "test_marker": "membership rotation omits the removed member"
+    },
+    {
+      "file": "src/transport/chunk-data-plane.mjs",
+      "entrypoint": "export async function publishStateChunk",
+      "ownership_marker": "const messages = createRelayChunkFragmentMessages",
+      "test_file": "test/transport.test.mjs",
+      "test_marker": "real relay messages carry S3 chunks"
+    },
+    {
+      "file": "src/transport/chunk-data-plane.mjs",
+      "entrypoint": "export async function publishStatePackageChunks",
+      "ownership_marker": "const ownedChunks = createArray",
+      "test_file": "test/transport.test.mjs",
+      "test_marker": "package publisher owns every chunk before the first transport await"
     }
   ]
 }

@@ -7,6 +7,25 @@ import {
   portSuccess
 } from "./contracts.mjs";
 
+const subtle = globalThis.crypto?.subtle;
+const subtlePrototype = globalThis.SubtleCrypto?.prototype;
+const cryptoKeyPrototype = globalThis.CryptoKey?.prototype;
+if (!subtle || !subtlePrototype || !cryptoKeyPrototype) {
+  throw new Error("WebCrypto key containment requires native CryptoKey and SubtleCrypto");
+}
+const reflectApply = Reflect.apply;
+const subtleExportKey = subtlePrototype.exportKey;
+const subtleGenerateKey = subtlePrototype.generateKey;
+const subtleSign = subtlePrototype.sign;
+const cryptoKeyAlgorithm = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "algorithm").get;
+const cryptoKeyExtractable = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "extractable").get;
+const cryptoKeyType = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "type").get;
+const cryptoKeyUsages = Object.getOwnPropertyDescriptor(cryptoKeyPrototype, "usages").get;
+
+function keyProperty(getter, key) {
+  return reflectApply(getter, key, []);
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -20,18 +39,30 @@ export function custodianFromPublicKeyBytes(raw) {
 }
 
 export async function assertNonExtractableSigningKey(privateKey) {
+  let algorithm;
+  let extractable;
+  let type;
+  let usages;
+  try {
+    algorithm = keyProperty(cryptoKeyAlgorithm, privateKey);
+    extractable = keyProperty(cryptoKeyExtractable, privateKey);
+    type = keyProperty(cryptoKeyType, privateKey);
+    usages = keyProperty(cryptoKeyUsages, privateKey);
+  } catch {
+    throw new TypeError("native CryptoKey required");
+  }
   if (
-    !privateKey ||
-    privateKey.type !== "private" ||
-    privateKey.extractable !== false ||
-    privateKey.algorithm?.name !== "Ed25519" ||
-    !privateKey.usages.includes("sign")
+    type !== "private" ||
+    extractable !== false ||
+    algorithm?.name !== "Ed25519" ||
+    usages.length !== 1 ||
+    usages[0] !== "sign"
   ) {
     throw new TypeError("non-extractable Ed25519 signing key required");
   }
   let privateExportRejected = false;
   try {
-    await crypto.subtle.exportKey("pkcs8", privateKey);
+    await reflectApply(subtleExportKey, subtle, ["pkcs8", privateKey]);
   } catch {
     privateExportRejected = true;
   }
@@ -44,7 +75,7 @@ export async function signBytes(keyId, privateKey, message) {
     throw new TypeError("bounded key ID and signing bytes required");
   }
   await assertNonExtractableSigningKey(privateKey);
-  const signature = await crypto.subtle.sign("Ed25519", privateKey, message);
+  const signature = await reflectApply(subtleSign, subtle, ["Ed25519", privateKey, message]);
   return Object.freeze({
     key_id: keyId,
     signature: `ed25519:${encodeBase64Url(new Uint8Array(signature))}`
@@ -52,9 +83,13 @@ export async function signBytes(keyId, privateKey, message) {
 }
 
 export async function createStoredWebCryptoKey() {
-  const generated = await crypto.subtle.generateKey({ name: "Ed25519" }, false, ["sign", "verify"]);
+  const generated = await reflectApply(subtleGenerateKey, subtle, [
+    { name: "Ed25519" }, false, ["sign", "verify"]
+  ]);
   await assertNonExtractableSigningKey(generated.privateKey);
-  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", generated.publicKey));
+  const raw = new Uint8Array(
+    await reflectApply(subtleExportKey, subtle, ["raw", generated.publicKey])
+  );
   const custodian = custodianFromPublicKeyBytes(raw);
   return {
     key_id: custodian.key_id,
@@ -99,9 +134,13 @@ export class WebCryptoKeyStore {
 
   async create() {
     if (this.#record) throw new Error("key store already contains a key");
-    const generated = await crypto.subtle.generateKey({ name: "Ed25519" }, false, ["sign", "verify"]);
+    const generated = await reflectApply(subtleGenerateKey, subtle, [
+      { name: "Ed25519" }, false, ["sign", "verify"]
+    ]);
     await assertNonExtractableSigningKey(generated.privateKey);
-    const raw = new Uint8Array(await crypto.subtle.exportKey("raw", generated.publicKey));
+    const raw = new Uint8Array(
+      await reflectApply(subtleExportKey, subtle, ["raw", generated.publicKey])
+    );
     this.#record = {
       custodian: custodianFromPublicKeyBytes(raw),
       privateKey: generated.privateKey,

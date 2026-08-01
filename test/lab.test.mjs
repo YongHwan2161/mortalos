@@ -256,13 +256,15 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   const keyStoreSource = await readFile(new URL("../lab/participant/webcrypto-key-store.mjs", import.meta.url), "utf8");
   const durableStoreSource = await readFile(new URL("../lab/storage/durable-store.mjs", import.meta.url), "utf8");
   const appSource = await readFile(new URL("../lab/app.mjs", import.meta.url), "utf8");
-  assert.match(keyStoreSource, /generateKey\(\{ name: "Ed25519" \}, false, \["sign", "verify"\]\)/);
+  assert.match(keyStoreSource, /subtleGenerateKey/);
+  assert.match(keyStoreSource, /reflectApply\(subtleSign, subtle,/);
   assert.match(durableSource, /threshold: 1/);
-  assert.match(keyStoreSource, /exportKey\("pkcs8", privateKey\)/);
+  assert.match(keyStoreSource, /reflectApply\(subtleExportKey, subtle, \["pkcs8", privateKey\]\)/);
   assert.match(
     durableEndpointSource,
-    /#commitDocument\("reserve", reserved\.document\)[\s\S]*?#signer\(/
+    /#commitDocument\("reserve", reserved\.document\)[\s\S]*?signBytes\(/
   );
+  assert.doesNotMatch(durableEndpointSource, /signer\s*[:=]|#signer/u);
   assert.match(
     durableEndpointSource,
     /expectedRevision = this\.#document\?\.revision \?\? null;[\s\S]*?writeDurableStore\(this\.#store, operation, document, \{ expectedRevision \}\)/
@@ -354,10 +356,13 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   for (const workflow of [deploymentWorkflow, verificationWorkflow]) {
     const actions = [...workflow.matchAll(/^\s+uses:\s+(actions\/(?:checkout|setup-node)@[0-9a-f]+)(?:\s+#.*)?$/gm)]
       .map((match) => match[1]);
-    assert.deepEqual(actions, [
-      "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
-      "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
-    ]);
+    assert.equal(actions.length % 2, 0);
+    for (let index = 0; index < actions.length; index += 2) {
+      assert.deepEqual(actions.slice(index, index + 2), [
+        "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+        "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
+      ]);
+    }
     assert.match(workflow, /uses: actions\/checkout@[0-9a-f]+ # v4\.3\.1[\s\S]{0,160}persist-credentials: false/);
   }
   assert.match(

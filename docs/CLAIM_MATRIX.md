@@ -29,7 +29,7 @@ inherits truth from another.
 | Byzantine/Sybil resistance or automatic fork resolution | No | No | No | No | Forks halt automatic progress; no winner is selected. |
 | Global death certificate or proof all copies are gone | No | No | No | No | Mortality remains observer-domain-relative under explicit assumptions. |
 | Firefox durable participant parity | Yes, candidate | Portable, S2 restart/loss/repair, S4 counter/rotation actual-engine gates pass | No | No | Requires exact-head release matrix before a production support claim. |
-| WebKit durable participant parity | Verifier only | Portable/adversarial verifier and capability smoke pass; WebCrypto Ed25519 is unavailable | No | No | Signer/durable mode must fail closed; no raw-key fallback is allowed. |
+| WebKit durable participant parity | Capability-routed candidate | Windows verifier-only path passes when Ed25519 is absent; signer-capable Ubuntu runtime is routed to full S2/S4 but exact-head CI is pending | No | No | Engine name never grants authority; unavailable capability fails closed and no raw-key fallback is allowed. |
 | GPT/model authority | Intentionally absent | Not applicable | Not applicable | Not claimed | Optional model output cannot sign, select a head, or change a verdict. |
 
 ## Change rule

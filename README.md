@@ -62,8 +62,9 @@ people, organizations, or physical devices independently control the keys.
 - A single-browser logical quorum is one physical failure domain.
 - Finite evidence cannot prove that every hidden copy worldwide is gone.
 - Chromium and Firefox durable-key paths pass actual-engine candidate gates. WebKit
-  verifier parity passes, but its signer profile remains disabled because the tested
-  WebKit 26.5 runtime rejects WebCrypto Ed25519.
+  is routed by a runtime capability probe: the Windows Playwright 26.5 build remains
+  verifier-only when Ed25519 is absent, while a signer-capable build must run the
+  complete S2/S4 custody matrix. Exact-head CI evidence for that full route is HOLD.
 
 ## Run locally
 

@@ -1,9 +1,17 @@
 import { canonicalBytes } from "../codec.mjs";
+import { asBytes, byteLengthOfBytes } from "../bytes.mjs";
+import { PROTOCOL_PROFILE } from "../generated/protocol-profile.mjs";
 import {
   copyBoundedOwnDataArray,
+  createArray,
+  createUint8Array,
+  defineArrayIndex,
+  freeze,
   ownDataArrayLength,
+  realmIntrinsicsIntact,
   snapshotDataMethod,
-  snapshotNamedOwnDataValues
+  snapshotNamedOwnDataValues,
+  typedArraySet
 } from "../primordials.mjs";
 import { statePackageChunkDigest } from "../state/package.mjs";
 import {
@@ -16,6 +24,20 @@ import {
 export const CHUNK_TRANSPORT_DESCRIPTOR_FORMAT =
   "mortalos-chunk-transport-descriptor/1";
 const DIGEST = /^sha256:[A-Za-z0-9_-]{43}$/u;
+
+function ownChunkBytes(value, index) {
+  const view = asBytes(value);
+  const length = view === null ? null : byteLengthOfBytes(view);
+  if (length === null || length < 1 || length > PROTOCOL_PROFILE.state.chunk_bytes) {
+    throw new RelayProtocolError(
+      "RELAY_SCHEMA",
+      `state package chunk ${index} must be a bounded Uint8Array`
+    );
+  }
+  const owned = createUint8Array(length);
+  typedArraySet(owned, view, 0);
+  return owned;
+}
 
 function snapshotDescriptor(value) {
   const [chunkDigest, chunkSize, format, messageIds] = snapshotNamedOwnDataValues(
@@ -74,9 +96,17 @@ export async function publishStateChunk({ chunkBytes, transport }) {
 
 export async function publishStatePackageChunks({ chunkBytes, transport }) {
   const count = ownDataArrayLength(chunkBytes, "state package chunks");
-  const owned = copyBoundedOwnDataArray(chunkBytes, count, "state package chunks");
+  const borrowed = copyBoundedOwnDataArray(chunkBytes, count, "state package chunks");
+  const ownedChunks = createArray(count);
+  for (let index = 0; index < count; index += 1) {
+    defineArrayIndex(ownedChunks, index, ownChunkBytes(borrowed[index], index));
+  }
+  freeze(ownedChunks);
+  if (!realmIntrinsicsIntact()) {
+    throw new RelayProtocolError("RELAY_SCHEMA", "realm integrity required");
+  }
   const descriptors = [];
-  for (const bytes of owned) {
+  for (const bytes of ownedChunks) {
     descriptors.push(await publishStateChunk({ chunkBytes: bytes, transport }));
   }
   return Object.freeze(descriptors);

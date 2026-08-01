@@ -8,7 +8,7 @@ MortalOS exposes two deliberately different browser modes.
 | Mode | Persistence | Signing authority after reload | Current verified support |
 | --- | --- | --- | --- |
 | Ephemeral Demo | none | no | Chromium; existing portable kernel also runs in the Node/browser differential target |
-| Durable Participant | consent-gated IndexedDB schema v2 | yes, until explicit removal or reached expiry | Chromium and Firefox candidate actual-engine gates; WebKit disabled |
+| Durable Participant | consent-gated IndexedDB schema v2 | yes, until explicit removal or reached expiry | Chromium and Firefox candidate gates; WebKit capability-routed per runtime |
 
 ## Durable Participant contract
 
@@ -47,16 +47,20 @@ Ephemeral Demo available and does not silently create a weaker or extractable ke
 Firefox now passes the same actual-engine creation, non-extractable-key, concurrent
 CAS, full process restart, expiry/removal, A/B/C loss, D repair, S4 rotation, and
 corruption boundaries in the current candidate. It remains unpromoted until the
-exact-head release gate passes. Playwright WebKit 26.5 supports IndexedDB, Web Locks,
-RSA-OAEP-3072, and `CryptoKey` structured cloning but rejects WebCrypto Ed25519 with
-`NotSupportedError`. WebKit therefore remains verifier-only and visibly disables
-the signer path. User-agent detection and exportable-key fallback are forbidden.
+exact-head release gate passes. The Windows Playwright WebKit 26.5 build supports
+IndexedDB, Web Locks, RSA-OAEP-3072, and `CryptoKey` structured cloning but rejects
+WebCrypto Ed25519 with `NotSupportedError`, so that runtime is verifier-only. The
+Ubuntu runner has produced a valid non-extractable Ed25519 key and is therefore
+routed to the complete S2/S4 custody matrix; its new exact-head result is still
+required. User-agent detection and exportable-key fallback are forbidden.
 
 ## Reproducible evidence
 
 `npm run verify:lab` runs the Chromium lifecycle in a clean isolated profile.
 `npm run test:browser-parity` applies the portable corpus plus the complete S2/S4
-scenario family to Chromium and Firefox, and the verifier-only profile to WebKit:
+scenario family to Chromium and Firefox. WebKit runs that same family when the
+capability probe finds a native non-extractable signer; otherwise only the portable
+verifier runs and signing stays visibly disabled:
 
 1. storage is zero before consent;
 2. one non-extractable key and v1 Genesis are created in durable schema v2;

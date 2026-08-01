@@ -48,9 +48,10 @@ now module-private capabilities, complete invocations are owned before the first
 await, and public decrypt/durable results redact key handles. It also adds a single
 generated protocol profile, real relay chunk fragmentation, an S5 package/CLI, S6
 Capsules, an S7 process-isolated replicated counter model, and S8 stateful custody
-fuzzing. Chromium and Firefox pass full candidate browser paths. WebKit passes the
-portable verifier but its signer profile stays disabled because WebCrypto Ed25519
-is unavailable in the tested runtime. The
+fuzzing. Chromium and Firefox pass full candidate browser paths. WebKit is no longer
+classified by engine name: a capability probe runs the full custody path when a
+non-extractable Ed25519 signer exists and otherwise fails closed to verifier-only.
+Windows currently takes the latter path; exact-head Ubuntu full-route CI is pending. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
 
@@ -64,8 +65,8 @@ verified, promoted, and explicitly unclaimed behavior.
    run 100 failure trials, then immutable seven-day burn-in.
 4. **P1 — GitHub merge authority:** live ruleset plus a separately provisioned
    reviewer identity that gives native exact-head approvals.
-5. **P2 — WebKit signer parity:** wait for WebCrypto Ed25519 or define a separately
-   reviewed suite; never fall back to exportable private bytes.
+5. **P2 — WebKit signer parity:** close the capability-routed full S2/S4 matrix on
+   every signer-capable release runner; never fall back to exportable private bytes.
 
 ## Promotion invariant
 

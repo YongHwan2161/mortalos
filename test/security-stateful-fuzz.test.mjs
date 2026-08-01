@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DurableQuorumEndpoint } from "../lab/participant/durable-quorum-endpoint.mjs";
-import { signBytes } from "../lab/participant/webcrypto-key-store.mjs";
 import { MemoryDurableStore } from "../lab/storage/memory-durable-store.mjs";
 import {
   MemoryConfidentialEpochStore,
@@ -31,10 +30,12 @@ test("stateful S2 corpus composes accessor, Proxy, prototype, store, and array m
       endpointId: `fuzz-${trial}`,
       store,
       clock: () => 1_800_000_000_000,
-      async signer(...args) {
+      async signingBoundary(boundary) {
+        assert.equal(typeof boundary, "string");
+        assert.equal(boundary === "before" || boundary === "after", true);
+        if (boundary !== "before") return;
         signerCalls += 1;
         await Promise.resolve();
-        return signBytes(...args);
       }
     });
     await endpoint.initializeKey();

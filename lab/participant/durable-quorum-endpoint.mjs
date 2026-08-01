@@ -34,8 +34,11 @@ import {
   writeDurableStore
 } from "../storage/durable-store.mjs";
 
+const structuredCloneIntrinsic = globalThis.structuredClone;
+const reflectApply = Reflect.apply;
+
 function clone(value) {
-  return structuredClone(value);
+  return reflectApply(structuredCloneIntrinsic, globalThis, [value]);
 }
 
 function nonceFromSeed(seed, prefix = "nonce:") {
@@ -56,15 +59,17 @@ function pendingSignature(document, tuple) {
 }
 
 function publicDocument(document) {
-  const snapshot = clone(document);
-  if (snapshot.key) {
-    snapshot.key = {
-      key_id: snapshot.key.key_id,
-      public_key: snapshot.key.public_key,
-      public_key_raw: snapshot.key.public_key_raw
-    };
-  }
-  return snapshot;
+  const { key, ...publicFields } = document;
+  return clone({
+    ...publicFields,
+    key: key
+      ? {
+          key_id: key.key_id,
+          public_key: key.public_key,
+          public_key_raw: key.public_key_raw
+        }
+      : null
+  });
 }
 
 export class DurableQuorumEndpoint {
@@ -73,17 +78,20 @@ export class DurableQuorumEndpoint {
   #document = null;
   #endpointId;
   #maxObservedNow = 0;
-  #signer;
+  #signingBoundary;
   #store;
 
-  constructor({ endpointId, store, clock = () => Date.now(), signer = signBytes }) {
+  constructor({ endpointId, store, clock = () => Date.now(), signingBoundary = null }) {
     if (!isDurableStore(store)) {
       throw new TypeError("registered MortalOS durable store is required");
+    }
+    if (signingBoundary !== null && typeof signingBoundary !== "function") {
+      throw new TypeError("signing boundary observer must be callable");
     }
     this.#endpointId = endpointId;
     this.#store = store;
     this.#clock = clock;
-    this.#signer = signer;
+    this.#signingBoundary = signingBoundary;
   }
 
   get custodian() {
@@ -371,7 +379,8 @@ export class DurableQuorumEndpoint {
     }
     const existing = pendingSignature(this.#document, reserved.entry.tuple);
     if (existing) return clone(existing);
-    const signature = await this.#signer(
+    await this.#signingBoundary?.("before");
+    const signature = await signBytes(
       this.#document.key.key_id,
       this.#document.key.private_key,
       invocation.request.message

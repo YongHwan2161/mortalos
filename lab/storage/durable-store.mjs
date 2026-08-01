@@ -13,6 +13,11 @@ const DURABLE_STORE_CAPABILITIES = new WeakMap();
 const weakMapGet = WeakMap.prototype.get;
 const weakMapSet = WeakMap.prototype.set;
 const reflectApply = Reflect.apply;
+const structuredCloneIntrinsic = globalThis.structuredClone;
+
+function clone(value) {
+  return reflectApply(structuredCloneIntrinsic, globalThis, [value]);
+}
 
 function registerDurableStore(store, capability) {
   reflectApply(weakMapSet, DURABLE_STORE_CAPABILITIES, [
@@ -178,7 +183,7 @@ export class IndexedDbDurableStore {
     const done = transactionDone(transaction);
     const value = await requestResult(transaction.objectStore(DOCUMENT_STORE).get("active"));
     await done;
-    return value ? structuredClone(value) : null;
+    return value ? clone(value) : null;
   }
 
   async write(operation, document, { expectedRevision } = {}) {
@@ -231,7 +236,7 @@ export class IndexedDbDurableStore {
 }
 
 function cloneDocument(value) {
-  return value === null ? null : structuredClone(value);
+  return value === null ? null : clone(value);
 }
 
 export class MemoryDurableStore {

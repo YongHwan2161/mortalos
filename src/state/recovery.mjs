@@ -4,17 +4,51 @@ import {
   statePackageResourceRoot,
   verifyStatePackage
 } from "./package.mjs";
-import { encodeBase64Url, equalBytes } from "../bytes.mjs";
+import {
+  asBytes,
+  byteLengthOfBytes,
+  encodeBase64Url,
+  equalBytes
+} from "../bytes.mjs";
 import { canonicalBytes } from "../codec.mjs";
 import {
   copyBoundedOwnDataArray,
   createArray,
+  createUint8Array,
   defineArrayIndex,
   freeze,
   ownDataArrayLength,
   realmIntrinsicsIntact,
-  snapshotDataMethod
+  snapshotDataMethod,
+  typedArraySet
 } from "../primordials.mjs";
+
+const CONTENT_STORE_CAPABILITIES = new WeakMap();
+const weakMapGet = WeakMap.prototype.get;
+const weakMapSet = WeakMap.prototype.set;
+const reflectApply = Reflect.apply;
+const structuredCloneIntrinsic = globalThis.structuredClone;
+
+function clone(value) {
+  return reflectApply(structuredCloneIntrinsic, globalThis, [value]);
+}
+
+function registerContentStore(store, capability) {
+  reflectApply(weakMapSet, CONTENT_STORE_CAPABILITIES, [
+    store,
+    Object.freeze(capability)
+  ]);
+}
+
+function contentStoreCapability(store) {
+  const capability = reflectApply(weakMapGet, CONTENT_STORE_CAPABILITIES, [store]);
+  if (!capability) {
+    const error = new TypeError("registered MortalOS content-addressed destination required");
+    error.code = "E_STATE_RECOVERY_UNTRUSTED_DESTINATION";
+    throw error;
+  }
+  return capability;
+}
 
 export const STATE_RECOVERY_LIMITS = Object.freeze({
   inventory_entries_per_source: 64,
@@ -22,7 +56,13 @@ export const STATE_RECOVERY_LIMITS = Object.freeze({
 });
 
 function cloneBytes(bytes) {
-  return bytes ? new Uint8Array(bytes) : null;
+  const view = asBytes(bytes);
+  if (view === null) return null;
+  const length = byteLengthOfBytes(view);
+  if (length === null) return null;
+  const owned = createUint8Array(length);
+  typedArraySet(owned, view, 0);
+  return owned;
 }
 
 export class MemoryContentAddressedStore {
@@ -33,6 +73,13 @@ export class MemoryContentAddressedStore {
 
   constructor({ fault = null } = {}) {
     this.#fault = fault;
+    registerContentStore(this, {
+      commitActive: (record, options) => this.#commitActive(record, options),
+      get: (digest) => this.#get(digest),
+      inventory: () => this.#inventory(),
+      put: (digest, bytes, size) => this.#put(digest, bytes, size),
+      readActive: () => this.#readActive()
+    });
   }
 
   setFault(fault) {
@@ -50,27 +97,41 @@ export class MemoryContentAddressedStore {
   }
 
   get active() {
-    return this.#active ? structuredClone(this.#active) : null;
+    return this.#activeSnapshot();
   }
 
   async inventory() {
+    return this.#inventory();
+  }
+
+  async #inventory() {
     if (this.#destroyed) return [];
     return [...this.#entries.keys()].sort();
   }
 
   async get(digest) {
+    return this.#get(digest);
+  }
+
+  async #get(digest) {
     if (this.#destroyed) return null;
     return cloneBytes(this.#entries.get(digest));
   }
 
   async put(digest, bytes, size) {
+    return this.#put(digest, bytes, size);
+  }
+
+  async #put(digest, bytes, size) {
     if (this.#destroyed) throw new Error("store-destroyed");
     const owned = cloneBytes(bytes);
     if (owned.byteLength !== size) throw new Error("chunk-size");
     if (statePackageChunkDigest(owned) !== digest) throw new Error("chunk-digest");
     await this.#fault?.("chunk:before", digest);
+    if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
     this.#entries.set(digest, owned);
     await this.#fault?.("chunk:after", digest);
+    if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
   }
 
   async commitActive(record, options = {}) {
@@ -78,24 +139,34 @@ export class MemoryContentAddressedStore {
   }
 
   async readActive() {
-    return this.active;
+    return this.#readActive();
+  }
+
+  async #readActive() {
+    return this.#activeSnapshot();
+  }
+
+  #activeSnapshot() {
+    return this.#active ? clone(this.#active) : null;
   }
 
   async #commitActive(record, { expectedPriorStateRoot = null } = {}) {
     if (this.#destroyed) throw new Error("store-destroyed");
-    const staged = structuredClone(record);
+    const staged = clone(record);
     if (
       this.#active &&
       equalBytes(canonicalBytes(this.#active), canonicalBytes(staged))
     ) {
-      return this.active;
+      return this.#activeSnapshot();
     }
     const activeRoot = this.#active?.next_state_root ?? expectedPriorStateRoot;
     if (activeRoot !== expectedPriorStateRoot) throw new Error("active-state-conflict");
     await this.#fault?.("active:before", record.next_state_root);
+    if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
     await this.#fault?.("active:after", record.next_state_root);
+    if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
     this.#active = staged;
-    return this.active;
+    return this.#activeSnapshot();
   }
 }
 
@@ -104,8 +175,9 @@ export class ReplicaRecoveryAdapter {
   #readChunk;
 
   constructor(store) {
-    this.#inventory = snapshotDataMethod(store, "inventory", "replica store");
-    this.#readChunk = snapshotDataMethod(store, "get", "replica store");
+    const capability = contentStoreCapability(store);
+    this.#inventory = capability.inventory;
+    this.#readChunk = capability.get;
   }
 
   async inventory() {
@@ -136,13 +208,7 @@ function snapshotRecoveryInvocation(destination, sources) {
       readChunk: snapshotDataMethod(source, "readChunk", `recovery source ${index}`)
     }));
   }
-  const destinationCapability = freeze({
-    commitActive: snapshotDataMethod(destination, "commitActive", "recovery destination"),
-    get: snapshotDataMethod(destination, "get", "recovery destination"),
-    inventory: snapshotDataMethod(destination, "inventory", "recovery destination"),
-    put: snapshotDataMethod(destination, "put", "recovery destination"),
-    readActive: snapshotDataMethod(destination, "readActive", "recovery destination")
-  });
+  const destinationCapability = contentStoreCapability(destination);
   if (!realmIntrinsicsIntact()) throw new TypeError("realm integrity required");
   return freeze({
     destination: destinationCapability,
@@ -150,7 +216,7 @@ function snapshotRecoveryInvocation(destination, sources) {
   });
 }
 
-export async function planStateRecovery({ manifest, destinationInventory = [], sourceInventories = [] }) {
+export function planStateRecovery({ manifest, destinationInventory = [], sourceInventories = [] }) {
   if (
     !Array.isArray(destinationInventory) ||
     destinationInventory.length > STATE_RECOVERY_LIMITS.inventory_entries_per_source ||
@@ -206,6 +272,11 @@ export async function recoverStatePackage({
   try {
     invocation = snapshotRecoveryInvocation(destination, sources);
   } catch (error) {
+    if (error?.code === "E_STATE_RECOVERY_UNTRUSTED_DESTINATION") {
+      return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
+        detail: String(error.message)
+      });
+    }
     return result("rejected", "E_STATE_PACKAGE_LIMIT_EXCEEDED", {
       detail: String(error?.message ?? error),
       field_path: error instanceof StatePackageError
@@ -258,6 +329,7 @@ export async function recoverStatePackage({
       let bytes;
       try {
         bytes = await invocation.sources[sourceIndex].readChunk(request.digest);
+        if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
       } catch (error) {
         return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
           detail: String(error?.message ?? error)
@@ -279,6 +351,7 @@ export async function recoverStatePackage({
       }
       try {
         await invocation.destination.put(request.digest, bytes, expected.size);
+        if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
       } catch (error) {
         return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
           detail: String(error?.message ?? error)
@@ -308,6 +381,7 @@ export async function recoverStatePackage({
     let bytes;
     try {
       bytes = await invocation.destination.get(descriptor.digest);
+      if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
     } catch (error) {
       return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
         detail: String(error?.message ?? error)
@@ -328,10 +402,10 @@ export async function recoverStatePackage({
     }
     chunks.push(bytes);
   }
-  const resource = new Uint8Array(verified.manifest.resource_size);
+  const resource = createUint8Array(verified.manifest.resource_size);
   let offset = 0;
   for (const bytes of chunks) {
-    resource.set(bytes, offset);
+    typedArraySet(resource, bytes, offset);
     offset += bytes.byteLength;
   }
   if (statePackageResourceRoot(resource) !== verified.manifest.resource_root) {
@@ -349,7 +423,9 @@ export async function recoverStatePackage({
     await invocation.destination.commitActive(activeCandidate, {
       expectedPriorStateRoot
     });
+    if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
     const readback = await invocation.destination.readActive();
+    if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
     if (
       !readback ||
       !equalBytes(canonicalBytes(readback), canonicalBytes(activeCandidate))

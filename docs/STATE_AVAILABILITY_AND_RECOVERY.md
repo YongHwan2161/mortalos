@@ -4,7 +4,9 @@ Current candidate note (2026-08-01): `protocol/profile.v1.json` now generates th
 state/transport/provider/confidential ceilings. A 64 KiB state chunk is carried as
 two bounded 32 KiB relay fragments, each domain-digested and reassembled only after
 exact message/chunk/root verification. Final activation uses expected-prior CAS,
-exact readback, and idempotent acceptance of the same already-active candidate.
+exact readback, and idempotent acceptance of the same already-active candidate. The
+publisher owns the outer chunk list and every nested byte array before its first
+transport await; recovery accepts only a module-branded destination capability.
 
 Status: **S3 CANDIDATE — receipt, independent review, promotion, and exact-main
 deployment required**
@@ -75,12 +77,14 @@ self-referential hash.
 
 Verified staged chunks may survive interruption. Retrying skips already verified
 chunks and is idempotent. An interruption or missing chunk never replaces the last
-verified active record. The destination adapter's `commitActive` operation MUST stage
+verified active record. The registered destination capability's `commitActive`
+operation MUST stage
 the complete next record, exercise all failure boundaries before publication, and
 publish atomically. Any thrown or rejected result means the prior active record is
 still exact; once the next record is published, the operation MUST resolve as
 successful. An adapter that can expose an ambiguous post-publication error does not
-implement this contract.
+implement this contract. Structurally similar caller objects and replaced public
+destination methods are never invoked as activation authority.
 
 The transition input is semantic, not merely digest-bound. Construction and
 verification both require exactly `mortalos-state-package-input/1`,

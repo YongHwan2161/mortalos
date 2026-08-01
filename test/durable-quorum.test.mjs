@@ -11,10 +11,6 @@ import {
   migrateLegacyDurableSnapshot,
   replayDurableDocument
 } from "../lab/storage/durable-document.mjs";
-import {
-  signBytes
-} from "../lab/participant/webcrypto-key-store.mjs";
-
 function seed(value) {
   return new Uint8Array(16).fill(value);
 }
@@ -220,20 +216,20 @@ test("same-revision endpoints CAS before signing and cannot release conflicting 
     endpointId: "A45",
     store: nodes[0].store,
     clock: () => 1_800_000_000_000,
-    signer: async (...args) => {
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
       primarySignerCalls += 1;
       signerEntered();
       await release;
-      return signBytes(...args);
     }
   });
   const stale = new DurableQuorumEndpoint({
     endpointId: "A45",
     store: nodes[0].store,
     clock: () => 1_800_000_000_000,
-    signer: async (...args) => {
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
       staleSignerCalls += 1;
-      return signBytes(...args);
     }
   });
   await primary.restore();
@@ -269,6 +265,65 @@ test("same-revision endpoints CAS before signing and cannot release conflicting 
   assert.equal(endpoints[0].publicState.sequence, "0");
 });
 
+test("private CryptoKey never reaches public signer hooks or mutable WebCrypto facades", async () => {
+  const store = new MemoryDurableStore();
+  let legacySignerCalls = 0;
+  const observed = [];
+  const endpoint = new DurableQuorumEndpoint({
+    endpointId: "key-containment",
+    store,
+    clock: () => 1_800_000_000_000,
+    signer() { legacySignerCalls += 1; },
+    signingBoundary(...values) { observed.push(values); }
+  });
+  await endpoint.initializeKey();
+  const body = endpoint.createGenesisBody({
+    custodians: [endpoint.custodian],
+    initialStateSeed: seed(91),
+    nonceSeed: seed(92),
+    threshold: 1
+  });
+  const subtle = globalThis.crypto.subtle;
+  const originalStructuredClone = globalThis.structuredClone;
+  let mutableFacadeCalls = 0;
+  const mutableCloneInputs = [];
+  Object.defineProperty(subtle, "sign", {
+    configurable: true,
+    value() {
+      mutableFacadeCalls += 1;
+      throw new Error("mutable WebCrypto facade reached");
+    }
+  });
+  globalThis.structuredClone = (value, options) => {
+    mutableCloneInputs.push(value);
+    return originalStructuredClone(value, options);
+  };
+  try {
+    assert.equal(endpoint.document.key.private_key, undefined);
+    const approval = await endpoint.approveGenesis(body);
+    assert.equal(typeof approval.signature, "string");
+  } finally {
+    delete subtle.sign;
+    globalThis.structuredClone = originalStructuredClone;
+  }
+  const seen = new WeakSet();
+  function containsCryptoKey(value) {
+    if ((typeof value !== "object" && typeof value !== "function") || value === null) return false;
+    if (value instanceof CryptoKey) return true;
+    if (seen.has(value)) return false;
+    seen.add(value);
+    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) {
+      if (Object.hasOwn(descriptor, "value") && containsCryptoKey(descriptor.value)) return true;
+    }
+    return false;
+  }
+  assert.equal(legacySignerCalls, 0);
+  assert.equal(mutableFacadeCalls, 0);
+  assert.equal(mutableCloneInputs.some(containsCryptoKey), false);
+  assert.deepEqual(observed, [["before"]]);
+  assert.equal(endpoint.document.key.private_key, undefined);
+});
+
 test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {
   const { endpoints, nodes } = await createCluster(50);
   const baseDocument = await nodes[0].store.read();
@@ -287,9 +342,9 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
       endpointId: "A50",
       store,
       clock: () => 1_800_000_000_000,
-      signer: async (...args) => {
+      signingBoundary: async (observed) => {
+        if (observed !== "before") return;
         signerCalls += 1;
-        return signBytes(...args);
       }
     });
     await crashed.restore();
@@ -300,9 +355,9 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
       endpointId: "A50",
       store,
       clock: () => 1_800_000_000_000,
-      signer: async (...args) => {
+      signingBoundary: async (observed) => {
+        if (observed !== "before") return;
         recoverySignerCalls += 1;
-        return signBytes(...args);
       }
     });
     await recovered.restore();

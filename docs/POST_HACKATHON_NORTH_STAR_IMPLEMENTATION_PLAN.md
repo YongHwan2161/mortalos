@@ -48,7 +48,7 @@ Capsule activation, fuzzing, documentation, and promotion evidence.
 | S5 | Authority-free `@mortal-os/core` export map and `mortalos` CLI | SDK allowlist, CLI, and package allowlist pass | Candidate only |
 | S6 | Canonical Continuity Capsule binds lineage, latest state transition, manifest, receipt, chunks, and exact resource | Cross-process CLI verification and tamper rejection pass | Candidate only |
 | S7 | Majority counter store, three process-isolated HTTP CAS replicas, disk restart, repair, and topology validator | Concurrent coordinators, one replica loss, restart, and no-overlap gates pass | Local topology PASS; real independent providers/admins **HOLD** |
-| S8 | Stateful mutation corpus and 2-of-3 adversarial Capsule custody | S2/S4 accessor/Proxy/prototype/array corpus; corrupt/lost/fork custody gate pass | Chromium/Firefox full local PASS; WebKit signer **HOLD** |
+| S8 | Stateful mutation corpus and 2-of-3 adversarial Capsule custody | S2/S4 accessor/Proxy/prototype/array corpus; corrupt/lost/fork custody gate pass | Chromium/Firefox full local PASS; WebKit capability-routed exact-head CI **HOLD** |
 
 ## 4. Global gate and evidence rules
 
@@ -129,7 +129,10 @@ Implemented work:
 - registered durable stores hold module-private read/write closures;
 - endpoint code ignores replaced own/prototype `read` and `write` methods;
 - body, proposal, purpose, key id, and message are owned before the first await;
-- the public durable document contains key id and public key only;
+- the public durable document is constructed without placing the private key in the
+  clone graph, and contains key id and public key only;
+- signer and WebCrypto facade injection cannot receive the key: signing calls a
+  captured native intrinsic and the optional test boundary receives one string;
 - expected-revision CAS occurs before signing and exact replay restores authority.
 
 Pass criteria:
@@ -154,6 +157,8 @@ Implemented work:
   digests and bounded reassembly;
 - recovery fetches actual relay frames, verifies fragment/chunk/root bindings, and
   commits by CAS plus readback;
+- the outer chunk array and every nested byte array are owned before the first
+  transport await;
 - exact-max and max-plus-one cases are generated from the profile.
 
 Pass criteria:
@@ -176,6 +181,8 @@ Implemented work:
 
 - expected bindings and complete custodian membership are owned before await;
 - activation store capability is a private WeakMap record;
+- S3 recovery accepts only a branded destination capability; arbitrary public
+  `commitActive`/`readActive` pairs are never invoked;
 - commit verifies expected prior root, committed candidate, and exact readback;
 - retry of the identical candidate is idempotent;
 - public decrypt and combined recovery results omit `epoch_key`;
@@ -249,13 +256,14 @@ Pass criteria:
   fails below quorum;
 - Chromium and Firefox pass portable validation, S2 durable restart/loss, and S4
   counter/rotation in actual engines;
-- WebKit passes portable validation and capability detection; its signer profile
-  must remain disabled while WebCrypto Ed25519 reports `NotSupportedError`;
+- WebKit passes portable validation and capability detection; runtimes with native
+  non-extractable Ed25519 must run the full S2/S4 family, while runtimes reporting
+  `NotSupportedError` remain verifier-only;
 - no user-agent string grants support and no fallback exports raw key material.
 
-WebKit full signing parity is therefore **HOLD**, not silently skipped. Closing it
-requires either runtime Ed25519 support or a separately reviewed protocol suite;
-weakening key containment is not an acceptable workaround.
+WebKit full signing parity is therefore **HOLD** until the signer-capable CI route
+passes on the exact head; non-capable runtimes remain an explicit verifier-only
+profile. Weakening key containment is not an acceptable workaround.
 
 ## 15. GitHub merge authority
 

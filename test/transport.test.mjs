@@ -5,7 +5,8 @@ import { canonicalBytes } from "../src/index.mjs";
 import {
   createStatePackage,
   createStatePackageInput,
-  deterministicReferenceResource
+  deterministicReferenceResource,
+  statePackageChunkDigest
 } from "../src/state/package.mjs";
 import {
   MemoryContentAddressedStore,
@@ -149,4 +150,39 @@ test("real relay messages carry S3 chunks end to end without trusting metadata",
   assert.deepEqual(recovered.resource_bytes, resourceBytes);
   publisher.close();
   reader.close();
+});
+
+test("package publisher owns every chunk before the first transport await", async () => {
+  const first = new Uint8Array(65_536).fill(11);
+  const second = new Uint8Array(65_536).fill(22);
+  const chunks = [first, second];
+  const expectedSecondDigest = statePackageChunkDigest(second);
+  const network = new VirtualTransportNetwork();
+  const endpoint = network.endpoint(ROOM, "ownership-publisher");
+  let releaseFirst;
+  let observedFirst;
+  let calls = 0;
+  const entered = new Promise((resolve) => { observedFirst = resolve; });
+  const release = new Promise((resolve) => { releaseFirst = resolve; });
+  const publishing = publishStatePackageChunks({
+    chunkBytes: chunks,
+    transport: {
+      async publish(bytes) {
+        calls += 1;
+        if (calls === 1) {
+          observedFirst();
+          await release;
+        }
+        return endpoint.publish(bytes);
+      }
+    }
+  });
+  await entered;
+  second.fill(99);
+  chunks.splice(0, chunks.length);
+  releaseFirst();
+  const descriptors = await publishing;
+  assert.equal(descriptors[1].chunk_digest, expectedSecondDigest);
+  assert.notEqual(descriptors[1].chunk_digest, statePackageChunkDigest(second));
+  endpoint.close();
 });

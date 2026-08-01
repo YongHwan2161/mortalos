@@ -1,4 +1,6 @@
 import {
+  asBytes,
+  byteLengthOfBytes,
   concatBytes,
   encodeBase64Url,
   equalBytes,
@@ -6,7 +8,12 @@ import {
 } from "../bytes.mjs";
 import { canonicalBytes } from "../codec.mjs";
 import { verifyEd25519 } from "../crypto.mjs";
-import { snapshotNamedOwnDataValues } from "../primordials.mjs";
+import {
+  createUint8Array,
+  realmIntrinsicsIntact,
+  snapshotNamedOwnDataValues,
+  typedArraySet
+} from "../primordials.mjs";
 import { isValidatedAcceptance } from "../validator.mjs";
 import { createStatePackage } from "../state/package.mjs";
 import { recoverStatePackage } from "../state/recovery.mjs";
@@ -32,6 +39,13 @@ import {
   isLinearizableCounterAuthority,
   isObservedCounterAuthorityEquivocation
 } from "./counter.mjs";
+
+const structuredCloneIntrinsic = globalThis.structuredClone;
+const structuredCloneReflectApply = Reflect.apply;
+
+function clone(value) {
+  return structuredCloneReflectApply(structuredCloneIntrinsic, globalThis, [value]);
+}
 
 export class MemoryConfidentialEpochStore {
   #active = null;
@@ -59,7 +73,7 @@ export class MemoryConfidentialEpochStore {
   }
 
   #readActive() {
-    return this.#active ? structuredClone(this.#active) : null;
+    return this.#active ? clone(this.#active) : null;
   }
 
   async #commitActive({ candidate, expectedPriorConfidentialRoot, fault = null }) {
@@ -70,7 +84,7 @@ export class MemoryConfidentialEpochStore {
     });
     await prior;
     try {
-      const staged = structuredClone(candidate);
+      const staged = clone(candidate);
       if (
         this.#active &&
         equalBytes(canonicalBytes(this.#active), canonicalBytes(staged))
@@ -87,8 +101,10 @@ export class MemoryConfidentialEpochStore {
       }
       const boundary = fault ?? this.#fault;
       await boundary?.("activation:before");
+      if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
       this.#active = staged;
       await boundary?.("activation:after");
+      if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
       return this.active;
     } finally {
       release();
@@ -114,7 +130,20 @@ function confidentialEpochStoreCapability(store) {
 
 async function commitConfidentialActive(store, options) {
   const capability = confidentialEpochStoreCapability(store);
-  const committed = await capability.commitActive(options);
+  let committed;
+  try {
+    committed = await capability.commitActive(options);
+  } catch (error) {
+    const afterFailure = capability.readActive();
+    if (
+      error?.message === "realm-integrity" ||
+      !afterFailure ||
+      !equalBytes(canonicalBytes(afterFailure), canonicalBytes(options.candidate))
+    ) {
+      throw error;
+    }
+    committed = afterFailure;
+  }
   const readback = capability.readActive();
   if (
     !committed ||
@@ -315,10 +344,17 @@ export async function createConfidentialStatePackage({
   inputBytes,
   priorStateRoot
 }) {
+  const inputView = asBytes(inputBytes);
+  const inputLength = inputView === null ? null : byteLengthOfBytes(inputView);
+  if (inputLength === null) {
+    throw new TypeError("state package input must be an owned Uint8Array");
+  }
+  const ownedInputBytes = createUint8Array(inputLength);
+  typedArraySet(ownedInputBytes, inputView, 0);
   const confidentialPackage = await createConfidentialPackage(confidential);
   const statePackage = createStatePackage({
     genomeHash,
-    inputBytes,
+    inputBytes: ownedInputBytes,
     priorStateRoot,
     resourceBytes: confidentialPackage.packageBytes
   });

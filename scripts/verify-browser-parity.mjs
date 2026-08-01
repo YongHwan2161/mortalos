@@ -1,20 +1,21 @@
 import { spawn } from "node:child_process";
+import {
+  hasNativeSignerCapability,
+  probeBrowserCapabilities
+} from "./browser-capability-probe.mjs";
 
 const engines = process.env.MORTALOS_BROWSER_ENGINE
   ? [process.env.MORTALOS_BROWSER_ENGINE]
   : ["chromium", "firefox", "webkit"];
+const fullCustodyCommands = [
+  "scripts/verify-chromium.mjs",
+  "scripts/verify-confidential-chromium.mjs",
+  "scripts/verify-durable-quorum-chromium.mjs"
+];
 const commands = {
-  chromium: [
-    "scripts/verify-chromium.mjs",
-    "scripts/verify-confidential-chromium.mjs",
-    "scripts/verify-durable-quorum-chromium.mjs"
-  ],
-  firefox: [
-    "scripts/verify-chromium.mjs",
-    "scripts/verify-confidential-chromium.mjs",
-    "scripts/verify-durable-quorum-chromium.mjs"
-  ],
-  webkit: ["scripts/verify-chromium.mjs"]
+  chromium: fullCustodyCommands,
+  firefox: fullCustodyCommands,
+  webkit: null
 };
 
 function run(script, engine) {
@@ -40,7 +41,25 @@ function run(script, engine) {
   });
 }
 
+let webkitSignerCapable = null;
 for (const engine of engines) {
-  for (const command of commands[engine]) await run(command, engine);
+  let engineCommands = commands[engine];
+  if (engine === "webkit") {
+    webkitSignerCapable = hasNativeSignerCapability(
+      await probeBrowserCapabilities("webkit")
+    );
+    engineCommands = webkitSignerCapable
+      ? fullCustodyCommands
+      : ["scripts/verify-chromium.mjs"];
+  }
+  for (const command of engineCommands) await run(command, engine);
 }
-console.log("MortalOS browser parity: PASS (Chromium/Firefox full custody; WebKit verifier-only fail-closed profile)");
+console.log(
+  "MortalOS browser parity: PASS (Chromium/Firefox full custody; WebKit " +
+    (webkitSignerCapable === null
+      ? "not requested"
+      : webkitSignerCapable
+        ? "full custody"
+        : "verifier-only fail-closed") +
+    ")"
+);

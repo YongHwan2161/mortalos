@@ -74,8 +74,11 @@ const PENDING_KEYS = Object.freeze([
   "tuple"
 ]);
 
+const structuredCloneIntrinsic = globalThis.structuredClone;
+const reflectApply = Reflect.apply;
+
 function clone(value) {
-  return structuredClone(value);
+  return reflectApply(structuredCloneIntrinsic, globalThis, [value]);
 }
 
 function durableError(code, detail) {

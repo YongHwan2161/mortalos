@@ -33,9 +33,10 @@ Their older receipts remain historical exact-commit evidence only.
 
 S5/S6 are implemented and locally verified. S7 passes a three-process HTTP CAS
 fault/restart rehearsal, not a real independent-provider topology. S8 stateful fuzz,
-adversarial Capsule custody, Chromium, and Firefox pass locally; WebKit is verifier-
-only because Ed25519 WebCrypto is unavailable. All new promotion receipts, immutable
-review, merge, post-merge CI, and live readback remain **HOLD**.
+adversarial Capsule custody, Chromium, and Firefox pass locally. WebKit is capability-
+routed: Windows is verifier-only without Ed25519; a signer-capable Ubuntu runner must
+pass full S2/S4 on the new exact head. All new promotion receipts, immutable review,
+merge, post-merge CI, and live readback remain **HOLD**.
 
 GitHub ruleset `20168959` is active on `main` with no bypass and requires the trusted
 policy check, protocol check, required Chromium/Firefox/WebKit capability-profiled

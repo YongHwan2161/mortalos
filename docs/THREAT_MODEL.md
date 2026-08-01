@@ -497,8 +497,9 @@ The revision must identify the new trust assumption, affected invariant, failure
   not separate hosts, providers, administrators, or credential domains.
 - A Continuity Capsule contains public lineage plus encrypted resource state and no
   signing authority. A 2-of-3 Capsule quorum is content availability, not key quorum.
-- Chromium and Firefox have actual-engine candidate evidence. WebKit is verifier-only
-  while its WebCrypto implementation rejects Ed25519; raw or exportable private-key
-  fallback is forbidden.
+- Chromium and Firefox have actual-engine candidate evidence. WebKit is selected by
+  measured capability, not engine name: native non-extractable Ed25519 requires the
+  full custody suite, while `NotSupportedError` permits verifier-only operation.
+  Raw or exportable private-key fallback is forbidden.
 - Any valid divergent Capsule or lineage is equivocation evidence and halts automatic
   activation; MortalOS does not select a winner.

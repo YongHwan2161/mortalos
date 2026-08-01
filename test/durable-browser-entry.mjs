@@ -237,20 +237,20 @@ async function verifyIndexedDbCompareAndSwap() {
     endpointId: "CAS",
     store: primaryStore,
     clock: () => 1_800_000_000_000,
-    signer: async (...args) => {
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
       primarySignerCalls += 1;
       signerEntered();
       await release;
-      return signBytes(...args);
     }
   });
   const stale = new DurableQuorumEndpoint({
     endpointId: "CAS",
     store: staleStore,
     clock: () => 1_800_000_000_000,
-    signer: async (...args) => {
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
       staleSignerCalls += 1;
-      return signBytes(...args);
     }
   });
   await Promise.all([primary.restore(), stale.restore()]);

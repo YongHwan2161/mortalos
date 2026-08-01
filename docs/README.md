@@ -62,4 +62,4 @@ immutable review, merge, and post-merge evidence complete.
 
 It does not yet promote the current confidential-state revision, independent
 failure domains, SDK/CLI/Capsule release, Byzantine/Sybil resistance, global death,
-or WebKit signing parity. GPT is optional and non-authoritative.
+or exact-head WebKit full signing parity. GPT is optional and non-authoritative.
