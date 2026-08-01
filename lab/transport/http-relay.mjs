@@ -1,4 +1,14 @@
-import { canonicalBytes, encodeBase64Url, parseJsonBytes } from "../../src/index.mjs";
+import {
+  asBytes,
+  byteLengthOfBytes,
+  canonicalBytes,
+  encodeBase64Url,
+  parseJsonBytes
+} from "../../src/index.mjs";
+import {
+  createUint8Array,
+  typedArraySet
+} from "../../src/primordials.mjs";
 import {
   assertRoomId,
   decodeRelayFrame,
@@ -28,6 +38,17 @@ async function strictResponse(response) {
   return value;
 }
 
+function ownRelayBytes(value) {
+  const view = asBytes(value);
+  const length = view === null ? null : byteLengthOfBytes(view);
+  if (length === null || length > RELAY_LIMITS.frame_bytes) {
+    throw new TypeError("bounded relay message bytes required");
+  }
+  const owned = createUint8Array(length);
+  typedArraySet(owned, view, 0);
+  return owned;
+}
+
 export class HttpRelayTransport {
   #baseUrl;
   #closed = false;
@@ -53,19 +74,33 @@ export class HttpRelayTransport {
 
   async publish(messageBytes) {
     if (this.#closed) throw new Error("transport closed");
-    return strictResponse(await fetch(this.#url("messages"), {
-      body: messageBytes,
+    const request = new Request(this.#url("messages"), {
+      body: ownRelayBytes(messageBytes),
       headers: { "content-type": "application/json" },
       method: "POST"
-    }));
+    });
+    return strictResponse(await fetch(request));
   }
 
   async fetchRange(after = this.#cursor, limit = RELAY_LIMITS.range_limit) {
     if (this.#closed) throw new Error("transport closed");
+    if (
+      !Number.isSafeInteger(after) ||
+      after < 0 ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1 ||
+      limit > RELAY_LIMITS.range_limit
+    ) {
+      throw new TypeError("bounded relay range required");
+    }
+    const ownedAfter = after;
+    const ownedLimit = limit;
     const value = await strictResponse(await fetch(
-      `${this.#url("messages")}?after=${encodeURIComponent(after)}&limit=${encodeURIComponent(limit)}`
+      `${this.#url("messages")}?after=${encodeURIComponent(ownedAfter)}&limit=${encodeURIComponent(ownedLimit)}`
     ));
-    if (!Array.isArray(value.frames) || value.frames.length > limit) throw new Error("relay range schema invalid");
+    if (!Array.isArray(value.frames) || value.frames.length > ownedLimit) {
+      throw new Error("relay range schema invalid");
+    }
     const frames = value.frames.map((frame) => {
       decodeRelayFrame(frame);
       return frame;

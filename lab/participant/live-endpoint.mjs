@@ -103,12 +103,19 @@ export class LiveEndpointParticipant {
   }
 
   async acceptHandoff(proposal) {
+    const ownedProposal = clone(proposal);
     const acceptance = assertPortResult(
-      await this.#keys.sign(this.#core.acceptanceRequest(proposal, this.#keys.keyId, { handoff: true })),
+      await this.#keys.sign(
+        this.#core.acceptanceRequest(ownedProposal, this.#keys.keyId, { handoff: true })
+      ),
       "KeyStore.sign"
     );
     try {
-      return this.#core.commitProposal(proposal, proposal.approvals, [acceptance]);
+      return this.#core.commitProposal(
+        ownedProposal,
+        ownedProposal.approvals,
+        [acceptance]
+      );
     } catch (error) {
       throw new Error(`handoff rejected locally: ${error.code ?? error.message}`);
     }

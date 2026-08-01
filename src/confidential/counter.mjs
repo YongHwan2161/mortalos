@@ -25,6 +25,10 @@ import {
   taggedBytes
 } from "./format.mjs";
 import { assertWebCrypto } from "./keys.mjs";
+import {
+  counterAuthorityStoreRecord,
+  registerCounterAuthorityStoreInternal
+} from "./counter-authority-internal.mjs";
 
 const BASIS_KEYS = [
   "authority_id",
@@ -45,18 +49,23 @@ const BASIS_KEYS = [
 const OBSERVED_EQUIVOCATIONS = new WeakSet();
 const COUNTER_AUTHORITY_RECORDS = new WeakMap();
 const COUNTER_AUTHORITY_FACADES = new WeakMap();
-const COUNTER_AUTHORITY_STORE_RECORDS = new WeakMap();
+const COUNTER_AUTHORITY_CONSTRUCTION_TOKEN = Object.freeze({});
+const DEFAULT_COUNTER_AUTHORITY_CAPABILITIES = new WeakMap();
 
-export function registerCounterAuthorityStore(
+function registerCounterAuthorityStore(
   store,
-  { inspect, transact }
+  { inspect, loadOrCreateAuthorityCapability = null, transact }
 ) {
   if (
     !store ||
     (typeof store !== "object" && typeof store !== "function") ||
     typeof inspect !== "function" ||
+    (
+      loadOrCreateAuthorityCapability !== null &&
+      typeof loadOrCreateAuthorityCapability !== "function"
+    ) ||
     typeof transact !== "function" ||
-    COUNTER_AUTHORITY_STORE_RECORDS.has(store)
+    counterAuthorityStoreRecord(store)
   ) {
     confidentialFail(
       "E_CONFIDENTIAL_COUNTER_AUTHORITY",
@@ -64,10 +73,16 @@ export function registerCounterAuthorityStore(
       "store-capability"
     );
   }
-  COUNTER_AUTHORITY_STORE_RECORDS.set(
-    store,
-    Object.freeze({ inspect, transact })
-  );
+  let generatedAuthorityCapability = null;
+  const loadAuthorityCapability = loadOrCreateAuthorityCapability ?? (() => {
+    generatedAuthorityCapability ??= generatePrivateCounterAuthorityCapability();
+    return generatedAuthorityCapability;
+  });
+  registerCounterAuthorityStoreInternal(store, {
+    inspect,
+    loadAuthorityCapability,
+    transact
+  });
   return store;
 }
 
@@ -426,16 +441,6 @@ export class MemoryCounterAuthorityStore {
         value: inspect,
         writable: false
       },
-      lose: {
-        configurable: false,
-        value: (epochId) => this.#lose(epochId),
-        writable: false
-      },
-      transact: {
-        configurable: false,
-        value: transact,
-        writable: false
-      }
     });
     Object.freeze(this);
   }
@@ -488,25 +493,12 @@ export class MemoryCounterAuthorityStore {
       : null;
   }
 
-  async #lose(epochId) {
-    this.#records.delete(epochId);
-    this.#lost.add(epochId);
-  }
-
-  async transact(epochId, operation) {
-    return this.#transact(epochId, operation);
-  }
-
   async inspect(epochId) {
     return this.#inspect(epochId);
   }
-
-  async lose(epochId) {
-    return this.#lose(epochId);
-  }
 }
 
-export async function generateCounterAuthorityKeyMaterial() {
+async function generatePrivateCounterAuthorityCapability() {
   const subtle = assertWebCrypto();
   const keyPair = await subtle.generateKey(
     { name: "Ed25519" },
@@ -515,21 +507,48 @@ export async function generateCounterAuthorityKeyMaterial() {
   );
   const raw = new Uint8Array(await subtle.exportKey("raw", keyPair.publicKey));
   const authorityPublicKey = `ed25519:${encodeBase64Url(raw)}`;
+  const privateKey = keyPair.privateKey;
   return Object.freeze({
     authorityId: deriveCounterAuthorityId(authorityPublicKey),
     authorityPublicKey,
-    privateKey: keyPair.privateKey
+    sign: async (message) => new Uint8Array(
+      await subtle.sign({ name: "Ed25519" }, privateKey, new Uint8Array(message))
+    )
+  });
+}
+
+function defaultCounterAuthorityCapability(store) {
+  let capability = DEFAULT_COUNTER_AUTHORITY_CAPABILITIES.get(store);
+  if (!capability) {
+    capability = generatePrivateCounterAuthorityCapability();
+    DEFAULT_COUNTER_AUTHORITY_CAPABILITIES.set(store, capability);
+  }
+  return capability;
+}
+
+export async function generateCounterAuthorityKeyMaterial() {
+  const material = await generatePrivateCounterAuthorityCapability();
+  return Object.freeze({
+    authorityId: material.authorityId,
+    authorityPublicKey: material.authorityPublicKey
   });
 }
 
 export class LinearizableCounterAuthority {
   #authorityId;
   #inspect;
-  #privateKey;
   #publicKey;
+  #sign;
   #transact;
 
-  constructor({ authorityId, authorityPublicKey, privateKey, store }) {
+  constructor(token, { authorityId, authorityPublicKey, sign, storeRecord }) {
+    if (token !== COUNTER_AUTHORITY_CONSTRUCTION_TOKEN) {
+      confidentialFail(
+        "E_CONFIDENTIAL_COUNTER_AUTHORITY",
+        "/counter_authority",
+        "private-constructor"
+      );
+    }
     if (new.target !== LinearizableCounterAuthority) {
       confidentialFail(
         "E_CONFIDENTIAL_COUNTER_AUTHORITY",
@@ -544,18 +563,13 @@ export class LinearizableCounterAuthority {
         "binding"
       );
     }
-    if (
-      privateKey?.type !== "private" ||
-      privateKey.extractable ||
-      !privateKey.usages.includes("sign")
-    ) {
+    if (typeof sign !== "function") {
       confidentialFail(
         "E_CONFIDENTIAL_COUNTER_AUTHORITY",
-        "/private_key",
-        "nonextractable-sign-only"
+        "/counter_authority",
+        "policy-bound-signer"
       );
     }
-    const storeRecord = COUNTER_AUTHORITY_STORE_RECORDS.get(store);
     if (!storeRecord) {
       confidentialFail(
         "E_CONFIDENTIAL_COUNTER_AUTHORITY",
@@ -566,7 +580,7 @@ export class LinearizableCounterAuthority {
     const { inspect, transact } = storeRecord;
     this.#authorityId = authorityId;
     this.#publicKey = authorityPublicKey;
-    this.#privateKey = privateKey;
+    this.#sign = sign;
     this.#inspect = inspect;
     this.#transact = transact;
     COUNTER_AUTHORITY_RECORDS.set(
@@ -583,12 +597,23 @@ export class LinearizableCounterAuthority {
   }
 
   static async create({ store = new MemoryCounterAuthorityStore() } = {}) {
-    const keyMaterial = await generateCounterAuthorityKeyMaterial();
-    return new LinearizableCounterAuthority({
-      authorityId: keyMaterial.authorityId,
-      authorityPublicKey: keyMaterial.authorityPublicKey,
-      privateKey: keyMaterial.privateKey,
-      store
+    const storeRecord = counterAuthorityStoreRecord(store);
+    if (!storeRecord) {
+      confidentialFail(
+        "E_CONFIDENTIAL_COUNTER_AUTHORITY",
+        "/counter_authority",
+        "store"
+      );
+    }
+    const authorityCapability = await (
+      storeRecord.loadAuthorityCapability?.() ??
+      defaultCounterAuthorityCapability(store)
+    );
+    return new LinearizableCounterAuthority(COUNTER_AUTHORITY_CONSTRUCTION_TOKEN, {
+      authorityId: authorityCapability.authorityId,
+      authorityPublicKey: authorityCapability.authorityPublicKey,
+      sign: authorityCapability.sign,
+      storeRecord
     });
   }
 
@@ -688,11 +713,7 @@ export class LinearizableCounterAuthority {
         suite: CONFIDENTIAL_SUITE
       });
       const rawSignature = new Uint8Array(
-        await assertWebCrypto().sign(
-          { name: "Ed25519" },
-          this.#privateKey,
-          counterReservationMessage(basis)
-        )
+        await this.#sign(counterReservationMessage(basis))
       );
       const receipt = Object.freeze({
         basis,

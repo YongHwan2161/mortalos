@@ -5,8 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   LinearizableCounterAuthority,
-  deriveConfidentialEpochId,
-  generateCounterAuthorityKeyMaterial
+  deriveConfidentialEpochId
 } from "../src/confidential/counter.mjs";
 import { randomTagged } from "../src/confidential/format.mjs";
 import {
@@ -72,25 +71,19 @@ try {
     }))
   });
   assert.equal(topology.nodes.length, 3);
-  const material = await generateCounterAuthorityKeyMaterial();
+  let clients = replicas.map(({ client }) => client);
+  let store = new QuorumCounterAuthorityStore({ replicas: clients });
+  let left = await LinearizableCounterAuthority.create({ store });
+  let right = await LinearizableCounterAuthority.create({ store });
   const epochId = deriveConfidentialEpochId({
-    authorityId: material.authorityId,
-    authorityPublicKey: material.authorityPublicKey,
+    authorityId: left.descriptor.authority_id,
+    authorityPublicKey: left.descriptor.authority_public_key,
     custodianEncryptionKeys: [randomTagged("sha256:")],
     epoch: "8",
     membershipHead: randomTagged("sha256:"),
     organismId: randomTagged("mortalos:"),
     transitionId: "process-isolated-counter"
   });
-  const makeAuthority = (clients) => new LinearizableCounterAuthority({
-    authorityId: material.authorityId,
-    authorityPublicKey: material.authorityPublicKey,
-    privateKey: material.privateKey,
-    store: new QuorumCounterAuthorityStore({ replicas: clients })
-  });
-  let clients = replicas.map(({ client }) => client);
-  let left = makeAuthority(clients);
-  let right = makeAuthority(clients);
   let current = null;
   for (let round = 0; round < 18; round += 1) {
     current = await left.inspect(epochId);
@@ -112,7 +105,6 @@ try {
 
   await stopReplica(replicas[0]);
   clients = [replicas[1].client, replicas[2].client, replicas[0].client];
-  left = makeAuthority(clients);
   for (let round = 0; round < 6; round += 1) {
     current = await left.inspect(epochId);
     await left.reserveRange({
@@ -126,15 +118,17 @@ try {
 
   const restarted = await startReplica(0);
   clients = [restarted.client, replicas[1].client, replicas[2].client];
-  left = makeAuthority(clients);
+  store = new QuorumCounterAuthorityStore({ replicas: clients });
+  left = await LinearizableCounterAuthority.create({ store });
   current = await left.inspect(epochId);
   assert.equal(current.next_counter, expectedAfterFailure);
   const afterRepair = await restarted.client.snapshot(epochId);
   assert.equal(afterRepair.data.next_counter, expectedAfterFailure);
   console.log("MortalOS S7 process-isolated HTTP quorum: PASS");
-  console.log("- two concurrent coordinators: one CAS winner per revision");
+  console.log("- two local callers sharing one confined authority: one CAS winner per revision");
   console.log("- one replica terminated: quorum reservations continued");
   console.log("- replica disk state restarted and repaired from quorum truth");
+  console.log("- remote multi-coordinator signing custody is not claimed by this verifier");
 } finally {
   await Promise.all(children.map((child) => {
     if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();

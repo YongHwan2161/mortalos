@@ -14,7 +14,7 @@ import {
 import {
   createStoredWebCryptoKey,
   signBytes
-} from "../lab/participant/webcrypto-key-store.mjs";
+} from "./webcrypto-signing-helper.mjs";
 import {
   createAuthorityPolicy,
   createKeyReadyDocument

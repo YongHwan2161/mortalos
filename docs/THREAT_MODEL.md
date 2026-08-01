@@ -1,6 +1,6 @@
 # MortalOS v0/v1 Threat Model
 
-Current candidate note (2026-08-01): S2/S4 claim authority is reopened. A branded
+Current candidate note (2026-08-02): S2/S4 claim authority is reopened. A branded
 outer authority is insufficient when the store or method behind it is mutable.
 Security-sensitive async entrypoints must capture complete transitive invocation
 data and module-private capabilities before the first await, and authority-changing
@@ -368,7 +368,9 @@ Resource contribution must be explicit and revocable in later participant-runtim
 ## 16. S2 durable-quorum assumptions and exclusions
 
 - A non-extractable browser `CryptoKey` prevents supported API export; it does not
-  resist a compromised browser process, operating system, hardware, or user account.
+  resist a compromised browser process, same-origin script/XSS, operating system,
+  hardware, or user account. Same-origin code can retrieve a structured-cloned key
+  from IndexedDB and invoke `sign` without exporting it.
 - IndexedDB atomicity and strict durability are platform assumptions. The S2 fault
   gate verifies every adapter-visible boundary but does not claim power-loss
   guarantees beyond the browser/storage contract.
@@ -432,6 +434,10 @@ epoch-key wrapping through WebCrypto.
   Locks plus a storage revision CAS. Actual Chromium contention and full process
   restart are required evidence; this is one credential/storage domain, not S7
   physical independence.
+- Web Locks and revision CAS serialize conforming callers only. They do not stop a
+  same-origin script from using the stored key outside the counter protocol; strong
+  counter custody requires a separate origin/service or hardware authorization
+  boundary and remains HOLD.
 - Authority records resolve immutable constructor-registered store capabilities,
   never caller-visible store methods. Own or prototype method replacement cannot
   forge authority loss or retirement; actual Chromium must complete both loss and

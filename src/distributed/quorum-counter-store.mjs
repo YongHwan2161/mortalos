@@ -4,8 +4,8 @@ import {
   confidentialFail
 } from "../confidential/format.mjs";
 import {
-  registerCounterAuthorityStore
-} from "../confidential/counter.mjs";
+  registerCounterAuthorityStoreInternal
+} from "../confidential/counter-authority-internal.mjs";
 import {
   copyBoundedOwnDataArray,
   ownDataArrayLength,
@@ -183,8 +183,9 @@ export class QuorumCounterAuthorityStore {
     }
     this.#replicas = Object.freeze(owned);
     this.#quorum = Math.floor(count / 2) + 1;
-    registerCounterAuthorityStore(this, {
+    registerCounterAuthorityStoreInternal(this, {
       inspect: (epochId) => this.#inspect(epochId),
+      loadAuthorityCapability: null,
       transact: (epochId, operation) => this.#transact(epochId, operation)
     });
     Object.freeze(this);

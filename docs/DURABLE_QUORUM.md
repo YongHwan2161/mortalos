@@ -12,6 +12,13 @@ public raw writes fail closed, signing uses captured native WebCrypto operations
 and the optional test boundary receives only a phase string. The historical S2
 receipt does not cover these edits and cannot promote the new source.
 
+This is public-API and conforming-concurrency hardening, not a same-origin/XSS
+custody boundary. Any script running with the application's origin can open the
+known IndexedDB, obtain the structured-cloned non-extractable `CryptoKey`, and ask
+WebCrypto to sign without exporting the key or consulting this journal. Strong
+sign-once enforcement therefore remains **HOLD** until key use and journal state
+are co-located in a separately isolated signer domain.
+
 Contract versions:
 
 - durable document: `mortalos-durable-participant/2`
@@ -71,7 +78,7 @@ returns the already stored signature without invoking the signer again. A crash
 around commit exposes only the old committed head with pending work or the new
 committed head.
 
-Two endpoints or tabs restored from the same revision may race, but only one
+Two conforming endpoints or tabs restored from the same revision may race, but only one
 reservation CAS can commit. The loser fails before invoking its signer. If two
 same-body signers race after one stored reservation, only the signer whose
 signature CAS commits may return to its caller.
@@ -154,4 +161,5 @@ The gate covers:
 
 These are same-host browser/profile and storage semantics. They do not prove
 separate devices, administrators, providers, confidential resource storage, or
-resource-byte reconstruction. Those remain S3, S4, and S7 work.
+resource-byte reconstruction. They also do not resist compromised same-origin code.
+Those remain S3, S4, S7, and signer-custody work.

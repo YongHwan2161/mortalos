@@ -5,6 +5,8 @@ import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
+import { CONFIDENTIAL_LIMITS } from "../src/confidential/format.mjs";
+import { PROTOCOL_PROFILE } from "../src/generated/protocol-profile.mjs";
 
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const defaultReceiptPath = resolve(defaultRoot, "evidence", "stages", "s4-confidentiality.json");
@@ -237,16 +239,16 @@ function assertSemanticEvidence(receipt) {
     "mortalos-epoch-wrap-label/1"
   ]);
   assert.deepEqual(receipt.limits, {
-    aad_bytes: 4096,
-    chunk_plaintext_bytes: 65536,
-    counter_max_exclusive: "4294967296",
-    epoch_max: "18446744073709551615",
-    max_chunks: 64,
-    max_custodians: 16,
-    package_bytes: 4194304,
-    reference_resource_bytes: 1048576,
-    resource_bytes: 3098890,
-    rsa_wrapped_key_bytes: 384
+    aad_bytes: CONFIDENTIAL_LIMITS.aad_bytes,
+    chunk_plaintext_bytes: CONFIDENTIAL_LIMITS.chunk_plaintext_bytes,
+    counter_max_exclusive: String(CONFIDENTIAL_LIMITS.counter_max_exclusive),
+    epoch_max: String(CONFIDENTIAL_LIMITS.epoch_max),
+    max_chunks: CONFIDENTIAL_LIMITS.max_chunks,
+    max_custodians: CONFIDENTIAL_LIMITS.max_custodians,
+    package_bytes: CONFIDENTIAL_LIMITS.package_bytes,
+    reference_resource_bytes: PROTOCOL_PROFILE.state.reference_resource_bytes,
+    resource_bytes: CONFIDENTIAL_LIMITS.resource_bytes,
+    rsa_wrapped_key_bytes: CONFIDENTIAL_LIMITS.rsa_wrapped_bytes
   });
   assert.deepEqual(receipt.seeds, {
     million_iv_workers: 16,
@@ -354,11 +356,13 @@ function assertSemanticEvidence(receipt) {
     counter_overflow_rejected: true
   });
   assert.deepEqual(receipt.results.resource_boundary, {
-    max_custodians: 16,
-    max_plaintext_resource_bytes: 3098890,
-    max_confidential_package_bytes: 4194303,
-    s3_package_ceiling_bytes: 4194304,
-    max_chunks_at_boundary: 49,
+    max_custodians: CONFIDENTIAL_LIMITS.max_custodians,
+    max_plaintext_resource_bytes: CONFIDENTIAL_LIMITS.resource_bytes,
+    max_confidential_package_bytes: CONFIDENTIAL_LIMITS.package_bytes - 1,
+    s3_package_ceiling_bytes: CONFIDENTIAL_LIMITS.package_bytes,
+    max_chunks_at_boundary: 1 + Math.ceil(
+      CONFIDENTIAL_LIMITS.resource_bytes / CONFIDENTIAL_LIMITS.chunk_plaintext_bytes
+    ),
     max_plus_one_rejected: true,
     custodian_seventeen_rejected: true
   });

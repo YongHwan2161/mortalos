@@ -34,6 +34,7 @@ import {
   verifyStatePackageTransitionPayload,
   verifyStateTransitionPayload
 } from "../src/index.mjs";
+import { commitStateActiveForTest } from "./recovery-activation-helper.mjs";
 
 function packageFixture() {
   const initial = createInitialState(new Uint8Array(16).fill(3));
@@ -467,7 +468,7 @@ test("missing chunks remain state_unavailable and never replace the last verifie
     );
   }
   const destination = new MemoryContentAddressedStore();
-  await destination.commitActive({
+  await commitStateActiveForTest(destination, {
     next_state_root: fixture.statePackage.manifest.prior_state_root,
     status: "verified"
   });
@@ -544,7 +545,7 @@ test("recovery is resumable and idempotent without replacing the prior active st
       if (boundary === "chunk:after" && ++writes === 3) throw new Error("forced-stop");
     }
   });
-  await destination.commitActive({
+  await commitStateActiveForTest(destination, {
     next_state_root: fixture.statePackage.manifest.prior_state_root,
     status: "verified"
   });
@@ -576,7 +577,7 @@ test("recovery is resumable and idempotent without replacing the prior active st
         descriptor.size
       );
     }
-    await atomicDestination.commitActive({
+    await commitStateActiveForTest(atomicDestination, {
       next_state_root: fixture.statePackage.manifest.prior_state_root,
       status: "verified"
     });
@@ -604,7 +605,7 @@ test("recovery is resumable and idempotent without replacing the prior active st
 test("adapter read interruption is stable and preserves the prior active state", async () => {
   const fixture = packageFixture();
   const destination = new MemoryContentAddressedStore();
-  await destination.commitActive({
+  await commitStateActiveForTest(destination, {
     next_state_root: fixture.statePackage.manifest.prior_state_root,
     status: "verified"
   });
@@ -643,7 +644,10 @@ test("store and destination failure boundaries remain stable before activation",
   assert.deepEqual(await store.inventory(), []);
   assert.equal(await store.get(first.digest), null);
   await assert.rejects(store.put(first.digest, firstBytes, first.size), /store-destroyed/u);
-  await assert.rejects(store.commitActive({ next_state_root: "x" }), /store-destroyed/u);
+  await assert.rejects(
+    commitStateActiveForTest(store, { next_state_root: "x" }),
+    /store-destroyed/u
+  );
 
   const invalidSources = await recoverStatePackage({
     ...recoveryOptions(fixture, new MemoryContentAddressedStore(), []),
@@ -702,6 +706,11 @@ test("store and destination failure boundaries remain stable before activation",
   assert.equal(liarCalls, 0, "unbranded destination methods must never be invoked");
 
   const brandedDestination = new MemoryContentAddressedStore();
+  assert.equal(
+    brandedDestination.commitActive,
+    undefined,
+    "verified-state activation must not be a public store method"
+  );
   for (const descriptor of fixture.statePackage.manifest.chunks) {
     await brandedDestination.put(
       descriptor.digest,
@@ -791,7 +800,7 @@ test("10,000 seeded loss, reorder, duplicate, partial, and tamper recoveries exe
     const lost = scheduleSeed % 3;
     const target = (scheduleSeed >>> 8) % digests.length;
     const destination = new MemoryContentAddressedStore();
-    await destination.commitActive({
+    await commitStateActiveForTest(destination, {
       next_state_root: fixture.statePackage.manifest.prior_state_root,
       status: "verified"
     });

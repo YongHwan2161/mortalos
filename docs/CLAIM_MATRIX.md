@@ -2,7 +2,7 @@
 
 Status: **ACTIVE — S2/S4 REOPENED / CURRENT CANDIDATE HOLD**
 
-Last synchronized: **2026-08-01 KST**
+Last synchronized: **2026-08-02 KST**
 
 This matrix is the current claim boundary. “Implemented” means code exists;
 “exact-head locally verified” means the named repository gates pass on the current
@@ -19,9 +19,9 @@ inherits truth from another.
 | Logical browser `2-of-3` loss and D repair | Yes | Yes, isolated Chromium contexts | No | Yes, as logical quorum evidence | Current contexts can share one host and administrative domain. |
 | Consent-gated durable `1-of-1` participant reload | Yes | Yes, Chromium schema v2 | No | Yes, within exact receipt/deploy evidence | Uses the same replay/WAL path as durable quorum; it remains one-key authority. |
 | Unified deterministic Participant Core | Yes | Yes, Node and Chromium | Not applicable | Yes | S1 receipt v2 is main-history portable; live, durable, handoff, quorum, catch-up, fork, snapshot, and availability paths use one core. |
-| Crash-safe durable `2-of-3` cold recovery and sign-once journal | Yes | Yes on current candidate: Node plus actual Chromium/Firefox bounded parity; historical Chromium `100/100` receipt remains commit-bound | No | Historical S2 commit only; current claim reopened | Module-private store capability, first-await ownership, endpoint/store private-key redaction, and rejected public raw writes changed the source. A fresh exact-head receipt/review is mandatory. |
+| Crash-safe durable `2-of-3` cold recovery and sign-once journal | Yes, for conforming endpoint concurrency | Yes on current candidate: Node plus actual Chromium/Firefox bounded parity; historical Chromium `100/100` receipt remains commit-bound | No | Historical S2 commit only; current claim reopened | Module-private capability and CAS block public-API/store-facade bypass. A same-origin script can still use the persisted non-extractable key outside the journal, so XSS-resistant sign-once is explicitly **HOLD** pending a separate signer trust domain. |
 | Exact R3 state replica recovery after storage/relay loss | Yes | Yes, 1 MiB/16-chunk logical stores, 20,000 end-to-end recovery executions, and JavaScript/Python differential | No | Yes, exact-main S3 receipt/review/Verify/Deploy | Inventory is a hint; exact fetched bytes and aggregate root are reverified. Logical stores do not prove independent domains. |
-| Confidential replicated state with epoch-key removal | Yes, candidate | Node plus actual Chromium/Firefox pass locally; recovery/activation mutation corpus passes | No | Historical receipt only; current claim reopened | Public results omit epoch keys; activation uses private capability plus exact readback. WebKit signing, hidden forks, prior exposure, and physical independence remain unclaimed. |
+| Confidential replicated state with epoch-key removal | Yes, candidate | Node plus actual Chromium/Firefox pass locally; recovery/activation mutation corpus passes | No | Historical receipt only; current claim reopened | Public results omit epoch keys; activation uses private capability plus exact readback. Browser non-extractability prevents export, not same-origin key use; XSS-resistant counter custody, WebKit signing, hidden forks, prior exposure, and physical independence remain unclaimed. |
 | Public SDK/CLI package interoperability | Yes, candidate | Exact export allowlist, CLI, package allowlist, and cross-process Capsule verify pass | Not applicable | No | Package is not promoted/published until exact-head review and clean-install evidence pass. |
 | Continuity Capsule resource lifecycle | Yes, candidate | Canonical lineage/state/chunk binding, process-boundary verification, and tamper tests pass | No | No | Capsule carries public evidence and encrypted resource bytes, never signing authority. |
 | Independent host/relay/credential-domain survival | Process-isolated model only | Three HTTP CAS processes survive one termination and disk restart | No | No | Real S7 promotion still requires distinct provider, host, administrator, credential domains, 100 trials, and seven-day burn-in. |

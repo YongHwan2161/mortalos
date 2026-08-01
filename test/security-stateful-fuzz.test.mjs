@@ -75,9 +75,9 @@ test("stateful S2 corpus composes accessor, Proxy, prototype, store, and array m
       }))]);
       const accepted = attempts.filter(({ status }) => status === "fulfilled");
       const rejected = attempts.filter(({ status }) => status === "rejected");
-      assert.equal(accepted.length, 1);
-      assert.equal(rejected.length, 1);
-      assert.equal(rejected[0].reason.code, "E_DURABLE_CONFLICT");
+      assert.equal(accepted.length, 2);
+      assert.equal(rejected.length, 0);
+      assert.deepEqual(accepted[1].value, accepted[0].value);
       const replayed = await endpoint.approveGenesis(endpoint.createGenesisBody({
         custodians: [endpoint.custodian],
         initialStateSeed: seed(20 + trial),

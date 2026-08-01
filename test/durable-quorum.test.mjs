@@ -16,7 +16,7 @@ import {
 import {
   createStoredWebCryptoKey,
   signBytes
-} from "../lab/participant/webcrypto-key-store.mjs";
+} from "./webcrypto-signing-helper.mjs";
 function seed(value) {
   return new Uint8Array(16).fill(value);
 }
@@ -469,10 +469,13 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
 
 test("durable module exports no raw read or write authority", async () => {
   const durableStoreModule = await import("../lab/storage/durable-store.mjs");
+  const keyStoreModule = await import("../lab/participant/webcrypto-key-store.mjs");
   assert.equal(Object.hasOwn(durableStoreModule, "readDurableStore"), false);
   assert.equal(Object.hasOwn(durableStoreModule, "writeDurableStore"), false);
   assert.equal(Object.hasOwn(durableStoreModule, "readPrivateDurableDocument"), false);
   assert.equal(Object.hasOwn(durableStoreModule, "commitPrivateDurableDocument"), false);
+  assert.equal(Object.hasOwn(keyStoreModule, "createStoredWebCryptoKey"), false);
+  assert.equal(Object.hasOwn(keyStoreModule, "signBytes"), false);
 });
 
 test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and migration failure fail closed", async () => {

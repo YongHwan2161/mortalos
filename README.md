@@ -52,7 +52,9 @@ proof.
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
 keys. They prove browser/profile isolation and protocol behavior, not that three
-people, organizations, or physical devices independently control the keys.
+people, organizations, or physical devices independently control the keys. They also
+do not isolate signing authority from compromised same-origin JavaScript: a persisted
+non-extractable `CryptoKey` can still sign without being exported.
 
 ## What MortalOS does not claim
 
@@ -142,6 +144,11 @@ gated and uses one atomic versioned document for a non-extractable key, canonica
 public evidence, state references, sign-once journal, pending recovery, and explicit
 authority policy. Restore replays evidence instead of trusting cached verdicts.
 Ephemeral Demo creates no durable browser storage.
+
+The journal and counter CAS prevent equivocation by conforming concurrent endpoints;
+they are not an XSS-resistant signer boundary. Strong sign-once custody remains HOLD
+until key use and monotonic state move to a separately isolated origin/service or
+hardware-backed authorization domain.
 
 The implemented core sequence is:
 

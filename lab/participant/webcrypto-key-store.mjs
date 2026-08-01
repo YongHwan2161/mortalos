@@ -75,10 +75,8 @@ export async function assertNonExtractableSigningKey(privateKey) {
   return true;
 }
 
-export async function signBytes(keyId, privateKey, message) {
-  if (typeof keyId !== "string" || !(message instanceof Uint8Array)) {
-    throw new TypeError("bounded key ID and signing bytes required");
-  }
+async function signBytes(keyId, privateKey, message) {
+  if (typeof keyId !== "string") throw new TypeError("bounded key ID required");
   const ownedMessage = ownSigningBytes(message);
   await assertNonExtractableSigningKey(privateKey);
   const signature = await reflectApply(subtleSign, subtle, ["Ed25519", privateKey, ownedMessage]);
@@ -86,23 +84,6 @@ export async function signBytes(keyId, privateKey, message) {
     key_id: keyId,
     signature: `ed25519:${encodeBase64Url(new uint8ArrayConstructor(signature))}`
   });
-}
-
-export async function createStoredWebCryptoKey() {
-  const generated = await reflectApply(subtleGenerateKey, subtle, [
-    { name: "Ed25519" }, false, ["sign", "verify"]
-  ]);
-  await assertNonExtractableSigningKey(generated.privateKey);
-  const raw = new Uint8Array(
-    await reflectApply(subtleExportKey, subtle, ["raw", generated.publicKey])
-  );
-  const custodian = custodianFromPublicKeyBytes(raw);
-  return {
-    key_id: custodian.key_id,
-    private_key: generated.privateKey,
-    public_key: custodian.public_key,
-    public_key_raw: raw.buffer
-  };
 }
 
 export class WebCryptoKeyStore {

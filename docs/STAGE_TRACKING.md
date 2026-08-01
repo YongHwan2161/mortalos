@@ -25,11 +25,17 @@ Promotion requires all strict stage criteria, an exact machine-validated receipt
 independent immutable-head review, expected-head merge, and post-merge evidence.
 Anything less is **HOLD**.
 
-## Current candidate (2026-08-01)
+## Current candidate (2026-08-02)
 
 S2 and S4 are reopened because capability ownership, first-await snapshots,
 activation readback, and key redaction changed their security-critical sources.
 Their older receipts remain historical exact-commit evidence only.
+
+Independent Chromium attack review also confirmed that same-origin code can use a
+persisted non-extractable IndexedDB key without exporting it. Current sign-once and
+counter claims are therefore limited to conforming endpoint concurrency. Strong
+same-origin/XSS-resistant custody remains a separate P0 HOLD requiring an isolated
+signer trust domain.
 
 S5/S6 are implemented and locally verified. S7 passes a three-process HTTP CAS
 fault/restart rehearsal, not a real independent-provider topology. S8 stateful fuzz,

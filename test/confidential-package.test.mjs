@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { commitConfidentialActiveForTest } from "./recovery-activation-helper.mjs";
 import {
   decodeBase64Url,
   encodeBase64Url
@@ -9,7 +10,6 @@ import {
   LinearizableCounterAuthority,
   MemoryCounterAuthorityStore,
   createCounterAuthorityFacade,
-  generateCounterAuthorityKeyMaterial,
   observeCounterAuthorityEquivocation,
   deriveConfidentialEpochId
 } from "../src/confidential/counter.mjs";
@@ -41,6 +41,7 @@ import {
 } from "../src/confidential/recovery.mjs";
 import {
   createConfidentialFixture,
+  createForkableCounterAuthorityPair,
   createNextMembershipHead,
   createRotationAuthorization,
   deterministicSecret,
@@ -541,14 +542,9 @@ test("maximum S4 resource stays inside the S3 package ceiling for sixteen custod
     .sort((left, right) =>
       left.custodian_id.localeCompare(right.custodian_id)
     );
-  const store = new MemoryCounterAuthorityStore();
-  const material = await generateCounterAuthorityKeyMaterial();
-  const authority = new LinearizableCounterAuthority({
-    authorityId: material.authorityId,
-    authorityPublicKey: material.authorityPublicKey,
-    privateKey: material.privateKey,
-    store
-  });
+  const controlled = await createForkableCounterAuthorityPair();
+  const store = controlled.leftStore;
+  const authority = controlled.left;
   const epoch = String(CONFIDENTIAL_LIMITS.epoch_max);
   const transitionId = "x".repeat(64);
   const epochId = deriveConfidentialEpochId({
@@ -609,6 +605,32 @@ test("maximum S4 resource stays inside the S3 package ceiling for sixteen custod
       resourceBytes: new Uint8Array([1])
     }),
     /E_CONFIDENTIAL_MEMBERSHIP/u
+  );
+});
+
+test("rotation custodian envelope accepts profile max and rejects max plus one", () => {
+  const digests = Array.from(
+    { length: CONFIDENTIAL_LIMITS.max_custodians + 1 },
+    (_, index) => `sha256:${encodeBase64Url(new Uint8Array(32).fill(index + 1))}`
+  ).sort();
+  const rotation = {
+    approved_membership_head: randomTagged("sha256:"),
+    current_membership_head: randomTagged("sha256:"),
+    format: "mortalos-confidential-rotation/1",
+    from_epoch: "0",
+    next_authority_id: randomTagged("sha256:"),
+    next_custodian_key_digests: digests.slice(0, CONFIDENTIAL_LIMITS.max_custodians),
+    reason: "membership_change",
+    suite: "mortalos-confidential-state-suite/1",
+    to_epoch: "1"
+  };
+  assert.doesNotThrow(() => validateConfidentialRotationInput(rotation));
+  assert.throws(
+    () => validateConfidentialRotationInput({
+      ...rotation,
+      next_custodian_key_digests: digests
+    }),
+    /E_CONFIDENTIAL_ROTATION/u
   );
 });
 
@@ -734,7 +756,10 @@ test("membership rotation omits the removed member and preserves exact survivor 
 });
 
 test("authority equivocation rotates with unchanged membership, a fresh authority, and a fresh epoch key", async () => {
+  const compromised = await createForkableCounterAuthorityPair();
   const current = await createConfidentialFixture({
+    counterAuthority: compromised.left,
+    counterAuthorityStore: compromised.leftStore,
     resourceBytes: deterministicSecret(65_537),
     transitionId: "authority-rotation-source"
   });
@@ -752,18 +777,13 @@ test("authority equivocation rotates with unchanged membership, a fresh authorit
     transitionId: "authority-equivocation-rotation"
   });
   const survivor = current.custodians[1];
-  const forkStore = new MemoryCounterAuthorityStore();
+  const forkStore = compromised.rightStore;
   const priorState = await current.authority.inspect(current.epochId);
   await forkStore.transact(current.epochId, async () => ({
     next: priorState,
     value: true
   }));
-  const forkAuthority = new LinearizableCounterAuthority({
-    authorityId: current.counterKeyMaterial.authorityId,
-    authorityPublicKey: current.counterKeyMaterial.authorityPublicKey,
-    privateKey: current.counterKeyMaterial.privateKey,
-    store: forkStore
-  });
+  const forkAuthority = compromised.right;
   const request = {
     count: "1",
     epoch: current.epoch,
@@ -872,7 +892,10 @@ test("authority equivocation rotates with unchanged membership, a fresh authorit
 });
 
 test("lost-authority rotation requires real quorum signatures, unchanged membership, and a fresh authority", async () => {
+  const controlled = await createForkableCounterAuthorityPair();
   const current = await createConfidentialFixture({
+    counterAuthority: controlled.left,
+    counterAuthorityStore: controlled.leftStore,
     resourceBytes: deterministicSecret(65_536),
     transitionId: "lost-authority-source"
   });
@@ -1096,7 +1119,12 @@ test("counter, wrap, chunk, package, rotation, and activation faults leave one c
     status: "verified"
   };
   const store = new MemoryConfidentialEpochStore();
-  await store.commitActive({
+  assert.equal(
+    store.commitActive,
+    undefined,
+    "verified confidential activation must not be a public store method"
+  );
+  await commitConfidentialActiveForTest(store, {
     candidate: oldCandidate,
     expectedPriorConfidentialRoot: base.priorConfidentialRoot
   });
@@ -1142,7 +1170,7 @@ test("counter, wrap, chunk, package, rotation, and activation faults leave one c
     package_base64url: "new"
   };
   await assert.rejects(
-    store.commitActive({
+    commitConfidentialActiveForTest(store, {
       candidate: newCandidate,
       expectedPriorConfidentialRoot: oldCandidate.confidential_root,
       fault(point) {
@@ -1153,7 +1181,7 @@ test("counter, wrap, chunk, package, rotation, and activation faults leave one c
   );
   assert.deepEqual(store.active, oldCandidate);
   await assert.rejects(
-    store.commitActive({
+    commitConfidentialActiveForTest(store, {
       candidate: newCandidate,
       expectedPriorConfidentialRoot: oldCandidate.confidential_root,
       fault(point) {
@@ -1164,14 +1192,14 @@ test("counter, wrap, chunk, package, rotation, and activation faults leave one c
   );
   assert.deepEqual(store.active, newCandidate);
   assert.deepEqual(
-    await store.commitActive({
+    await commitConfidentialActiveForTest(store, {
       candidate: newCandidate,
       expectedPriorConfidentialRoot: oldCandidate.confidential_root
     }),
     newCandidate
   );
   await assert.rejects(
-    store.commitActive({
+    commitConfidentialActiveForTest(store, {
       candidate: oldCandidate,
       expectedPriorConfidentialRoot: oldCandidate.confidential_root
     }),

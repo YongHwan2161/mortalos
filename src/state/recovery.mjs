@@ -22,32 +22,16 @@ import {
   snapshotDataMethod,
   typedArraySet
 } from "../primordials.mjs";
+import {
+  contentStoreCapabilityInternal,
+  registerContentStoreInternal
+} from "./recovery-internal.mjs";
 
-const CONTENT_STORE_CAPABILITIES = new WeakMap();
-const weakMapGet = WeakMap.prototype.get;
-const weakMapSet = WeakMap.prototype.set;
 const reflectApply = Reflect.apply;
 const structuredCloneIntrinsic = globalThis.structuredClone;
 
 function clone(value) {
   return reflectApply(structuredCloneIntrinsic, globalThis, [value]);
-}
-
-function registerContentStore(store, capability) {
-  reflectApply(weakMapSet, CONTENT_STORE_CAPABILITIES, [
-    store,
-    Object.freeze(capability)
-  ]);
-}
-
-function contentStoreCapability(store) {
-  const capability = reflectApply(weakMapGet, CONTENT_STORE_CAPABILITIES, [store]);
-  if (!capability) {
-    const error = new TypeError("registered MortalOS content-addressed destination required");
-    error.code = "E_STATE_RECOVERY_UNTRUSTED_DESTINATION";
-    throw error;
-  }
-  return capability;
 }
 
 export const STATE_RECOVERY_LIMITS = Object.freeze({
@@ -73,7 +57,7 @@ export class MemoryContentAddressedStore {
 
   constructor({ fault = null } = {}) {
     this.#fault = fault;
-    registerContentStore(this, {
+    registerContentStoreInternal(this, {
       commitActive: (record, options) => this.#commitActive(record, options),
       get: (digest) => this.#get(digest),
       inventory: () => this.#inventory(),
@@ -134,10 +118,6 @@ export class MemoryContentAddressedStore {
     if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
   }
 
-  async commitActive(record, options = {}) {
-    return this.#commitActive(record, options);
-  }
-
   async readActive() {
     return this.#readActive();
   }
@@ -175,7 +155,7 @@ export class ReplicaRecoveryAdapter {
   #readChunk;
 
   constructor(store) {
-    const capability = contentStoreCapability(store);
+    const capability = contentStoreCapabilityInternal(store);
     this.#inventory = capability.inventory;
     this.#readChunk = capability.get;
   }
@@ -208,7 +188,7 @@ function snapshotRecoveryInvocation(destination, sources) {
       readChunk: snapshotDataMethod(source, "readChunk", `recovery source ${index}`)
     }));
   }
-  const destinationCapability = contentStoreCapability(destination);
+  const destinationCapability = contentStoreCapabilityInternal(destination);
   if (!realmIntrinsicsIntact()) throw new TypeError("realm integrity required");
   return freeze({
     destination: destinationCapability,

@@ -2,7 +2,7 @@
 
 Status: **ACTIVE — S2/S4 claims reopened; S5–S8 candidate implementation**
 
-Last synchronized: **2026-08-01 KST**
+Last synchronized: **2026-08-02 KST**
 
 The sole detailed implementation SSOT is the
 [post-hackathon North Star implementation plan](POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md).
@@ -42,7 +42,7 @@ its exact receipt, frozen-source rerun, independent review, merge, and exact-mai
 deployment; the complete pre-freeze ordered suite passes. Independent failure
 domains remain a later stage.
 
-The current candidate reopens S2 and S4 because it moves the trust boundary below
+The current candidate reopens S2 and S4 because it moves the public-API trust boundary below
 the outer authority object: durable stores and confidential activation stores are
 now module-private capabilities, complete invocations are owned before the first
 await, and public decrypt/durable results redact key handles. It also adds a single
@@ -57,19 +57,30 @@ verifier-only path. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
 
+Independent Chromium attack review established the next, deeper boundary: a
+non-extractable key persisted in same-origin IndexedDB is still usable by any
+compromised same-origin script. The current journal/counter prevents conforming
+writer races but is not an XSS-resistant signer. S2/S4 promotion is therefore
+scoped to public-API/concurrency hardening; strong custody remains HOLD until key
+use and monotonic state move together to an isolated signer domain.
+
 ## Priority order
 
-1. **P0 — re-promote S2/S4:** new receipts, full suite, immutable independent review,
-   merge, post-merge CI, and exact deployment for the hardened trust boundary.
-2. **P0 — finish S5/S6 release:** clean-install package evidence and exact Capsule
+1. **P0 — isolate signer custody:** co-locate key use, sign-once/counter state, and
+   atomic policy in a separate origin/service or hardware authorization domain;
+   prove that same-origin application code cannot obtain a generic signing oracle.
+2. **P0 — re-promote scoped S2/S4:** new receipts, full suite, immutable independent
+   review, merge, post-merge CI, and exact deployment for public-API/concurrency
+   hardening, without claiming XSS-resistant custody.
+3. **P0 — finish S5/S6 release:** clean-install package evidence and exact Capsule
    interoperability receipt.
-3. **P1 — production S7:** provision genuinely distinct providers/admins/credentials,
+4. **P1 — production S7:** provision genuinely distinct providers/admins/credentials,
    run 100 failure trials, then immutable seven-day burn-in.
-4. **P1 — GitHub merge authority:** complete the current exact-head promotion using
+5. **P1 — GitHub merge authority:** complete the current exact-head promotion using
    the live no-bypass ruleset, GitHub App attestation check, and separately
    credentialed machine-user native approval. This closes platform identity
    separation only; independent administrative control remains a later topology.
-5. **P2 — WebKit signer parity:** close the capability-routed full S2/S4 matrix on
+6. **P2 — WebKit signer parity:** close the capability-routed full S2/S4 matrix on
    a release runner that passes the protocol-ceiling signing probe; never infer full
    capability from key generation or fall back to exportable private bytes.
 

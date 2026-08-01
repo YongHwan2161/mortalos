@@ -22,6 +22,7 @@ import { createStatePackage } from "../state/package.mjs";
 import { recoverStatePackage } from "../state/recovery.mjs";
 import {
   CONFIDENTIAL_FORMATS,
+  CONFIDENTIAL_LIMITS,
   CONFIDENTIAL_SUITE,
   ConfidentialStateError,
   assertDigest,
@@ -42,12 +43,25 @@ import {
   isLinearizableCounterAuthority,
   isObservedCounterAuthorityEquivocation
 } from "./counter.mjs";
+import {
+  confidentialEpochStoreCapabilityInternal,
+  registerConfidentialEpochStoreInternal
+} from "./recovery-internal.mjs";
 
 const structuredCloneIntrinsic = globalThis.structuredClone;
 const structuredCloneReflectApply = Reflect.apply;
 
 function clone(value) {
   return structuredCloneReflectApply(structuredCloneIntrinsic, globalThis, [value]);
+}
+
+function ownConfidentialBytes(value) {
+  const view = asBytes(value);
+  const length = view === null ? null : byteLengthOfBytes(view);
+  if (length === null) return null;
+  const owned = createUint8Array(length);
+  typedArraySet(owned, view, 0);
+  return owned;
 }
 
 export class MemoryConfidentialEpochStore {
@@ -57,22 +71,14 @@ export class MemoryConfidentialEpochStore {
 
   constructor({ fault = null } = {}) {
     this.#fault = fault;
-    confidentialEpochStores.set(this, Object.freeze({
+    registerConfidentialEpochStoreInternal(this, {
       commitActive: (options) => this.#commitActive(options),
       readActive: () => this.#readActive()
-    }));
+    });
   }
 
   get active() {
     return this.#readActive();
-  }
-
-  async commitActive({
-    candidate,
-    expectedPriorConfidentialRoot,
-    fault = null
-  }) {
-    return this.#commitActive({ candidate, expectedPriorConfidentialRoot, fault });
   }
 
   #readActive() {
@@ -115,20 +121,8 @@ export class MemoryConfidentialEpochStore {
   }
 }
 
-const confidentialEpochStores = new WeakMap();
-const confidentialEpochStoreGet = WeakMap.prototype.get;
-const confidentialReflectApply = Reflect.apply;
-
 function confidentialEpochStoreCapability(store) {
-  const capability = confidentialReflectApply(
-    confidentialEpochStoreGet,
-    confidentialEpochStores,
-    [store]
-  );
-  if (!capability) {
-    throw new TypeError("registered MortalOS confidential epoch store required");
-  }
-  return capability;
+  return confidentialEpochStoreCapabilityInternal(store);
 }
 
 async function commitConfidentialActive(capability, options) {
@@ -231,7 +225,7 @@ export function validateConfidentialRotationInput(input) {
   assertDigest(inputSnapshot.next_authority_id, "/rotation/next_authority_id");
   if (
     inputSnapshot.next_custodian_key_digests.length < 1 ||
-    inputSnapshot.next_custodian_key_digests.length > 16
+    inputSnapshot.next_custodian_key_digests.length > CONFIDENTIAL_LIMITS.max_custodians
   ) {
     confidentialFail(
       "E_CONFIDENTIAL_ROTATION",
@@ -382,13 +376,10 @@ export async function createConfidentialStatePackage({
   inputBytes,
   priorStateRoot
 }) {
-  const inputView = asBytes(inputBytes);
-  const inputLength = inputView === null ? null : byteLengthOfBytes(inputView);
-  if (inputLength === null) {
+  const ownedInputBytes = ownConfidentialBytes(inputBytes);
+  if (ownedInputBytes === null) {
     throw new TypeError("state package input must be an owned Uint8Array");
   }
-  const ownedInputBytes = createUint8Array(inputLength);
-  typedArraySet(ownedInputBytes, inputView, 0);
   let confidentialValues;
   try {
     confidentialValues = snapshotNamedOwnDataValues(
@@ -413,13 +404,10 @@ export async function createConfidentialStatePackage({
   } catch {
     confidentialFail("E_CONFIDENTIAL_FORMAT", "/confidential", "own-data-record");
   }
-  const resourceView = asBytes(confidentialValues[10]);
-  const resourceLength = resourceView === null ? null : byteLengthOfBytes(resourceView);
-  if (resourceLength === null) {
+  const ownedResourceBytes = ownConfidentialBytes(confidentialValues[10]);
+  if (ownedResourceBytes === null) {
     confidentialFail("E_CONFIDENTIAL_FORMAT", "/resource", "bytes-required");
   }
-  const ownedResourceBytes = createUint8Array(resourceLength);
-  typedArraySet(ownedResourceBytes, resourceView, 0);
   const confidentialSnapshot = Object.freeze({
     authority: confidentialValues[0],
     custodians: snapshotConfidentialCustodians(confidentialValues[1]),
@@ -498,11 +486,14 @@ export async function recoverAndDecryptConfidentialState({
     priorStateRoot: expectedValues[8],
     resourceId: expectedValues[9]
   });
+  const recoveryExpectedGenomeHash = expectedSnapshot.genomeHash;
+  const recoveryExpectedNextStateRoot = expectedSnapshot.nextStateRoot;
+  const recoveryExpectedPriorStateRoot = expectedSnapshot.priorStateRoot;
   const recoveryPromise = recoverStatePackage({
     destination,
-    expectedGenomeHash: expectedSnapshot.genomeHash,
-    expectedNextStateRoot: expectedSnapshot.nextStateRoot,
-    expectedPriorStateRoot: expectedSnapshot.priorStateRoot,
+    expectedGenomeHash: recoveryExpectedGenomeHash,
+    expectedNextStateRoot: recoveryExpectedNextStateRoot,
+    expectedPriorStateRoot: recoveryExpectedPriorStateRoot,
     inputBytes,
     manifestBytes,
     receiptBytes,
@@ -579,15 +570,10 @@ export async function rotateConfidentialState({
   nextMembershipHead = null,
   priorAuthority = null
 }) {
-  const activePackageView = asBytes(activePackageBytes);
-  const activePackageLength = activePackageView === null
-    ? null
-    : byteLengthOfBytes(activePackageView);
-  if (activePackageLength === null) {
+  const ownedActivePackageBytes = ownConfidentialBytes(activePackageBytes);
+  if (ownedActivePackageBytes === null) {
     confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation", "active-package");
   }
-  const ownedActivePackageBytes = createUint8Array(activePackageLength);
-  typedArraySet(ownedActivePackageBytes, activePackageView, 0);
   const observedEquivocation = snapshotObservedCounterAuthorityEquivocation(
     equivocationEvidence
   );
@@ -644,6 +630,12 @@ export async function rotateConfidentialState({
   const nextAuthorityDescriptor = counterAuthorityDescriptor(
     nextSnapshot.authority
   );
+  const currentHeadValues = snapshotNamedOwnDataValues(
+    currentHead,
+    ["organism_id"],
+    "current rotation head"
+  );
+  const currentOrganismId = currentHeadValues[0];
   const authorized = verifyConfidentialRotationAuthorization({
     authorization,
     currentHead,
@@ -657,10 +649,10 @@ export async function rotateConfidentialState({
   if (
     current.manifest.epoch !== rotation.from_epoch ||
     current.manifest.membership_head !== rotation.current_membership_head ||
-    current.manifest.organism_id !== currentHead.organism_id ||
+    current.manifest.organism_id !== currentOrganismId ||
     nextSnapshot.epoch !== rotation.to_epoch ||
     nextSnapshot.membershipHead !== rotation.approved_membership_head ||
-    nextSnapshot.organismId !== currentHead.organism_id ||
+    nextSnapshot.organismId !== currentOrganismId ||
     nextAuthorityDescriptor.authority_id !== rotation.next_authority_id ||
     JSON.stringify(
       nextSnapshot.custodians

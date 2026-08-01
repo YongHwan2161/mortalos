@@ -208,7 +208,11 @@ function resourcePlaintextParts(resourceBytes) {
     );
   }
   if (parts.length > CONFIDENTIAL_LIMITS.max_chunks) {
-    confidentialFail("E_CONFIDENTIAL_LIMIT", "/chunks", "64");
+    confidentialFail(
+      "E_CONFIDENTIAL_LIMIT",
+      "/chunks",
+      String(CONFIDENTIAL_LIMITS.max_chunks)
+    );
   }
   return { parts, resource };
 }
@@ -224,7 +228,11 @@ export function snapshotConfidentialCustodians(custodians) {
     entries.length < 1 ||
     entries.length > CONFIDENTIAL_LIMITS.max_custodians
   ) {
-    confidentialFail("E_CONFIDENTIAL_MEMBERSHIP", "/custodians", "1..16");
+    confidentialFail(
+      "E_CONFIDENTIAL_MEMBERSHIP",
+      "/custodians",
+      `1..${CONFIDENTIAL_LIMITS.max_custodians}`
+    );
   }
   const owned = entries.map((custodian, index) => {
     exactObjectKeys(
@@ -370,7 +378,11 @@ export async function createConfidentialPackage({
     });
     const aadBytes = canonicalBytes(aad);
     if (aadBytes.byteLength > CONFIDENTIAL_LIMITS.aad_bytes) {
-      confidentialFail("E_CONFIDENTIAL_LIMIT", `/chunks/${index}/aad`, "4096");
+      confidentialFail(
+        "E_CONFIDENTIAL_LIMIT",
+        `/chunks/${index}/aad`,
+        String(CONFIDENTIAL_LIMITS.aad_bytes)
+      );
     }
     const iv = counterToIv(invocationCounter);
     const ciphertext = new Uint8Array(

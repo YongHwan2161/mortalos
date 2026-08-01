@@ -2,7 +2,7 @@
 
 Status: **ACTIVE IMPLEMENTATION SSOT — S2/S4 claims reopened; candidate promotion HOLD**
 
-Last synchronized: **2026-08-01 KST**
+Last synchronized: **2026-08-02 KST**
 
 This is the sole ordered S0–S8 execution plan. Historical receipts remain valid
 evidence for their named commits, but they do not authorize claims for a later
@@ -22,17 +22,19 @@ assumptions.
 
 ## 2. Most fundamental improvement
 
-The root problem is not a missing feature. It is an incomplete trust boundary:
-previous code sometimes branded an outer authority while calling mutable methods
-on the store behind it, or verified an object before `await` and used the caller's
-mutable graph afterwards. A green test or historical receipt could then overstate
-the current source.
+The root problem is not a missing feature. It is an incomplete trust boundary.
+Branding an outer authority did not secure mutable store methods; owning a method
+did not secure borrowed data across `await`; and hiding a non-extractable key from
+public APIs did not stop compromised same-origin code from using the persisted key
+directly. A green test or historical receipt could then overstate the current source.
 
 The governing rule is now:
 
 > Every security-sensitive async entrypoint must own its complete transitive
 > invocation before its first `await`, and every authority-changing commit must
-> use a module-private capability followed by exact readback.
+> use a module-private capability followed by exact readback. Any claim that must
+> survive same-origin compromise must additionally move key use and monotonic policy
+> state into a separate trust domain; API redaction alone is not custody isolation.
 
 This rule controls S2 sign-once, S3/S4 recovery, S4 rotation, S7 counter allocation,
 Capsule activation, fuzzing, documentation, and promotion evidence.
@@ -42,9 +44,9 @@ Capsule activation, fuzzing, documentation, and promotion evidence.
 | Stage | Candidate state | Local evidence | Promotion state |
 | --- | --- | --- | --- |
 | S0/S1 | Historical baseline and Participant Core retained | Existing exact-commit receipts | Historical promotion only |
-| S2 | Endpoint and raw store capability share one module-private closure with no raw exports; public document redacts `CryptoKey`; sign invocation owned before await | Node durable matrix and Chromium/Firefox persistent-profile matrix pass | **REOPENED / HOLD** until new exact-head receipt and review |
+| S2 | Endpoint and raw store capability share one module-private closure with no raw exports; public document redacts `CryptoKey`; sign invocation owned before await | Node durable matrix and Chromium/Firefox persistent-profile matrix pass for conforming callers | **REOPENED / HOLD**; XSS-resistant sign-once additionally requires isolated signer custody |
 | S3 | Limits generated from one protocol profile; real relay fragment data plane; activation CAS/readback is idempotent | 1 MiB reconstruction, 10,000 recovery corpus, real relay message test pass | Existing promotion remains historical; new data plane is candidate |
-| S4 | Recovery inputs owned; epoch activation uses private capability and exact readback; public decrypt/recovery results omit epoch keys | Node, Chromium, and Firefox cryptographic/rotation gates pass | **REOPENED / HOLD** until new exact-head receipt and review |
+| S4 | Recovery inputs owned; epoch activation uses private capability and exact readback; public decrypt/recovery results omit epoch keys | Node, Chromium, and Firefox cryptographic/rotation gates pass for the stated compromised-browser non-claim | **REOPENED / HOLD**; same-origin counter-key use remains outside the current custody boundary |
 | S5 | Authority-free `@mortal-os/core` export map and `mortalos` CLI | SDK allowlist, CLI, and package allowlist pass | Candidate only |
 | S6 | Canonical Continuity Capsule binds lineage, latest state transition, manifest, receipt, chunks, and exact resource | Cross-process CLI verification and tamper rejection pass | Candidate only |
 | S7 | Majority counter store, three process-isolated HTTP CAS replicas, disk restart, repair, and topology validator | Concurrent coordinators, one replica loss, restart, and no-overlap gates pass | Local topology PASS; real independent providers/admins **HOLD** |
@@ -151,6 +153,10 @@ Pass criteria:
 - the public module namespace contains no raw store capability and hostile
   replacement of public `read`/`write` methods cannot affect endpoint commits.
 
+Boundary: these criteria prove public-API redaction and conforming concurrency, not
+same-origin/XSS-resistant sign-once. Strong custody is a separate P0 gate requiring
+an isolated signer that owns both key use and monotonic journal state.
+
 ## 9. S3 — Protocol profile and real chunk data plane
 
 Goal: one generated profile governs state, transport, provider, and confidential
@@ -203,6 +209,11 @@ Pass criteria:
 - non-extractable AES/RSA/Ed25519 key properties hold internally and package/SDK,
   CLI, capsule, logs, and public documents contain no private handle;
 - one-million IVs contain no duplicate and rotation blocks the old authority.
+
+Boundary: the current browser adapter persists a non-extractable key in same-origin
+IndexedDB. This blocks export but not direct `sign` use by compromised same-origin
+code. Strong counter custody cannot pass until signing and counter state are moved
+together to a separate origin/service or hardware authorization domain.
 
 ## 11. S5 — SDK and CLI
 

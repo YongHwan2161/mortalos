@@ -8,12 +8,16 @@ import {
 import {
   LinearizableCounterAuthority,
   createCounterAuthorityFacade,
+  deriveCounterAuthorityId,
   deriveConfidentialEpochId,
   inspectCounterAuthority,
   isLinearizableCounterAuthority,
   observeCounterAuthorityEquivocation,
   retireCounterAuthority
 } from "../src/confidential/counter.mjs";
+import {
+  registerCounterAuthorityStoreInternal
+} from "../src/confidential/counter-authority-internal.mjs";
 import { randomTagged } from "../src/confidential/format.mjs";
 import { generateCustodianEncryptionKeyPair } from "../src/confidential/keys.mjs";
 import { createConfidentialPackage } from "../src/confidential/package.mjs";
@@ -121,24 +125,81 @@ async function createRotationAuthorization(context, rotation) {
   });
 }
 
-async function openPersistentAuthority(databaseName, material = null) {
+async function openPersistentAuthority(databaseName) {
   const store = new IndexedDbCounterAuthorityStore({ databaseName });
-  const keyMaterial = material ?? (await store.loadOrCreateKeyMaterial());
-  const authority = new LinearizableCounterAuthority({
-    authorityId: keyMaterial.authorityId,
-    authorityPublicKey: keyMaterial.authorityPublicKey,
-    privateKey: keyMaterial.privateKey,
-    store
-  });
+  const authority = await LinearizableCounterAuthority.create({ store });
   const facade = createCounterAuthorityFacade({
     authority,
     close: () => store.close()
   });
-  return Object.freeze({ authority, facade, material: keyMaterial, store });
+  return Object.freeze({
+    authority,
+    facade,
+    material: Object.freeze({
+      authorityId: facade.descriptor.authority_id,
+      authorityPublicKey: facade.descriptor.authority_public_key
+    }),
+    store
+  });
 }
 
-async function createPersistentFixture(databaseName, rotationContext) {
-  const persistent = await openPersistentAuthority(databaseName);
+async function createForkableBrowserAuthorityPair() {
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "Ed25519" },
+    false,
+    ["sign", "verify"]
+  );
+  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
+  const authorityPublicKey = `ed25519:${encodeBase64Url(raw)}`;
+  const material = Object.freeze({
+    authorityId: deriveCounterAuthorityId(authorityPublicKey),
+    authorityPublicKey,
+    privateKey: keyPair.privateKey
+  });
+  const open = async () => {
+    let lost = false;
+    let record = null;
+    const store = {};
+    const authorityLost = () => {
+      const error = new Error("E_CONFIDENTIAL_COUNTER_AUTHORITY: test custody lost");
+      error.code = "E_CONFIDENTIAL_COUNTER_AUTHORITY";
+      throw error;
+    };
+    const inspect = async () => {
+      if (lost) authorityLost();
+      return record === null ? null : structuredClone(record);
+    };
+    const transact = async (_epochId, operation) => {
+      if (lost) authorityLost();
+      const outcome = await operation(record === null ? null : structuredClone(record));
+      record = outcome.next === null ? null : structuredClone(outcome.next);
+      return outcome.value;
+    };
+    registerCounterAuthorityStoreInternal(store, {
+      inspect,
+      loadAuthorityCapability: async () => Object.freeze({
+        authorityId: material.authorityId,
+        authorityPublicKey: material.authorityPublicKey,
+        sign: async (message) => new Uint8Array(
+          await crypto.subtle.sign("Ed25519", material.privateKey, new Uint8Array(message))
+        )
+      }),
+      transact
+    });
+    Object.defineProperties(store, {
+      inspect: { value: inspect },
+      lose: { value: async () => { lost = true; record = null; } },
+      transact: { value: transact }
+    });
+    const authority = await LinearizableCounterAuthority.create({ store });
+    const facade = createCounterAuthorityFacade({ authority, close: () => {} });
+    return Object.freeze({ authority, facade, store });
+  };
+  return Object.freeze({ left: await open(), right: await open() });
+}
+
+async function createPersistentFixture(databaseName, rotationContext, persistent = null) {
+  persistent ??= await openPersistentAuthority(databaseName);
   const keyPairs = await Promise.all([
     generateCustodianEncryptionKeyPair(randomTagged("mortalos-key:")),
     generateCustodianEncryptionKeyPair(randomTagged("mortalos-key:")),
@@ -338,9 +399,11 @@ globalThis.__MORTALOS_S4_COUNTER_AUTHORITY__ = Object.freeze({
         throw new Error("spoofed prototype transaction");
       };
       const rotationContext = await createRotationContext();
+      const lostControl = await createForkableBrowserAuthorityPair();
       const lostCurrent = await createPersistentFixture(
         names[0],
-        rotationContext
+        rotationContext,
+        lostControl.left
       );
       closeables.push(lostCurrent.facade);
       IndexedDbCounterAuthorityStore.prototype.inspect = originalInspect;
@@ -452,15 +515,14 @@ globalThis.__MORTALOS_S4_COUNTER_AUTHORITY__ = Object.freeze({
         transitionId: "chromium-persistent-lost-rotation"
       });
 
+      const compromised = await createForkableBrowserAuthorityPair();
       const equivocationCurrent = await createPersistentFixture(
         names[2],
-        rotationContext
+        rotationContext,
+        compromised.left
       );
       closeables.push(equivocationCurrent.facade);
-      const fork = await openPersistentAuthority(
-        names[3],
-        equivocationCurrent.material
-      );
+      const fork = compromised.right;
       closeables.push(fork.facade);
       const priorState = await equivocationCurrent.facade.inspect(
         equivocationCurrent.epochId
@@ -482,21 +544,12 @@ globalThis.__MORTALOS_S4_COUNTER_AUTHORITY__ = Object.freeze({
         equivocationCurrent.facade.reserveRange(request),
         fork.facade.reserveRange({ ...request, count: "2" })
       ]);
-      IndexedDbCounterAuthorityStore.prototype.inspect = async () => ({
-        ...priorState,
-        retired: true
-      });
-      IndexedDbCounterAuthorityStore.prototype.transact = async (
-        _epochId,
-        operation
-      ) => (await operation(priorState)).value;
       const evidence = await observeCounterAuthorityEquivocation({
         authority: equivocationCurrent.facade,
         left: left.receipt,
         right: right.receipt
       });
-      const actualRetired = await originalInspect.call(
-        equivocationCurrent.store,
+      const actualRetired = await equivocationCurrent.facade.inspect(
         equivocationCurrent.epochId
       );
       const equivocationNext = await openPersistentAuthority(names[4]);

@@ -60,25 +60,40 @@ export async function generateCustodianEncryptionKeyPair(custodianId) {
 }
 
 export async function importCustodianPublicKey(descriptor) {
+  let descriptorValues;
+  try {
+    descriptorValues = snapshotNamedOwnDataValues(
+      descriptor,
+      ["custodian_id", "encryption_key_digest", "encryption_public_key"],
+      "custodian public-key descriptor"
+    );
+  } catch {
+    confidentialFail("E_CONFIDENTIAL_KEY", "/custodian", "owned-data");
+  }
+  const ownedDescriptor = Object.freeze({
+    custodian_id: descriptorValues[0],
+    encryption_key_digest: descriptorValues[1],
+    encryption_public_key: descriptorValues[2]
+  });
   exactObjectKeys(
     descriptor,
     ["custodian_id", "encryption_key_digest", "encryption_public_key"],
     "/custodian"
   );
-  assertCustodianId(descriptor.custodian_id, "/custodian/custodian_id");
+  assertCustodianId(ownedDescriptor.custodian_id, "/custodian/custodian_id");
   assertDigest(
-    descriptor.encryption_key_digest,
+    ownedDescriptor.encryption_key_digest,
     "/custodian/encryption_key_digest"
   );
   const spki = taggedBytes(
-    descriptor.encryption_public_key,
+    ownedDescriptor.encryption_public_key,
     "spki:",
     422,
     "/custodian/encryption_public_key"
   );
   if (
     domainHash(CONFIDENTIAL_DOMAINS.encryption_key, spki) !==
-    descriptor.encryption_key_digest
+    ownedDescriptor.encryption_key_digest
   ) {
     confidentialFail(
       "E_CONFIDENTIAL_KEY",
@@ -210,50 +225,65 @@ export async function unwrapEpochKey({
   wrap
 }) {
   try {
+    const wrapNames = [
+      "custodian_encryption_key",
+      "custodian_id",
+      "epoch",
+      "epoch_id",
+      "format",
+      "label_digest",
+      "suite",
+      "wrapped_epoch_key_base64url",
+      "wrapped_epoch_key_digest"
+    ];
+    const wrapValues = snapshotNamedOwnDataValues(wrap, wrapNames, "epoch-key wrap");
+    const custodianValues = snapshotNamedOwnDataValues(
+      custodian,
+      ["custodian_id", "encryption_key_digest", "encryption_public_key"],
+      "epoch-key unwrap custodian"
+    );
+    const ownedWrap = Object.freeze(Object.fromEntries(
+      wrapNames.map((name, index) => [name, wrapValues[index]])
+    ));
+    const ownedCustodian = Object.freeze({
+      custodian_id: custodianValues[0],
+      encryption_key_digest: custodianValues[1],
+      encryption_public_key: custodianValues[2]
+    });
     exactObjectKeys(
       wrap,
-      [
-        "custodian_encryption_key",
-        "custodian_id",
-        "epoch",
-        "epoch_id",
-        "format",
-        "label_digest",
-        "suite",
-        "wrapped_epoch_key_base64url",
-        "wrapped_epoch_key_digest"
-      ],
+      wrapNames,
       "/wrap"
     );
     if (
-      wrap.format !== CONFIDENTIAL_FORMATS.wrap ||
-      wrap.suite !== CONFIDENTIAL_SUITE ||
-      wrap.epoch !== epoch ||
-      wrap.epoch_id !== epochId ||
-      wrap.custodian_id !== custodian.custodian_id ||
-      wrap.custodian_encryption_key !== custodian.encryption_key_digest
+      ownedWrap.format !== CONFIDENTIAL_FORMATS.wrap ||
+      ownedWrap.suite !== CONFIDENTIAL_SUITE ||
+      ownedWrap.epoch !== epoch ||
+      ownedWrap.epoch_id !== epochId ||
+      ownedWrap.custodian_id !== ownedCustodian.custodian_id ||
+      ownedWrap.custodian_encryption_key !== ownedCustodian.encryption_key_digest
     ) {
       confidentialFail("E_CONFIDENTIAL_WRAP", "/wrap", "binding");
     }
     const label = createWrapLabel({
-      custodian,
+      custodian: ownedCustodian,
       epoch,
       epochId,
       membershipHead,
       organismId
     });
     if (
-      wrap.label_digest !==
+      ownedWrap.label_digest !==
       canonicalDomainHash(CONFIDENTIAL_DOMAINS.wrap_label, label)
     ) {
       confidentialFail("E_CONFIDENTIAL_WRAP", "/wrap/label_digest", "digest");
     }
-    const wrapped = decodeBase64Url(wrap.wrapped_epoch_key_base64url);
+    const wrapped = decodeBase64Url(ownedWrap.wrapped_epoch_key_base64url);
     if (
       !wrapped ||
       wrapped.byteLength !== CONFIDENTIAL_LIMITS.rsa_wrapped_bytes ||
       domainHash(CONFIDENTIAL_DOMAINS.wrap, wrapped) !==
-        wrap.wrapped_epoch_key_digest
+        ownedWrap.wrapped_epoch_key_digest
     ) {
       confidentialFail("E_CONFIDENTIAL_WRAP", "/wrap", "ciphertext");
     }

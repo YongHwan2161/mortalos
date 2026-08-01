@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   LinearizableCounterAuthority,
   deriveConfidentialEpochId,
-  generateCounterAuthorityKeyMaterial,
   verifyCounterReservationReceipt
 } from "../src/confidential/counter.mjs";
 import { randomTagged } from "../src/confidential/format.mjs";
@@ -42,10 +41,10 @@ function topology() {
   };
 }
 
-function epochIdFor(material) {
+function epochIdFor(authority) {
   return deriveConfidentialEpochId({
-    authorityId: material.authorityId,
-    authorityPublicKey: material.authorityPublicKey,
+    authorityId: authority.descriptor.authority_id,
+    authorityPublicKey: authority.descriptor.authority_public_key,
     custodianEncryptionKeys: [randomTagged("sha256:")],
     epoch: "7",
     membershipHead: randomTagged("sha256:"),
@@ -54,23 +53,14 @@ function epochIdFor(material) {
   });
 }
 
-function authority(material, replicas) {
-  return new LinearizableCounterAuthority({
-    authorityId: material.authorityId,
-    authorityPublicKey: material.authorityPublicKey,
-    privateKey: material.privateKey,
-    store: new QuorumCounterAuthorityStore({ replicas })
-  });
-}
-
 test("S7 majority counter store has one winner across coordinators, partitions, repair, and restart", async () => {
   const replicas = ["a", "b", "c"].map(
     (failureDomain) => new MemoryCounterReplica({ failureDomain })
   );
-  const material = await generateCounterAuthorityKeyMaterial();
-  const epochId = epochIdFor(material);
-  let left = authority(material, replicas);
-  let right = authority(material, replicas);
+  const store = new QuorumCounterAuthorityStore({ replicas });
+  let left = await LinearizableCounterAuthority.create({ store });
+  let right = await LinearizableCounterAuthority.create({ store });
+  const epochId = epochIdFor(left);
   const intervals = [];
 
   for (let round = 0; round < 96; round += 1) {
@@ -104,8 +94,8 @@ test("S7 majority counter store has one winner across coordinators, partitions, 
     if (round % 8 === 2) replicas[round % replicas.length].setOnline(false);
     if (round % 8 === 3) replicas.forEach((replica) => replica.restart());
     if (round % 12 === 5) {
-      left = authority(material, replicas);
-      right = authority(material, replicas);
+      left = await LinearizableCounterAuthority.create({ store });
+      right = await LinearizableCounterAuthority.create({ store });
     }
   }
 
@@ -161,10 +151,13 @@ test("S7 stale repair cannot roll back a newer quorum revision", async () => {
     new MemoryCounterReplica({ failureDomain: "b" }),
     new MemoryCounterReplica({ failureDomain: "c" })
   ];
-  const material = await generateCounterAuthorityKeyMaterial();
-  const epochId = epochIdFor(material);
-  const slow = authority(material, replicas);
-  const fast = authority(material, replicas);
+  const slow = await LinearizableCounterAuthority.create({
+    store: new QuorumCounterAuthorityStore({ replicas })
+  });
+  const fast = await LinearizableCounterAuthority.create({
+    store: new QuorumCounterAuthorityStore({ replicas })
+  });
+  const epochId = epochIdFor(slow);
   const first = slow.reserveRange({
     count: "1",
     epoch: "7",

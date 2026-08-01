@@ -6,8 +6,11 @@ import {
   LinearizableCounterAuthority,
   MemoryCounterAuthorityStore,
   deriveConfidentialEpochId,
-  generateCounterAuthorityKeyMaterial
+  deriveCounterAuthorityId
 } from "../src/confidential/counter.mjs";
+import {
+  registerCounterAuthorityStoreInternal
+} from "../src/confidential/counter-authority-internal.mjs";
 import {
   canonicalBytes
 } from "../src/codec.mjs";
@@ -144,20 +147,84 @@ export function deterministicSecret(size = 1_048_576) {
   return bytes;
 }
 
+// Test-only model of a compromised external custody service. The raw key never
+// leaves this helper; production APIs expose no equivalent construction path.
+export async function createForkableCounterAuthorityPair() {
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "Ed25519" },
+    false,
+    ["sign", "verify"]
+  );
+  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
+  const authorityPublicKey = `ed25519:${encodeBase64Url(raw)}`;
+  const material = Object.freeze({
+    authorityId: deriveCounterAuthorityId(authorityPublicKey),
+    authorityPublicKey,
+    privateKey: keyPair.privateKey
+  });
+  const createStore = () => {
+    let lost = false;
+    let record = null;
+    const store = {};
+    const authorityLost = () => {
+      const error = new Error("E_CONFIDENTIAL_COUNTER_AUTHORITY: test custody lost");
+      error.code = "E_CONFIDENTIAL_COUNTER_AUTHORITY";
+      throw error;
+    };
+    const inspect = async () => {
+      if (lost) authorityLost();
+      return record === null ? null : structuredClone(record);
+    };
+    const transact = async (_epochId, operation) => {
+      if (lost) authorityLost();
+      const outcome = await operation(record === null ? null : structuredClone(record));
+      record = outcome.next === null ? null : structuredClone(outcome.next);
+      return outcome.value;
+    };
+    registerCounterAuthorityStoreInternal(store, {
+      inspect,
+      loadAuthorityCapability: async () => Object.freeze({
+        authorityId: material.authorityId,
+        authorityPublicKey: material.authorityPublicKey,
+        sign: async (message) => new Uint8Array(
+          await crypto.subtle.sign("Ed25519", material.privateKey, new Uint8Array(message))
+        )
+      }),
+      transact
+    });
+    Object.defineProperties(store, {
+      inspect: { value: inspect },
+      lose: { value: async () => { lost = true; record = null; } },
+      transact: { value: transact }
+    });
+    return Object.freeze(store);
+  };
+  const leftStore = createStore();
+  const rightStore = createStore();
+  return Object.freeze({
+    left: await LinearizableCounterAuthority.create({ store: leftStore }),
+    leftStore,
+    right: await LinearizableCounterAuthority.create({ store: rightStore }),
+    rightStore
+  });
+}
+
 export async function createConfidentialFixture({
+  counterAuthority = null,
+  counterAuthorityStore = null,
   epoch = "0",
   priorConfidentialRoot = randomTagged("sha256:"),
   resourceBytes = deterministicSecret(131_072),
   transitionId = "s4-reference"
 } = {}) {
   const rotationContext = createRotationContext();
-  const counterStore = new MemoryCounterAuthorityStore();
-  const counterKeyMaterial = await generateCounterAuthorityKeyMaterial();
-  const authority = new LinearizableCounterAuthority({
-    authorityId: counterKeyMaterial.authorityId,
-    authorityPublicKey: counterKeyMaterial.authorityPublicKey,
-    privateKey: counterKeyMaterial.privateKey,
+  const counterStore = counterAuthorityStore ?? new MemoryCounterAuthorityStore();
+  const authority = counterAuthority ?? await LinearizableCounterAuthority.create({
     store: counterStore
+  });
+  const counterKeyMaterial = Object.freeze({
+    authorityId: authority.descriptor.authority_id,
+    authorityPublicKey: authority.descriptor.authority_public_key
   });
   const keyPairs = [];
   for (let index = 0; index < 3; index += 1) {

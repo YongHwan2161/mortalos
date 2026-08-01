@@ -25,8 +25,8 @@ import {
   ParticipantCore
 } from "../participant/core.mjs";
 import {
-  createStoredWebCryptoKey,
-  signBytes
+  assertNonExtractableSigningKey,
+  custodianFromPublicKeyBytes
 } from "../participant/webcrypto-key-store.mjs";
 
 const DATABASE = "mortalos-participant";
@@ -38,9 +38,49 @@ const weakMapGet = WeakMap.prototype.get;
 const weakMapSet = WeakMap.prototype.set;
 const reflectApply = Reflect.apply;
 const structuredCloneIntrinsic = globalThis.structuredClone;
+const subtle = globalThis.crypto?.subtle;
+const subtlePrototype = globalThis.SubtleCrypto?.prototype;
+if (!subtle || !subtlePrototype) {
+  throw new Error("durable WebCrypto signing requires native SubtleCrypto");
+}
+const subtleExportKey = subtlePrototype.exportKey;
+const subtleGenerateKey = subtlePrototype.generateKey;
+const subtleSign = subtlePrototype.sign;
 
 function clone(value) {
   return reflectApply(structuredCloneIntrinsic, globalThis, [value]);
+}
+
+async function createStoredWebCryptoKey() {
+  const generated = await reflectApply(subtleGenerateKey, subtle, [
+    { name: "Ed25519" }, false, ["sign", "verify"]
+  ]);
+  await assertNonExtractableSigningKey(generated.privateKey);
+  const raw = new Uint8Array(
+    await reflectApply(subtleExportKey, subtle, ["raw", generated.publicKey])
+  );
+  const custodian = custodianFromPublicKeyBytes(raw);
+  return Object.freeze({
+    key_id: custodian.key_id,
+    private_key: generated.privateKey,
+    public_key: custodian.public_key,
+    public_key_raw: raw.buffer
+  });
+}
+
+async function signBytes(keyId, privateKey, message) {
+  if (typeof keyId !== "string") throw new TypeError("bounded key ID required");
+  const ownedMessage = new Uint8Array(message);
+  await assertNonExtractableSigningKey(privateKey);
+  const signature = await reflectApply(subtleSign, subtle, [
+    "Ed25519",
+    privateKey,
+    ownedMessage
+  ]);
+  return Object.freeze({
+    key_id: keyId,
+    signature: `ed25519:${encodeBase64Url(new Uint8Array(signature))}`
+  });
 }
 
 function registerDurableStore(store, capability) {

@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-01 KST**
+Last synchronized: **2026-08-02 KST**
 
 ## Current authority
 
