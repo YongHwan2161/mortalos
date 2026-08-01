@@ -51,6 +51,10 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   separately controlled GitHub reviewer principal is provisioned. New exact-head
   receipts, immutable native approval, expected-head merge, post-merge CI/deploy,
   real distinct-provider/admin/credential S7 topology, and burn-in remain open.
+- Recurrence gate: `browser-parity` is a separate required GitHub check. It installs
+  and probes Chromium, Firefox, and WebKit, runs full custody where the native
+  signer capability exists, and enforces the WebKit verifier-only fail-closed
+  profile instead of accepting an extractable software-key fallback.
 
 ### HISTORICAL — Implement S4 confidential state and epoch-key recovery
 

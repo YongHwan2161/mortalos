@@ -31,6 +31,7 @@
         "do_not_enforce_on_create": true,
         "required_status_checks": [
           { "context": "Trusted main-base policy" },
+          { "context": "browser-parity" },
           { "context": "protocol" }
         ],
         "strict_required_status_checks_policy": true

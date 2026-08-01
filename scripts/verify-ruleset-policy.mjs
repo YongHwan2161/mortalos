@@ -30,7 +30,7 @@ const checks = byType.required_status_checks.parameters;
 assert.equal(checks.strict_required_status_checks_policy, true);
 assert.deepEqual(
   checks.required_status_checks.map(({ context }) => context).sort(),
-  ["Trusted main-base policy", "protocol"]
+  ["Trusted main-base policy", "browser-parity", "protocol"]
 );
 assert.equal(identity.format, "mortalos-reviewer-identity-policy/1");
 assert.equal(identity.native_approval.required, true);

@@ -38,10 +38,11 @@ only because Ed25519 WebCrypto is unavailable. All new promotion receipts, immut
 review, merge, post-merge CI, and live readback remain **HOLD**.
 
 GitHub ruleset `20168959` is active on `main` with no bypass and requires the trusted
-policy check, protocol check, current base, resolved threads, stale-review dismissal,
-and one native approval from someone other than the last pusher. The separate
-reviewer GitHub principal is not provisioned, so merge authority is deliberately
-**HOLD** rather than falling back to the implementation account.
+policy check, protocol check, required Chromium/Firefox/WebKit capability-profiled
+browser parity check, current base, resolved threads, stale-review dismissal, and
+one native approval from someone other than the last pusher. The separate reviewer
+GitHub principal is not provisioned, so merge authority is deliberately **HOLD**
+rather than falling back to the implementation account.
 
 ## Historical promotion lineage
 
