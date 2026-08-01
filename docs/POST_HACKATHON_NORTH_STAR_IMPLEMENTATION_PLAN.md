@@ -274,21 +274,32 @@ verifier-only profile. Weakening key containment is not an acceptable workaround
 
 ## 15. GitHub merge authority
 
-Goal: native branch protection requires an approval from a GitHub identity that is
-not the author/implementer and dismisses approval when the head changes.
+Goal: native branch protection requires both a signed exact-snapshot attestation
+and approval from a separately credentialed GitHub identity, dismissing approval
+when the head changes.
 
 Pass criteria:
 
 - default-branch ruleset requires pull request, one native approval, code-owner
   review where applicable, conversation resolution, and required CI;
 - force push, deletion, and bypass are disabled except documented break-glass;
-- reviewer bot/App or machine account has its own identity and least-privilege
-  review permission;
+- GitHub App `mortalos-review-gate` is repository-scoped, cannot bypass the ruleset,
+  and alone may emit required check `MortalOS Reviewer Attestation`;
+- machine-user `ant713900-web` is repository-scoped and has the minimum GitHub role
+  that makes native approval count; it has no ruleset bypass;
+- App and machine-user credentials remain outside the repository and every workflow
+  that can execute pull-request code;
+- the external runner binds head, body digest, base, changed-file digest,
+  Git-object diff digest, exact CI run identities, reviewer version, and independent
+  receipt digest before either attestation or approval;
 - an approval binds the exact immutable head and a changed head dismisses it;
-- the reviewer cannot alter the implementation branch or its own policy workflow.
+- the reviewer cannot alter the implementation branch or its own policy workflow;
+- machine-user 2FA, passkey, recovery isolation, and login alerts pass live preflight.
 
-Repository policy files may be implemented locally, but the gate remains **HOLD**
-until the external identity is provisioned and the live ruleset readback proves it.
+The identity and ruleset are provisioned. Promotion remains **HOLD** until the new
+policy head passes exact-head CI, independent review, App attestation, and native
+approval. This proves separate GitHub credentials under one operator, not separate
+human or administrative control.
 
 ## 16. Completion and explicit nonclaims
 

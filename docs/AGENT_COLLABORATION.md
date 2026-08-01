@@ -161,7 +161,26 @@ For account-level enforcement, configure a GitHub ruleset for `main` that requir
 4. a branch-up-to-date requirement so a policy result cannot outlive a changed base
 5. conversation resolution
 6. no administrator bypass for normal agent work
-7. approval by a separately authenticated reviewer GitHub App or bot
+7. a successful `MortalOS Reviewer Attestation` check emitted only by GitHub App
+   `mortalos-review-gate` (App ID `4456370`)
+8. native approval by machine-user `ant713900-web`, which must retain repository
+   `write` solely because GitHub does not count approvals from read-only users
 
-Until that external configuration exists, the reviewer agent is a process-level and
-immutable-SHA gate, not a cryptographically distinct GitHub principal.
+The App and machine-user have different jobs. The App check binds one canonical
+`mortalos-review-attestation/1` snapshot containing the base/head, exact API-body
+digest, paginated changed-file digest, Git-object diff digest, trusted policy run,
+required exact-head check runs, reviewer version, and independent PASS-receipt
+digest. The machine-user recomputes the same snapshot, requires the successful App
+check with the same digest in its `external_id`, and only then submits native
+`APPROVE` for that exact head.
+
+Neither credential may be stored in this repository or exposed to a workflow that
+executes pull-request code. The reviewer runner executes from an operator-protected
+directory outside the checkout. A head, body, base, file set, diff, policy run,
+required check, reviewer receipt, App identity, or attestation-digest mismatch fails
+closed before approval.
+
+This is separate GitHub credential identity, not separate human, administrator,
+organization, provider, host, or custody control. Both technical identities remain
+under the same project operator until a genuinely independent control plane is
+provisioned.

@@ -65,8 +65,10 @@ verified, promoted, and explicitly unclaimed behavior.
    interoperability receipt.
 3. **P1 — production S7:** provision genuinely distinct providers/admins/credentials,
    run 100 failure trials, then immutable seven-day burn-in.
-4. **P1 — GitHub merge authority:** live ruleset plus a separately provisioned
-   reviewer identity that gives native exact-head approvals.
+4. **P1 — GitHub merge authority:** complete the current exact-head promotion using
+   the live no-bypass ruleset, GitHub App attestation check, and separately
+   credentialed machine-user native approval. This closes platform identity
+   separation only; independent administrative control remains a later topology.
 5. **P2 — WebKit signer parity:** close the capability-routed full S2/S4 matrix on
    a release runner that passes the protocol-ceiling signing probe; never infer full
    capability from key generation or fall back to exportable private bytes.

@@ -47,10 +47,15 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
   stage verifiers passed. Actual Chromium and Firefox passed the full signer/custody
   path; WebKit passed the portable verifier but remains fail-closed for signing
   because its current WebCrypto runtime does not implement Ed25519.
-- Promotion HOLD (2026-08-01): the active main ruleset is `20168959`, but no
-  separately controlled GitHub reviewer principal is provisioned. New exact-head
-  receipts, immutable native approval, expected-head merge, post-merge CI/deploy,
-  real distinct-provider/admin/credential S7 topology, and burn-in remain open.
+- Promotion HOLD (2026-08-02): machine-user `ant713900-web` is now a separately
+  credentialed repository-write principal and GitHub App `mortalos-review-gate`
+  is installed repository-only. The policy remediation adds an App-owned exact-
+  snapshot required check and an external runner contract that binds base/head,
+  API-body, changed-file and Git-object diff digests, exact CI runs, reviewer
+  version, and PASS-receipt digest before native approval. The changed head still
+  requires complete CI, immutable review, App attestation, native approval,
+  expected-head merge, post-merge CI/deploy, real distinct-provider/admin topology,
+  and burn-in. The two GitHub credentials remain under one project operator.
 - Recurrence gate: `browser-parity` is a separate required GitHub check. It installs
   and probes Chromium, Firefox, and WebKit, runs full custody where the native
   signer capability exists, and enforces the WebKit verifier-only fail-closed

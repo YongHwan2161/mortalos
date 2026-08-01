@@ -1640,3 +1640,25 @@ result, and reproducible verification.
   frozen as a new direct-main source commit, then pass an uninterrupted exact-source
   suite before a fresh receipt promotion, replacement PR, immutable independent
   review, expected-head merge, exact-main verification, and deployment.
+
+## 2026-08-02 — Separate reviewer identity and dual attestation gate
+
+- GitHub App `mortalos-review-gate` was installed only on
+  `YongHwan2161/mortalos`. Its first exact-head `APPROVE` proved a separate App
+  identity but did not count toward branch protection because GitHub Apps are not
+  write collaborators.
+- Machine-user `ant713900-web` accepted repository `write`, has no administrator or
+  ruleset bypass, and issued native review `4834922160` for exact head `e7ccbba…`.
+  GitHub changed PR #51 from `REVIEW_REQUIRED/BLOCKED` to `APPROVED/CLEAN`.
+- That approval intentionally exposed an SSOT mismatch: the candidate policy still
+  recorded a null reviewer principal. This remediation replaces that HOLD record
+  with the actual machine-user, explicitly records same-operator limitations, and
+  requires both native approval and App-owned check `MortalOS Reviewer Attestation`.
+- `security/reviewer-attestation.mjs` defines one canonical snapshot covering base,
+  head, exact PR-body digest, paginated changed-file digest, Git-object diff digest,
+  trusted policy run, required exact-head runs, reviewer version, PASS-receipt
+  digest, and review time. Focused mutation tests prove every bound field changes
+  the digest and stale, foreign, incomplete, or duplicate evidence fails closed.
+- Credentials are forbidden from repository files and PR-executing workflows. The
+  operational runner is provisioned outside the checkout. The policy still does not
+  claim separate human, administrator, provider, host, or custody control.

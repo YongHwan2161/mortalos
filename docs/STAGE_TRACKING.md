@@ -41,10 +41,14 @@ merge, post-merge CI, and live readback remain **HOLD**.
 
 GitHub ruleset `20168959` is active on `main` with no bypass and requires the trusted
 policy check, protocol check, required Chromium/Firefox/WebKit capability-profiled
-browser parity check, current base, resolved threads, stale-review dismissal, and
-one native approval from someone other than the last pusher. The separate reviewer
-GitHub principal is not provisioned, so merge authority is deliberately **HOLD**
-rather than falling back to the implementation account.
+browser parity check, current base, resolved threads, stale-review dismissal, a
+GitHub App `MortalOS Reviewer Attestation` exact-snapshot check, and one native
+approval from someone other than the last pusher. Machine-user `ant713900-web` is
+the separately credentialed native principal with repository `write`; GitHub App
+`mortalos-review-gate` is the attester. Both remain controlled by the same project
+operator, so this is not independent human, administrator, provider, or custody
+evidence. The current candidate remains **HOLD** until its changed policy head passes
+fresh CI, independent review, App attestation, and native approval.
 
 ## Historical promotion lineage
 

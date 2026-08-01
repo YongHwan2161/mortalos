@@ -32,7 +32,8 @@
         "required_status_checks": [
           { "context": "Trusted main-base policy" },
           { "context": "browser-parity" },
-          { "context": "protocol" }
+          { "context": "protocol" },
+          { "context": "MortalOS Reviewer Attestation", "integration_id": 4456370 }
         ],
         "strict_required_status_checks_policy": true
       }
