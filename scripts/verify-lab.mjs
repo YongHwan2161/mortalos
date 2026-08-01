@@ -697,9 +697,9 @@ async function runDurableProof(browser, serverUrl) {
     assert.equal(created.sequence, "0");
     assert.equal(created.pulse_count, 0);
     assert.deepEqual(created.storage, [
-      "IndexedDB non-extractable CryptoKey",
+      "same-origin IndexedDB key (export-blocking only)",
       "canonical evidence",
-      "sign-once journal",
+      "conforming-client sign-once journal",
       "state references"
     ]);
     assert.deepEqual(await storageSnapshot(page), {
