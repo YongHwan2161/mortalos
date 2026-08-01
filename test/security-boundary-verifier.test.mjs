@@ -72,6 +72,10 @@ test("security boundary AST propagates alias, shallow-freeze, spread, and destru
     {
       expected: "body",
       source: "const { body } = borrowed; await pause(); return body;"
+    },
+    {
+      expected: "invocation",
+      source: "const invocation = {}; invocation.request = borrowed; await pause(); return invocation.request.body;"
     }
   ];
   for (const { expected, source } of corpus) {

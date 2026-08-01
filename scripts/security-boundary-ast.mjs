@@ -82,6 +82,11 @@ function isIdentifierReference(node, ancestors) {
 function bindingNames(pattern, names = []) {
   if (!pattern) return names;
   if (pattern.type === "Identifier") names.push(pattern.name);
+  else if (pattern.type === "MemberExpression") {
+    let target = pattern.object;
+    while (target?.type === "MemberExpression") target = target.object;
+    if (target?.type === "Identifier") names.push(target.name);
+  }
   else if (pattern.type === "RestElement") bindingNames(pattern.argument, names);
   else if (pattern.type === "AssignmentPattern") bindingNames(pattern.left, names);
   else if (pattern.type === "ArrayPattern") {
