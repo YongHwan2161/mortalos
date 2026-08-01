@@ -5,8 +5,9 @@ state/transport/provider/confidential ceilings. A 64 KiB state chunk is carried 
 two bounded 32 KiB relay fragments, each domain-digested and reassembled only after
 exact message/chunk/root verification. Final activation uses expected-prior CAS,
 exact readback, and idempotent acceptance of the same already-active candidate. The
-publisher owns the outer chunk list and every nested byte array before its first
-transport await; recovery accepts only a module-branded destination capability.
+publisher owns the transport capability, outer chunk list, each nested byte array,
+and a single-chunk invocation before its first transport await; recovery accepts
+only a module-branded destination capability.
 
 Status: **S3 CANDIDATE — receipt, independent review, promotion, and exact-main
 deployment required**

@@ -129,8 +129,8 @@ Implemented work:
 - registered durable stores hold module-private read/write closures;
 - endpoint code ignores replaced own/prototype `read` and `write` methods;
 - body, proposal, purpose, key id, and message are owned before the first await;
-- the public durable document is constructed without placing the private key in the
-  clone graph, and contains key id and public key only;
+- endpoint and store diagnostics are constructed without placing the private key in
+  the clone graph, contain key id and public key only, and reject public raw writes;
 - signer and WebCrypto facade injection cannot receive the key: signing calls a
   captured native intrinsic and the optional test boundary receives one string;
 - expected-revision CAS occurs before signing and exact replay restores authority.
@@ -142,8 +142,8 @@ Pass criteria:
 - cold restart, expiry rollback latch, migration, A/B/C loss, and D repair pass in
   actual Chromium and Firefox;
 - accessor/Proxy/prototype/store/array fuzz releases no duplicate signature;
-- `JSON.stringify(endpoint.document)` contains neither `private_key` nor a
-  `CryptoKey` handle.
+- endpoint and store diagnostic graphs contain no private `CryptoKey`, and neither
+  surface permits raw durable writes.
 
 ## 9. S3 — Protocol profile and real chunk data plane
 
@@ -157,8 +157,8 @@ Implemented work:
   digests and bounded reassembly;
 - recovery fetches actual relay frames, verifies fragment/chunk/root bindings, and
   commits by CAS plus readback;
-- the outer chunk array and every nested byte array are owned before the first
-  transport await;
+- the transport method, outer chunk array, every nested byte array, and single-chunk
+  descriptor size are owned before the first transport await;
 - exact-max and max-plus-one cases are generated from the profile.
 
 Pass criteria:

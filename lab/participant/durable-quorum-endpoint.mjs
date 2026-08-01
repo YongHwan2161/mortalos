@@ -18,6 +18,7 @@ import {
   durableError,
   expiredAuthorityDocument,
   observedDocument,
+  publicDurableDocument,
   recordDurableSignature,
   removedAuthorityDocument,
   renewedDocument,
@@ -58,20 +59,6 @@ function pendingSignature(document, tuple) {
   return document.journal.find((entry) => entry.tuple === tuple)?.signature ?? null;
 }
 
-function publicDocument(document) {
-  const { key, ...publicFields } = document;
-  return clone({
-    ...publicFields,
-    key: key
-      ? {
-          key_id: key.key_id,
-          public_key: key.public_key,
-          public_key_raw: key.public_key_raw
-        }
-      : null
-  });
-}
-
 export class DurableQuorumEndpoint {
   #clock;
   #core = null;
@@ -99,7 +86,7 @@ export class DurableQuorumEndpoint {
   }
 
   get document() {
-    return this.#document ? publicDocument(this.#document) : null;
+    return publicDurableDocument(this.#document);
   }
 
   get records() {

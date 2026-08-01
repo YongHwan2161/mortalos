@@ -10,6 +10,7 @@
       "file": "lab/participant/durable-quorum-endpoint.mjs",
       "entrypoint": "async #signDurably",
       "ownership_marker": "const invocation = Object.freeze",
+      "post_await_forbidden": ["body", "kind", "proposal", "request"],
       "test_file": "test/durable-quorum.test.mjs",
       "test_marker": "private CryptoKey never reaches public signer hooks"
     },
@@ -17,6 +18,7 @@
       "file": "src/state/recovery.mjs",
       "entrypoint": "export async function recoverStatePackage",
       "ownership_marker": "invocation = snapshotRecoveryInvocation",
+      "post_await_forbidden": ["destination", "inputBytes", "manifestBytes", "receiptBytes", "sources"],
       "test_file": "test/state-package.test.mjs",
       "test_marker": "store and destination failure boundaries remain stable before activation"
     },
@@ -24,6 +26,7 @@
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function createConfidentialStatePackage",
       "ownership_marker": "const ownedInputBytes = createUint8Array",
+      "post_await_forbidden": ["confidential", "inputBytes"],
       "test_file": "test/confidential-s3-recovery.test.mjs",
       "test_marker": "confidential/S3 constructor"
     },
@@ -31,6 +34,7 @@
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function recoverAndDecryptConfidentialState",
       "ownership_marker": "const expectedSnapshot = Object.freeze",
+      "post_await_forbidden": ["custodian", "destination", "expected", "inputBytes", "manifestBytes", "receiptBytes", "sources"],
       "test_file": "test/security-stateful-fuzz.test.mjs",
       "test_marker": "stateful S4 recovery corpus snapshots transitive authority"
     },
@@ -38,20 +42,23 @@
       "file": "src/confidential/recovery.mjs",
       "entrypoint": "export async function rotateConfidentialState",
       "ownership_marker": "const nextSnapshot = Object.freeze",
+      "post_await_forbidden": ["activePackageBytes", "authorization", "currentCustodian", "currentCustodians", "currentHead", "equivocationEvidence", "next", "nextMembershipHead"],
       "test_file": "test/confidential-package.test.mjs",
       "test_marker": "membership rotation omits the removed member"
     },
     {
       "file": "src/transport/chunk-data-plane.mjs",
       "entrypoint": "export async function publishStateChunk",
-      "ownership_marker": "const messages = createRelayChunkFragmentMessages",
+      "ownership_marker": "const ownedChunkBytes = ownChunkBytes",
+      "post_await_forbidden": ["chunkBytes", "transport"],
       "test_file": "test/transport.test.mjs",
-      "test_marker": "real relay messages carry S3 chunks"
+      "test_marker": "single chunk publisher never re-reads borrowed bytes after await"
     },
     {
       "file": "src/transport/chunk-data-plane.mjs",
       "entrypoint": "export async function publishStatePackageChunks",
       "ownership_marker": "const ownedChunks = createArray",
+      "post_await_forbidden": ["chunkBytes", "transport"],
       "test_file": "test/transport.test.mjs",
       "test_marker": "package publisher owns every chunk before the first transport await"
     }

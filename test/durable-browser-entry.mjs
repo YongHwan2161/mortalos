@@ -3,7 +3,8 @@ import {
 } from "../lab/participant/durable-quorum-endpoint.mjs";
 import {
   deleteDurableStore,
-  IndexedDbDurableStore
+  IndexedDbDurableStore,
+  readDurableStore
 } from "../lab/storage/durable-store.mjs";
 import {
   MemoryDurableStore
@@ -114,7 +115,7 @@ async function restoreAndAdvance(run) {
     after,
     before,
     private_key_export_rejected:
-      persisted.key.private_key.extractable === false &&
+      !Object.hasOwn(persisted.key, "private_key") &&
       !Object.hasOwn(target.endpoint.document.key, "private_key")
   };
 }
@@ -472,7 +473,7 @@ async function verifyVersionOneMigration() {
   });
   const approval = await legacy.approveGenesis(body);
   await legacy.commissionGenesis(body, [approval]);
-  const document = await legacyStore.read();
+  const document = await readDurableStore(legacyStore);
   const validName = "mortalos-s2-migration-valid";
   await createVersionOneDatabase(validName, {
     evidence: {

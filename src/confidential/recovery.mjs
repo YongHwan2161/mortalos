@@ -493,6 +493,21 @@ export async function rotateConfidentialState({
   nextMembershipHead = null,
   priorAuthority = null
 }) {
+  const activePackageView = asBytes(activePackageBytes);
+  const activePackageLength = activePackageView === null
+    ? null
+    : byteLengthOfBytes(activePackageView);
+  if (activePackageLength === null) {
+    confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation", "active-package");
+  }
+  const ownedActivePackageBytes = createUint8Array(activePackageLength);
+  typedArraySet(ownedActivePackageBytes, activePackageView, 0);
+  const observedEquivocation = isObservedCounterAuthorityEquivocation(equivocationEvidence)
+    ? Object.freeze({
+        authorityId: equivocationEvidence.authority_id,
+        epochId: equivocationEvidence.epoch_id
+      })
+    : null;
   let nextValues;
   try {
     nextValues = snapshotNamedOwnDataValues(
@@ -554,7 +569,7 @@ export async function rotateConfidentialState({
   const rotation = authorized.rotation;
   const current = verifyConfidentialPackage({
     expectedCustodians: currentMembership,
-    packageBytes: activePackageBytes
+    packageBytes: ownedActivePackageBytes
   });
   if (
     current.manifest.epoch !== rotation.from_epoch ||
@@ -612,9 +627,9 @@ export async function rotateConfidentialState({
       (rotation.reason === "counter_authority_lost" && !priorStateLost) ||
       (rotation.reason === "counter_authority_equivocation" &&
         (!priorState?.retired ||
-          !isObservedCounterAuthorityEquivocation(equivocationEvidence) ||
-          equivocationEvidence.authority_id !== current.manifest.authority_id ||
-          equivocationEvidence.epoch_id !== current.manifest.epoch_id))
+          !observedEquivocation ||
+          observedEquivocation.authorityId !== current.manifest.authority_id ||
+          observedEquivocation.epochId !== current.manifest.epoch_id))
     ) {
       confidentialFail(
         "E_CONFIDENTIAL_ROTATION",
@@ -626,7 +641,7 @@ export async function rotateConfidentialState({
   const decrypted = await decryptConfidentialPackageForRecovery({
     custodian: currentRecipient,
     expectedCustodians: currentMembership,
-    packageBytes: activePackageBytes,
+    packageBytes: ownedActivePackageBytes,
     privateKey: currentPrivateKey
   });
   await fault?.("rotation:plaintext-recovered");

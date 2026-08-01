@@ -2,7 +2,8 @@ import {
   assertDurableDocumentStructure,
   DURABLE_DOCUMENT_SCHEMA_VERSION,
   durableError,
-  migrateLegacyDurableSnapshot
+  migrateLegacyDurableSnapshot,
+  publicDurableDocument
 } from "./durable-document.mjs";
 
 const DATABASE = "mortalos-participant";
@@ -174,7 +175,7 @@ export class IndexedDbDurableStore {
   }
 
   async read() {
-    return this.#read();
+    return publicDurableDocument(await this.#read());
   }
 
   async #read() {
@@ -186,8 +187,8 @@ export class IndexedDbDurableStore {
     return value ? clone(value) : null;
   }
 
-  async write(operation, document, { expectedRevision } = {}) {
-    return this.#write(operation, document, { expectedRevision });
+  async write() {
+    throw new TypeError("raw durable store writes are internal");
   }
 
   async #write(operation, document, { expectedRevision } = {}) {
@@ -270,15 +271,15 @@ export class MemoryDurableStore {
   }
 
   async read() {
-    return this.#read();
+    return publicDurableDocument(await this.#read());
   }
 
   async #read() {
     return cloneDocument(this.#document);
   }
 
-  async write(operation, document, { expectedRevision } = {}) {
-    return this.#write(operation, document, { expectedRevision });
+  async write() {
+    throw new TypeError("raw durable store writes are internal");
   }
 
   async #write(operation, document, { expectedRevision } = {}) {

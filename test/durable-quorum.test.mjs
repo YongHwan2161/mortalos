@@ -7,6 +7,10 @@ import {
   MemoryDurableStore
 } from "../lab/storage/memory-durable-store.mjs";
 import {
+  readDurableStore,
+  writeDurableStore
+} from "../lab/storage/durable-store.mjs";
+import {
   assertDurableDocumentStructure,
   migrateLegacyDurableSnapshot,
   replayDurableDocument
@@ -326,7 +330,7 @@ test("private CryptoKey never reaches public signer hooks or mutable WebCrypto f
 
 test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {
   const { endpoints, nodes } = await createCluster(50);
-  const baseDocument = await nodes[0].store.read();
+  const baseDocument = await readDurableStore(nodes[0].store);
   const proposal = endpoints[0].createStateProposal(1);
   const peerApproval = await endpoints[1].approveProposal(proposal);
 
@@ -382,7 +386,7 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
   const ownApproval = await signer.approveProposal(proposal);
   for (const boundary of ["commit:before", "commit:after"]) {
     const store = new MemoryDurableStore({
-      document: await signedStore.read(),
+      document: await readDurableStore(signedStore),
       fault: (name) => {
         if (name === boundary) throw new Error(`crash:${boundary}`);
       }
@@ -414,7 +418,7 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
 
 test("every durable adapter write exposes atomic before/after failure semantics", async () => {
   const { nodes } = await createCluster(55);
-  const prior = await nodes[0].store.read();
+  const prior = await readDurableStore(nodes[0].store);
   for (const operation of [
     "initialize",
     "expire",
@@ -436,12 +440,12 @@ test("every durable adapter write exposes atomic before/after failure semantics"
         }
       });
       await assert.rejects(
-        () => store.write(operation, candidate, {
+        () => writeDurableStore(store, operation, candidate, {
           expectedRevision: operation === "initialize" ? null : prior.revision
         }),
         new RegExp(`crash:${operation}:${side}`)
       );
-      const stored = await store.read();
+      const stored = await readDurableStore(store);
       if (side === "before") {
         assert.equal(stored?.revision ?? null, operation === "initialize" ? null : prior.revision);
       } else {
@@ -453,7 +457,7 @@ test("every durable adapter write exposes atomic before/after failure semantics"
 
 test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and migration failure fail closed", async () => {
   const { nodes } = await createCluster(60);
-  const valid = await nodes[0].store.read();
+  const valid = await readDurableStore(nodes[0].store);
   const structuralMutations = [
     (value) => { value.extra = true; },
     (value) => { value.schema_version = 99; },
@@ -485,7 +489,7 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
 
   const { store: outsiderStore } = await createEndpoint("outside");
   const wrongCustody = structuredClone(valid);
-  wrongCustody.key = (await outsiderStore.read()).key;
+  wrongCustody.key = (await readDurableStore(outsiderStore)).key;
   await assert.rejects(
     () => replayDurableDocument(wrongCustody),
     (error) => error.code === "E_DURABLE_CUSTODY"
@@ -529,11 +533,31 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
   );
 });
 
-test("public endpoint documents redact usable signing capability and store method mutation cannot bypass sign-once", async () => {
+test("public endpoint and store diagnostics redact private CryptoKey authority", async () => {
   const { endpoints, nodes } = await createCluster(70);
   const publicDocument = endpoints[0].document;
   assert.equal(Object.hasOwn(publicDocument.key, "private_key"), false);
   assert.doesNotMatch(JSON.stringify(publicDocument), /CryptoKey|private_key/u);
+
+  const publicStoreDocument = await nodes[0].store.read();
+  assert.equal(Object.hasOwn(publicStoreDocument.key, "private_key"), false);
+  const seen = new WeakSet();
+  function containsPrivateCryptoKey(value) {
+    if ((typeof value !== "object" && typeof value !== "function") || value === null) return false;
+    if (value instanceof CryptoKey) return value.type === "private";
+    if (seen.has(value)) return false;
+    seen.add(value);
+    return Object.values(Object.getOwnPropertyDescriptors(value)).some((descriptor) =>
+      Object.hasOwn(descriptor, "value") && containsPrivateCryptoKey(descriptor.value));
+  }
+  assert.equal(containsPrivateCryptoKey(publicStoreDocument), false);
+  const rawDocument = await readDurableStore(nodes[0].store);
+  await assert.rejects(
+    () => nodes[0].store.write("commit", rawDocument, {
+      expectedRevision: rawDocument.revision
+    }),
+    /raw durable store writes are internal/u
+  );
 
   const first = endpoints[0].createStateProposal(1);
   nodes[0].store.write = async () => {};

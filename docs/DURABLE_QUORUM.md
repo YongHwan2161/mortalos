@@ -5,9 +5,10 @@ independent review, merge, and post-merge evidence**
 
 The current candidate moved durable reads/writes into module-private store
 capabilities, owns the full signing invocation before its first await, and redacts
-the private `CryptoKey` from `DurableQuorumEndpoint.document`. The public document
-is built from a key-free graph, signing uses captured native WebCrypto operations,
-and the optional test boundary receives only a phase string. The historical S2
+the private `CryptoKey` from both endpoint and store diagnostics. Public documents
+are built from a key-free graph, public raw writes fail closed, signing uses captured
+native WebCrypto operations, and the optional test boundary receives only a phase
+string. The historical S2
 receipt does not cover these edits and cannot promote the new source.
 
 Contract versions:

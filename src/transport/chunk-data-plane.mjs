@@ -72,7 +72,9 @@ function snapshotDescriptor(value) {
 
 export async function publishStateChunk({ chunkBytes, transport }) {
   const publish = snapshotDataMethod(transport, "publish", "chunk transport");
-  const messages = createRelayChunkFragmentMessages(chunkBytes);
+  const ownedChunkBytes = ownChunkBytes(chunkBytes, "single");
+  const chunkSize = ownedChunkBytes.byteLength;
+  const messages = createRelayChunkFragmentMessages(ownedChunkBytes);
   const messageIds = [];
   for (const message of messages) {
     const response = await publish(canonicalBytes(message));
@@ -88,13 +90,15 @@ export async function publishStateChunk({ chunkBytes, transport }) {
   }
   return Object.freeze({
     chunk_digest: messages[0].chunk_digest,
-    chunk_size: chunkBytes.byteLength,
+    chunk_size: chunkSize,
     format: CHUNK_TRANSPORT_DESCRIPTOR_FORMAT,
     message_ids: Object.freeze(messageIds)
   });
 }
 
 export async function publishStatePackageChunks({ chunkBytes, transport }) {
+  const publish = snapshotDataMethod(transport, "publish", "chunk transport");
+  const ownedTransport = freeze({ publish });
   const count = ownDataArrayLength(chunkBytes, "state package chunks");
   const borrowed = copyBoundedOwnDataArray(chunkBytes, count, "state package chunks");
   const ownedChunks = createArray(count);
@@ -107,7 +111,7 @@ export async function publishStatePackageChunks({ chunkBytes, transport }) {
   }
   const descriptors = [];
   for (const bytes of ownedChunks) {
-    descriptors.push(await publishStateChunk({ chunkBytes: bytes, transport }));
+    descriptors.push(await publishStateChunk({ chunkBytes: bytes, transport: ownedTransport }));
   }
   return Object.freeze(descriptors);
 }

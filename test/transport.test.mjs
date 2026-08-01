@@ -13,6 +13,7 @@ import {
   recoverStatePackage
 } from "../src/state/recovery.mjs";
 import {
+  publishStateChunk,
   publishStatePackageChunks,
   RelayChunkRecoveryAdapter
 } from "../src/transport/chunk-data-plane.mjs";
@@ -164,25 +165,47 @@ test("package publisher owns every chunk before the first transport await", asyn
   let calls = 0;
   const entered = new Promise((resolve) => { observedFirst = resolve; });
   const release = new Promise((resolve) => { releaseFirst = resolve; });
-  const publishing = publishStatePackageChunks({
-    chunkBytes: chunks,
-    transport: {
-      async publish(bytes) {
-        calls += 1;
-        if (calls === 1) {
-          observedFirst();
-          await release;
-        }
-        return endpoint.publish(bytes);
+  const transport = {
+    async publish(bytes) {
+      calls += 1;
+      if (calls === 1) {
+        observedFirst();
+        await release;
       }
+      return endpoint.publish(bytes);
     }
-  });
+  };
+  const publishing = publishStatePackageChunks({ chunkBytes: chunks, transport });
   await entered;
   second.fill(99);
   chunks.splice(0, chunks.length);
+  transport.publish = async () => {
+    throw new Error("borrowed transport facade reached after await");
+  };
   releaseFirst();
   const descriptors = await publishing;
   assert.equal(descriptors[1].chunk_digest, expectedSecondDigest);
   assert.notEqual(descriptors[1].chunk_digest, statePackageChunkDigest(second));
+  endpoint.close();
+});
+
+test("single chunk publisher never re-reads borrowed bytes after await", async () => {
+  const chunk = new Uint8Array(1024).fill(37);
+  const expectedDigest = statePackageChunkDigest(chunk);
+  const expectedSize = chunk.byteLength;
+  const network = new VirtualTransportNetwork();
+  const endpoint = network.endpoint(ROOM, "single-ownership-publisher");
+  const descriptor = await publishStateChunk({
+    chunkBytes: chunk,
+    transport: {
+      async publish(bytes) {
+        structuredClone(chunk.buffer, { transfer: [chunk.buffer] });
+        return endpoint.publish(bytes);
+      }
+    }
+  });
+  assert.equal(chunk.byteLength, 0);
+  assert.equal(descriptor.chunk_digest, expectedDigest);
+  assert.equal(descriptor.chunk_size, expectedSize);
   endpoint.close();
 });
