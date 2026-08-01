@@ -9,6 +9,37 @@ const DATABASE = "mortalos-participant";
 const VERSION = DURABLE_DOCUMENT_SCHEMA_VERSION;
 const DOCUMENT_STORE = "participant";
 const LEGACY_STORES = Object.freeze(["evidence", "keys", "meta"]);
+const DURABLE_STORE_CAPABILITIES = new WeakMap();
+const weakMapGet = WeakMap.prototype.get;
+const weakMapSet = WeakMap.prototype.set;
+const reflectApply = Reflect.apply;
+
+function registerDurableStore(store, capability) {
+  reflectApply(weakMapSet, DURABLE_STORE_CAPABILITIES, [
+    store,
+    Object.freeze(capability)
+  ]);
+}
+
+function durableStoreCapability(store) {
+  const capability = reflectApply(weakMapGet, DURABLE_STORE_CAPABILITIES, [store]);
+  if (!capability) {
+    throw new TypeError("registered MortalOS durable store required");
+  }
+  return capability;
+}
+
+export function isDurableStore(store) {
+  return Boolean(reflectApply(weakMapGet, DURABLE_STORE_CAPABILITIES, [store]));
+}
+
+export function readDurableStore(store) {
+  return durableStoreCapability(store).read();
+}
+
+export function writeDurableStore(store, operation, document, options) {
+  return durableStoreCapability(store).write(operation, document, options);
+}
 
 function requestResult(request) {
   return new Promise((resolve, reject) => {
@@ -113,6 +144,11 @@ export class IndexedDbDurableStore {
     this.#endpointId = endpointId;
     this.#fault = fault;
     this.#migrationClock = migrationClock;
+    registerDurableStore(this, {
+      read: () => this.#read(),
+      write: (operation, document, options) =>
+        this.#write(operation, document, options)
+    });
   }
 
   setFault(fault) {
@@ -133,6 +169,10 @@ export class IndexedDbDurableStore {
   }
 
   async read() {
+    return this.#read();
+  }
+
+  async #read() {
     const database = await this.#handle();
     const transaction = database.transaction([DOCUMENT_STORE], "readonly");
     const done = transactionDone(transaction);
@@ -142,6 +182,10 @@ export class IndexedDbDurableStore {
   }
 
   async write(operation, document, { expectedRevision } = {}) {
+    return this.#write(operation, document, { expectedRevision });
+  }
+
+  async #write(operation, document, { expectedRevision } = {}) {
     assertDurableDocumentStructure(document);
     if (
       expectedRevision !== null &&
@@ -179,6 +223,79 @@ export class IndexedDbDurableStore {
   close() {
     this.#database?.close();
     this.#database = null;
+  }
+
+  async #boundary(name) {
+    if (this.#fault) await this.#fault(name);
+  }
+}
+
+function cloneDocument(value) {
+  return value === null ? null : structuredClone(value);
+}
+
+export class MemoryDurableStore {
+  #document = null;
+  #fault = null;
+  #writes = [];
+
+  constructor({ document = null, fault = null, unsafeSkipValidation = false } = {}) {
+    if (document !== null && !unsafeSkipValidation) {
+      assertDurableDocumentStructure(document);
+    }
+    this.#document = cloneDocument(document);
+    this.#fault = fault;
+    registerDurableStore(this, {
+      read: () => this.#read(),
+      write: (operation, nextDocument, options) =>
+        this.#write(operation, nextDocument, options)
+    });
+  }
+
+  get writeTrace() {
+    return [...this.#writes];
+  }
+
+  setFault(fault) {
+    this.#fault = fault;
+  }
+
+  clearFault() {
+    this.#fault = null;
+  }
+
+  async read() {
+    return this.#read();
+  }
+
+  async #read() {
+    return cloneDocument(this.#document);
+  }
+
+  async write(operation, document, { expectedRevision } = {}) {
+    return this.#write(operation, document, { expectedRevision });
+  }
+
+  async #write(operation, document, { expectedRevision } = {}) {
+    assertDurableDocumentStructure(document);
+    if (
+      expectedRevision !== null &&
+      (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0)
+    ) {
+      throw new TypeError("expected durable revision is required");
+    }
+    const wantedRevision = expectedRevision === null ? 0 : expectedRevision + 1;
+    if (document.revision !== wantedRevision) {
+      throw durableError("E_DURABLE_CONFLICT", "next durable revision is not consecutive");
+    }
+    await this.#boundary(`${operation}:before`);
+    const currentRevision = this.#document?.revision ?? null;
+    if (currentRevision !== expectedRevision) {
+      throw durableError("E_DURABLE_CONFLICT", "durable revision changed before commit");
+    }
+    this.#document = cloneDocument(document);
+    this.#writes.push(operation);
+    await this.#boundary(`${operation}:after`);
   }
 
   async #boundary(name) {

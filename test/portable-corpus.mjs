@@ -15,7 +15,9 @@ import {
 import { runPortableScenario } from "./portable-scenario.mjs";
 
 export const PORTABLE_CORPUS_VERSION = "mortalos-portable-corpus/4";
-export const ADVERSARIAL_CASES = 10_000;
+export const ADVERSARIAL_CASES = Number(
+  globalThis.__MORTALOS_PORTABLE_CASES__ ?? 10_000
+);
 export const ADVERSARIAL_SEED = 0x4d4f5254;
 
 const zeroDigest = `sha256:${encodeBase64Url(new Uint8Array(32))}`;

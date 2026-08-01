@@ -13,6 +13,7 @@ import {
   stringSlice,
   stringStartsWith
 } from "../primordials.mjs";
+import { PROTOCOL_PROFILE } from "../generated/protocol-profile.mjs";
 
 export const STATE_PACKAGE_MANIFEST_FORMAT = "mortalos-state-package-manifest/1";
 export const STATE_PACKAGE_RECEIPT_FORMAT = "mortalos-state-package-receipt/1";
@@ -20,13 +21,7 @@ export const STATE_PACKAGE_TRANSITION_FORMAT = "mortalos-state-package-transitio
 export const STATE_PACKAGE_INPUT_FORMAT = "mortalos-state-package-input/1";
 export const STATE_PACKAGE_POLICY = "mortalos-state-recovery-policy/1";
 export const STATE_PACKAGE_LIMITS = freeze({
-  chunk_bytes: 65_536,
-  input_bytes: 4_096,
-  manifest_bytes: 32_768,
-  max_chunks: 64,
-  receipt_bytes: 4_096,
-  reference_resource_bytes: 1_048_576,
-  resource_bytes: 4_194_304
+  ...PROTOCOL_PROFILE.state
 });
 
 const CHUNK_DOMAIN = new TextEncoder().encode("MORTALOS/STATE-PACKAGE/1/CHUNK\0");

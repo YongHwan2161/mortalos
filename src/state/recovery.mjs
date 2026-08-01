@@ -4,7 +4,17 @@ import {
   statePackageResourceRoot,
   verifyStatePackage
 } from "./package.mjs";
-import { encodeBase64Url } from "../bytes.mjs";
+import { encodeBase64Url, equalBytes } from "../bytes.mjs";
+import { canonicalBytes } from "../codec.mjs";
+import {
+  copyBoundedOwnDataArray,
+  createArray,
+  defineArrayIndex,
+  freeze,
+  ownDataArrayLength,
+  realmIntrinsicsIntact,
+  snapshotDataMethod
+} from "../primordials.mjs";
 
 export const STATE_RECOVERY_LIMITS = Object.freeze({
   inventory_entries_per_source: 64,
@@ -63,29 +73,81 @@ export class MemoryContentAddressedStore {
     await this.#fault?.("chunk:after", digest);
   }
 
-  async commitActive(record) {
+  async commitActive(record, options = {}) {
+    return this.#commitActive(record, options);
+  }
+
+  async readActive() {
+    return this.active;
+  }
+
+  async #commitActive(record, { expectedPriorStateRoot = null } = {}) {
     if (this.#destroyed) throw new Error("store-destroyed");
     const staged = structuredClone(record);
+    if (
+      this.#active &&
+      equalBytes(canonicalBytes(this.#active), canonicalBytes(staged))
+    ) {
+      return this.active;
+    }
+    const activeRoot = this.#active?.next_state_root ?? expectedPriorStateRoot;
+    if (activeRoot !== expectedPriorStateRoot) throw new Error("active-state-conflict");
     await this.#fault?.("active:before", record.next_state_root);
     await this.#fault?.("active:after", record.next_state_root);
     this.#active = staged;
+    return this.active;
   }
 }
 
 export class ReplicaRecoveryAdapter {
-  #store;
+  #inventory;
+  #readChunk;
 
   constructor(store) {
-    this.#store = store;
+    this.#inventory = snapshotDataMethod(store, "inventory", "replica store");
+    this.#readChunk = snapshotDataMethod(store, "get", "replica store");
   }
 
   async inventory() {
-    return this.#store.inventory();
+    return this.#inventory();
   }
 
   async readChunk(digest) {
-    return this.#store.get(digest);
+    return this.#readChunk(digest);
   }
+}
+
+function snapshotRecoveryInvocation(destination, sources) {
+  if (!realmIntrinsicsIntact()) throw new TypeError("realm integrity required");
+  const count = ownDataArrayLength(sources, "recovery sources");
+  if (count > STATE_RECOVERY_LIMITS.sources) {
+    throw new StatePackageError(
+      "E_STATE_PACKAGE_LIMIT_EXCEEDED",
+      "/recovery/sources",
+      String(STATE_RECOVERY_LIMITS.sources)
+    );
+  }
+  const ownedSources = copyBoundedOwnDataArray(sources, count, "recovery sources");
+  const sourceCapabilities = createArray(count);
+  for (let index = 0; index < count; index += 1) {
+    const source = ownedSources[index];
+    defineArrayIndex(sourceCapabilities, index, freeze({
+      inventory: snapshotDataMethod(source, "inventory", `recovery source ${index}`),
+      readChunk: snapshotDataMethod(source, "readChunk", `recovery source ${index}`)
+    }));
+  }
+  const destinationCapability = freeze({
+    commitActive: snapshotDataMethod(destination, "commitActive", "recovery destination"),
+    get: snapshotDataMethod(destination, "get", "recovery destination"),
+    inventory: snapshotDataMethod(destination, "inventory", "recovery destination"),
+    put: snapshotDataMethod(destination, "put", "recovery destination"),
+    readActive: snapshotDataMethod(destination, "readActive", "recovery destination")
+  });
+  if (!realmIntrinsicsIntact()) throw new TypeError("realm integrity required");
+  return freeze({
+    destination: destinationCapability,
+    sources: freeze(sourceCapabilities)
+  });
 }
 
 export async function planStateRecovery({ manifest, destinationInventory = [], sourceInventories = [] }) {
@@ -140,9 +202,15 @@ export async function recoverStatePackage({
   receiptBytes,
   sources
 }) {
-  if (!Array.isArray(sources) || sources.length > STATE_RECOVERY_LIMITS.sources) {
+  let invocation;
+  try {
+    invocation = snapshotRecoveryInvocation(destination, sources);
+  } catch (error) {
     return result("rejected", "E_STATE_PACKAGE_LIMIT_EXCEEDED", {
-      field_path: "/recovery/sources"
+      detail: String(error?.message ?? error),
+      field_path: error instanceof StatePackageError
+        ? error.fieldPath
+        : "/recovery/capability"
     });
   }
   let verified;
@@ -164,12 +232,16 @@ export async function recoverStatePackage({
   let plan;
   try {
     const sourceInventories = [];
-    for (const source of sources) sourceInventories.push(await source.inventory());
+    for (const source of invocation.sources) {
+      sourceInventories.push(await source.inventory());
+      if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
+    }
     plan = await planStateRecovery({
       manifest: verified.manifest,
-      destinationInventory: await destination.inventory(),
+      destinationInventory: await invocation.destination.inventory(),
       sourceInventories
     });
+    if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
   } catch (error) {
     if (error instanceof StatePackageError) {
       return result("rejected", error.code, {
@@ -185,7 +257,7 @@ export async function recoverStatePackage({
     for (const sourceIndex of request.source_indexes) {
       let bytes;
       try {
-        bytes = await sources[sourceIndex].readChunk(request.digest);
+        bytes = await invocation.sources[sourceIndex].readChunk(request.digest);
       } catch (error) {
         return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
           detail: String(error?.message ?? error)
@@ -206,7 +278,7 @@ export async function recoverStatePackage({
         continue;
       }
       try {
-        await destination.put(request.digest, bytes, expected.size);
+        await invocation.destination.put(request.digest, bytes, expected.size);
       } catch (error) {
         return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
           detail: String(error?.message ?? error)
@@ -235,7 +307,7 @@ export async function recoverStatePackage({
   for (const descriptor of verified.manifest.chunks) {
     let bytes;
     try {
-      bytes = await destination.get(descriptor.digest);
+      bytes = await invocation.destination.get(descriptor.digest);
     } catch (error) {
       return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
         detail: String(error?.message ?? error)
@@ -265,15 +337,25 @@ export async function recoverStatePackage({
   if (statePackageResourceRoot(resource) !== verified.manifest.resource_root) {
     return result("rejected", "E_STATE_PACKAGE_RESOURCE_ROOT_MISMATCH");
   }
-  try {
-    await destination.commitActive({
+  const activeCandidate = Object.freeze({
       manifest_base64url: encodeBase64Url(verified.manifestBytes),
       next_state_root: verified.nextStateRoot,
       receipt_base64url: encodeBase64Url(verified.receiptBytes),
       resource_root: verified.manifest.resource_root,
       resource_size: verified.manifest.resource_size,
       status: "verified"
+  });
+  try {
+    await invocation.destination.commitActive(activeCandidate, {
+      expectedPriorStateRoot
     });
+    const readback = await invocation.destination.readActive();
+    if (
+      !readback ||
+      !equalBytes(canonicalBytes(readback), canonicalBytes(activeCandidate))
+    ) {
+      throw new Error("active-state-readback");
+    }
   } catch (error) {
     return result("interrupted", "E_STATE_RECOVERY_INTERRUPTED", {
       detail: String(error?.message ?? error)

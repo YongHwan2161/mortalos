@@ -6,6 +6,7 @@ import {
   utf8Bytes
 } from "../bytes.mjs";
 import { canonicalBytes, isCanonical, parseJsonBytes } from "../codec.mjs";
+import { PROTOCOL_PROFILE } from "../generated/protocol-profile.mjs";
 
 export const CONFIDENTIAL_SUITE = "mortalos-confidential-state-suite/1";
 export const CONFIDENTIAL_FORMATS = Object.freeze({
@@ -26,15 +27,15 @@ export const CONFIDENTIAL_FORMATS = Object.freeze({
 
 export const CONFIDENTIAL_LIMITS = Object.freeze({
   aad_bytes: 4_096,
-  chunk_plaintext_bytes: 65_536,
+  chunk_plaintext_bytes: PROTOCOL_PROFILE.confidential.chunk_plaintext_bytes,
   counter_max_exclusive: 4_294_967_296n,
   epoch_max: 18_446_744_073_709_551_615n,
   manifest_bytes: 131_072,
   max_custodians: 16,
-  max_chunks: 64,
-  package_bytes: 4_194_304,
+  max_chunks: PROTOCOL_PROFILE.confidential.max_chunks,
+  package_bytes: PROTOCOL_PROFILE.confidential.package_bytes,
   reservation_count_max: 64n,
-  resource_bytes: 3_098_890,
+  resource_bytes: PROTOCOL_PROFILE.confidential.resource_bytes,
   rsa_wrapped_bytes: 384
 });
 

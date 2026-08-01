@@ -270,8 +270,8 @@ test("same-revision endpoints CAS before signing and cannot release conflicting 
 });
 
 test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {
-  const { endpoints } = await createCluster(50);
-  const baseDocument = endpoints[0].document;
+  const { endpoints, nodes } = await createCluster(50);
+  const baseDocument = await nodes[0].store.read();
   const proposal = endpoints[0].createStateProposal(1);
   const peerApproval = await endpoints[1].approveProposal(proposal);
 
@@ -327,7 +327,7 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
   const ownApproval = await signer.approveProposal(proposal);
   for (const boundary of ["commit:before", "commit:after"]) {
     const store = new MemoryDurableStore({
-      document: signer.document,
+      document: await signedStore.read(),
       fault: (name) => {
         if (name === boundary) throw new Error(`crash:${boundary}`);
       }
@@ -358,8 +358,8 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
 });
 
 test("every durable adapter write exposes atomic before/after failure semantics", async () => {
-  const { endpoints } = await createCluster(55);
-  const prior = endpoints[0].document;
+  const { nodes } = await createCluster(55);
+  const prior = await nodes[0].store.read();
   for (const operation of [
     "initialize",
     "expire",
@@ -397,8 +397,8 @@ test("every durable adapter write exposes atomic before/after failure semantics"
 });
 
 test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and migration failure fail closed", async () => {
-  const { endpoints } = await createCluster(60);
-  const valid = endpoints[0].document;
+  const { nodes } = await createCluster(60);
+  const valid = await nodes[0].store.read();
   const structuralMutations = [
     (value) => { value.extra = true; },
     (value) => { value.schema_version = 99; },
@@ -428,9 +428,9 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
   badKey.key.public_key_raw = new ArrayBuffer(32);
   await assert.rejects(() => replayDurableDocument(badKey), (error) => error.code === "E_DURABLE_KEY");
 
-  const { endpoint: outsider } = await createEndpoint("outside");
+  const { store: outsiderStore } = await createEndpoint("outside");
   const wrongCustody = structuredClone(valid);
-  wrongCustody.key = outsider.document.key;
+  wrongCustody.key = (await outsiderStore.read()).key;
   await assert.rejects(
     () => replayDurableDocument(wrongCustody),
     (error) => error.code === "E_DURABLE_CUSTODY"
@@ -471,5 +471,30 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
       }
     }, { completedAt: 1_800_000_000_000 }),
     (error) => error.code === "E_DURABLE_MIGRATION"
+  );
+});
+
+test("public endpoint documents redact usable signing capability and store method mutation cannot bypass sign-once", async () => {
+  const { endpoints, nodes } = await createCluster(70);
+  const publicDocument = endpoints[0].document;
+  assert.equal(Object.hasOwn(publicDocument.key, "private_key"), false);
+  assert.doesNotMatch(JSON.stringify(publicDocument), /CryptoKey|private_key/u);
+
+  const first = endpoints[0].createStateProposal(1);
+  nodes[0].store.write = async () => {};
+  nodes[0].store.read = async () => null;
+  const approval = await endpoints[0].approveProposal(first);
+  assert.equal(typeof approval.signature, "string");
+
+  const restarted = new DurableQuorumEndpoint({
+    endpointId: "A70",
+    store: nodes[0].store,
+    clock: () => 1_800_000_000_000
+  });
+  await restarted.restore();
+  const conflicting = restarted.createStateProposal(2);
+  await assert.rejects(
+    () => restarted.approveProposal(conflicting),
+    (error) => error.code === "E_DURABLE_EQUIVOCATION"
   );
 });

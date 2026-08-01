@@ -735,3 +735,16 @@ the reconstructed aggregate resource before replacing a local active-state recor
 results. They do not change Pulse validity, select a lineage head, or contribute to
 the mortality classifier. In particular, missing chunks cannot become empty state
 and cannot establish protocol death.
+
+## 16. Candidate protocol profile, relay fragments, and Capsules
+
+`protocol/profile.v1.json` is the current candidate source for S3/S4 and transport
+ceilings. Generated constants must exactly match it. A 65,536-byte state chunk does
+not fit directly inside the 65,536-byte relay-message ceiling after encoding, so the
+real data plane carries it as bounded 32,768-byte domain-digested fragments and
+reassembles only after exact fragment, chunk, and resource-root verification.
+
+`mortalos-continuity-capsule/1` is a candidate portable container for canonical
+lineage records and one exact state package. A Capsule is not an accepted lineage
+record, private-key container, fork-choice vote, or mortality observation. It must
+be verified through the same lineage/state validators before any local activation.

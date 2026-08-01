@@ -4,6 +4,7 @@ import {
 import {
   createInitialState
 } from "../../src/state/engine.mjs";
+import { snapshotNamedOwnDataValues } from "../../src/primordials.mjs";
 import {
   assembleParticipantGenesis,
   createParticipantGenesisBody,
@@ -27,6 +28,11 @@ import {
   createStoredWebCryptoKey,
   signBytes
 } from "./webcrypto-key-store.mjs";
+import {
+  isDurableStore,
+  readDurableStore,
+  writeDurableStore
+} from "../storage/durable-store.mjs";
 
 function clone(value) {
   return structuredClone(value);
@@ -49,6 +55,18 @@ function pendingSignature(document, tuple) {
   return document.journal.find((entry) => entry.tuple === tuple)?.signature ?? null;
 }
 
+function publicDocument(document) {
+  const snapshot = clone(document);
+  if (snapshot.key) {
+    snapshot.key = {
+      key_id: snapshot.key.key_id,
+      public_key: snapshot.key.public_key,
+      public_key_raw: snapshot.key.public_key_raw
+    };
+  }
+  return snapshot;
+}
+
 export class DurableQuorumEndpoint {
   #clock;
   #core = null;
@@ -59,8 +77,8 @@ export class DurableQuorumEndpoint {
   #store;
 
   constructor({ endpointId, store, clock = () => Date.now(), signer = signBytes }) {
-    if (!store || typeof store.read !== "function" || typeof store.write !== "function") {
-      throw new TypeError("durable store with read/write is required");
+    if (!isDurableStore(store)) {
+      throw new TypeError("registered MortalOS durable store is required");
     }
     this.#endpointId = endpointId;
     this.#store = store;
@@ -73,7 +91,7 @@ export class DurableQuorumEndpoint {
   }
 
   get document() {
-    return this.#document ? clone(this.#document) : null;
+    return this.#document ? publicDocument(this.#document) : null;
   }
 
   get records() {
@@ -125,7 +143,9 @@ export class DurableQuorumEndpoint {
   }
 
   async initializeKey({ expiresAt = null } = {}) {
-    if (await this.#store.read()) throw durableError("E_DURABLE_EXISTS", "durable endpoint already exists");
+    if (await readDurableStore(this.#store)) {
+      throw durableError("E_DURABLE_EXISTS", "durable endpoint already exists");
+    }
     const now = this.#observeNow();
     if (expiresAt !== null && expiresAt <= now) {
       throw durableError("E_DURABLE_POLICY", "new authority expiry must be in the future");
@@ -142,7 +162,7 @@ export class DurableQuorumEndpoint {
   }
 
   async restore() {
-    const stored = await this.#store.read();
+    const stored = await readDurableStore(this.#store);
     if (!stored) {
       this.#document = null;
       this.#core = null;
@@ -315,14 +335,34 @@ export class DurableQuorumEndpoint {
   }
 
   async #signDurably({ body, kind, proposal, request }) {
+    let requestValues;
+    try {
+      requestValues = snapshotNamedOwnDataValues(
+        request,
+        ["key_id", "message", "purpose"],
+        "durable signing request"
+      );
+    } catch {
+      throw durableError("E_DURABLE_SCHEMA", "durable signing request must be owned data");
+    }
+    const invocation = Object.freeze({
+      body: clone(body),
+      kind,
+      proposal: clone(proposal),
+      request: Object.freeze({
+        key_id: requestValues[0],
+        message: new Uint8Array(requestValues[1]),
+        purpose: requestValues[2]
+      })
+    });
     await this.#enforceSigningPolicy();
     const reserved = reserveSigningIntent(this.#document, {
-      body,
-      keyId: request.key_id,
-      kind,
-      message: request.message,
-      proposal,
-      purpose: request.purpose
+      body: invocation.body,
+      keyId: invocation.request.key_id,
+      kind: invocation.kind,
+      message: invocation.request.message,
+      proposal: invocation.proposal,
+      purpose: invocation.request.purpose
     });
     if (!reserved.existing) {
       await this.#commitDocument("reserve", reserved.document);
@@ -334,7 +374,7 @@ export class DurableQuorumEndpoint {
     const signature = await this.#signer(
       this.#document.key.key_id,
       this.#document.key.private_key,
-      request.message
+      invocation.request.message
     );
     const signed = recordDurableSignature(this.#document, reserved.entry.tuple, signature);
     await this.#commitDocument("signature", signed);
@@ -343,7 +383,7 @@ export class DurableQuorumEndpoint {
 
   async #commitDocument(operation, document) {
     const expectedRevision = this.#document?.revision ?? null;
-    await this.#store.write(operation, document, { expectedRevision });
+    await writeDurableStore(this.#store, operation, document, { expectedRevision });
     this.#document = document;
   }
 

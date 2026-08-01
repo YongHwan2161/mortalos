@@ -1,6 +1,11 @@
 # S4 confidential-state cryptography
 
-Status: **PROMOTED ADR — S4 IMPLEMENTATION CANDIDATE**
+Status: **PROMOTED ADR — S4 RUNTIME CLAIM REOPENED / HARDENED CANDIDATE HOLD**
+
+The suite decision remains promoted. Runtime promotion is reopened because recovery
+now owns its complete expected basis before await, activation uses a module-private
+commit/readback capability, identical retries are idempotent, and supported public
+decrypt/recovery results no longer expose the epoch-key `CryptoKey` handle.
 
 Decision owner: `codex-protocol-kernel`
 Independent reviewer: `reviewer-merge-gate`

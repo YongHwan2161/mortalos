@@ -3,6 +3,19 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { canonicalBytes } from "../src/index.mjs";
 import {
+  createStatePackage,
+  createStatePackageInput,
+  deterministicReferenceResource
+} from "../src/state/package.mjs";
+import {
+  MemoryContentAddressedStore,
+  recoverStatePackage
+} from "../src/state/recovery.mjs";
+import {
+  publishStatePackageChunks,
+  RelayChunkRecoveryAdapter
+} from "../src/transport/chunk-data-plane.mjs";
+import {
   createRelayFrame,
   createRelayMessage,
   decodeRelayFrame,
@@ -97,4 +110,43 @@ test("10,000 seeded virtual schedules recover all endpoints deterministically", 
   assert.ok(result.duplicated > 0);
   assert.ok(result.reordered > 0);
   assert.match(result.digest, /^sha256:[A-Za-z0-9_-]{43}$/);
+});
+
+test("real relay messages carry S3 chunks end to end without trusting metadata", async () => {
+  const resourceBytes = deterministicReferenceResource();
+  const inputBytes = createStatePackageInput({ transitionId: "relay-chunk-data-plane" });
+  const tagged = `sha256:${"A".repeat(43)}`;
+  const statePackage = createStatePackage({
+    genomeHash: tagged,
+    inputBytes,
+    priorStateRoot: tagged,
+    resourceBytes
+  });
+  const network = new VirtualTransportNetwork();
+  const publisher = network.endpoint(ROOM, "chunk-publisher");
+  const reader = network.endpoint(ROOM, "chunk-reader");
+  const descriptors = await publishStatePackageChunks({
+    chunkBytes: statePackage.chunkBytes,
+    transport: publisher
+  });
+  assert.equal(descriptors.length, statePackage.manifest.chunks.length);
+  const source = new RelayChunkRecoveryAdapter({
+    descriptors,
+    transport: { readRange: (after, limit) => reader.fetchRange(after, limit) }
+  });
+  const destination = new MemoryContentAddressedStore();
+  const recovered = await recoverStatePackage({
+    destination,
+    expectedGenomeHash: tagged,
+    expectedNextStateRoot: statePackage.nextStateRoot,
+    expectedPriorStateRoot: tagged,
+    inputBytes,
+    manifestBytes: statePackage.manifestBytes,
+    receiptBytes: statePackage.receiptBytes,
+    sources: [source]
+  });
+  assert.equal(recovered.status, "available");
+  assert.deepEqual(recovered.resource_bytes, resourceBytes);
+  publisher.close();
+  reader.close();
 });

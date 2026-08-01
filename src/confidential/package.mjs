@@ -744,7 +744,7 @@ export function verifyConfidentialPackage({
   });
 }
 
-export async function decryptConfidentialPackage({
+async function decryptConfidentialPackageWithEpochKey({
   custodian,
   expectedCustodians,
   expectedEpochId,
@@ -860,6 +860,23 @@ export async function decryptConfidentialPackage({
     resource_id: verified.manifest.resource_id,
     status: "available"
   });
+}
+
+export async function decryptConfidentialPackage(options) {
+  const decrypted = await decryptConfidentialPackageWithEpochKey(options);
+  return Object.freeze({
+    confidential_root: decrypted.confidential_root,
+    resource_bytes: decrypted.resource_bytes,
+    resource_id: decrypted.resource_id,
+    status: decrypted.status
+  });
+}
+
+// Internal protocol composition only. This symbol is intentionally omitted from
+// src/index.mjs and the packaged SDK so the epoch-key handle cannot cross a
+// supported public API boundary.
+export function decryptConfidentialPackageForRecovery(options) {
+  return decryptConfidentialPackageWithEpochKey(options);
 }
 
 export async function aesGcmKnownAnswer({

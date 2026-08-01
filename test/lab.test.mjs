@@ -265,7 +265,7 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   );
   assert.match(
     durableEndpointSource,
-    /expectedRevision = this\.#document\?\.revision \?\? null;[\s\S]*?write\(operation, document, \{ expectedRevision \}\)/
+    /expectedRevision = this\.#document\?\.revision \?\? null;[\s\S]*?writeDurableStore\(this\.#store, operation, document, \{ expectedRevision \}\)/
   );
   assert.match(durableDocumentSource, /next\.pending = null[\s\S]*?next\.revision \+= 1/);
   assert.match(durableStoreSource, /database\.transaction\(\[DOCUMENT_STORE\], "readwrite", \{ durability: "strict" \}\)/);

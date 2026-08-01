@@ -1,11 +1,11 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-07-26 KST**
+Last synchronized: **2026-08-01 KST**
 
 ## Current authority
 
 - [North Star roadmap](NORTH_STAR_ROADMAP.md) — short current direction and stage order.
-- [Post-hackathon North Star implementation plan](POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md) — sole detailed S0–S8 execution SSOT, strict PASS/HOLD gates, and Definition of Done.
+- [North Star implementation SSOT](POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md) — current compact S0–S8 ledger, strict PASS/HOLD gates, and Definition of Done.
 - [Current claim matrix](CLAIM_MATRIX.md) — implemented, exact-head verified, physically verified, promoted, and explicitly unclaimed behavior.
 - [Stage tracking](STAGE_TRACKING.md) — S1–S8 issues, owner, milestone, and required receipt paths.
 
@@ -34,6 +34,7 @@ before its receipt, full suite, review, merge, and exact-main deployment pass.
 - [Crash-safe durable quorum](DURABLE_QUORUM.md)
 - [R3 state availability and recovery](STATE_AVAILABILITY_AND_RECOVERY.md)
 - [S4 confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md)
+- [Distributed counter-authority ADR](DISTRIBUTED_COUNTER_AUTHORITY_ADR.md)
 - [Endpoint-neutral access architecture](ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](BROWSER_PARTICIPANT_COMPATIBILITY.md)
 
@@ -55,10 +56,10 @@ The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
 `2-of-3` loss/repair, the merged S1 Participant Core, S2 crash-safe durable quorum,
 and S3 exact logical resource recovery within the qualifications in the claim
-matrix. The S4 ADR is promoted and the runtime candidate has focused evidence, but
-S4 promotion remains HOLD on its complete release chain.
+matrix. The current candidate reopens S2/S4 after trust-boundary hardening and adds
+S5–S8 candidate surfaces. No new stage is promoted until its new exact-head receipt,
+immutable review, merge, and post-merge evidence complete.
 
-It does not yet promote confidential replicated state, independent failure
-domains, a public SDK/CLI,
-Byzantine/Sybil resistance, global death, or Firefox/WebKit durable parity. GPT is
-optional and non-authoritative.
+It does not yet promote the current confidential-state revision, independent
+failure domains, SDK/CLI/Capsule release, Byzantine/Sybil resistance, global death,
+or WebKit signing parity. GPT is optional and non-authoritative.

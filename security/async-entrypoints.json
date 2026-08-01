@@ -1,0 +1,25 @@
+{
+  "format": "mortalos-async-security-entrypoints/1",
+  "entries": [
+    {
+      "file": "lab/participant/durable-quorum-endpoint.mjs",
+      "entrypoint": "async #signDurably",
+      "ownership_marker": "const invocation = Object.freeze"
+    },
+    {
+      "file": "src/state/recovery.mjs",
+      "entrypoint": "export async function recoverStatePackage",
+      "ownership_marker": "invocation = snapshotRecoveryInvocation"
+    },
+    {
+      "file": "src/confidential/recovery.mjs",
+      "entrypoint": "export async function recoverAndDecryptConfidentialState",
+      "ownership_marker": "const expectedSnapshot = Object.freeze"
+    },
+    {
+      "file": "src/confidential/recovery.mjs",
+      "entrypoint": "export async function rotateConfidentialState",
+      "ownership_marker": "const nextSnapshot = Object.freeze"
+    }
+  ]
+}

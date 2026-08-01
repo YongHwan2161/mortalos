@@ -1,7 +1,12 @@
 # MortalOS crash-safe durable quorum
 
-Status: **S2 implementation present; promotion is bound to the exact S2 receipt,
+Status: **S2 CLAIM REOPENED; hardened implementation promotion is bound to a new exact S2 receipt,
 independent review, merge, and post-merge evidence**
+
+The current candidate moved durable reads/writes into module-private store
+capabilities, owns the full signing invocation before its first await, and redacts
+the private `CryptoKey` from `DurableQuorumEndpoint.document`. The historical S2
+receipt does not cover these edits and cannot promote the new source.
 
 Contract versions:
 

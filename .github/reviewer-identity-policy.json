@@ -1,0 +1,13 @@
+{
+  "format": "mortalos-reviewer-identity-policy/1",
+  "implementation_principal": "YongHwan2161",
+  "logical_reviewer": "reviewer-merge-gate",
+  "native_approval": {
+    "dismiss_stale_reviews_on_push": true,
+    "minimum_approvals": 1,
+    "require_last_push_approval": true,
+    "required": true
+  },
+  "provisioned_reviewer_principal": null,
+  "status": "HOLD_PENDING_SEPARATE_GITHUB_IDENTITY"
+}

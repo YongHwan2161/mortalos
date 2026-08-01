@@ -692,7 +692,8 @@ test("store and destination failure boundaries remain stable before activation",
     async inventory() { return fullInventory; },
     async get() { throw new Error("destination-offline"); },
     async put() { throw new Error("unexpected-put"); },
-    async commitActive() { throw new Error("unexpected-commit"); }
+    async commitActive() { throw new Error("unexpected-commit"); },
+    async readActive() { return null; }
   };
   assert.equal(
     (await recoverStatePackage(recoveryOptions(fixture, throwingGet, []))).code,

@@ -1,6 +1,6 @@
 # MortalOS North Star stage tracking
 
-Status: **ACTIVE**
+Status: **ACTIVE — CURRENT CANDIDATE PROMOTION HOLD**
 
 Milestone: [Post-hackathon North Star S1–S8](https://github.com/YongHwan2161/mortalos/milestone/1)
 
@@ -25,7 +25,25 @@ Promotion requires all strict stage criteria, an exact machine-validated receipt
 independent immutable-head review, expected-head merge, and post-merge evidence.
 Anything less is **HOLD**.
 
-## Current candidate
+## Current candidate (2026-08-01)
+
+S2 and S4 are reopened because capability ownership, first-await snapshots,
+activation readback, and key redaction changed their security-critical sources.
+Their older receipts remain historical exact-commit evidence only.
+
+S5/S6 are implemented and locally verified. S7 passes a three-process HTTP CAS
+fault/restart rehearsal, not a real independent-provider topology. S8 stateful fuzz,
+adversarial Capsule custody, Chromium, and Firefox pass locally; WebKit is verifier-
+only because Ed25519 WebCrypto is unavailable. All new promotion receipts, immutable
+review, merge, post-merge CI, and live readback remain **HOLD**.
+
+GitHub ruleset `20168959` is active on `main` with no bypass and requires the trusted
+policy check, protocol check, current base, resolved threads, stale-review dismissal,
+and one native approval from someone other than the last pusher. The separate
+reviewer GitHub principal is not provisioned, so merge authority is deliberately
+**HOLD** rather than falling back to the implementation account.
+
+## Historical promotion lineage
 
 S1, S2, and S3 are promoted on `main` with main-history-portable receipts,
 independent immutable review, expected-head merge, post-merge Verify, and exact-main
@@ -34,11 +52,9 @@ Deploy. S3 closed issue #32 at main
 cryptographic ADR was then promoted at
 `39529337b2a739b1aee4697e680643d77704bbaa`.
 
-S4 runtime implementation is an exact-head candidate on
-`agent/codex-protocol-kernel--s4-confidential-state`. Focused Node, one-million-IV,
-capture, any-two S3 recovery/decryption, removal/rotation, fault, coverage, and
-actual-Chromium gates pass. Promotion remains **HOLD** pending the exact
-`s4-confidentiality.json` receipt, frozen-source ordered rerun, immutable
-implementation review, expected-head merge, and exact-main Verify plus Deploy.
-The complete pre-freeze ordered suite passes, including the expanded actual
-Chromium authority contention and process-restart gate.
+The historical S4 runtime promotion reached `main` at
+`49c53029623c6da85566d7fa794b71f2068af682`. Its receipt remains valid only for
+that exact promotion tree. The current candidate changes S2/S4 security-critical
+capability and recovery sources, so neither the old branch review nor the old
+receipt authorizes the new head. Current replacement evidence and remaining HOLD
+conditions are recorded above; a fresh immutable-head promotion chain is required.

@@ -37,6 +37,14 @@ export class TransportReplica {
     if (opened.control) {
       return { status: "control_observed", kind: opened.control.kind, message_id: opened.message_id };
     }
+    if (opened.chunk) {
+      return {
+        status: "chunk_observed",
+        chunk_digest: opened.chunk.chunk_digest,
+        fragment_index: opened.chunk.fragment_index,
+        message_id: opened.message_id
+      };
+    }
     if (opened.record.envelope.kind === "mortalos.genesis") {
       const result = r1ValidateGenesis(opened.record.envelope).outcome;
       if (result.status !== "accept") return { status: "reject", code: result.code };

@@ -8,7 +8,7 @@ MortalOS exposes two deliberately different browser modes.
 | Mode | Persistence | Signing authority after reload | Current verified support |
 | --- | --- | --- | --- |
 | Ephemeral Demo | none | no | Chromium; existing portable kernel also runs in the Node/browser differential target |
-| Durable Participant | consent-gated IndexedDB schema v2 | yes, until explicit removal or reached expiry | Chromium actual-engine S2 gate |
+| Durable Participant | consent-gated IndexedDB schema v2 | yes, until explicit removal or reached expiry | Chromium and Firefox candidate actual-engine gates; WebKit disabled |
 
 ## Durable Participant contract
 
@@ -44,15 +44,19 @@ of a non-extractable `CryptoKey` into IndexedDB, and `indexedDB.databases()` for
 no-implicit-storage check. If any prerequisite is unavailable, the site keeps the
 Ephemeral Demo available and does not silently create a weaker or extractable key.
 
-Firefox and WebKit are currently **feature-gated, not claimed supported**. They may
-be promoted only after an actual-engine gate proves creation, private-export
-rejection, crash/reload recovery, atomic authority removal, and corrupt-database
-fail-closed behavior. User-agent detection is forbidden; capability checks and an
-honest visible downgrade decide the mode.
+Firefox now passes the same actual-engine creation, non-extractable-key, concurrent
+CAS, full process restart, expiry/removal, A/B/C loss, D repair, S4 rotation, and
+corruption boundaries in the current candidate. It remains unpromoted until the
+exact-head release gate passes. Playwright WebKit 26.5 supports IndexedDB, Web Locks,
+RSA-OAEP-3072, and `CryptoKey` structured cloning but rejects WebCrypto Ed25519 with
+`NotSupportedError`. WebKit therefore remains verifier-only and visibly disables
+the signer path. User-agent detection and exportable-key fallback are forbidden.
 
 ## Reproducible evidence
 
-`npm run verify:lab` runs the Chromium lifecycle in a clean isolated profile:
+`npm run verify:lab` runs the Chromium lifecycle in a clean isolated profile.
+`npm run test:browser-parity` applies the portable corpus plus the complete S2/S4
+scenario family to Chromium and Firefox, and the verifier-only profile to WebKit:
 
 1. storage is zero before consent;
 2. one non-extractable key and v1 Genesis are created in durable schema v2;

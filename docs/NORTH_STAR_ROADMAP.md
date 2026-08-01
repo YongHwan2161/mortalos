@@ -1,8 +1,8 @@
 # MortalOS North Star roadmap
 
-Status: **ACTIVE — S3 promoted; S4 runtime candidate**
+Status: **ACTIVE — S2/S4 claims reopened; S5–S8 candidate implementation**
 
-Last synchronized: **2026-07-26 KST**
+Last synchronized: **2026-08-01 KST**
 
 The sole detailed implementation SSOT is the
 [post-hackathon North Star implementation plan](POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md).
@@ -40,25 +40,32 @@ handling, epoch-wide signed counter reservations, any-two recovery/decryption,
 removed-member denial, and authority-only rotation. S4 promotion remains gated by
 its exact receipt, frozen-source rerun, independent review, merge, and exact-main
 deployment; the complete pre-freeze ordered suite passes. Independent failure
-domains remain a later stage. The
+domains remain a later stage.
+
+The current candidate reopens S2 and S4 because it moves the trust boundary below
+the outer authority object: durable stores and confidential activation stores are
+now module-private capabilities, complete invocations are owned before the first
+await, and public decrypt/durable results redact key handles. It also adds a single
+generated protocol profile, real relay chunk fragmentation, an S5 package/CLI, S6
+Capsules, an S7 process-isolated replicated counter model, and S8 stateful custody
+fuzzing. Chromium and Firefox pass full candidate browser paths. WebKit passes the
+portable verifier but its signer profile stays disabled because WebCrypto Ed25519
+is unavailable in the tested runtime. The
 [claim matrix](CLAIM_MATRIX.md) separates implemented, locally verified, physically
 verified, promoted, and explicitly unclaimed behavior.
 
 ## Priority order
 
-1. **S0 — baseline reset:** current documents, claims, tracking, dependency evidence,
-   and one reproducible receipt.
-2. **S1 — Unified Participant Core:** one authoritative state machine and adapter
-   boundary for browser, CLI, durable, handoff, and quorum paths.
-3. **S2 — crash-safe durable quorum:** cold restart, sign-once journal, one-endpoint
-   loss, continuation, and repair.
-4. **S3/S4 — recoverable confidential state:** exact R3 reconstruction followed by
-   epoch-key confidentiality and revocation.
-5. **S5/S6 — usable product surface:** SDK/CLI and one bounded Continuity Capsule.
-6. **S7 — independent failure domains:** 100-trial matrix and immutable seven-day
-   burn-in across genuinely separate credential/runtime domains.
-7. **S8 — adversarial custody and browser parity:** explicit equivocation handling,
-   compromised-key recovery, and actual Chromium/Firefox/WebKit capability claims.
+1. **P0 — re-promote S2/S4:** new receipts, full suite, immutable independent review,
+   merge, post-merge CI, and exact deployment for the hardened trust boundary.
+2. **P0 — finish S5/S6 release:** clean-install package evidence and exact Capsule
+   interoperability receipt.
+3. **P1 — production S7:** provision genuinely distinct providers/admins/credentials,
+   run 100 failure trials, then immutable seven-day burn-in.
+4. **P1 — GitHub merge authority:** live ruleset plus a separately provisioned
+   reviewer identity that gives native exact-head approvals.
+5. **P2 — WebKit signer parity:** wait for WebCrypto Ed25519 or define a separately
+   reviewed suite; never fall back to exportable private bytes.
 
 ## Promotion invariant
 

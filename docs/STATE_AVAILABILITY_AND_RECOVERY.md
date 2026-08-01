@@ -1,5 +1,11 @@
 # MortalOS R3 state availability and recovery
 
+Current candidate note (2026-08-01): `protocol/profile.v1.json` now generates the
+state/transport/provider/confidential ceilings. A 64 KiB state chunk is carried as
+two bounded 32 KiB relay fragments, each domain-digested and reassembled only after
+exact message/chunk/root verification. Final activation uses expected-prior CAS,
+exact readback, and idempotent acceptance of the same already-active candidate.
+
 Status: **S3 CANDIDATE — receipt, independent review, promotion, and exact-main
 deployment required**
 

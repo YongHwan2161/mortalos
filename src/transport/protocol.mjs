@@ -1,26 +1,28 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import {
-  canonicalBytes,
   decodeBase64Url,
   encodeBase64Url,
-  equalBytes,
+  equalBytes
+} from "../bytes.mjs";
+import {
+  canonicalBytes,
   isCanonical,
   parseJsonBytes
-} from "../index.mjs";
+} from "../codec.mjs";
+import { PROTOCOL_PROFILE } from "../generated/protocol-profile.mjs";
+import { statePackageChunkDigest } from "../state/package.mjs";
 
 export const RELAY_MESSAGE_FORMAT = "mortalos-relay-message/1";
 export const RELAY_CONTROL_FORMAT = "mortalos-relay-control/1";
 export const RELAY_FRAME_FORMAT = "mortalos-relay-frame/1";
+export const RELAY_CHUNK_FRAGMENT_FORMAT = "mortalos-chunk-fragment/1";
 export const RELAY_LIMITS = Object.freeze({
-  frame_bytes: 96 * 1024,
-  message_bytes: 64 * 1024,
-  range_limit: 128,
-  room_bytes: 2 * 1024 * 1024,
-  room_messages: 512
+  ...PROTOCOL_PROFILE.transport
 });
 
 const TAGGED_DIGEST = /^sha256:[A-Za-z0-9_-]{43}$/;
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
+const CHUNK_FRAGMENT_DOMAIN = new TextEncoder().encode("MORTALOS/RELAY/1/CHUNK-FRAGMENT\0");
 
 export class RelayProtocolError extends Error {
   constructor(code, message) {
@@ -63,6 +65,103 @@ function artifact(value, label, maximum) {
 export function relayMessageId(bytes) {
   if (!(bytes instanceof Uint8Array)) throw new RelayProtocolError("RELAY_SCHEMA", "message bytes required");
   return `sha256:${encodeBase64Url(sha256(bytes))}`;
+}
+
+export function relayChunkFragmentDigest(bytes) {
+  if (!(bytes instanceof Uint8Array)) {
+    throw new RelayProtocolError("RELAY_SCHEMA", "fragment bytes required");
+  }
+  const basis = new Uint8Array(CHUNK_FRAGMENT_DOMAIN.byteLength + bytes.byteLength);
+  basis.set(CHUNK_FRAGMENT_DOMAIN);
+  basis.set(bytes, CHUNK_FRAGMENT_DOMAIN.byteLength);
+  return `sha256:${encodeBase64Url(sha256(basis))}`;
+}
+
+export function createRelayChunkFragmentMessages(chunkBytes) {
+  if (!(chunkBytes instanceof Uint8Array) || chunkBytes.byteLength < 1 || chunkBytes.byteLength > PROTOCOL_PROFILE.state.chunk_bytes) {
+    throw new RelayProtocolError("RELAY_LIMIT", "state chunk exceeds profile ceiling");
+  }
+  const owned = new Uint8Array(chunkBytes);
+  const chunkDigest = statePackageChunkDigest(owned);
+  const fragmentCount = Math.ceil(owned.byteLength / RELAY_LIMITS.data_fragment_bytes);
+  const messages = [];
+  for (let fragmentIndex = 0; fragmentIndex < fragmentCount; fragmentIndex += 1) {
+    const fragment = owned.slice(
+      fragmentIndex * RELAY_LIMITS.data_fragment_bytes,
+      (fragmentIndex + 1) * RELAY_LIMITS.data_fragment_bytes
+    );
+    const message = {
+      chunk_digest: chunkDigest,
+      chunk_size: owned.byteLength,
+      format: RELAY_CHUNK_FRAGMENT_FORMAT,
+      fragment_count: fragmentCount,
+      fragment_digest: relayChunkFragmentDigest(fragment),
+      fragment_index: fragmentIndex,
+      fragment_size: fragment.byteLength,
+      payload_base64url: encodeBase64Url(fragment)
+    };
+    if (canonicalBytes(message).byteLength > RELAY_LIMITS.message_bytes) {
+      throw new RelayProtocolError("RELAY_LIMIT", "chunk fragment envelope exceeds message ceiling");
+    }
+    messages.push(Object.freeze(message));
+  }
+  return Object.freeze(messages);
+}
+
+function decodeChunkFragment(message, bytes) {
+  exactKeys(
+    message,
+    [
+      "chunk_digest",
+      "chunk_size",
+      "format",
+      "fragment_count",
+      "fragment_digest",
+      "fragment_index",
+      "fragment_size",
+      "payload_base64url"
+    ],
+    "relay chunk fragment"
+  );
+  if (
+    !TAGGED_DIGEST.test(message.chunk_digest) ||
+    !TAGGED_DIGEST.test(message.fragment_digest) ||
+    !Number.isSafeInteger(message.chunk_size) ||
+    message.chunk_size < 1 ||
+    message.chunk_size > PROTOCOL_PROFILE.state.chunk_bytes ||
+    !Number.isSafeInteger(message.fragment_count) ||
+    message.fragment_count !== Math.ceil(message.chunk_size / RELAY_LIMITS.data_fragment_bytes) ||
+    !Number.isSafeInteger(message.fragment_index) ||
+    message.fragment_index < 0 ||
+    message.fragment_index >= message.fragment_count ||
+    !Number.isSafeInteger(message.fragment_size) ||
+    message.fragment_size < 1 ||
+    message.fragment_size > RELAY_LIMITS.data_fragment_bytes ||
+    typeof message.payload_base64url !== "string" ||
+    !BASE64URL.test(message.payload_base64url)
+  ) {
+    throw new RelayProtocolError("RELAY_SCHEMA", "invalid chunk fragment metadata");
+  }
+  const fragment = decodeBase64Url(message.payload_base64url);
+  const expectedSize = message.fragment_index === message.fragment_count - 1
+    ? message.chunk_size - RELAY_LIMITS.data_fragment_bytes * (message.fragment_count - 1)
+    : RELAY_LIMITS.data_fragment_bytes;
+  if (
+    !fragment ||
+    fragment.byteLength !== message.fragment_size ||
+    message.fragment_size !== expectedSize ||
+    relayChunkFragmentDigest(fragment) !== message.fragment_digest
+  ) {
+    throw new RelayProtocolError("RELAY_DIGEST", "chunk fragment digest or size mismatch");
+  }
+  return Object.freeze({
+    bytes: new Uint8Array(bytes),
+    chunk: Object.freeze({ ...message, fragment_bytes: fragment }),
+    control: null,
+    message,
+    message_id: relayMessageId(bytes),
+    record: null
+  });
 }
 
 export function createRelayMessage(record) {
@@ -136,6 +235,9 @@ export function decodeRelayMessageBytes(bytes) {
   }
   if (!isCanonical(bytes, message)) {
     throw new RelayProtocolError("RELAY_NONCANONICAL", "relay message is not canonical JSON");
+  }
+  if (message.format === RELAY_CHUNK_FRAGMENT_FORMAT) {
+    return decodeChunkFragment(message, bytes);
   }
   if (message.format === RELAY_CONTROL_FORMAT) {
     exactKeys(message, ["content_base64url", "format", "kind"], "relay control message");

@@ -1,5 +1,11 @@
 # MortalOS v0/v1 Threat Model
 
+Current candidate note (2026-08-01): S2/S4 claim authority is reopened. A branded
+outer authority is insufficient when the store or method behind it is mutable.
+Security-sensitive async entrypoints must capture complete transitive invocation
+data and module-private capabilities before the first await, and authority-changing
+commits require exact readback. Historical receipts do not cover this source.
+
 Status: **Normative for v0 and the Minimum Viable Life claim**  
 Protocol: `mortalos/0`, state extension `mortalos/1`
 
@@ -482,3 +488,17 @@ Any implementation change that introduces one of the following requires a threat
 - a claim that logical key separation proves physical or administrative independence.
 
 The revision must identify the new trust assumption, affected invariant, failure mode, and required test.
+
+## 20. S7/S8 distributed and browser boundary
+
+- Majority CAS tolerates crash/partition faults only; it does not tolerate Byzantine
+  replicas or a compromised signing authority.
+- Three localhost processes and three files prove process/network restart semantics,
+  not separate hosts, providers, administrators, or credential domains.
+- A Continuity Capsule contains public lineage plus encrypted resource state and no
+  signing authority. A 2-of-3 Capsule quorum is content availability, not key quorum.
+- Chromium and Firefox have actual-engine candidate evidence. WebKit is verifier-only
+  while its WebCrypto implementation rejects Ed25519; raw or exportable private-key
+  fallback is forbidden.
+- Any valid divergent Capsule or lineage is equivocation evidence and halts automatic
+  activation; MortalOS does not select a winner.

@@ -5,7 +5,54 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Implement S4 confidential state and epoch-key recovery
+### ACTIVE — Harden the North Star capability boundary and complete S5-S8
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `49c53029623c6da85566d7fa794b71f2068af682`
+- Work branch: `agent/codex-protocol-kernel--north-star-security-platform`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--north-star-security-platform`
+- Exact intended shared areas: `.github/` policy and verification workflows;
+  `package.json`, `package-lock.json`; public SDK/CLI/capsule entrypoints and
+  allowlist; `src/`, `lab/participant/`, `lab/transport/`, and new S5-S8 runtime
+  modules; protocol profiles, schemas, generators, independent validators, tests,
+  browser-matrix scripts, receipts/evidence, and current normative documentation.
+- Exact named current paths include `lab/participant/durable-quorum-endpoint.mjs`,
+  `lab/storage/`, `src/confidential/recovery.mjs`, `src/transport/protocol.mjs`,
+  `src/state/package.mjs`, `src/index.mjs`, `docs/CLAIM_MATRIX.md`,
+  `docs/NORTH_STAR_ROADMAP.md`, `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`,
+  `docs/STAGE_TRACKING.md`, `docs/THREAT_MODEL.md`, `docs/TRACEABILITY.md`, and
+  `agents/codex-protocol-kernel/{HANDOFF,WORKLOG}.md`.
+- Intended change: reopen the active S2/S4 claims without rewriting historical
+  evidence; remove mutable store and post-await caller state from security trust;
+  contain signing keys; freeze one generated protocol profile through the real
+  chunk data plane; publish an allowlisted S5 SDK/CLI; implement a portable S6
+  Continuity Capsule; choose and implement an S7 counter/topology contract; add
+  stateful adversarial fuzzing and Chromium/Firefox/WebKit S8 custody parity.
+- Required gates: each known exploit is a deterministic negative regression in Node
+  and, where applicable, a real browser; exact boundary and one-over limits fail
+  across package, frame, and provider layers; clean install/pack on Windows and
+  Linux; independent-domain partition/loss/restart trials have no counter overlap;
+  browser capability smoke and full parity pass; historical receipts remain
+  immutable; replacement claims are promoted only through new exact-head receipts,
+  complete CI, distinct reviewer identity, protected merge, and exact-main checks.
+- Excluded: pretending one profile is an independent failure domain, treating a
+  GitHub App owned by the author as human independence, retroactive secrecy,
+  compromised-authority safety beyond the selected ADR, or production claims not
+  demonstrated by the resulting topology.
+- Local candidate evidence (2026-08-01): S2 actual Chromium `100/100` handoff and
+  A/B/C loss suite passed; S4 `23/23` passed with one million allocations and zero
+  IV collisions plus actual Chromium recovery; protocol-profile and real chunk
+  data-plane tests passed; S5 clean package install, S6 Capsule, S7 process-isolated
+  HTTP quorum, S8 custody/stateful fuzz, spec/link/audit/build/UX, and all historical
+  stage verifiers passed. Actual Chromium and Firefox passed the full signer/custody
+  path; WebKit passed the portable verifier but remains fail-closed for signing
+  because its current WebCrypto runtime does not implement Ed25519.
+- Promotion HOLD (2026-08-01): the active main ruleset is `20168959`, but no
+  separately controlled GitHub reviewer principal is provisioned. New exact-head
+  receipts, immutable native approval, expected-head merge, post-merge CI/deploy,
+  real distinct-provider/admin/credential S7 topology, and burn-in remain open.
+
+### HISTORICAL — Implement S4 confidential state and epoch-key recovery
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `39529337b2a739b1aee4697e680643d77704bbaa`

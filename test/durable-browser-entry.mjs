@@ -108,11 +108,14 @@ async function restoreAndAdvance(run) {
   const approval = await target.endpoint.approveProposal(proposal);
   await target.endpoint.commitProposal(proposal, [approval]);
   const after = target.endpoint.publicState;
+  const persisted = await target.store.read();
   target.store.close();
   return {
     after,
     before,
-    private_key_export_rejected: target.endpoint.document.key.private_key.extractable === false
+    private_key_export_rejected:
+      persisted.key.private_key.extractable === false &&
+      !Object.hasOwn(target.endpoint.document.key, "private_key")
   };
 }
 
@@ -469,7 +472,7 @@ async function verifyVersionOneMigration() {
   });
   const approval = await legacy.approveGenesis(body);
   await legacy.commissionGenesis(body, [approval]);
-  const document = legacy.document;
+  const document = await legacyStore.read();
   const validName = "mortalos-s2-migration-valid";
   await createVersionOneDatabase(validName, {
     evidence: {

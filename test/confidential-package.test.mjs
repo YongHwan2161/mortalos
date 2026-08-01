@@ -30,6 +30,7 @@ import {
 import {
   createConfidentialPackage,
   decryptConfidentialPackage,
+  decryptConfidentialPackageForRecovery,
   verifyConfidentialPackage
 } from "../src/confidential/package.mjs";
 import {
@@ -92,12 +93,16 @@ test("ciphertext package round-trips only for exact current custodians with non-
   );
   for (const custodian of value.custodians) {
     const keyPair = keyPairFor(value, custodian);
-    const decrypted = await decryptConfidentialPackage({
+    const options = {
       custodian,
       expectedCustodians: value.custodians,
       packageBytes: value.confidentialPackage.packageBytes,
       privateKey: keyPair.privateKey
-    });
+    };
+    const publicDecrypted = await decryptConfidentialPackage(options);
+    assert.deepEqual(publicDecrypted.resource_bytes, value.resourceBytes);
+    assert.equal(Object.hasOwn(publicDecrypted, "epoch_key"), false);
+    const decrypted = await decryptConfidentialPackageForRecovery(options);
     assert.deepEqual(decrypted.resource_bytes, value.resourceBytes);
     assert.equal(decrypted.epoch_key.extractable, false);
     assert.deepEqual([...decrypted.epoch_key.usages], ["decrypt"]);
@@ -1115,6 +1120,13 @@ test("counter, wrap, chunk, package, rotation, and activation faults leave one c
     /after/u
   );
   assert.deepEqual(store.active, newCandidate);
+  assert.deepEqual(
+    await store.commitActive({
+      candidate: newCandidate,
+      expectedPriorConfidentialRoot: oldCandidate.confidential_root
+    }),
+    newCandidate
+  );
   await assert.rejects(
     store.commitActive({
       candidate: oldCandidate,
