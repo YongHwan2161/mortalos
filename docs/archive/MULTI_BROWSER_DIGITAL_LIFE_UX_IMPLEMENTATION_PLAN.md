@@ -2,7 +2,7 @@
 
 > Historical implementation record — the S0–S12 contest-era program is complete
 > and no longer sets current priority. Use
-> [`../POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`](../POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md)
+> [`../IMPLEMENTATION_PLAN.md`](../IMPLEMENTATION_PLAN.md)
 > as the active implementation SSOT.
 
 상태: **ACTIVE EXECUTION SSOT — S0–S11 LOCAL PASS after two fail-closed reviewer remediation loops; S12 new-head review/merge/production acceptance 대기**<br>

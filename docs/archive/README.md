@@ -12,7 +12,6 @@ submission instructions.
 
 Current authority:
 
-- [North Star roadmap](../NORTH_STAR_ROADMAP.md)
-- [Post-hackathon implementation SSOT](../POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md)
+- [North Star implementation SSOT](../IMPLEMENTATION_PLAN.md)
 - [Claim matrix](../CLAIM_MATRIX.md)
 - [Normative protocol](../PROTOCOL.md)

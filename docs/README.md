@@ -4,13 +4,13 @@ Last synchronized: **2026-08-02 KST**
 
 ## Current authority
 
-- [North Star roadmap](NORTH_STAR_ROADMAP.md) — short current direction and stage order.
-- [North Star implementation SSOT](POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md) — current compact S0–S8 ledger, strict PASS/HOLD gates, and Definition of Done.
+- [North Star implementation SSOT](IMPLEMENTATION_PLAN.md) — sole current direction,
+  priority order, S0–S8 ledger, strict PASS/HOLD gates, and Definition of Done.
 - [Current claim matrix](CLAIM_MATRIX.md) — implemented, exact-head verified, physically verified, promoted, and explicitly unclaimed behavior.
-- [Stage tracking](STAGE_TRACKING.md) — S1–S8 issues, owner, milestone, and required receipt paths.
 
-Exactly one active roadmap and one detailed implementation SSOT exist. Historical
-plans cannot promote a current claim.
+The former separate roadmap and stage-tracking files were folded into the
+implementation SSOT to prevent priority and status drift. GitHub issues remain
+coordination metadata; historical plans cannot promote a current claim.
 
 ## Normative protocol and evidence boundaries
 
@@ -54,12 +54,14 @@ deadlines, submission paths, or promotion status as current authority.
 
 The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
-`2-of-3` loss/repair, the merged S1 Participant Core, S2 crash-safe durable quorum,
-and S3 exact logical resource recovery within the qualifications in the claim
-matrix. The current candidate reopens S2/S4 after trust-boundary hardening and adds
-S5–S8 candidate surfaces. No new stage is promoted until its new exact-head receipt,
-immutable review, merge, and post-merge evidence complete.
+`2-of-3` loss/repair, the S1 Participant Core, the historical S2 durable quorum
+claim, and S3 exact logical resource recovery within the qualifications in the
+claim matrix. Main `12e90e6199b16b5379a6d4c1caa62cd24f7446e5` also contains
+revised S2/S4 code and S5–S8 implementation surfaces. Their presence in main does
+not replace a stage receipt or prove physical independence.
 
-It does not yet promote the current confidential-state revision, independent
-failure domains, SDK/CLI/Capsule release, Byzantine/Sybil resistance, global death,
-or exact-head WebKit full signing parity. GPT is optional and non-authoritative.
+The immediate product priority is the real-file A-to-B continuity vertical defined
+in the implementation SSOT. It does not yet promote the revised confidential-state
+claim, independent failure domains, SDK/CLI/Capsule release, Byzantine/Sybil
+resistance, global death, or WebKit full signing parity. GPT is optional and
+non-authoritative.

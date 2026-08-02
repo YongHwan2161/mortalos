@@ -1,19 +1,21 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S2/S4 claims reopened; candidate promotion HOLD**
+Status: **ACTIVE IMPLEMENTATION SSOT — PRODUCT CONTINUITY VERTICAL FIRST**
 
 Last synchronized: **2026-08-02 KST**
 
-This is the sole ordered S0–S8 execution plan. Historical receipts remain valid
-evidence for their named commits, but they do not authorize claims for a later
-source tree. The current candidate obtains no promotion from old S2/S4 receipts.
+This is the sole current direction, stage ledger, and ordered implementation plan.
+Historical receipts remain valid only for their named commits. Main
+`12e90e6199b16b5379a6d4c1caa62cd24f7446e5` contains the reviewed S2-S8 platform
+implementation; merge alone does not manufacture a stage receipt or a physical-
+independence claim.
 
 ## 1. North Star
 
-> A digital organism remains deterministically identifiable, recoverable, and
-> continuable after any one endpoint, relay, or storage replica disappears,
-> without trusting a mutable public object, exposing private authority, or
-> silently selecting a fork.
+> A user can bind a real digital resource to one verifiable organism on endpoint A,
+> move custody and recover the exact resource on endpoint B, and commit the next
+> authorized transition after A disappears, without trusting a UI, relay, storage
+> provider, or model to decide the result.
 
 The product sentence remains **Create once. Continue elsewhere.** The protocol
 claim is narrower than “decentralized”, “ownerless”, or “immortal”: a verified
@@ -22,37 +24,116 @@ assumptions.
 
 ## 2. Most fundamental improvement
 
-The root problem is not a missing feature. It is an incomplete trust boundary.
-Branding an outer authority did not secure mutable store methods; owning a method
-did not secure borrowed data across `await`; and hiding a non-extractable key from
-public APIs did not stop compromised same-origin code from using the persisted key
-directly. A green test or historical receipt could then overstate the current source.
+The root gap is now product composition, not another horizontal protocol primitive.
+Main contains a Participant Core, real relay fragments, confidential state, an SDK,
+a verification CLI, Capsules, and logical replica models. Those pieces are tested
+separately, but the Lab, Functions, Relay, examples, and CLI do not yet expose one
+supported path that creates a Capsule from a user-selected resource, completes an
+A-to-B custody handoff, recovers after A closes, and commits the next transition.
+The CLI currently verifies artifacts; it cannot create or continue them.
 
-The governing rule is now:
+The governing product rule is:
 
-> Every security-sensitive async entrypoint must own its complete transitive
-> invocation before its first `await`, and every authority-changing commit must
-> use a module-private capability followed by exact readback. Any claim that must
-> survive same-origin compromise must additionally move key use and monotonic policy
-> state into a separate trust domain; API redaction alone is not custody isolation.
+> No new stage begins until one shared public workflow proves the North Star with a
+> real bounded file across two isolated clients and a fresh verifier process.
 
-This rule controls S2 sign-once, S3/S4 recovery, S4 rotation, S7 counter allocation,
-Capsule activation, fuzzing, documentation, and promotion evidence.
+Security hardening is deferred, not reversed. Existing capability ownership,
+private-key containment, exact-readback, bounded-input, and fail-closed browser
+gates remain mandatory regression boundaries. Strong same-origin signer isolation
+and real independent-provider topology return only after the product vertical is
+usable and stable.
 
 ## 3. Current implementation ledger
 
-| Stage | Candidate state | Local evidence | Promotion state |
+| Stage | Main implementation | Evidence | Claim state |
 | --- | --- | --- | --- |
 | S0/S1 | Historical baseline and Participant Core retained | Existing exact-commit receipts | Historical promotion only |
-| S2 | Endpoint and raw store capability share one module-private closure with no raw exports; public document redacts `CryptoKey`; sign invocation owned before await | Node durable matrix and Chromium/Firefox persistent-profile matrix pass for conforming callers | **REOPENED / HOLD**; XSS-resistant sign-once additionally requires isolated signer custody |
-| S3 | Limits generated from one protocol profile; real relay fragment data plane; activation CAS/readback is idempotent | 1 MiB reconstruction, 10,000 recovery corpus, real relay message test pass | Existing promotion remains historical; new data plane is candidate |
-| S4 | Recovery inputs owned; epoch activation uses private capability and exact readback; public decrypt/recovery results omit epoch keys | Node, Chromium, and Firefox cryptographic/rotation gates pass for the stated compromised-browser non-claim | **REOPENED / HOLD**; same-origin counter-key use remains outside the current custody boundary |
-| S5 | Authority-free `@mortal-os/core` export map and `mortalos` CLI | SDK allowlist, CLI, and package allowlist pass | Candidate only |
-| S6 | Canonical Continuity Capsule binds lineage, latest state transition, manifest, receipt, chunks, and exact resource | Cross-process CLI verification and tamper rejection pass | Candidate only |
-| S7 | Majority counter store, three process-isolated HTTP CAS replicas, disk restart, repair, and topology validator | Concurrent coordinators, one replica loss, restart, and no-overlap gates pass | Local topology PASS; real independent providers/admins **HOLD** |
-| S8 | Stateful mutation corpus and 2-of-3 adversarial Capsule custody | S2/S4 accessor/Proxy/prototype/array corpus; corrupt/lost/fork custody gate pass | Chromium/Firefox full local PASS; WebKit capability-routed exact-head CI **HOLD** |
+| S2 | Module-private durable capability, first-await ownership, key-redacted diagnostics | Node plus Chromium/Firefox conforming-caller matrices | Historical receipt only; XSS-resistant sign-once remains **HOLD** |
+| S3 | Generated profile and real relay fragment data plane | 1 MiB reconstruction, recovery corpus, real relay message test | Historical recovery promoted; new data-plane integration not yet product-proven |
+| S4 | Private activation capability, exact readback, key-redacted recovery | Node plus Chromium/Firefox cryptographic and rotation gates | Historical receipt only; revised claim remains **HOLD** |
+| [S5](https://github.com/YongHwan2161/mortalos/issues/34) | Authority-free `@mortal-os/core` package and verification CLI | Export/pack/install/CLI tests | Merged, not published and not product-integrated |
+| [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and 2-of-3 content custody | Cross-process verification and tamper/fork rejection | Merged, but no end-to-end create/continue receipt |
+| [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
+| [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 
-## 4. Global gate and evidence rules
+Stage coordination remains subordinate to this SSOT:
+
+| Stage | Issue | Required receipt |
+| --- | --- | --- |
+| S1 | [#30](https://github.com/YongHwan2161/mortalos/issues/30) | `evidence/stages/s1-participant-core.json` |
+| S2 | [#31](https://github.com/YongHwan2161/mortalos/issues/31) | `evidence/stages/s2-durable-quorum.json` |
+| S3 | [#32](https://github.com/YongHwan2161/mortalos/issues/32) | `evidence/stages/s3-state-recovery.json` |
+| S4 | [#33](https://github.com/YongHwan2161/mortalos/issues/33) | `evidence/stages/s4-confidentiality.json` |
+| S5 | [#34](https://github.com/YongHwan2161/mortalos/issues/34) | `evidence/stages/s5-sdk-cli.json` |
+| S6 | [#35](https://github.com/YongHwan2161/mortalos/issues/35) | `evidence/stages/s6-continuity-capsule.json` |
+| S7 | [#36](https://github.com/YongHwan2161/mortalos/issues/36) | `evidence/stages/s7-failure-domains.json` |
+| S8 | [#37](https://github.com/YongHwan2161/mortalos/issues/37) | `evidence/stages/s8-adversarial-custody.json` |
+
+## 4. Priority order
+
+### P0 — One real continuity vertical
+
+Use one implementation path in the SDK, CLI, and Lab to prove this sequence:
+
+1. Endpoint A selects a real bounded file and creates the organism and encrypted
+   state package.
+2. Endpoint B creates its own non-extractable key and accepts a canonical custody
+   handoff; no private key crosses clients.
+3. The resource, lineage, and manifest are exported as a canonical Capsule and
+   stored as three content copies through the real chunk data plane.
+4. A is closed. B recovers the exact resource from any two copies, verifies the
+   Capsule, and commits the next authorized state transition.
+5. A fresh CLI process verifies the new organism ID, head, state root, resource
+   digest, and Capsule ID without receiving signing authority.
+
+Strict pass criteria:
+
+- the same scenario code drives Node integration, actual Chromium, and the Lab;
+- the file is supplied at runtime, not embedded as a test fixture;
+- A's process is actually gone before B continues;
+- one missing or corrupt content copy recovers exact bytes, while one remaining
+  copy, a valid fork, stale lineage, or altered chunk fails closed;
+- no internal `src/` authority module is imported by the product surface; public
+  SDK boundaries are used throughout;
+- EN/KO users can finish the primary flow without opening Advanced evidence;
+- median local completion across ten clean runs is recorded, with zero flaky run
+  and no model call.
+
+### P0 — Complete the public package surface
+
+- add explicit create, inspect, handoff, recover, and continue orchestration APIs;
+- add CLI commands for the same operations with machine-readable JSON output;
+- add one minimal consumer example installed from the packed tarball;
+- retain the authority-free export allowlist and no-private-material invariant.
+
+Pass when a clean temporary consumer performs the full P0 vertical without a
+relative repository import and Windows plus Ubuntu package gates agree.
+
+### P1 — Make the Lab a product demonstration
+
+- reduce the default journey to **Create resource → Move custody → Recover and
+  continue**;
+- keep protocol bytes, GPT witness, fuzzing, and diagnostics under Advanced evidence;
+- show one stable organism ID, resource digest, custody state, and next action;
+- provide accessible EN/KO copy and actionable fail-closed recovery guidance.
+
+Pass when a first-time user can complete the flow from visible instructions alone,
+and automated accessibility, mobile layout, two-profile Chromium, and failure-path
+tests remain green.
+
+### P1 — Promote only the integrated result
+
+Freeze S5/S6 receipts after the product vertical stabilizes. Bind source, packed
+artifact, exact user scenario, browser evidence, and public readback to one SHA.
+Do not spend release evidence on another disconnected candidate.
+
+### P2 — Deferred strengthening
+
+Return to isolated signer custody, WebKit full signing, real independent providers,
+100 failure trials, and seven-day burn-in only after P0/P1 pass. These are explicit
+nonclaims meanwhile and must not be weakened to make the product flow pass.
+
+## 5. Global gate and evidence rules
 
 A stage passes only when all of the following bind the same immutable SHA:
 
@@ -70,7 +151,14 @@ administratively independent providers.
 
 An old green run does not cover a new SHA.
 
-## 5. Required verification commands
+Every publishable SHA must still pass: locked install, license, specification,
+links, governance, protocol, state, transport, relay, Lab, UX, package, and browser
+gates. Committed, Node, isolated browser-target, and actual Chromium results must be
+byte-identical for the portable corpus. Exactly 10,000 cases replay from seed
+`1297044052`. Any cross-runtime mismatch reopens the earliest portable gate and
+invalidates all later evidence.
+
+## 6. Required verification commands
 
 ```bash
 npm ci
@@ -93,22 +181,22 @@ npm test
 The million-IV test and the 100-run persistent browser matrices remain release
 gates even when a bounded local parity run is used for iteration.
 
-## 6. S0 — Post-hackathon baseline reset
+## 7. S0 — Current claim baseline
 
 Stage alias: **S0 — baseline reset:** current claim and evidence authority.
 
-Goal: preserve historical receipts as immutable evidence while resetting current
-claim authority to the new candidate.
+Goal: preserve historical receipts as immutable evidence while separating merged
+implementation, current product integration, and promoted claims.
 
 Pass criteria:
 
-- current claim matrix says S2/S4 are reopened;
+- current claim matrix says S2/S4 revised claims remain reopened;
 - old receipts still verify only their recorded commits;
-- this SSOT, roadmap, tracking, threat model, traceability, README, and browser
+- this SSOT, claim matrix, threat model, traceability, README, and browser
   compatibility agree;
 - no current document treats a local green run as promotion.
 
-## 7. S1 — Unified Participant Core
+## 8. S1 — Unified Participant Core
 
 Stage alias: **S1 — Unified Participant Core:** one deterministic authority path.
 
@@ -121,7 +209,7 @@ Pass criteria:
 - canonical Node/browser results remain byte-identical;
 - proxy, accessor, cloned-context, fork, and bounded-input negatives remain green.
 
-## 8. S2 — Durable capability and sign-once security
+## 9. S2 — Durable capability and sign-once security
 
 Goal: a mutable or spoofed store cannot lie about a committed signing intent, and no
 supported public result exposes a usable signing key.
@@ -154,10 +242,10 @@ Pass criteria:
   replacement of public `read`/`write` methods cannot affect endpoint commits.
 
 Boundary: these criteria prove public-API redaction and conforming concurrency, not
-same-origin/XSS-resistant sign-once. Strong custody is a separate P0 gate requiring
-an isolated signer that owns both key use and monotonic journal state.
+same-origin/XSS-resistant sign-once. Strong custody is deferred and requires an
+isolated signer that owns both key use and monotonic journal state.
 
-## 9. S3 — Protocol profile and real chunk data plane
+## 10. S3 — Protocol profile and real chunk data plane
 
 Goal: one generated profile governs state, transport, provider, and confidential
 limits, and a legal state chunk actually traverses relay messages.
@@ -183,7 +271,7 @@ Pass criteria:
 - repeating the same completed activation succeeds idempotently; a conflicting
   successor fails closed.
 
-## 10. S4 — Recovery, activation, and private-key containment
+## 11. S4 — Recovery, activation, and private-key containment
 
 Goal: ciphertext recovery cannot be redirected after verification, activation
 cannot be faked through a mutable facade, and supported public APIs return no epoch
@@ -215,20 +303,23 @@ IndexedDB. This blocks export but not direct `sign` use by compromised same-orig
 code. Strong counter custody cannot pass until signing and counter state are moved
 together to a separate origin/service or hardware authorization domain.
 
-## 11. S5 — SDK and CLI
+## 12. S5 — SDK and CLI
 
-Goal: installable consumers use one reviewed, authority-free protocol surface.
+Goal: installable consumers create, inspect, hand off, recover, verify, and continue
+through one reviewed, authority-free orchestration surface.
 
 Pass criteria:
 
 - package `exports` exposes only the SDK and protocol profile;
 - SDK export names exactly match the allowlist and contain no authority, store,
   decrypt-key, or private-key primitive;
-- CLI verifies profiles, one Capsule, and quorum custody copies deterministically;
+- CLI exposes the P0 create/handoff/recover/continue workflow and deterministic
+  verification with stable JSON output;
 - packed artifacts omit lab, evidence, tests, scripts, agents, and GitHub internals;
-- a clean temporary install runs on supported Node versions.
+- a clean temporary install executes the real-file continuity vertical on supported
+  Windows and Ubuntu Node versions.
 
-## 12. S6 — Continuity Capsule
+## 13. S6 — Continuity Capsule
 
 Goal: one canonical bounded artifact carries enough public evidence and encrypted
 resource state to verify and continue elsewhere without private authority.
@@ -240,9 +331,11 @@ Pass criteria:
 - another process verifies the same capsule id/head/state/resource;
 - mutation, truncation, stale lineage, wrong chunk, or wrong receipt fails before
   activation;
-- serialized bytes contain no private key, `CryptoKey`, PKCS#8, or raw epoch key.
+- serialized bytes contain no private key, `CryptoKey`, PKCS#8, or raw epoch key;
+- the Lab and packed CLI produce and consume the same canonical Capsule bytes for
+  the P0 user-selected resource scenario.
 
-## 13. S7 — Independent counter authority and topology
+## 14. S7 — Independent counter authority and topology
 
 Goal: counter allocation survives one replica loss without releasing overlapping
 AES-GCM invocation counters.
@@ -260,7 +353,7 @@ Pass criteria:
 The local process topology satisfies implementation verification only. It cannot
 promote the last production criterion.
 
-## 14. S8 — Adversarial custody and browser parity
+## 15. S8 — Adversarial custody and browser parity
 
 Goal: hostile storage/custody behavior is classified without last-write-wins, and
 every browser gets an evidence-backed capability profile.
@@ -283,7 +376,7 @@ WebKit full signing parity is therefore **HOLD**: the current Ubuntu build creat
 key but fails the full protocol envelope. Non-capable runtimes remain an explicit
 verifier-only profile. Weakening key containment is not an acceptable workaround.
 
-## 15. GitHub merge authority
+## 16. GitHub merge authority
 
 Goal: native branch protection requires both a signed exact-snapshot attestation
 and approval from a separately credentialed GitHub identity, dismissing approval
@@ -307,16 +400,19 @@ Pass criteria:
 - the reviewer cannot alter the implementation branch or its own policy workflow;
 - machine-user 2FA, passkey, recovery isolation, and login alerts pass live preflight.
 
-The identity and ruleset are provisioned. Promotion remains **HOLD** until the new
-policy head passes exact-head CI, independent review, App attestation, and native
-approval. This proves separate GitHub credentials under one operator, not separate
-human or administrative control.
+PR #51 passed exact-head CI, immutable review, App attestation, native approval,
+no-bypass ruleset enforcement, and expected-head squash merge as
+`12e90e6199b16b5379a6d4c1caa62cd24f7446e5`. This proves separate GitHub
+credentials under one operator, not separate human or administrative control.
+Future source changes must repeat the same exact-snapshot gate.
 
-## 16. Completion and explicit nonclaims
+## 17. Completion and explicit nonclaims
 
-The program is complete only when all S0–S8 rows have exact receipts, independent
-review, expected-head merge, post-merge CI, and—where claimed—live topology/deploy
-evidence. Until then the aggregate status is **HOLD**.
+The next product milestone is complete only when the P0 real-file vertical and
+public package surface pass their strict criteria, then receive one integrated
+receipt, independent review, expected-head merge, post-merge CI, and public
+readback. S2/S4 strong-custody and S7 physical-independence claims remain **HOLD**
+without blocking ordinary product iteration.
 
 Explicit nonclaims:
 
