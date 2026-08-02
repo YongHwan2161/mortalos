@@ -30,7 +30,7 @@
   },
   "runner": {
     "version": "mortalos-reviewer-gate/1",
-    "binary_sha256": "63384d25aa4f65444176d20c90a8357110c32209183a56f62e4e8b2b4d407e3f",
+    "binary_sha256": "b28d7e5af70b4af8c9e0995ab5cbbf7ea2bb11099bc19ec609d3cccf1fed055f",
     "execution_boundary": "outside_pr_controlled_github_actions",
     "credential_storage": "operator_protected_external_store",
     "repository_secret_forbidden": true,
