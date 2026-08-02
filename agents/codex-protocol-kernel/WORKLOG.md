@@ -1693,3 +1693,25 @@ result, and reproducible verification.
   and ruleset-policy PASS. A new uninterrupted full suite, commit/push, exact-head
   CI, fresh independent review, App check, and machine-user native approval remain
   required. App Checks permission remains a user-owned live configuration HOLD.
+
+## 2026-08-02 — PR #51 promotion and product-continuity documentation reset
+
+- Independent reviewer revalidated exact head `8cc5375…`, required CI, App
+  attestation, machine-user native approval, unresolved-thread count, and no-bypass
+  ruleset immediately before expected-head squash merge. Main became `12e90e6…`.
+- Repository analysis found the next root gap: the SDK, verification CLI, Capsule,
+  real chunk data plane, and Lab pass independently but are not composed into one
+  supported create/handoff/recover/continue user workflow. The CLI has no creation
+  or continuation command and no Lab/Functions/Relay/example imports the new product
+  surface.
+- The active implementation SSOT was renamed to `docs/IMPLEMENTATION_PLAN.md` and
+  recentered on a real-file A-to-B vertical. Duplicate roadmap and stage-tracking
+  files were retired; their live priorities and issue links moved into the SSOT.
+- Normative protocol, threat, traceability, ADR, claim history, archived contest
+  evidence, and dirty historical worktrees were preserved. This change is
+  documentation-only and does not promote S2/S4, publish S5/S6, change production,
+  or claim physical independence.
+- Focused validation passed: document links `44` local / `11` HTTPS syntax,
+  specification with `73` relative links, governance `30/30`, historical receipt
+  regressions S0-S4 `61/61`, Apache-2.0 verification, dependency audit with zero
+  findings, and `git diff --check`.

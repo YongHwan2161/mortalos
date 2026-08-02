@@ -30,15 +30,13 @@ const paths = {
   threatModel: "docs/THREAT_MODEL.md",
   rejectionCodes: "docs/REJECTION_CODES.md",
   traceability: "docs/TRACEABILITY.md",
-  roadmap: "docs/NORTH_STAR_ROADMAP.md",
   releaseEvidence: "docs/archive/BUILD_WEEK_EVIDENCE.md",
   incubator: "docs/archive/SINGLE_BROWSER_INCUBATOR.md",
   accessArchitecture: "docs/ACCESS_ARCHITECTURE.md",
   docsIndex: "docs/README.md",
-  postImplementationPlan: "docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md",
+  currentPlan: "docs/IMPLEMENTATION_PLAN.md",
   claimMatrix: "docs/CLAIM_MATRIX.md",
-  stageTracking: "docs/STAGE_TRACKING.md",
-  implementationPlan: "docs/archive/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
+  historicalImplementationPlan: "docs/archive/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
   browserCompatibility: "docs/BROWSER_PARTICIPANT_COMPATIBILITY.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
@@ -285,24 +283,23 @@ const portableGateStatements = [
 ];
 for (const statement of portableGateStatements) {
   assert(
-    text.roadmap.includes(statement) ||
+    text.currentPlan.includes(statement) ||
       text.releaseEvidence.includes(statement) ||
-      text.implementationPlan.includes(statement),
+      text.historicalImplementationPlan.includes(statement),
     `Current or historical verification authority lost C1 evidence: ${statement}`
   );
 }
 
 for (const statement of [
-  "S0 — baseline reset:",
-  "S1 — Unified Participant Core:",
+  "S0 — Current claim baseline",
+  "S1 — Unified Participant Core",
   "An old green run does not cover a new SHA",
   "Crash-safe durable `2-of-3` cold recovery"
 ]) {
   assert(
-    text.roadmap.includes(statement) ||
-      text.postImplementationPlan.includes(statement) ||
+    text.currentPlan.includes(statement) ||
       text.claimMatrix.includes(statement),
-    `Current roadmap, plan, or claim matrix is missing: ${statement}`
+    `Current plan or claim matrix is missing: ${statement}`
   );
 }
 
@@ -446,7 +443,7 @@ for (const [name, artifact] of Object.entries({
   traceability: text.traceability,
   accessArchitecture: text.accessArchitecture,
   incubator: text.incubator,
-  roadmap: text.roadmap,
+  currentPlan: text.currentPlan,
   docsIndex: text.docsIndex,
   threatModel: text.threatModel
 })) {
@@ -490,13 +487,14 @@ assert(
 
 for (const statement of [
   "ACTIVE IMPLEMENTATION SSOT",
-  "## 6. S0 — Post-hackathon baseline reset",
-  "## 14. S8 — Adversarial custody and browser parity",
+  "## 7. S0 — Current claim baseline",
+  "## 15. S8 — Adversarial custody and browser parity",
+  "No new stage begins until one shared public workflow proves the North Star",
   "GPT/model product features"
 ]) {
   assert(
-    text.postImplementationPlan.includes(statement),
-    `Post-hackathon implementation SSOT is missing: ${statement}`
+    text.currentPlan.includes(statement),
+    `Implementation SSOT is missing: ${statement}`
   );
 }
 assert(
@@ -506,10 +504,8 @@ assert(
 
 const currentDocLinks = [
   "README.md",
-  "NORTH_STAR_ROADMAP.md",
-  "POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md",
+  "IMPLEMENTATION_PLAN.md",
   "CLAIM_MATRIX.md",
-  "STAGE_TRACKING.md",
   "ACCESS_ARCHITECTURE.md",
   "PROTOCOL.md",
   "THREAT_MODEL.md",
@@ -525,11 +521,11 @@ for (const fileName of currentDocLinks) {
 
 for (let stage = 1; stage <= 8; stage += 1) {
   const issue = 29 + stage;
-  assert(text.stageTracking.includes(`| S${stage} `), `Stage tracking is missing S${stage}`);
-  assert(text.stageTracking.includes(`/issues/${issue}`), `Stage tracking is missing issue #${issue}`);
+  assert(text.currentPlan.includes(`| S${stage} |`), `Implementation plan is missing S${stage}`);
+  assert(text.currentPlan.includes(`/issues/${issue}`), `Implementation plan is missing issue #${issue}`);
   assert(
-    text.stageTracking.includes(`evidence/stages/s${stage}-`),
-    `Stage tracking is missing the S${stage} receipt path`
+    text.currentPlan.includes(`evidence/stages/s${stage}-`),
+    `Implementation plan is missing the S${stage} receipt path`
   );
 }
 
@@ -539,7 +535,6 @@ const removedLegacyDocs = [
   "CURRENT_AUDIT_2026-07-14.md",
   "DEVPOST_COMPLIANCE.md",
   "DEMO_SCRIPT.md",
-  "IMPLEMENTATION_PLAN.md",
   "P0_VERIFICATION_REPORT.md",
   "PORTABLE_KERNEL_REPORT_2026-07-15.md",
   "PROJECT_STATUS.md",
