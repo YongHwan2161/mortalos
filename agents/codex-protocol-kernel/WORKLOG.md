@@ -1745,3 +1745,17 @@ result, and reproducible verification.
 - Honest limits: three copies are one local administrative domain, product Capsules
   are not confidential, CLI key files rely on endpoint OS custody, and no stage
   receipt or production deployment is promoted by this candidate.
+
+## 2026-08-02 — CLI cross-process sign-once race closed before immutable review
+
+- Final source audit found that atomic file replacement alone did not serialize two
+  processes that read the same authority revision concurrently. Conflicting bodies
+  for one tuple could therefore both reach the endpoint-local private key.
+- Added an exclusive per-authority lock, flushed lock/journal writes, atomic journal
+  replacement before signing, a WeakMap-branded signer record, and fail-closed stale
+  lock handling that requires explicit operator recovery rather than time guessing.
+- Added a real two-process conflicting-body regression: exactly one process signs,
+  the other returns `E_CONTINUITY_EQUIVOCATION`, and one journal binding persists.
+- Added the CLI signer to the verifier-pinned first-await audit. Focused continuity
+  `5/5`, clean packed consumer, and async security inventory `21 direct / 119
+  auto-discovered` pass; prior CI is invalidated and must rerun on the new head.

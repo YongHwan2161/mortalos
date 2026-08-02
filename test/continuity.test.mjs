@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { fork } from "node:child_process";
+import { fork, spawn } from "node:child_process";
 import { generateKeyPairSync, sign } from "node:crypto";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -17,6 +17,7 @@ import {
   recoverContinuity
 } from "../sdk/continuity.mjs";
 import { decodeBase64Url, derivePeerId, encodeBase64Url } from "../src/index.mjs";
+import { loadNodeAuthority } from "../cli/node-authority.mjs";
 
 const endpointPath = new URL("./continuity-node-endpoint.mjs", import.meta.url);
 
@@ -78,6 +79,37 @@ function exitedProcess(pid) {
   } catch (error) {
     return error?.code === "ESRCH";
   }
+}
+
+function nodeAuthoritySigner(authorityPath, byte) {
+  const moduleUrl = new URL("../cli/node-authority.mjs", import.meta.url).href;
+  const source = `
+    const { loadNodeAuthority } = await import(${JSON.stringify(moduleUrl)});
+    try {
+      const authority = await loadNodeAuthority(${JSON.stringify(authorityPath)});
+      await authority.sign({
+        message: new Uint8Array([${byte}]),
+        tuple: "pulse.race-organism.7.parent"
+      });
+      process.stdout.write("signed");
+    } catch (error) {
+      process.stderr.write(String(error?.code ?? error));
+      process.exitCode = 17;
+    }
+  `;
+  const child = spawn(process.execPath, ["--input-type=module", "--eval", source], {
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  let stderr = "";
+  let stdout = "";
+  child.stderr.setEncoding("utf8");
+  child.stdout.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => { stderr += chunk; });
+  child.stdout.on("data", (chunk) => { stdout += chunk; });
+  return new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", (code) => resolve({ code, stderr, stdout }));
+  });
 }
 
 function runtimeResource(size = 131_073) {
@@ -305,6 +337,29 @@ test("single copy, stale lineage, wrong authority, and divergent valid capsules 
     }),
     (error) => error.code === "E_CUSTODY_EQUIVOCATION"
   );
+});
+
+test("local CLI authority serializes conflicting cross-process sign-once attempts", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "mortalos-authority-race-"));
+  const authorityPath = join(directory, "authority.json");
+  t.after(() => rm(directory, { force: true, recursive: true }));
+  await loadNodeAuthority(authorityPath, { create: true });
+  const tuple = "pulse.race-organism.7.parent";
+  const results = await Promise.all([
+    nodeAuthoritySigner(authorityPath, 1),
+    nodeAuthoritySigner(authorityPath, 2)
+  ]);
+  const signed = results.filter(({ code, stdout }) => code === 0 && stdout === "signed");
+  const rejected = results.filter(({ code, stderr }) =>
+    code === 17 && stderr === "E_CONTINUITY_EQUIVOCATION");
+  assert.equal(signed.length, 1);
+  assert.equal(rejected.length, 1);
+  const document = JSON.parse(await readFile(authorityPath, "utf8"));
+  assert.equal(Object.keys(document.sign_once).length, 1);
+  assert.ok([
+    encodeBase64Url(new Uint8Array([1])),
+    encodeBase64Url(new Uint8Array([2]))
+  ].includes(document.sign_once[tuple]));
 });
 
 test("create owns resource bytes and signer capability before the first await", async () => {

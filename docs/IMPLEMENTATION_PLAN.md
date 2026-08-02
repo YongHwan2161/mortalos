@@ -331,6 +331,9 @@ Pass criteria:
   continuity subpath exposes signer capabilities but never private key material;
 - CLI exposes the P0 create/handoff/recover/continue workflow and deterministic
   verification with stable JSON output;
+- concurrent CLI processes serialize an authority file before journal commit, a
+  conflicting tuple has exactly one signer, and a crash-left lock fails closed
+  until explicit operator recovery;
 - packed artifacts omit lab, evidence, tests, scripts, agents, and GitHub internals;
 - a clean temporary install executes the real-file continuity vertical on supported
   Windows and Ubuntu Node versions.

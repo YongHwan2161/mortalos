@@ -40,12 +40,12 @@ not active locks.
 - Excluded: package registry publication, claim promotion without a new receipt,
   physical provider independence, WebKit full signing, and changing existing S2/S4
   nonclaims.
-- Candidate validation: exact checkout `npm test` PASS in `2542.8s`;
-  `npm run test:browser-parity` PASS in `207.3s`; continuity Node `4/4`, clean packed
-  consumer, Chromium/Firefox real-file vertical, portable `10000/10000`, security
-  inventory `20 direct / 117 auto-discovered`, links/spec, and `git diff --check`
-  PASS.
-- Remaining gate: commit/push, exact-head CI, immutable reviewer freeze, GitHub App
+- Candidate validation: pre-lock full `npm test` PASS in `2542.8s` and browser
+  parity PASS in `207.3s`; post-lock continuity Node `5/5`, clean packed consumer,
+  cross-process conflicting sign-once serialization, and security inventory
+  `21 direct / 119 auto-discovered` PASS. Exact-head CI must supersede the earlier
+  full run before review.
+- Remaining gate: final commit/push, exact-head CI, immutable reviewer freeze, GitHub App
   attestation plus machine-user native approval, expected-head merge, post-merge CI,
   and exact-main readback. No receipt or production claim is promoted by local PASS.
 

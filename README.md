@@ -155,6 +155,10 @@ mortalos continue --authority B.key --capsule B.mosc --expected-head HASH --reso
 
 CLI private keys remain endpoint-local authority files. Capsules, handoff messages,
 copy artifacts, SDK results, and CLI JSON never contain that private material.
+Each authority file is serialized by an exclusive sibling lock before its sign-once
+journal is flushed and atomically replaced. A conflicting second process fails
+closed; a lock left by a crashed signer is never guessed stale and requires explicit
+operator recovery.
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below

@@ -19,6 +19,7 @@ assert.ok(Array.isArray(registry.export_scopes) && registry.export_scopes.length
 assert.ok(Array.isArray(registry.classifications));
 
 const SECURITY_EXPORT_SCOPES = Object.freeze([
+  "cli/node-authority.mjs",
   "lab/distributed/http-counter-replica.mjs",
   "lab/live-incubator.mjs",
   "lab/participant/durable-participant.mjs",
@@ -43,6 +44,7 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "src/transport/chunk-data-plane.mjs"
 ]);
 const REQUIRED_ENTRYPOINTS = Object.freeze([
+  "cli/node-authority.mjs:export async function signNodeAuthority",
   "lab/participant/live-endpoint.mjs:LiveEndpointParticipant.async acceptHandoff",
   "lab/participant/webcrypto-key-store.mjs:async function signBytes",
   "lab/storage/durable-document.mjs:export async function replayDurableDocument",
@@ -88,6 +90,7 @@ const DEEP_OWNERSHIP_PRIMITIVES = new Set([
   "ownRelayBytes",
   "ownCryptoInputBytes",
   "ownOptionalCryptoInputBytes",
+  "ownSigningRequest",
   "ownBytes",
   "ownSigningBytes",
   "recoverStatePackage",
@@ -112,6 +115,9 @@ const DEEP_OWNERSHIP_PRIMITIVES = new Set([
 // This table is verifier-owned. A registry entry may select only an exact binding whose
 // implementation digest is pinned here; a same-named local function is never sufficient.
 const OWNERSHIP_PROVENANCE = Object.freeze({
+  "cli/node-authority.mjs": {
+    ownSigningRequest: ["local", null, null, "d6ca615864fdf29fa848822b19b798e7705919e215111b24609f0641cf446afb"]
+  },
   "lab/participant/live-endpoint.mjs": {
     clone: ["local", null, null, "ad23ae7000029bb45a994f26519180b268e8aa8a309674fd59b939f63f27c67a"]
   },
@@ -180,6 +186,7 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
 });
 
 const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
+  "cli/node-authority.mjs": "40cf6b9c3a5f54fe6547ff313a9ae711662e5aee69431862e04b64cefdb6b1b1",
   "lab/distributed/http-counter-replica.mjs": "a2cdda85d3b77347f69237eab4f23a7de258573f50f2a30ae83cc7832d17a5ac",
   "lab/live-incubator.mjs": "c813cfe5a98f6415ab8310f18c36a7db7c5100b499f5dde037b8575c57db988c",
   "lab/participant/durable-participant.mjs": "d4cf3f3c2190f080a0310437bb438c4456a7a9feb1258aef25e4cb1075feecb0",
@@ -211,6 +218,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
 // exemption. Pin both its exact function and its complete module so any drift
 // requires the reviewer to revisit the classification before CI can pass.
 const CLASSIFICATION_DIGESTS = Object.freeze({
+  "cli/node-authority.mjs:export async function loadNodeAuthority": "3d5da253d5e9c406235f3551c6069491e4d94a488bbb193889d6ac870070e707",
   "lab/live-incubator.mjs:BrowserIncubator.async birth": "eb0852385f67cc7a5957c821ed3c7e137604f3765780781dfb966a190f7b2592",
   "lab/live-incubator.mjs:BrowserIncubator.async completeHeartbeat": "87588c407a0f9d9be0f414c44c3254b3573797eba23b870d4db97395dbb7052d",
   "lab/live-incubator.mjs:BrowserIncubator.async nurture": "06ffca93c66f38faa0d979e2af41c394d89ff8f14df3b42f6256fa40e3393089",
@@ -322,6 +330,7 @@ assert.deepEqual(
 // Exact reviewed ownership-prelude language. Any syntax or sequencing change before
 // the first suspension requires an explicit verifier-policy review and digest update.
 const OWNERSHIP_PRELUDE_DIGESTS = Object.freeze({
+  "cli/node-authority.mjs:export async function signNodeAuthority": "53c62a54e83876bf049de5f6467ddde8473b0bb27a32bbc5d094901447fd36c0",
   "lab/participant/live-endpoint.mjs:LiveEndpointParticipant.async acceptHandoff": "7b71f3d8d456ca81d2a96dfd06a43f3462a38b3b0888972b6f8e1a8a4d7580e9",
   "lab/participant/webcrypto-key-store.mjs:async function signBytes": "3c9e2428f10143ee1d2de0cab9df0c2b4be4b85f96b77e42352cb7829fd5373f",
   "lab/storage/durable-document.mjs:export async function replayDurableDocument": "56382ef1faf80912cd2601b6db12666db1d466b3d434bab8f365c25f43d2238e",

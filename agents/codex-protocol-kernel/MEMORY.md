@@ -31,8 +31,12 @@ Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
   non-extractable Ed25519 keys; CLI private keys remain endpoint-local files.
 - One corrupt copy recovers. One copy, stale lineage, wrong authority, and a valid
   fork fail closed. Exchanged artifacts contain no private signing material.
-- Exact current checkout passed `npm test` in 2,542.8 seconds and browser parity in
-  207.3 seconds. Promotion still requires exact-head CI, immutable review, native
+- CLI authority files now use a flushed exclusive lock plus atomic journal replace;
+  two conflicting Node processes yield exactly one signer and one equivocation
+  rejection. A crash-left lock deliberately requires explicit recovery.
+- The pre-lock checkout passed `npm test` in 2,542.8 seconds and browser parity in
+  207.3 seconds; post-lock focused continuity, packed consumer, and the `21/119`
+  async security inventory pass. Promotion still requires exact-head CI, immutable review, native
   approval/App attestation, expected-head merge, and post-merge readback.
 
 ## Current priority

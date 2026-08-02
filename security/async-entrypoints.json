@@ -1,6 +1,7 @@
 {
   "format": "mortalos-async-security-entrypoints/2",
   "export_scopes": [
+    "cli/node-authority.mjs",
     "lab/distributed/http-counter-replica.mjs",
     "lab/live-incubator.mjs",
     "lab/participant/durable-participant.mjs",
@@ -25,6 +26,14 @@
     "src/transport/chunk-data-plane.mjs"
   ],
   "entries": [
+    {
+      "file": "cli/node-authority.mjs",
+      "entrypoint": "export async function signNodeAuthority",
+      "ownership_primitives": ["ownSigningRequest"],
+      "post_await_forbidden": ["request"],
+      "test_file": "test/continuity.test.mjs",
+      "test_marker": "local CLI authority serializes conflicting cross-process sign-once attempts"
+    },
     {
       "file": "lab/participant/live-endpoint.mjs",
       "entrypoint": "LiveEndpointParticipant.async acceptHandoff",
@@ -189,6 +198,7 @@
     }
   ],
   "classifications": [
+    { "file": "cli/node-authority.mjs", "entrypoint": "export async function loadNodeAuthority", "mode": "no-borrowed-mutable-input", "reason": "Validates the authority path and snapshots the create flag before file suspension, then returns a WeakMap-branded local signer facade." },
     { "file": "lab/live-incubator.mjs", "entrypoint": "BrowserIncubator.async birth", "mode": "module-private-owned-state", "reason": "Creates and owns all three custodian clients before awaiting initialization and signs only its locally built Genesis." },
     { "file": "lab/live-incubator.mjs", "entrypoint": "BrowserIncubator.async completeHeartbeat", "mode": "module-private-owned-state", "reason": "Uses a validated scalar signer index and an incubator-owned pending proposal across the signing suspension." },
     { "file": "lab/live-incubator.mjs", "entrypoint": "BrowserIncubator.async nurture", "mode": "module-private-owned-state", "reason": "Validates signer indices, builds the proposal before suspension, and commits only incubator-owned signatures." },
