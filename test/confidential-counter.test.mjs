@@ -6,6 +6,7 @@ import {
   MemoryCounterAuthorityStore,
   createCounterAuthorityFacade,
   detectCounterAuthorityEquivocation,
+  deriveCounterAuthorityId,
   deriveConfidentialEpochId,
   generateCounterAuthorityKeyMaterial,
   isLinearizableCounterAuthority,
@@ -13,6 +14,7 @@ import {
   reservationIvs,
   verifyCounterReservationReceipt
 } from "../src/confidential/counter.mjs";
+import { registerCounterAuthorityStoreInternal } from "../src/confidential/counter-authority-internal.mjs";
 import {
   counterToIv,
   randomTagged
@@ -215,6 +217,74 @@ test("one store-bound signing key cannot issue conflicting same-prior successors
   assert.equal(
     detectCounterAuthorityEquivocation(receipt, receipt).status,
     "no_joint_equivocation"
+  );
+});
+
+test("package-private stores retain one default authority identity and public facades preserve retirement semantics", async () => {
+  let active = null;
+  const store = {};
+  registerCounterAuthorityStoreInternal(store, {
+    inspect: async () => active === null ? null : structuredClone(active),
+    loadAuthorityCapability: null,
+    transact: async (_epochId, operation) => {
+      const outcome = await operation(
+        active === null ? null : structuredClone(active)
+      );
+      active = outcome.next === null ? null : structuredClone(outcome.next);
+      return outcome.value;
+    }
+  });
+  Object.freeze(store);
+
+  const authority = await LinearizableCounterAuthority.create({ store });
+  const sameStoreAuthority = await LinearizableCounterAuthority.create({ store });
+  assert.deepEqual(sameStoreAuthority.descriptor, authority.descriptor);
+  const epochId = epochIdFor(authority);
+  let closes = 0;
+  const keyPolicy = Object.freeze({ custody: "test-only-module-private" });
+  const facade = createCounterAuthorityFacade({
+    authority,
+    close: () => { closes += 1; },
+    keyPolicy
+  });
+  assert.equal(facade.keyPolicy, keyPolicy);
+  assert.deepEqual(facade.descriptor, authority.descriptor);
+
+  const reserved = await facade.reserveRange({
+    count: "1",
+    epoch: "0",
+    epochId,
+    expectedNextCounter: "0",
+    expectedPriorReceiptDigest: null
+  });
+  assert.equal(reserved.basis.interval_start, "0");
+  assert.equal((await facade.inspect(epochId)).next_counter, "1");
+  assert.equal(await facade.retire(epochId), true);
+  assert.equal((await facade.inspect(epochId)).retired, true);
+  facade.close();
+  assert.equal(closes, 1);
+  await assert.rejects(
+    facade.reserveRange({
+      count: "1",
+      epoch: "0",
+      epochId,
+      expectedNextCounter: "1",
+      expectedPriorReceiptDigest: reserved.digest
+    }),
+    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
+  );
+
+  assert.throws(
+    () => createCounterAuthorityFacade({ authority, close: null }),
+    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
+  );
+  await assert.rejects(
+    LinearizableCounterAuthority.create({ store: Object.freeze({}) }),
+    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
+  );
+  assert.throws(
+    () => deriveCounterAuthorityId(`ed25519:${encodeBase64Url(new Uint8Array(32))}`),
+    /E_CONFIDENTIAL_COUNTER_RECEIPT/u
   );
 });
 
