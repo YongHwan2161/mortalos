@@ -51,6 +51,16 @@ assert.equal(identity.attestation_check.context, "MortalOS Reviewer Attestation"
 assert.equal(identity.attestation_check.github_app.app_id, 4456370);
 assert.equal(identity.attestation_check.github_app.installation_id, 150549191);
 assert.equal(identity.attestation_check.github_app.slug, "mortalos-review-gate");
+assert.deepEqual(
+  identity.attestation_check.github_app.repository_scope,
+  ["YongHwan2161/mortalos"]
+);
+assert.deepEqual(identity.attestation_check.github_app.permissions, {
+  checks: "write",
+  contents: "read",
+  metadata: "read",
+  pull_requests: "read"
+});
 assert.equal(identity.attestation_check.required, true);
 assert.equal(identity.attestation_check.exact_head_required, true);
 assert.equal(identity.runner.version, "mortalos-reviewer-gate/1");
