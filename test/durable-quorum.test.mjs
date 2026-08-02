@@ -8,13 +8,15 @@ import {
 } from "../lab/storage/memory-durable-store.mjs";
 import {
   assertDurableDocumentStructure,
+  createAuthorityPolicy,
+  createKeyReadyDocument,
   migrateLegacyDurableSnapshot,
   replayDurableDocument
 } from "../lab/storage/durable-document.mjs";
 import {
+  createStoredWebCryptoKey,
   signBytes
-} from "../lab/participant/webcrypto-key-store.mjs";
-
+} from "./webcrypto-signing-helper.mjs";
 function seed(value) {
   return new Uint8Array(16).fill(value);
 }
@@ -220,20 +222,20 @@ test("same-revision endpoints CAS before signing and cannot release conflicting 
     endpointId: "A45",
     store: nodes[0].store,
     clock: () => 1_800_000_000_000,
-    signer: async (...args) => {
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
       primarySignerCalls += 1;
       signerEntered();
       await release;
-      return signBytes(...args);
     }
   });
   const stale = new DurableQuorumEndpoint({
     endpointId: "A45",
     store: nodes[0].store,
     clock: () => 1_800_000_000_000,
-    signer: async (...args) => {
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
       staleSignerCalls += 1;
-      return signBytes(...args);
     }
   });
   await primary.restore();
@@ -269,40 +271,154 @@ test("same-revision endpoints CAS before signing and cannot release conflicting 
   assert.equal(endpoints[0].publicState.sequence, "0");
 });
 
-test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {
-  const { endpoints } = await createCluster(50);
-  const baseDocument = endpoints[0].document;
-  const proposal = endpoints[0].createStateProposal(1);
-  const peerApproval = await endpoints[1].approveProposal(proposal);
+test("same endpoint coalesces concurrent same-body signing into one signer and WAL release", async () => {
+  const { endpoints, nodes } = await createCluster(46);
+  let releaseSigner;
+  let signerEntered;
+  const entered = new Promise((resolve) => {
+    signerEntered = resolve;
+  });
+  const release = new Promise((resolve) => {
+    releaseSigner = resolve;
+  });
+  let signerCalls = 0;
+  const endpoint = new DurableQuorumEndpoint({
+    endpointId: "A46",
+    store: nodes[0].store,
+    clock: () => 1_800_000_000_000,
+    signingBoundary: async (boundary) => {
+      if (boundary !== "before") return;
+      signerCalls += 1;
+      signerEntered();
+      await release;
+    }
+  });
+  await endpoint.restore();
+  const proposal = endpoint.createStateProposal(1);
+  const signatureWritesBefore = nodes[0].store.writeTrace.filter((entry) =>
+    entry === "signature").length;
+  const first = endpoint.approveProposal(proposal);
+  await entered;
+  const second = endpoint.approveProposal(structuredClone(proposal));
+  releaseSigner();
+  const [firstApproval, secondApproval] = await Promise.all([first, second]);
 
-  for (const boundary of ["reserve:before", "reserve:after", "signature:before", "signature:after"]) {
+  assert.deepEqual(secondApproval, firstApproval);
+  assert.equal(signerCalls, 1);
+  assert.equal(
+    nodes[0].store.writeTrace.filter((entry) => entry === "signature").length,
+    signatureWritesBefore + 1
+  );
+  assert.equal(
+    endpoint.document.journal.filter((entry) => entry.purpose === "pulse-approval").length,
+    1
+  );
+});
+
+test("private CryptoKey never reaches public signer hooks or mutable WebCrypto facades", async () => {
+  const store = new MemoryDurableStore();
+  let legacySignerCalls = 0;
+  const observed = [];
+  const endpoint = new DurableQuorumEndpoint({
+    endpointId: "key-containment",
+    store,
+    clock: () => 1_800_000_000_000,
+    signer() { legacySignerCalls += 1; },
+    signingBoundary(...values) { observed.push(values); }
+  });
+  await endpoint.initializeKey();
+  const body = endpoint.createGenesisBody({
+    custodians: [endpoint.custodian],
+    initialStateSeed: seed(91),
+    nonceSeed: seed(92),
+    threshold: 1
+  });
+  const subtle = globalThis.crypto.subtle;
+  const originalStructuredClone = globalThis.structuredClone;
+  let mutableFacadeCalls = 0;
+  const mutableCloneInputs = [];
+  Object.defineProperty(subtle, "sign", {
+    configurable: true,
+    value() {
+      mutableFacadeCalls += 1;
+      throw new Error("mutable WebCrypto facade reached");
+    }
+  });
+  globalThis.structuredClone = (value, options) => {
+    mutableCloneInputs.push(value);
+    return originalStructuredClone(value, options);
+  };
+  try {
+    assert.equal(endpoint.document.key.private_key, undefined);
+    const approval = await endpoint.approveGenesis(body);
+    assert.equal(typeof approval.signature, "string");
+  } finally {
+    delete subtle.sign;
+    globalThis.structuredClone = originalStructuredClone;
+  }
+  const seen = new WeakSet();
+  function containsCryptoKey(value) {
+    if ((typeof value !== "object" && typeof value !== "function") || value === null) return false;
+    if (value instanceof CryptoKey) return true;
+    if (seen.has(value)) return false;
+    seen.add(value);
+    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) {
+      if (Object.hasOwn(descriptor, "value") && containsCryptoKey(descriptor.value)) return true;
+    }
+    return false;
+  }
+  assert.equal(legacySignerCalls, 0);
+  assert.equal(mutableFacadeCalls, 0);
+  assert.equal(mutableCloneInputs.some(containsCryptoKey), false);
+  assert.deepEqual(observed, [["before"]]);
+  assert.equal(endpoint.document.key.private_key, undefined);
+});
+
+test("signBytes owns caller message bytes before its first WebCrypto await", async () => {
+  const key = await createStoredWebCryptoKey();
+  const message = new Uint8Array([1, 2, 3, 4]);
+  const pending = signBytes(key.key_id, key.private_key, message);
+  message.fill(9);
+  const actual = await pending;
+  const expected = await signBytes(
+    key.key_id,
+    key.private_key,
+    new Uint8Array([1, 2, 3, 4])
+  );
+  assert.deepEqual(actual, expected);
+});
+
+test("every critical WAL boundary recovers only old, pending, or new head without a second released signature", async () => {
+  const signingBoundaries = ["reserve:before", "reserve:after", "signature:before", "signature:after"];
+  for (const [index, boundary] of signingBoundaries.entries()) {
+    const { endpoints, nodes } = await createCluster(500 + index);
+    const proposal = endpoints[0].createStateProposal(1);
+    await endpoints[1].approveProposal(proposal);
     let signerCalls = 0;
-    const store = new MemoryDurableStore({
-      document: baseDocument,
-      fault: (name) => {
-        if (name === boundary) throw new Error(`crash:${boundary}`);
-      }
-    });
+    const store = nodes[0].store;
     const crashed = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${500 + index}`,
       store,
       clock: () => 1_800_000_000_000,
-      signer: async (...args) => {
+      signingBoundary: async (observed) => {
+        if (observed !== "before") return;
         signerCalls += 1;
-        return signBytes(...args);
       }
     });
     await crashed.restore();
+    store.setFault((name) => {
+      if (name === boundary) throw new Error(`crash:${boundary}`);
+    });
     await assert.rejects(() => crashed.approveProposal(proposal), new RegExp(`crash:${boundary}`));
     store.clearFault();
     let recoverySignerCalls = 0;
     const recovered = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${500 + index}`,
       store,
       clock: () => 1_800_000_000_000,
-      signer: async (...args) => {
+      signingBoundary: async (observed) => {
+        if (observed !== "before") return;
         recoverySignerCalls += 1;
-        return signBytes(...args);
       }
     });
     await recovered.restore();
@@ -317,34 +433,28 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
     assert.equal(signerCalls, boundary.startsWith("signature:") ? 1 : 0);
   }
 
-  const signedStore = new MemoryDurableStore({ document: baseDocument });
-  const signer = new DurableQuorumEndpoint({
-    endpointId: "A50",
-    store: signedStore,
-    clock: () => 1_800_000_000_000
-  });
-  await signer.restore();
-  const ownApproval = await signer.approveProposal(proposal);
-  for (const boundary of ["commit:before", "commit:after"]) {
-    const store = new MemoryDurableStore({
-      document: signer.document,
-      fault: (name) => {
-        if (name === boundary) throw new Error(`crash:${boundary}`);
-      }
-    });
+  for (const [index, boundary] of ["commit:before", "commit:after"].entries()) {
+    const { endpoints, nodes } = await createCluster(510 + index);
+    const proposal = endpoints[0].createStateProposal(1);
+    const ownApproval = await endpoints[0].approveProposal(proposal);
+    const peerApproval = await endpoints[1].approveProposal(proposal);
+    const store = nodes[0].store;
     const crashed = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${510 + index}`,
       store,
       clock: () => 1_800_000_000_000
     });
     await crashed.restore();
+    store.setFault((name) => {
+      if (name === boundary) throw new Error(`crash:${boundary}`);
+    });
     await assert.rejects(
       () => crashed.commitProposal(proposal, [ownApproval, peerApproval]),
       new RegExp(`crash:${boundary}`)
     );
     store.clearFault();
     const recovered = new DurableQuorumEndpoint({
-      endpointId: "A50",
+      endpointId: `A${510 + index}`,
       store,
       clock: () => 1_800_000_000_000
     });
@@ -357,48 +467,44 @@ test("every critical WAL boundary recovers only old, pending, or new head withou
   }
 });
 
-test("every durable adapter write exposes atomic before/after failure semantics", async () => {
-  const { endpoints } = await createCluster(55);
-  const prior = endpoints[0].document;
-  for (const operation of [
-    "initialize",
-    "expire",
-    "reserve",
-    "signature",
-    "commit",
-    "observe",
-    "sync",
-    "renew",
-    "remove"
-  ]) {
-    for (const side of ["before", "after"]) {
-      const candidate = structuredClone(prior);
-      candidate.revision = operation === "initialize" ? 0 : prior.revision + 1;
-      const store = new MemoryDurableStore({
-        document: operation === "initialize" ? null : prior,
-        fault: (boundary) => {
-          if (boundary === `${operation}:${side}`) throw new Error(`crash:${operation}:${side}`);
-        }
-      });
-      await assert.rejects(
-        () => store.write(operation, candidate, {
-          expectedRevision: operation === "initialize" ? null : prior.revision
-        }),
-        new RegExp(`crash:${operation}:${side}`)
-      );
-      const stored = await store.read();
-      if (side === "before") {
-        assert.equal(stored?.revision ?? null, operation === "initialize" ? null : prior.revision);
-      } else {
-        assert.equal(stored.revision, candidate.revision);
-      }
-    }
-  }
+test("durable module exports no raw read or write authority", async () => {
+  const durableStoreModule = await import("../lab/storage/durable-store.mjs");
+  const keyStoreModule = await import("../lab/participant/webcrypto-key-store.mjs");
+  assert.equal(Object.hasOwn(durableStoreModule, "readDurableStore"), false);
+  assert.equal(Object.hasOwn(durableStoreModule, "writeDurableStore"), false);
+  assert.equal(Object.hasOwn(durableStoreModule, "readPrivateDurableDocument"), false);
+  assert.equal(Object.hasOwn(durableStoreModule, "commitPrivateDurableDocument"), false);
+  assert.equal(Object.hasOwn(keyStoreModule, "createStoredWebCryptoKey"), false);
+  assert.equal(Object.hasOwn(keyStoreModule, "signBytes"), false);
 });
 
 test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and migration failure fail closed", async () => {
-  const { endpoints } = await createCluster(60);
-  const valid = endpoints[0].document;
+  const firstKey = await createStoredWebCryptoKey();
+  const firstStore = new MemoryDurableStore({
+    document: createKeyReadyDocument({
+      endpointId: "A60",
+      key: firstKey,
+      policy: createAuthorityPolicy()
+    })
+  });
+  const first = new DurableQuorumEndpoint({
+    endpointId: "A60",
+    store: firstStore,
+    clock: () => 1_800_000_000_000
+  });
+  await first.restore();
+  const peers = await Promise.all([createEndpoint("B60"), createEndpoint("C60")]);
+  const endpoints = [first, ...peers.map(({ endpoint }) => endpoint)];
+  const body = first.createGenesisBody({
+    custodians: publicCustodians(endpoints),
+    initialStateSeed: seed(70),
+    nonceSeed: seed(80),
+    threshold: 2
+  });
+  const approvals = [];
+  for (const endpoint of endpoints) approvals.push(await endpoint.approveGenesis(body));
+  for (const endpoint of endpoints) await endpoint.commissionGenesis(body, approvals);
+  const valid = { ...first.document, key: firstKey };
   const structuralMutations = [
     (value) => { value.extra = true; },
     (value) => { value.schema_version = 99; },
@@ -428,9 +534,8 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
   badKey.key.public_key_raw = new ArrayBuffer(32);
   await assert.rejects(() => replayDurableDocument(badKey), (error) => error.code === "E_DURABLE_KEY");
 
-  const { endpoint: outsider } = await createEndpoint("outside");
   const wrongCustody = structuredClone(valid);
-  wrongCustody.key = outsider.document.key;
+  wrongCustody.key = await createStoredWebCryptoKey();
   await assert.rejects(
     () => replayDurableDocument(wrongCustody),
     (error) => error.code === "E_DURABLE_CUSTODY"
@@ -471,5 +576,49 @@ test("unknown schema, corrupt key/evidence/journal/state, custody mismatch, and 
       }
     }, { completedAt: 1_800_000_000_000 }),
     (error) => error.code === "E_DURABLE_MIGRATION"
+  );
+});
+
+test("public endpoint and store diagnostics redact private CryptoKey authority", async () => {
+  const { endpoints, nodes } = await createCluster(70);
+  const publicDocument = endpoints[0].document;
+  assert.equal(Object.hasOwn(publicDocument.key, "private_key"), false);
+  assert.doesNotMatch(JSON.stringify(publicDocument), /CryptoKey|private_key/u);
+
+  const publicStoreDocument = await nodes[0].store.read();
+  assert.equal(Object.hasOwn(publicStoreDocument.key, "private_key"), false);
+  const seen = new WeakSet();
+  function containsPrivateCryptoKey(value) {
+    if ((typeof value !== "object" && typeof value !== "function") || value === null) return false;
+    if (value instanceof CryptoKey) return value.type === "private";
+    if (seen.has(value)) return false;
+    seen.add(value);
+    return Object.values(Object.getOwnPropertyDescriptors(value)).some((descriptor) =>
+      Object.hasOwn(descriptor, "value") && containsPrivateCryptoKey(descriptor.value));
+  }
+  assert.equal(containsPrivateCryptoKey(publicStoreDocument), false);
+  await assert.rejects(
+    () => nodes[0].store.write("commit", publicStoreDocument, {
+      expectedRevision: publicStoreDocument.revision
+    }),
+    /raw durable store writes are internal/u
+  );
+
+  const first = endpoints[0].createStateProposal(1);
+  nodes[0].store.write = async () => {};
+  nodes[0].store.read = async () => null;
+  const approval = await endpoints[0].approveProposal(first);
+  assert.equal(typeof approval.signature, "string");
+
+  const restarted = new DurableQuorumEndpoint({
+    endpointId: "A70",
+    store: nodes[0].store,
+    clock: () => 1_800_000_000_000
+  });
+  await restarted.restore();
+  const conflicting = restarted.createStateProposal(2);
+  await assert.rejects(
+    () => restarted.approveProposal(conflicting),
+    (error) => error.code === "E_DURABLE_EQUIVOCATION"
   );
 });

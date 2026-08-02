@@ -74,8 +74,26 @@ const PENDING_KEYS = Object.freeze([
   "tuple"
 ]);
 
+const structuredCloneIntrinsic = globalThis.structuredClone;
+const reflectApply = Reflect.apply;
+
 function clone(value) {
-  return structuredClone(value);
+  return reflectApply(structuredCloneIntrinsic, globalThis, [value]);
+}
+
+export function publicDurableDocument(document) {
+  if (document === null) return null;
+  const { key, ...publicFields } = document;
+  return clone({
+    ...publicFields,
+    key: key
+      ? {
+          key_id: key.key_id,
+          public_key: key.public_key,
+          public_key_raw: key.public_key_raw
+        }
+      : null
+  });
 }
 
 function durableError(code, detail) {

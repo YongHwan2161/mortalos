@@ -1,6 +1,11 @@
 # S4 confidential-state cryptography
 
-Status: **PROMOTED ADR — S4 IMPLEMENTATION CANDIDATE**
+Status: **PROMOTED ADR — S4 RUNTIME CLAIM REOPENED / HARDENED CANDIDATE HOLD**
+
+The suite decision remains promoted. Runtime promotion is reopened because recovery
+now owns its complete expected basis before await, activation uses a module-private
+commit/readback capability, identical retries are idempotent, and supported public
+decrypt/recovery results no longer expose the epoch-key `CryptoKey` handle.
 
 Decision owner: `codex-protocol-kernel`
 Independent reviewer: `reviewer-merge-gate`
@@ -85,7 +90,9 @@ authorized surviving custodian with its bound private decryption key can.
 - S4 does not prove secure erasure from JavaScript memory, browser storage, backups,
   operating systems, remote providers, or a malicious custodian.
 - A non-extractable WebCrypto key blocks supported API export; it does not resist a
-  compromised process, browser, OS, hardware, or user account.
+  compromised process, same-origin script/XSS, browser, OS, hardware, or user
+  account. IndexedDB persistence lets same-origin code use the key through WebCrypto
+  even though PKCS#8 export fails.
 - S4 trusts the epoch-bound counter authority not to sign overlapping reservation
   histories. Compromise of that authority can violate nonce uniqueness; suite 1
   detects a fork only when conflicting receipts are jointly observed and then
@@ -256,7 +263,9 @@ compare-and-swap check before commit. Reopening the same persistent browser prof
 after full Chromium process termination must recover the same authority ID,
 non-extractable sign-only key, receipt-chain digest, and next counter. This proves
 reference failover within that storage/credential domain; it does not prove the S7
-independence of that domain.
+independence of that domain or isolate signing from same-origin code. The reference
+CAS constrains conforming callers; XSS-resistant signing requires a different trust
+domain and is not an S4 candidate claim.
 
 The authority owns a distinct WebCrypto-generated Ed25519 key pair. Its private key
 is non-extractable with `sign` usage only. Its public key is the exact strict

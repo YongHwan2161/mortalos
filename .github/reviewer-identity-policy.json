@@ -1,0 +1,63 @@
+{
+  "format": "mortalos-reviewer-identity-policy/2",
+  "implementation_principal": "YongHwan2161",
+  "logical_reviewer": "reviewer-merge-gate",
+  "provisioned_reviewer_principal": {
+    "login": "ant713900-web",
+    "principal_type": "machine_user",
+    "required_repository_role": "write",
+    "repository_scope": ["YongHwan2161/mortalos"],
+    "ruleset_bypass": false,
+    "separate_credential": true,
+    "separate_human_or_administrator": false
+  },
+  "native_approval": {
+    "dismiss_stale_reviews_on_push": true,
+    "minimum_approvals": 1,
+    "require_last_push_approval": true,
+    "required": true
+  },
+  "attestation_check": {
+    "context": "MortalOS Reviewer Attestation",
+    "github_app": {
+      "app_id": 4456370,
+      "installation_id": 150549191,
+      "slug": "mortalos-review-gate",
+      "repository_scope": ["YongHwan2161/mortalos"],
+      "permissions": {
+        "checks": "write",
+        "contents": "read",
+        "metadata": "read",
+        "pull_requests": "read"
+      }
+    },
+    "required": true,
+    "exact_head_required": true,
+    "external_id_format": "mortalos-review-attestation/1:<sha256>"
+  },
+  "runner": {
+    "version": "mortalos-reviewer-gate/1",
+    "binary_sha256": "71206e49e0c897a7fffd015dc7ad4f06d35e837f10ed53809bc3f15b5ebfa680",
+    "execution_boundary": "outside_pr_controlled_github_actions",
+    "credential_storage": "operator_protected_external_store",
+    "repository_secret_forbidden": true,
+    "required_snapshot_fields": [
+      "head_sha",
+      "body_sha256",
+      "base_sha",
+      "changed_files_sha256",
+      "diff_sha256",
+      "policy_run",
+      "required_check_runs",
+      "reviewer_version"
+    ]
+  },
+  "account_security": {
+    "two_factor_authentication": "required",
+    "passkey": "required",
+    "recovery_material": "outside_repository",
+    "login_alerts": "required",
+    "live_preflight_required": true
+  },
+  "status": "ACTIVE_SEPARATE_MACHINE_IDENTITY_SAME_OPERATOR"
+}

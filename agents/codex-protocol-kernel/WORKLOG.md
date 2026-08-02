@@ -1640,3 +1640,56 @@ result, and reproducible verification.
   frozen as a new direct-main source commit, then pass an uninterrupted exact-source
   suite before a fresh receipt promotion, replacement PR, immutable independent
   review, expected-head merge, exact-main verification, and deployment.
+
+## 2026-08-02 — Separate reviewer identity and dual attestation gate
+
+- GitHub App `mortalos-review-gate` was installed only on
+  `YongHwan2161/mortalos`. Its first exact-head `APPROVE` proved a separate App
+  identity but did not count toward branch protection because GitHub Apps are not
+  write collaborators.
+- Machine-user `ant713900-web` accepted repository `write`, has no administrator or
+  ruleset bypass, and issued native review `4834922160` for exact head `e7ccbba…`.
+  GitHub changed PR #51 from `REVIEW_REQUIRED/BLOCKED` to `APPROVED/CLEAN`.
+- That approval intentionally exposed an SSOT mismatch: the candidate policy still
+  recorded a null reviewer principal. This remediation replaces that HOLD record
+  with the actual machine-user, explicitly records same-operator limitations, and
+  requires both native approval and App-owned check `MortalOS Reviewer Attestation`.
+- `security/reviewer-attestation.mjs` defines one canonical snapshot covering base,
+  head, exact PR-body digest, paginated changed-file digest, Git-object diff digest,
+  trusted policy run, required exact-head runs, reviewer version, PASS-receipt
+  digest, and review time. Focused mutation tests prove every bound field changes
+  the digest and stale, foreign, incomplete, or duplicate evidence fails closed.
+- Credentials are forbidden from repository files and PR-executing workflows. The
+  operational runner is provisioned outside the checkout. The policy still does not
+  claim separate human, administrator, provider, host, or custody control.
+
+## 2026-08-02 — Independent-review P0 remediation and runner issuer binding
+
+- Independent review froze PR #51 at base `49c5302…`, head `a7ea8b8…`, and PR-body
+  SHA-256 `9f41f4…`, then returned BLOCK. A same-endpoint/same-body barrier produced
+  signer calls `2`, fulfilled promises `2`, and write trace
+  `initialize,reserve,signature,signature`. Alias and shallow-freeze ownership
+  bypasses also returned an empty violation list in the old AST checker.
+- The durable endpoint now snapshots the full invocation before suspension,
+  serializes owned signing operations on a module-private tail, and captures exact
+  revisions for reservation and signature commits. The regression requires the two
+  concurrent callers to receive the same approval while the signer and signature
+  WAL each run exactly once.
+- The ownership verifier now performs transitive identifier taint across alias,
+  object/property, spread, destructuring, loop, and deferred-closure paths. Only a
+  verifier-maintained deep-own/brand-clear allowlist can remove taint. Nine security
+  modules are automatically inventoried; all 56 exported async functions and class
+  methods must be directly audited or carry a concrete reviewed classification.
+  Sixteen high-risk entrypoints are directly checked and hostile negative corpus
+  covers the prior bypasses.
+- Runtime hardening found by the stronger audit copies WebCrypto signing bytes,
+  custodian wrap descriptors, AES vector buffers, and rotation records/arrays before
+  suspension or reuse. All S4 ceilings now generate from the protocol profile and
+  the exact mapping is tested. The external runner verifies GitHub Actions App ID
+  `15368`, exact run/job identities, and its own repository-pinned SHA-256 before it
+  can attest or approve.
+- Focused evidence before source freeze: durable suite `12/12`, confidential package
+  suite `11/11`, ownership AST `7/7` plus 16-entrypoint audit, protocol/format `5/5`,
+  and ruleset-policy PASS. A new uninterrupted full suite, commit/push, exact-head
+  CI, fresh independent review, App check, and machine-user native approval remain
+  required. App Checks permission remains a user-owned live configuration HOLD.

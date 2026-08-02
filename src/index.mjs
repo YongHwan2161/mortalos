@@ -9,8 +9,19 @@ export * from "./state/recovery.mjs";
 export * from "./confidential/format.mjs";
 export * from "./confidential/keys.mjs";
 export * from "./confidential/counter.mjs";
-export * from "./confidential/package.mjs";
+export {
+  aesGcmKnownAnswer,
+  createConfidentialPackage,
+  decryptConfidentialPackage,
+  snapshotConfidentialCustodians,
+  verifyConfidentialPackage
+} from "./confidential/package.mjs";
 export * from "./confidential/recovery.mjs";
+export * from "./transport/chunk-data-plane.mjs";
+export * from "./transport/protocol.mjs";
+export * from "./capsule.mjs";
+export * from "./custody.mjs";
+export * from "./distributed/quorum-counter-store.mjs";
 export {
   isValidatedAcceptance,
   isValidatedLatentSuccessor,

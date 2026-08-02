@@ -3,13 +3,16 @@ import { build } from "esbuild";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { buildLab } from "./build-lab.mjs";
 import { startLabServer } from "./serve-lab.mjs";
 import { counterReceiptDigest } from "../src/confidential/counter.mjs";
 import { runConfidentialVectors } from "../test/confidential-vector-runner.mjs";
 
-const temporaryRoot = await mkdtemp(join(tmpdir(), "mortalos-s4-chromium-"));
+const engineName = process.env.MORTALOS_BROWSER_ENGINE ?? "chromium";
+const browserType = { chromium, firefox, webkit }[engineName];
+if (!browserType) throw new Error(`unsupported browser engine: ${engineName}`);
+const temporaryRoot = await mkdtemp(join(tmpdir(), `mortalos-s4-${engineName}-`));
 const labDirectory = resolve(temporaryRoot, "lab");
 const profileDirectory = resolve(temporaryRoot, "profile");
 const bundle = await build({
@@ -19,7 +22,7 @@ const bundle = await build({
   legalComments: "none",
   minify: true,
   platform: "browser",
-  target: ["chrome120"],
+  target: ["es2022"],
   write: false
 });
 await buildLab({ outdir: labDirectory });
@@ -29,10 +32,10 @@ await writeFile(
 );
 const server = await startLabServer({ directory: labDirectory });
 const launchOptions = { headless: true };
-if (process.env.MORTALOS_CHROMIUM_EXECUTABLE) {
+if (engineName === "chromium" && process.env.MORTALOS_CHROMIUM_EXECUTABLE) {
   launchOptions.executablePath = process.env.MORTALOS_CHROMIUM_EXECUTABLE;
 }
-const browser = await chromium.launch(launchOptions);
+const browser = await browserType.launch(launchOptions);
 async function pageWithHarness(context) {
   const page = await context.newPage();
   await page.goto(server.url, { waitUntil: "domcontentloaded" });
@@ -60,7 +63,7 @@ try {
   const databaseName = "mortalos-s4-counter-authority-test";
   const epochId =
     "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-  persistentContext = await chromium.launchPersistentContext(
+  persistentContext = await browserType.launchPersistentContext(
     profileDirectory,
     launchOptions
   );
@@ -131,7 +134,7 @@ try {
   await persistentContext.close();
   persistentContext = null;
 
-  persistentContext = await chromium.launchPersistentContext(
+  persistentContext = await browserType.launchPersistentContext(
     profileDirectory,
     launchOptions
   );
@@ -213,16 +216,16 @@ try {
   await persistentContext.close();
   persistentContext = null;
 
-  console.log("MortalOS S4 Node / actual Chromium vectors: PASS");
+  console.log(`MortalOS S4 Node / actual ${engineName} vectors: PASS`);
   console.log(`- AES-GCM: ${nodeResult.aes_ciphertext_hex}`);
   console.log("- RSA-OAEP-3072 SHA-256/MGF1-SHA-256: valid + malformed + wrong label");
   console.log("- JCS decimal strings: byte-identical");
   console.log("- IndexedDB/Web Locks authority: two endpoints, one CAS winner");
-  console.log("- Chromium process restart: same non-extractable key and next counter");
-  console.log("- Chromium authority facade: internally branded, retired, and blocked");
-  console.log("- Chromium persistent rotations: lost + equivocation, mutation-resistant");
-  console.log("- Chromium successor rotation input: inert snapshot, substitution rejected");
-  console.log("- Chromium recipient membership: deep owned snapshot, substitution rejected");
+  console.log(`- ${engineName} process restart: same non-extractable key and next counter`);
+  console.log(`- ${engineName} authority facade: internally branded, retired, and blocked`);
+  console.log(`- ${engineName} persistent rotations: lost + equivocation, mutation-resistant`);
+  console.log(`- ${engineName} successor rotation input: inert snapshot, substitution rejected`);
+  console.log(`- ${engineName} recipient membership: deep owned snapshot, substitution rejected`);
 } finally {
   await persistentContext?.close();
   await browser.close();

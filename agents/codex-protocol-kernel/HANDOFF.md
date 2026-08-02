@@ -5,7 +5,81 @@ preserved in Git history and `WORKLOG.md`; they are not active locks.
 
 ## Active intent
 
-### ACTIVE — Implement S4 confidential state and epoch-key recovery
+### ACTIVE — Harden the North Star capability boundary and complete S5-S8
+
+- From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
+- Base: `49c53029623c6da85566d7fa794b71f2068af682`
+- Work branch: `agent/codex-protocol-kernel--north-star-security-platform`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--north-star-security-platform`
+- Exact intended shared areas: `.github/` policy and verification workflows;
+  `package.json`, `package-lock.json`; public SDK/CLI/capsule entrypoints and
+  allowlist; `src/`, `lab/participant/`, `lab/transport/`, and new S5-S8 runtime
+  modules; protocol profiles, schemas, generators, independent validators, tests,
+  browser-matrix scripts, receipts/evidence, and current normative documentation.
+- Exact named current paths include `lab/participant/durable-quorum-endpoint.mjs`,
+  `lab/storage/`, `src/confidential/recovery.mjs`, `src/transport/protocol.mjs`,
+  `src/state/package.mjs`, `src/index.mjs`, `docs/CLAIM_MATRIX.md`,
+  `docs/NORTH_STAR_ROADMAP.md`, `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`,
+  `docs/STAGE_TRACKING.md`, `docs/THREAT_MODEL.md`, `docs/TRACEABILITY.md`, and
+  `agents/codex-protocol-kernel/{HANDOFF,WORKLOG}.md`.
+- Intended change: reopen the active S2/S4 claims without rewriting historical
+  evidence; remove mutable store and post-await caller state from security trust;
+  contain signing keys; freeze one generated protocol profile through the real
+  chunk data plane; publish an allowlisted S5 SDK/CLI; implement a portable S6
+  Continuity Capsule; choose and implement an S7 counter/topology contract; add
+  stateful adversarial fuzzing and Chromium/Firefox/WebKit S8 custody parity.
+- Required gates: each known exploit is a deterministic negative regression in Node
+  and, where applicable, a real browser; exact boundary and one-over limits fail
+  across package, frame, and provider layers; clean install/pack on Windows and
+  Linux; independent-domain partition/loss/restart trials have no counter overlap;
+  browser capability smoke and full parity pass; historical receipts remain
+  immutable; replacement claims are promoted only through new exact-head receipts,
+  complete CI, distinct reviewer identity, protected merge, and exact-main checks.
+- Excluded: pretending one profile is an independent failure domain, treating a
+  GitHub App owned by the author as human independence, retroactive secrecy,
+  compromised-authority safety beyond the selected ADR, or production claims not
+  demonstrated by the resulting topology.
+- Local candidate evidence (2026-08-01): S2 actual Chromium `100/100` handoff and
+  A/B/C loss suite passed; S4 `23/23` passed with one million allocations and zero
+  IV collisions plus actual Chromium recovery; protocol-profile and real chunk
+  data-plane tests passed; S5 clean package install, S6 Capsule, S7 process-isolated
+  HTTP quorum, S8 custody/stateful fuzz, spec/link/audit/build/UX, and all historical
+  stage verifiers passed. Actual Chromium and Firefox passed the full signer/custody
+  path; WebKit passed the portable verifier but remains fail-closed for signing
+  because its current WebCrypto runtime does not implement Ed25519.
+- Promotion HOLD (2026-08-02): machine-user `ant713900-web` is now a separately
+  credentialed repository-write principal and GitHub App `mortalos-review-gate`
+  is installed repository-only. The policy remediation adds an App-owned exact-
+  snapshot required check and an external runner contract that binds base/head,
+  API-body, changed-file and Git-object diff digests, exact CI runs, reviewer
+  version, and PASS-receipt digest before native approval. The changed head still
+  requires complete CI, immutable review, App attestation, native approval,
+  expected-head merge, post-merge CI/deploy, real distinct-provider/admin topology,
+  and burn-in. The two GitHub credentials remain under one project operator.
+- Recurrence gate: `browser-parity` is a separate required GitHub check. It installs
+  and probes Chromium, Firefox, and WebKit, runs full custody where the native
+  signer capability exists, and enforces the WebKit verifier-only fail-closed
+  profile instead of accepting an extractable software-key fallback.
+- Independent review HOLD (2026-08-02): exact head `a7ea8b8…` was blocked after a
+  same-endpoint/same-body barrier reproduced two native signing calls and two
+  signature WAL commits. The same review proved the seven-entrypoint ownership
+  checker accepted alias and shallow-freeze escapes. The remediation serializes
+  every owned signing invocation on a module-private Promise tail, binds reserve
+  and signature commits to captured revisions, and adds a one-signer/one-WAL
+  regression. The AST gate now propagates parameter taint through aliases,
+  properties, spread, destructuring, loops, and closures; only verifier-allowlisted
+  deep-own or branded-capability calls clear it. It auto-discovers and forces an
+  audit/classification for every async export and exported-class method across nine
+  security modules, with sixteen high-risk boundaries under direct taint audit.
+- The same remediation moves every confidential S4 ceiling into
+  `protocol/profile.v1.json`, snapshots wrap/rotation inputs and WebCrypto signing
+  bytes before suspension, binds every required CI check to GitHub Actions App ID
+  `15368` plus exact run/job IDs, and pins the external runner binary digest in the
+  repository policy. This changes the candidate head; all prior CI and reviews are
+  invalid. App Checks permission is still live-HOLD at read-only until the App owner
+  changes it to read/write and approves the installation update.
+
+### HISTORICAL — Implement S4 confidential state and epoch-key recovery
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `39529337b2a739b1aee4697e680643d77704bbaa`

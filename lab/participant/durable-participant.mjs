@@ -38,7 +38,7 @@ export class DurableParticipant {
       signing_authority: state.signing_authority,
       state_root: state.state_root,
       storage: document
-        ? ["IndexedDB non-extractable CryptoKey", "canonical evidence", "sign-once journal", "state references"]
+        ? ["same-origin IndexedDB key (export-blocking only)", "canonical evidence", "conforming-client sign-once journal", "state references"]
         : []
     };
   }
@@ -68,8 +68,12 @@ export class DurableParticipant {
   }
 
   async nurture(steps = 1) {
+    if (!Number.isInteger(steps) || steps < 1) {
+      throw new TypeError("durable nurture steps must be a positive integer");
+    }
+    const ownedSteps = steps;
     if (!this.#endpoint.document) await this.#endpoint.restore();
-    const proposal = this.#endpoint.createStateProposal(steps);
+    const proposal = this.#endpoint.createStateProposal(ownedSteps);
     const approval = await this.#endpoint.approveProposal(proposal);
     await this.#endpoint.commitProposal(proposal, [approval]);
     return this.publicState;

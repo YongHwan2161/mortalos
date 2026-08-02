@@ -1,9 +1,12 @@
 import {
   LinearizableCounterAuthority,
   createCounterAuthorityFacade,
-  generateCounterAuthorityKeyMaterial,
-  registerCounterAuthorityStore
+  deriveCounterAuthorityId
 } from "../../src/confidential/counter.mjs";
+import {
+  registerCounterAuthorityStoreInternal
+} from "../../src/confidential/counter-authority-internal.mjs";
+import { encodeBase64Url } from "../../src/bytes.mjs";
 import { confidentialFail } from "../../src/confidential/format.mjs";
 
 const DATABASE = "mortalos-confidential-counter-authority";
@@ -101,6 +104,16 @@ function epochRecordId(epochId) {
   return `epoch:${epochId}`;
 }
 
+function authorityCapability(authorityId, authorityPublicKey, privateKey) {
+  return Object.freeze({
+    authorityId,
+    authorityPublicKey,
+    sign: async (message) => new Uint8Array(
+      await crypto.subtle.sign("Ed25519", privateKey, new Uint8Array(message))
+    )
+  });
+}
+
 export class IndexedDbCounterAuthorityStore {
   #database = null;
   #databaseName;
@@ -117,9 +130,15 @@ export class IndexedDbCounterAuthorityStore {
     this.#databaseName = databaseName;
     this.#lockName = `mortalos-s4-counter-authority:${databaseName}`;
     const inspect = (epochId) => this.#inspect(epochId);
+    const loadOrCreateAuthorityCapability = () =>
+      this.#loadOrCreateAuthorityCapability();
     const transact = (epochId, operation) =>
       this.#transact(epochId, operation);
-    registerCounterAuthorityStore(this, { inspect, transact });
+    registerCounterAuthorityStoreInternal(this, {
+      inspect,
+      loadAuthorityCapability: loadOrCreateAuthorityCapability,
+      transact
+    });
     Object.defineProperties(this, {
       close: {
         configurable: false,
@@ -131,21 +150,6 @@ export class IndexedDbCounterAuthorityStore {
         value: inspect,
         writable: false
       },
-      loadOrCreateKeyMaterial: {
-        configurable: false,
-        value: () => this.#loadOrCreateKeyMaterial(),
-        writable: false
-      },
-      lose: {
-        configurable: false,
-        value: (epochId) => this.#lose(epochId),
-        writable: false
-      },
-      transact: {
-        configurable: false,
-        value: transact,
-        writable: false
-      }
     });
     Object.freeze(this);
   }
@@ -168,7 +172,7 @@ export class IndexedDbCounterAuthorityStore {
     return navigator.locks.request(this.#lockName, { mode: "exclusive" }, operation);
   }
 
-  async #loadOrCreateKeyMaterial() {
+  async #loadOrCreateAuthorityCapability() {
     return this.#locked(async () => {
       const current = await this.#read(MATERIAL_ID);
       if (current) {
@@ -189,13 +193,24 @@ export class IndexedDbCounterAuthorityStore {
             "corrupt"
           );
         }
-        return Object.freeze({
-          authorityId: current.authority_id,
-          authorityPublicKey: current.authority_public_key,
-          privateKey: current.private_key
-        });
+        return authorityCapability(
+          current.authority_id,
+          current.authority_public_key,
+          current.private_key
+        );
       }
-      const generated = await generateCounterAuthorityKeyMaterial();
+      const keyPair = await crypto.subtle.generateKey(
+        { name: "Ed25519" },
+        false,
+        ["sign", "verify"]
+      );
+      const raw = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
+      const authorityPublicKey = `ed25519:${encodeBase64Url(raw)}`;
+      const generated = Object.freeze({
+        authorityId: deriveCounterAuthorityId(authorityPublicKey),
+        authorityPublicKey,
+        privateKey: keyPair.privateKey
+      });
       const database = await this.#handle();
       const transaction = database.transaction([STORE], "readwrite", {
         durability: "strict"
@@ -209,7 +224,11 @@ export class IndexedDbCounterAuthorityStore {
         schema_version: VERSION
       });
       await transactionDone(transaction);
-      return generated;
+      return authorityCapability(
+        generated.authorityId,
+        generated.authorityPublicKey,
+        generated.privateKey
+      );
     });
   }
 
@@ -298,39 +317,13 @@ export class IndexedDbCounterAuthorityStore {
     return record ? structuredClone(record.data) : null;
   }
 
-  async #lose(epochId) {
-    return this.#locked(async () => {
-      const database = await this.#handle();
-      const transaction = database.transaction([STORE], "readwrite", {
-        durability: "strict"
-      });
-      transaction.objectStore(STORE).put({
-        id: epochRecordId(epochId),
-        kind: "lost"
-      });
-      await transactionDone(transaction);
-    });
-  }
-
   #close() {
     this.#database?.close();
     this.#database = null;
   }
 
-  async loadOrCreateKeyMaterial() {
-    return this.#loadOrCreateKeyMaterial();
-  }
-
-  async transact(epochId, operation) {
-    return this.#transact(epochId, operation);
-  }
-
   async inspect(epochId) {
     return this.#inspect(epochId);
-  }
-
-  async lose(epochId) {
-    return this.#lose(epochId);
   }
 
   close() {
@@ -341,20 +334,14 @@ export class IndexedDbCounterAuthorityStore {
 export class IndexedDbCounterAuthority {
   static async open({ databaseName = DATABASE } = {}) {
     const store = new IndexedDbCounterAuthorityStore({ databaseName });
-    const material = await store.loadOrCreateKeyMaterial();
-    const authority = new LinearizableCounterAuthority({
-      authorityId: material.authorityId,
-      authorityPublicKey: material.authorityPublicKey,
-      privateKey: material.privateKey,
-      store
-    });
+    const authority = await LinearizableCounterAuthority.create({ store });
     return createCounterAuthorityFacade({
       authority,
       close: () => store.close(),
       keyPolicy: Object.freeze({
-        extractable: material.privateKey.extractable,
-        type: material.privateKey.type,
-        usages: Object.freeze([...material.privateKey.usages])
+        extractable: false,
+        type: "private",
+        usages: Object.freeze(["sign"])
       })
     });
   }

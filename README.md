@@ -11,9 +11,12 @@ relay, host, UI, or model as the source of truth.
 - Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos)
 - Current North Star: [post-hackathon roadmap](docs/NORTH_STAR_ROADMAP.md)
 
-The repository contains a promoted multi-browser baseline, unified Participant
-Core, crash-safe durable quorum, exact logical S3 recovery, and an S4 confidential
-state implementation candidate. The
+The repository contains a promoted historical baseline plus a current security-
+hardening candidate: unified Participant Core, crash-safe durable quorum, exact S3
+recovery over real relay fragments, confidential S4 state, an authority-free
+SDK/CLI, Continuity Capsules, and a replicated counter-authority model. S2 and S4
+claims are deliberately reopened until this candidate receives new exact-head
+evidence and independent review. The
 [claim matrix](docs/CLAIM_MATRIX.md) distinguishes
 implemented, exact-head verified, physically verified, promoted, and explicitly
 unclaimed behavior.
@@ -42,12 +45,16 @@ proof.
 | L3 — quorum resilience | A/B/C hold distinct keys under `2-of-3`; every complementary pair continues after the third endpoint is lost, and a new D can repair membership. |
 | L4 — deterministic state | JavaScript and an independently written Python verifier reproduce byte-identical next-state and receipt records; tamper and limits fail atomically. |
 | L5 — recoverable resource state | A canonical manifest binds a bounded resource to lineage; any two logical replicas reconstruct the exact 1 MiB reference after the third replica and primary relay are deleted. S3 is promoted. |
-| S4 candidate — confidential resource state | S3 stores only a canonical ciphertext package; an authorized current custodian unwraps a non-extractable epoch key and decrypts exact bytes. One-million-IV, removal, rotation, capture, and actual-Chromium evidence are candidate-only until S4 promotion. |
+| S4 reopened candidate — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass locally; new exact-head promotion evidence remains required. |
+| S5/S6 candidate — portable use | The reviewed SDK/CLI surface contains no authority primitive, and a canonical Continuity Capsule binds lineage plus exact encrypted resource state for verification in another process. |
+| S7/S8 candidate — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 Capsule custody tolerates one corrupt/lost copy and rejects a valid fork. This is not evidence of independent providers or administrators. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
 keys. They prove browser/profile isolation and protocol behavior, not that three
-people, organizations, or physical devices independently control the keys.
+people, organizations, or physical devices independently control the keys. They also
+do not isolate signing authority from compromised same-origin JavaScript: a persisted
+non-extractable `CryptoKey` can still sign without being exported.
 
 ## What MortalOS does not claim
 
@@ -56,8 +63,11 @@ people, organizations, or physical devices independently control the keys.
   establishes protocol validity or global death.
 - A single-browser logical quorum is one physical failure domain.
 - Finite evidence cannot prove that every hidden copy worldwide is gone.
-- Firefox and WebKit durable-key support remain feature-gated until their own actual-
-  engine acceptance runs pass.
+- Chromium and Firefox durable-key paths pass actual-engine candidate gates. WebKit
+  is routed by a runtime capability probe that requires sign/verify through the
+  canonical 65,536-byte message ceiling, not merely key generation. Current Windows
+  and Ubuntu Playwright 26.5 builds are verifier-only for different measured reasons;
+  any future full signer-capable build must run the complete S2/S4 custody matrix.
 
 ## Run locally
 
@@ -66,7 +76,7 @@ Chromium is required for browser acceptance.
 
 ```bash
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 npm test
 npm run verify:lab
 npm run dev:lab
@@ -85,6 +95,13 @@ npm run test:transport
 npm run test:relay
 npm run test:multi-browser
 npm run test:durable-quorum
+npm run test:distributed-counter
+npm run test:security-fuzz
+npm run test:sdk
+npm run test:capsule
+npm run test:browser-capabilities
+npm run test:browser-parity
+npm run verify:security-boundaries
 npm run verify:persistent-handoff
 npm run verify:ux
 npm run verify:state
@@ -127,6 +144,11 @@ gated and uses one atomic versioned document for a non-extractable key, canonica
 public evidence, state references, sign-once journal, pending recovery, and explicit
 authority policy. Restore replays evidence instead of trusting cached verdicts.
 Ephemeral Demo creates no durable browser storage.
+
+The journal and counter CAS prevent equivocation by conforming concurrent endpoints;
+they are not an XSS-resistant signer boundary. Strong sign-once custody remains HOLD
+until key use and monotonic state move to a separately isolated origin/service or
+hardware-backed authorization domain.
 
 The implemented core sequence is:
 
@@ -172,6 +194,7 @@ out of band; a failed candidate preserves or restores the last accepted deployme
 - [Endpoint-neutral architecture](docs/ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](docs/BROWSER_PARTICIPANT_COMPATIBILITY.md)
 - [Crash-safe durable quorum](docs/DURABLE_QUORUM.md)
+- [Distributed counter-authority ADR](docs/DISTRIBUTED_COUNTER_AUTHORITY_ADR.md)
 - [Protocol](docs/PROTOCOL.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Rejection codes](docs/REJECTION_CODES.md)

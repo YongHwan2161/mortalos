@@ -1,16 +1,28 @@
 import {
+  asBytes,
+  byteLengthOfBytes,
   concatBytes,
   encodeBase64Url,
+  equalBytes,
   utf8Bytes
 } from "../bytes.mjs";
 import { canonicalBytes } from "../codec.mjs";
 import { verifyEd25519 } from "../crypto.mjs";
-import { snapshotNamedOwnDataValues } from "../primordials.mjs";
+import {
+  copyBoundedOwnDataArray,
+  createUint8Array,
+  freeze,
+  ownDataArrayLength,
+  realmIntrinsicsIntact,
+  snapshotNamedOwnDataValues,
+  typedArraySet
+} from "../primordials.mjs";
 import { isValidatedAcceptance } from "../validator.mjs";
 import { createStatePackage } from "../state/package.mjs";
 import { recoverStatePackage } from "../state/recovery.mjs";
 import {
   CONFIDENTIAL_FORMATS,
+  CONFIDENTIAL_LIMITS,
   CONFIDENTIAL_SUITE,
   ConfidentialStateError,
   assertDigest,
@@ -21,7 +33,7 @@ import {
 } from "./format.mjs";
 import {
   createConfidentialPackage,
-  decryptConfidentialPackage,
+  decryptConfidentialPackageForRecovery,
   snapshotConfidentialCustodians,
   verifyConfidentialPackage
 } from "./package.mjs";
@@ -31,20 +43,49 @@ import {
   isLinearizableCounterAuthority,
   isObservedCounterAuthorityEquivocation
 } from "./counter.mjs";
+import {
+  confidentialEpochStoreCapabilityInternal,
+  registerConfidentialEpochStoreInternal
+} from "./recovery-internal.mjs";
+
+const structuredCloneIntrinsic = globalThis.structuredClone;
+const structuredCloneReflectApply = Reflect.apply;
+
+function clone(value) {
+  return structuredCloneReflectApply(structuredCloneIntrinsic, globalThis, [value]);
+}
+
+function ownConfidentialBytes(value) {
+  const view = asBytes(value);
+  const length = view === null ? null : byteLengthOfBytes(view);
+  if (length === null) return null;
+  const owned = createUint8Array(length);
+  typedArraySet(owned, view, 0);
+  return owned;
+}
 
 export class MemoryConfidentialEpochStore {
   #active = null;
+  #fault = null;
   #tail = Promise.resolve();
 
-  get active() {
-    return this.#active ? structuredClone(this.#active) : null;
+  constructor({ fault = null } = {}) {
+    this.#fault = fault;
+    registerConfidentialEpochStoreInternal(this, {
+      commitActive: (options) => this.#commitActive(options),
+      readActive: () => this.#readActive()
+    });
   }
 
-  async commitActive({
-    candidate,
-    expectedPriorConfidentialRoot,
-    fault = null
-  }) {
+  get active() {
+    return this.#readActive();
+  }
+
+  #readActive() {
+    return this.#active ? clone(this.#active) : null;
+  }
+
+  async #commitActive({ candidate, expectedPriorConfidentialRoot, fault = null }) {
     let release;
     const prior = this.#tail;
     this.#tail = new Promise((resolve) => {
@@ -52,6 +93,13 @@ export class MemoryConfidentialEpochStore {
     });
     await prior;
     try {
+      const staged = clone(candidate);
+      if (
+        this.#active &&
+        equalBytes(canonicalBytes(this.#active), canonicalBytes(staged))
+      ) {
+        return this.active;
+      }
       const activeRoot = this.#active?.confidential_root ?? expectedPriorConfidentialRoot;
       if (activeRoot !== expectedPriorConfidentialRoot) {
         confidentialFail(
@@ -60,9 +108,12 @@ export class MemoryConfidentialEpochStore {
           "compare-and-swap"
         );
       }
-      await fault?.("activation:before");
-      this.#active = structuredClone(candidate);
-      await fault?.("activation:after");
+      const boundary = fault ?? this.#fault;
+      await boundary?.("activation:before");
+      if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
+      this.#active = staged;
+      await boundary?.("activation:after");
+      if (!realmIntrinsicsIntact()) throw new Error("realm-integrity");
       return this.active;
     } finally {
       release();
@@ -70,51 +121,111 @@ export class MemoryConfidentialEpochStore {
   }
 }
 
+function confidentialEpochStoreCapability(store) {
+  return confidentialEpochStoreCapabilityInternal(store);
+}
+
+async function commitConfidentialActive(capability, options) {
+  let committed;
+  try {
+    committed = await capability.commitActive(options);
+  } catch (error) {
+    const afterFailure = capability.readActive();
+    if (
+      error?.message === "realm-integrity" ||
+      !afterFailure ||
+      !equalBytes(canonicalBytes(afterFailure), canonicalBytes(options.candidate))
+    ) {
+      throw error;
+    }
+    committed = afterFailure;
+  }
+  const readback = capability.readActive();
+  if (
+    !committed ||
+    !readback ||
+    !equalBytes(canonicalBytes(committed), canonicalBytes(options.candidate)) ||
+    !equalBytes(canonicalBytes(readback), canonicalBytes(options.candidate))
+  ) {
+    confidentialFail(
+      "E_CONFIDENTIAL_ACTIVATION_STALE",
+      "/active",
+      "commit-readback"
+    );
+  }
+  return readback;
+}
+
 export function validateConfidentialRotationInput(input) {
+  const names = [
+    "approved_membership_head",
+    "current_membership_head",
+    "format",
+    "from_epoch",
+    "next_authority_id",
+    "next_custodian_key_digests",
+    "reason",
+    "suite",
+    "to_epoch"
+  ];
   exactObjectKeys(
     input,
-    [
-      "approved_membership_head",
-      "current_membership_head",
-      "format",
-      "from_epoch",
-      "next_authority_id",
-      "next_custodian_key_digests",
-      "reason",
-      "suite",
-      "to_epoch"
-    ],
+    names,
     "/rotation"
   );
+  let inputSnapshot;
+  try {
+    const values = snapshotNamedOwnDataValues(input, names, "confidential rotation");
+    const digestCount = ownDataArrayLength(
+      values[5],
+      "confidential rotation custodian key digests"
+    );
+    inputSnapshot = freeze({
+      approved_membership_head: values[0],
+      current_membership_head: values[1],
+      format: values[2],
+      from_epoch: values[3],
+      next_authority_id: values[4],
+      next_custodian_key_digests: freeze(copyBoundedOwnDataArray(
+        values[5],
+        digestCount,
+        "confidential rotation custodian key digests"
+      )),
+      reason: values[6],
+      suite: values[7],
+      to_epoch: values[8]
+    });
+  } catch {
+    confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation", "owned-data");
+  }
   if (
-    input.format !== CONFIDENTIAL_FORMATS.rotation ||
-    input.suite !== CONFIDENTIAL_SUITE ||
+    inputSnapshot.format !== CONFIDENTIAL_FORMATS.rotation ||
+    inputSnapshot.suite !== CONFIDENTIAL_SUITE ||
     ![
       "membership_change",
       "counter_authority_lost",
       "counter_authority_equivocation"
-    ].includes(input.reason)
+    ].includes(inputSnapshot.reason)
   ) {
     confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation", "authorization");
   }
-  const from = parseEpoch(input.from_epoch, "/rotation/from_epoch");
-  const to = parseEpoch(input.to_epoch, "/rotation/to_epoch");
+  const from = parseEpoch(inputSnapshot.from_epoch, "/rotation/from_epoch");
+  const to = parseEpoch(inputSnapshot.to_epoch, "/rotation/to_epoch");
   if (to !== from + 1n) {
     confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation/to_epoch", "successor");
   }
   assertDigest(
-    input.approved_membership_head,
+    inputSnapshot.approved_membership_head,
     "/rotation/approved_membership_head"
   );
   assertDigest(
-    input.current_membership_head,
+    inputSnapshot.current_membership_head,
     "/rotation/current_membership_head"
   );
-  assertDigest(input.next_authority_id, "/rotation/next_authority_id");
+  assertDigest(inputSnapshot.next_authority_id, "/rotation/next_authority_id");
   if (
-    !Array.isArray(input.next_custodian_key_digests) ||
-    input.next_custodian_key_digests.length < 1 ||
-    input.next_custodian_key_digests.length > 16
+    inputSnapshot.next_custodian_key_digests.length < 1 ||
+    inputSnapshot.next_custodian_key_digests.length > CONFIDENTIAL_LIMITS.max_custodians
   ) {
     confidentialFail(
       "E_CONFIDENTIAL_ROTATION",
@@ -122,11 +233,11 @@ export function validateConfidentialRotationInput(input) {
       "count"
     );
   }
-  const sorted = [...input.next_custodian_key_digests].sort();
+  const sorted = [...inputSnapshot.next_custodian_key_digests].sort();
   for (let index = 0; index < sorted.length; index += 1) {
     assertDigest(sorted[index], `/rotation/next_custodian_key_digests/${index}`);
     if (
-      sorted[index] !== input.next_custodian_key_digests[index] ||
+      sorted[index] !== inputSnapshot.next_custodian_key_digests[index] ||
       (index > 0 && sorted[index] === sorted[index - 1])
     ) {
       confidentialFail(
@@ -136,7 +247,7 @@ export function validateConfidentialRotationInput(input) {
       );
     }
   }
-  return Object.freeze(input);
+  return inputSnapshot;
 }
 
 export function confidentialRotationAuthorizationMessage(rotationInput) {
@@ -146,6 +257,17 @@ export function confidentialRotationAuthorizationMessage(rotationInput) {
     new Uint8Array([0]),
     canonicalBytes(rotation)
   );
+}
+
+function snapshotObservedCounterAuthorityEquivocation(evidence) {
+  if (!isObservedCounterAuthorityEquivocation(evidence)) return null;
+  const values = snapshotNamedOwnDataValues(
+    evidence,
+    ["authority_id", "epoch_id", "receipt_digests", "status"],
+    "observed counter authority equivocation"
+  );
+  if (values[3] !== "counter_authority_equivocation") return null;
+  return freeze({ authorityId: values[0], epochId: values[1] });
 }
 
 export function verifyConfidentialRotationAuthorization({
@@ -254,10 +376,57 @@ export async function createConfidentialStatePackage({
   inputBytes,
   priorStateRoot
 }) {
-  const confidentialPackage = await createConfidentialPackage(confidential);
+  const ownedInputBytes = ownConfidentialBytes(inputBytes);
+  if (ownedInputBytes === null) {
+    throw new TypeError("state package input must be an owned Uint8Array");
+  }
+  let confidentialValues;
+  try {
+    confidentialValues = snapshotNamedOwnDataValues(
+      confidential,
+      [
+        "authority",
+        "custodians",
+        "epoch",
+        "epochId",
+        "expectedNextCounter",
+        "expectedPriorReceiptDigest",
+        "fault",
+        "membershipHead",
+        "organismId",
+        "priorConfidentialRoot",
+        "resourceBytes",
+        "resourceId",
+        "transitionId"
+      ],
+      "confidential package input"
+    );
+  } catch {
+    confidentialFail("E_CONFIDENTIAL_FORMAT", "/confidential", "own-data-record");
+  }
+  const ownedResourceBytes = ownConfidentialBytes(confidentialValues[10]);
+  if (ownedResourceBytes === null) {
+    confidentialFail("E_CONFIDENTIAL_FORMAT", "/resource", "bytes-required");
+  }
+  const confidentialSnapshot = Object.freeze({
+    authority: confidentialValues[0],
+    custodians: snapshotConfidentialCustodians(confidentialValues[1]),
+    epoch: confidentialValues[2],
+    epochId: confidentialValues[3],
+    expectedNextCounter: confidentialValues[4] ?? "0",
+    expectedPriorReceiptDigest: confidentialValues[5] ?? null,
+    fault: confidentialValues[6] ?? null,
+    membershipHead: confidentialValues[7],
+    organismId: confidentialValues[8],
+    priorConfidentialRoot: confidentialValues[9],
+    resourceBytes: ownedResourceBytes,
+    resourceId: confidentialValues[11],
+    transitionId: confidentialValues[12]
+  });
+  const confidentialPackage = await createConfidentialPackage(confidentialSnapshot);
   const statePackage = createStatePackage({
     genomeHash,
-    inputBytes,
+    inputBytes: ownedInputBytes,
     priorStateRoot,
     resourceBytes: confidentialPackage.packageBytes
   });
@@ -275,27 +444,73 @@ export async function recoverAndDecryptConfidentialState({
   receiptBytes,
   sources
 }) {
-  const recovered = await recoverStatePackage({
+  let expectedValues;
+  let expectedCustodians;
+  let ownedCustodian;
+  let confidentialCommitCapability;
+  try {
+    expectedValues = snapshotNamedOwnDataValues(
+      expected,
+      [
+        "custodians",
+        "epoch",
+        "epochId",
+        "genomeHash",
+        "membershipHead",
+        "nextStateRoot",
+        "organismId",
+        "priorConfidentialRoot",
+        "priorStateRoot",
+        "resourceId"
+      ],
+      "confidential recovery expected basis"
+    );
+    expectedCustodians = snapshotConfidentialCustodians(expectedValues[0]);
+    ownedCustodian = snapshotConfidentialCustodians([custodian])[0];
+    confidentialCommitCapability = confidentialEpochStoreCapability(confidentialDestination);
+  } catch {
+    return Object.freeze({
+      code: "E_CONFIDENTIAL_REJECTED",
+      status: "confidential_state_rejected"
+    });
+  }
+  const expectedSnapshot = Object.freeze({
+    custodians: expectedCustodians,
+    epoch: expectedValues[1],
+    epochId: expectedValues[2],
+    genomeHash: expectedValues[3],
+    membershipHead: expectedValues[4],
+    nextStateRoot: expectedValues[5],
+    organismId: expectedValues[6],
+    priorConfidentialRoot: expectedValues[7],
+    priorStateRoot: expectedValues[8],
+    resourceId: expectedValues[9]
+  });
+  const recoveryExpectedGenomeHash = expectedSnapshot.genomeHash;
+  const recoveryExpectedNextStateRoot = expectedSnapshot.nextStateRoot;
+  const recoveryExpectedPriorStateRoot = expectedSnapshot.priorStateRoot;
+  const recoveryPromise = recoverStatePackage({
     destination,
-    expectedGenomeHash: expected.genomeHash,
-    expectedNextStateRoot: expected.nextStateRoot,
-    expectedPriorStateRoot: expected.priorStateRoot,
+    expectedGenomeHash: recoveryExpectedGenomeHash,
+    expectedNextStateRoot: recoveryExpectedNextStateRoot,
+    expectedPriorStateRoot: recoveryExpectedPriorStateRoot,
     inputBytes,
     manifestBytes,
     receiptBytes,
     sources
   });
+  const recovered = await recoveryPromise;
   if (recovered.status !== "available") return recovered;
   let decrypted;
   try {
-    decrypted = await decryptConfidentialPackage({
-      custodian,
-      expectedCustodians: expected.custodians,
-      expectedEpochId: expected.epochId,
-      expectedMembershipHead: expected.membershipHead,
-      expectedOrganismId: expected.organismId,
-      expectedPriorConfidentialRoot: expected.priorConfidentialRoot,
-      expectedResourceId: expected.resourceId,
+    decrypted = await decryptConfidentialPackageForRecovery({
+      custodian: ownedCustodian,
+      expectedCustodians: expectedSnapshot.custodians,
+      expectedEpochId: expectedSnapshot.epochId,
+      expectedMembershipHead: expectedSnapshot.membershipHead,
+      expectedOrganismId: expectedSnapshot.organismId,
+      expectedPriorConfidentialRoot: expectedSnapshot.priorConfidentialRoot,
+      expectedResourceId: expectedSnapshot.resourceId,
       packageBytes: recovered.resource_bytes,
       privateKey
     });
@@ -316,17 +531,17 @@ export async function recoverAndDecryptConfidentialState({
   }
   const candidate = Object.freeze({
     confidential_root: decrypted.confidential_root,
-    epoch: expected.epoch,
-    epoch_id: expected.epochId,
+    epoch: expectedSnapshot.epoch,
+    epoch_id: expectedSnapshot.epochId,
     package_base64url: encodeBase64Url(recovered.resource_bytes),
-    resource_id: expected.resourceId,
+    resource_id: expectedSnapshot.resourceId,
     s3_state_root: recovered.next_state_root,
     status: "verified"
   });
   try {
-    await confidentialDestination.commitActive({
+    await commitConfidentialActive(confidentialCommitCapability, {
       candidate,
-      expectedPriorConfidentialRoot: expected.priorConfidentialRoot
+      expectedPriorConfidentialRoot: expectedSnapshot.priorConfidentialRoot
     });
   } catch {
     return Object.freeze({
@@ -337,7 +552,6 @@ export async function recoverAndDecryptConfidentialState({
   return Object.freeze({
     code: null,
     confidential_root: decrypted.confidential_root,
-    epoch_key: decrypted.epoch_key,
     resource_bytes: decrypted.resource_bytes,
     status: "available"
   });
@@ -356,6 +570,13 @@ export async function rotateConfidentialState({
   nextMembershipHead = null,
   priorAuthority = null
 }) {
+  const ownedActivePackageBytes = ownConfidentialBytes(activePackageBytes);
+  if (ownedActivePackageBytes === null) {
+    confidentialFail("E_CONFIDENTIAL_ROTATION", "/rotation", "active-package");
+  }
+  const observedEquivocation = snapshotObservedCounterAuthorityEquivocation(
+    equivocationEvidence
+  );
   let nextValues;
   try {
     nextValues = snapshotNamedOwnDataValues(
@@ -409,6 +630,12 @@ export async function rotateConfidentialState({
   const nextAuthorityDescriptor = counterAuthorityDescriptor(
     nextSnapshot.authority
   );
+  const currentHeadValues = snapshotNamedOwnDataValues(
+    currentHead,
+    ["organism_id"],
+    "current rotation head"
+  );
+  const currentOrganismId = currentHeadValues[0];
   const authorized = verifyConfidentialRotationAuthorization({
     authorization,
     currentHead,
@@ -417,15 +644,15 @@ export async function rotateConfidentialState({
   const rotation = authorized.rotation;
   const current = verifyConfidentialPackage({
     expectedCustodians: currentMembership,
-    packageBytes: activePackageBytes
+    packageBytes: ownedActivePackageBytes
   });
   if (
     current.manifest.epoch !== rotation.from_epoch ||
     current.manifest.membership_head !== rotation.current_membership_head ||
-    current.manifest.organism_id !== currentHead.organism_id ||
+    current.manifest.organism_id !== currentOrganismId ||
     nextSnapshot.epoch !== rotation.to_epoch ||
     nextSnapshot.membershipHead !== rotation.approved_membership_head ||
-    nextSnapshot.organismId !== currentHead.organism_id ||
+    nextSnapshot.organismId !== currentOrganismId ||
     nextAuthorityDescriptor.authority_id !== rotation.next_authority_id ||
     JSON.stringify(
       nextSnapshot.custodians
@@ -475,9 +702,9 @@ export async function rotateConfidentialState({
       (rotation.reason === "counter_authority_lost" && !priorStateLost) ||
       (rotation.reason === "counter_authority_equivocation" &&
         (!priorState?.retired ||
-          !isObservedCounterAuthorityEquivocation(equivocationEvidence) ||
-          equivocationEvidence.authority_id !== current.manifest.authority_id ||
-          equivocationEvidence.epoch_id !== current.manifest.epoch_id))
+          !observedEquivocation ||
+          observedEquivocation.authorityId !== current.manifest.authority_id ||
+          observedEquivocation.epochId !== current.manifest.epoch_id))
     ) {
       confidentialFail(
         "E_CONFIDENTIAL_ROTATION",
@@ -486,10 +713,10 @@ export async function rotateConfidentialState({
       );
     }
   }
-  const decrypted = await decryptConfidentialPackage({
+  const decrypted = await decryptConfidentialPackageForRecovery({
     custodian: currentRecipient,
     expectedCustodians: currentMembership,
-    packageBytes: activePackageBytes,
+    packageBytes: ownedActivePackageBytes,
     privateKey: currentPrivateKey
   });
   await fault?.("rotation:plaintext-recovered");

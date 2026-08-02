@@ -569,6 +569,28 @@ export function snapshotNamedOwnDataValues(value, names, label = "record") {
   return result;
 }
 
+export function snapshotDataMethod(target, property, label = "capability") {
+  if ((typeof target !== "object" && typeof target !== "function") || target === null) {
+    throw new typeErrorConstructor(`${label} must be an object capability`);
+  }
+  let cursor = target;
+  for (let depth = 0; depth < 16 && cursor !== null; depth += 1) {
+    const descriptor = ownDescriptor(cursor, property);
+    if (descriptor !== undefined) {
+      const method = requireDataDescriptor(
+        descriptor,
+        `${label}.${property} must be a data method`
+      );
+      if (typeof method !== "function") {
+        throw new typeErrorConstructor(`${label}.${property} must be callable`);
+      }
+      return (...argumentsList) => reflectApply(method, target, argumentsList);
+    }
+    cursor = reflectApply(objectGetPrototypeOfIntrinsic, objectConstructor, [cursor]);
+  }
+  throw new typeErrorConstructor(`${label}.${property} is required`);
+}
+
 export function ownDataArrayLength(value, label = "array") {
   if (!reflectApply(arrayIsArrayIntrinsic, undefined, [value])) {
     throw new typeErrorConstructor(`${label} must be an array`);

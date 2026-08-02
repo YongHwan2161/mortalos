@@ -3,7 +3,7 @@ import { build } from "esbuild";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { buildLab } from "./build-lab.mjs";
 import { startLabServer } from "./serve-lab.mjs";
 
@@ -16,7 +16,10 @@ if (!Number.isSafeInteger(lossTrials) || lossTrials < 1 || lossTrials > 100) {
   throw new Error("MORTALOS_S2_LOSS_TRIALS must be 1 through 100");
 }
 
-const temporaryRoot = await mkdtemp(join(tmpdir(), "mortalos-s2-chromium-"));
+const engineName = process.env.MORTALOS_BROWSER_ENGINE ?? "chromium";
+const browserType = { chromium, firefox, webkit }[engineName];
+if (!browserType) throw new Error(`unsupported browser engine: ${engineName}`);
+const temporaryRoot = await mkdtemp(join(tmpdir(), `mortalos-s2-${engineName}-`));
 const labDirectory = resolve(temporaryRoot, "lab");
 const profileDirectory = resolve(temporaryRoot, "profile");
 const bundle = await build({
@@ -24,7 +27,7 @@ const bundle = await build({
   bundle: true,
   format: "iife",
   platform: "browser",
-  target: ["chrome120"],
+  target: ["es2022"],
   legalComments: "none",
   minify: true,
   write: false
@@ -34,12 +37,15 @@ await writeFile(resolve(labDirectory, "durable-browser-test.js"), bundle.outputF
 const server = await startLabServer({ directory: labDirectory });
 
 const launchOptions = { headless: true };
-if (process.env.MORTALOS_CHROMIUM_EXECUTABLE) {
+if (engineName === "chromium" && process.env.MORTALOS_CHROMIUM_EXECUTABLE) {
   launchOptions.executablePath = process.env.MORTALOS_CHROMIUM_EXECUTABLE;
 }
 
 async function pageWithHarness(context) {
   const page = await context.newPage();
+  page.on("console", (message) => {
+    console.log(`S2 ${engineName} browser: ${message.text()}`);
+  });
   await page.goto(server.url, { waitUntil: "domcontentloaded" });
   await page.addScriptTag({ url: `${server.url}/durable-browser-test.js` });
   await page.waitForFunction(() => Boolean(globalThis.__MORTALOS_DURABLE_BROWSER__));
@@ -49,13 +55,13 @@ async function pageWithHarness(context) {
 try {
   const prepared = [];
   const preparedLoss = [[], [], []];
-  let context = await chromium.launchPersistentContext(profileDirectory, launchOptions);
+  let context = await browserType.launchPersistentContext(profileDirectory, launchOptions);
   let page = await pageWithHarness(context);
   for (let run = 0; run < trials; run += 1) {
     prepared.push(await page.evaluate((value) =>
       globalThis.__MORTALOS_DURABLE_BROWSER__.createAcceptedHandoff(value), run));
     if ((run + 1) % 10 === 0 || run + 1 === trials) {
-      console.log(`S2 Chromium handoff prepared: ${run + 1}/${trials}`);
+      console.log(`S2 ${engineName} handoff prepared: ${run + 1}/${trials}`);
     }
   }
   for (let lost = 0; lost < 3; lost += 1) {
@@ -66,24 +72,28 @@ try {
         { lost, run }
       ));
       if ((run + 1) % 10 === 0 || run + 1 === lossTrials) {
-        console.log(`S2 Chromium loss ${["A", "B", "C"][lost]} prepared: ${run + 1}/${lossTrials}`);
+        console.log(`S2 ${engineName} loss ${["A", "B", "C"][lost]} prepared: ${run + 1}/${lossTrials}`);
       }
     }
   }
   await context.close();
 
-  context = await chromium.launchPersistentContext(profileDirectory, launchOptions);
+  context = await browserType.launchPersistentContext(profileDirectory, launchOptions);
   page = await pageWithHarness(context);
+  console.log(`S2 ${engineName} compare-and-swap: START`);
   const compareAndSwap = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyIndexedDbCompareAndSwap());
+  console.log(`S2 ${engineName} compare-and-swap: COMPLETE`);
   assert.equal(compareAndSwap.accepted_signature, true);
   assert.equal(compareAndSwap.stale_code, "E_DURABLE_CONFLICT");
   assert.equal(compareAndSwap.stale_signer_calls, 0);
   assert.equal(compareAndSwap.primary_signer_calls, 1);
   assert.equal(compareAndSwap.persisted_pulse_entries, 1);
   assert.equal(compareAndSwap.conflicting_code, "E_DURABLE_EQUIVOCATION");
+  console.log(`S2 ${engineName} expiry rollback latch: START`);
   const expiry = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyExpiryRollbackLatch());
+  console.log(`S2 ${engineName} expiry rollback latch: COMPLETE`);
   assert.equal(expiry.at_expiry_code, "E_DURABLE_EXPIRED");
   assert.equal(expiry.persisted_status, "expired");
   assert.equal(expiry.rollback_authority, false);
@@ -92,8 +102,10 @@ try {
   assert.equal(expiry.stale_renewal_code, "E_DURABLE_POLICY");
   assert.equal(expiry.status_after_rejected_renewals, "expired");
   assert.equal(expiry.renewed_authority, true);
+  console.log(`S2 ${engineName} v1 migration: START`);
   const migration = await page.evaluate(() =>
     globalThis.__MORTALOS_DURABLE_BROWSER__.verifyVersionOneMigration());
+  console.log(`S2 ${engineName} v1 migration: COMPLETE`);
   assert.equal(migration.valid.schema_version, 2);
   assert.equal(migration.valid.from_schema, 1);
   assert.equal(migration.valid.signing_authority, false);
@@ -137,7 +149,7 @@ try {
     assert.equal(recovered.after.sequence, "2");
     assert.equal(recovered.private_key_export_rejected, true);
     if ((run + 1) % 10 === 0 || run + 1 === trials) {
-      console.log(`S2 Chromium handoff recovered: ${run + 1}/${trials}`);
+      console.log(`S2 ${engineName} handoff recovered: ${run + 1}/${trials}`);
     }
   }
   for (let lost = 0; lost < 3; lost += 1) {
@@ -151,12 +163,12 @@ try {
       assert.equal(recovered.sequence, "3");
       assert.equal(recovered.replacement_authority, true);
       if ((run + 1) % 10 === 0 || run + 1 === lossTrials) {
-        console.log(`S2 Chromium loss ${["A", "B", "C"][lost]} recovered: ${run + 1}/${lossTrials}`);
+        console.log(`S2 ${engineName} loss ${["A", "B", "C"][lost]} recovered: ${run + 1}/${lossTrials}`);
       }
     }
   }
   await context.close();
-  console.log(`MortalOS S2 Chromium durable handoff: PASS (${trials}/${trials})`);
+  console.log(`MortalOS S2 ${engineName} durable handoff: PASS (${trials}/${trials})`);
   console.log("- target browser process fully closed between accepted handoff and recovery");
   console.log("- non-extractable IndexedDB CryptoKey, canonical evidence replay, and same-identity continuation");
   console.log("- same-revision IndexedDB writers use CAS before signing; stale signer calls: 0");
@@ -166,5 +178,10 @@ try {
   console.log("- corrupt/removed+key/active-keyless v1 copies stayed at version 1");
 } finally {
   await server.close();
-  await rm(temporaryRoot, { force: true, recursive: true });
+  await rm(temporaryRoot, {
+    force: true,
+    maxRetries: 8,
+    recursive: true,
+    retryDelay: 250
+  });
 }

@@ -1,15 +1,32 @@
 {
-  "name": "mortalos",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@mortal-os/core",
+  "version": "0.1.0",
+  "private": false,
   "license": "Apache-2.0",
   "type": "module",
+  "bin": {
+    "mortalos": "./cli/mortalos.mjs"
+  },
+  "exports": {
+    ".": "./sdk/index.mjs",
+    "./protocol-profile": "./src/generated/protocol-profile.mjs"
+  },
+  "files": [
+    "cli/",
+    "sdk/",
+    "src/",
+    "protocol/profile.v1.json",
+    "LICENSE",
+    "README.md"
+  ],
   "description": "An experimental portable lifecycle protocol with deterministic lineage validation.",
   "engines": {
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:s3-receipt && npm run test:s4-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:confidentiality && npm run test:transport && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2 && npm run verify:s3 && npm run verify:s4",
+    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run verify:protocol-profile && npm run verify:security-boundaries && npm run verify:ruleset-policy && npm run test:reviewer-attestation && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:s3-receipt && npm run test:s4-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:confidentiality && npm run test:protocol-profile && npm run test:transport && npm run test:distributed-counter && npm run test:security-fuzz && npm run test:sdk && npm run verify:sdk-package && npm run test:capsule && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2 && npm run verify:s3 && npm run verify:s4",
+    "generate:protocol-profile": "node scripts/generate-protocol-profile.mjs",
+    "verify:protocol-profile": "node scripts/generate-protocol-profile.mjs --check",
     "verify:license": "node scripts/verify-license.mjs",
     "verify:spec": "node scripts/verify-spec.mjs",
     "verify:links": "node scripts/verify-links.mjs",
@@ -35,8 +52,19 @@
     "test:state": "node --test test/state-engine.test.mjs",
     "test:state-package": "node --test test/state-package.test.mjs",
     "test:confidentiality": "node --test test/confidential-format.test.mjs test/confidential-counter.test.mjs test/confidential-crypto-vectors.test.mjs test/confidential-package.test.mjs test/confidential-s3-recovery.test.mjs && node scripts/verify-confidential-chromium.mjs",
+    "test:protocol-profile": "node --test test/protocol-profile.test.mjs",
+    "test:distributed-counter": "node --test test/distributed-counter.test.mjs && node scripts/verify-independent-counter-topology.mjs",
+    "test:security-fuzz": "node --test test/security-stateful-fuzz.test.mjs",
+    "verify:security-boundaries": "node --test test/security-boundary-verifier.test.mjs",
+    "verify:ruleset-policy": "node scripts/verify-ruleset-policy.mjs",
+    "test:reviewer-attestation": "node --test test/reviewer-attestation.test.mjs",
     "test:transport": "node --test test/transport.test.mjs",
+    "test:sdk": "node --test test/sdk.test.mjs",
+    "verify:sdk-package": "node scripts/verify-sdk-package.mjs",
+    "test:capsule": "node --test test/capsule.test.mjs test/custody.test.mjs",
     "test:multi-browser": "node --test test/multi-browser.test.mjs && node scripts/verify-quorum.mjs",
+    "test:browser-capabilities": "node scripts/verify-browser-capabilities.mjs",
+    "test:browser-parity": "node scripts/verify-browser-parity.mjs",
     "verify:quorum": "node scripts/verify-quorum.mjs",
     "test:relay": "node --test test/relay-contract.test.mjs && node scripts/run-relay-runtime-tests.mjs && wrangler deploy --dry-run --env \"\" --config relay/wrangler.jsonc --outdir dist/relay",
     "test:coverage": "node scripts/run-coverage.mjs",
@@ -68,6 +96,8 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.8",
+    "acorn": "8.18.0",
+    "acorn-walk": "8.3.5",
     "ajv": "8.20.0",
     "axe-core": "4.12.1",
     "esbuild": "0.28.1",

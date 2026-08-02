@@ -34,6 +34,7 @@ import {
   verifyStatePackageTransitionPayload,
   verifyStateTransitionPayload
 } from "../src/index.mjs";
+import { commitStateActiveForTest } from "./recovery-activation-helper.mjs";
 
 function packageFixture() {
   const initial = createInitialState(new Uint8Array(16).fill(3));
@@ -467,7 +468,7 @@ test("missing chunks remain state_unavailable and never replace the last verifie
     );
   }
   const destination = new MemoryContentAddressedStore();
-  await destination.commitActive({
+  await commitStateActiveForTest(destination, {
     next_state_root: fixture.statePackage.manifest.prior_state_root,
     status: "verified"
   });
@@ -544,7 +545,7 @@ test("recovery is resumable and idempotent without replacing the prior active st
       if (boundary === "chunk:after" && ++writes === 3) throw new Error("forced-stop");
     }
   });
-  await destination.commitActive({
+  await commitStateActiveForTest(destination, {
     next_state_root: fixture.statePackage.manifest.prior_state_root,
     status: "verified"
   });
@@ -576,7 +577,7 @@ test("recovery is resumable and idempotent without replacing the prior active st
         descriptor.size
       );
     }
-    await atomicDestination.commitActive({
+    await commitStateActiveForTest(atomicDestination, {
       next_state_root: fixture.statePackage.manifest.prior_state_root,
       status: "verified"
     });
@@ -604,7 +605,7 @@ test("recovery is resumable and idempotent without replacing the prior active st
 test("adapter read interruption is stable and preserves the prior active state", async () => {
   const fixture = packageFixture();
   const destination = new MemoryContentAddressedStore();
-  await destination.commitActive({
+  await commitStateActiveForTest(destination, {
     next_state_root: fixture.statePackage.manifest.prior_state_root,
     status: "verified"
   });
@@ -643,7 +644,10 @@ test("store and destination failure boundaries remain stable before activation",
   assert.deepEqual(await store.inventory(), []);
   assert.equal(await store.get(first.digest), null);
   await assert.rejects(store.put(first.digest, firstBytes, first.size), /store-destroyed/u);
-  await assert.rejects(store.commitActive({ next_state_root: "x" }), /store-destroyed/u);
+  await assert.rejects(
+    commitStateActiveForTest(store, { next_state_root: "x" }),
+    /store-destroyed/u
+  );
 
   const invalidSources = await recoverStatePackage({
     ...recoveryOptions(fixture, new MemoryContentAddressedStore(), []),
@@ -683,50 +687,60 @@ test("store and destination failure boundaries remain stable before activation",
   );
   assert.equal(hostileBytes.code, "E_STATE_PACKAGE_CHUNK_DIGEST_MISMATCH");
 
-  const fullInventory = fixture.statePackage.manifest.chunks.map(({ digest }) => digest);
-  const chunkFor = (digest) => {
-    const index = fixture.statePackage.manifest.chunks.findIndex((entry) => entry.digest === digest);
-    return fixture.statePackage.chunkBytes[index];
+  let liarCalls = 0;
+  const lyingDestination = {
+    async inventory() { liarCalls += 1; return []; },
+    async get() { liarCalls += 1; return null; },
+    async put() { liarCalls += 1; },
+    async commitActive(candidate) { liarCalls += 1; return candidate; },
+    async readActive() { liarCalls += 1; return { status: "verified" }; }
   };
-  const throwingGet = {
-    async inventory() { return fullInventory; },
-    async get() { throw new Error("destination-offline"); },
-    async put() { throw new Error("unexpected-put"); },
-    async commitActive() { throw new Error("unexpected-commit"); }
-  };
-  assert.equal(
-    (await recoverStatePackage(recoveryOptions(fixture, throwingGet, []))).code,
-    "E_STATE_RECOVERY_INTERRUPTED"
-  );
-  const missingGet = {
-    ...throwingGet,
-    async get() { return null; }
-  };
-  assert.equal(
-    (await recoverStatePackage(recoveryOptions(fixture, missingGet, []))).code,
-    "E_STATE_UNAVAILABLE"
-  );
-  const corruptGet = {
-    ...throwingGet,
-    async get(digest) {
-      const bytes = new Uint8Array(chunkFor(digest));
-      bytes[0] ^= 1;
-      return bytes;
+  assert.deepEqual(
+    await recoverStatePackage(recoveryOptions(fixture, lyingDestination, [])),
+    {
+      code: "E_STATE_RECOVERY_INTERRUPTED",
+      detail: "registered MortalOS content-addressed destination required",
+      status: "interrupted"
     }
-  };
-  assert.equal(
-    (await recoverStatePackage(recoveryOptions(fixture, corruptGet, []))).code,
-    "E_STATE_PACKAGE_CHUNK_DIGEST_MISMATCH"
   );
-  const commitFailure = {
-    ...throwingGet,
-    async get(digest) { return chunkFor(digest); },
-    async commitActive() { throw new Error("commit-offline"); }
-  };
+  assert.equal(liarCalls, 0, "unbranded destination methods must never be invoked");
+
+  const brandedDestination = new MemoryContentAddressedStore();
   assert.equal(
-    (await recoverStatePackage(recoveryOptions(fixture, commitFailure, []))).code,
-    "E_STATE_RECOVERY_INTERRUPTED"
+    brandedDestination.commitActive,
+    undefined,
+    "verified-state activation must not be a public store method"
   );
+  for (const descriptor of fixture.statePackage.manifest.chunks) {
+    await brandedDestination.put(
+      descriptor.digest,
+      fixture.statePackage.chunkBytes[descriptor.index],
+      descriptor.size
+    );
+  }
+  let facadeCalls = 0;
+  for (const method of ["commitActive", "get", "inventory", "put", "readActive"]) {
+    brandedDestination[method] = async () => {
+      facadeCalls += 1;
+      throw new Error(`mutable-facade:${method}`);
+    };
+  }
+  const originalStructuredClone = globalThis.structuredClone;
+  let cloneFacadeCalls = 0;
+  const recovery = recoverStatePackage(recoveryOptions(fixture, brandedDestination, []));
+  globalThis.structuredClone = () => {
+    cloneFacadeCalls += 1;
+    throw new Error("mutable-structured-clone-facade");
+  };
+  let recoveredThroughCapability;
+  try {
+    recoveredThroughCapability = await recovery;
+  } finally {
+    globalThis.structuredClone = originalStructuredClone;
+  }
+  assert.equal(recoveredThroughCapability.status, "available");
+  assert.equal(facadeCalls, 0, "recovery must use the module-private capability record");
+  assert.equal(cloneFacadeCalls, 0, "recovery must use the captured clone intrinsic");
 });
 
 test("aggregate resource verification is independent from valid chunk digests", async () => {
@@ -786,7 +800,7 @@ test("10,000 seeded loss, reorder, duplicate, partial, and tamper recoveries exe
     const lost = scheduleSeed % 3;
     const target = (scheduleSeed >>> 8) % digests.length;
     const destination = new MemoryContentAddressedStore();
-    await destination.commitActive({
+    await commitStateActiveForTest(destination, {
       next_state_root: fixture.statePackage.manifest.prior_state_root,
       status: "verified"
     });

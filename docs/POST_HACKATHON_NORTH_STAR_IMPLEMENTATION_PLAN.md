@@ -1,980 +1,327 @@
-# MortalOS post-hackathon North Star implementation plan
+# MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — S0/S1/S2/S3 promoted; S4 runtime candidate**
+Status: **ACTIVE IMPLEMENTATION SSOT — S2/S4 claims reopened; candidate promotion HOLD**
 
-Plan authority date: **2026-07-25 KST**
+Last synchronized: **2026-08-02 KST**
 
-Initial planning base: `origin/main`
-`079e37dfdea8ce94998533979546b65cc09709d6`
-
-Last reconciled main base: `origin/main`
-`39529337b2a739b1aee4697e680643d77704bbaa`
-
-Owner: `codex-protocol-kernel`
-
-This is the execution SSOT for turning MortalOS from a verified browser
-falsification Lab into a durable, recoverable, endpoint-neutral resource runtime.
-The contest, Devpost submission, and demo-video state are historical evidence, not
-future product priorities.
+This is the sole ordered S0–S8 execution plan. Historical receipts remain valid
+evidence for their named commits, but they do not authorize claims for a later
+source tree. The current candidate obtains no promotion from old S2/S4 receipts.
 
 ## 1. North Star
 
-> When any one endpoint, administrative credential domain, and the primary relay
-> disappear, the surviving quorum can cold-start, reconstruct the exact authorized
-> identity and state, and commit the next deterministic transition without trusting
-> a browser, server, cloud, UI, or model as authority.
+> A digital organism remains deterministically identifiable, recoverable, and
+> continuable after any one endpoint, relay, or storage replica disappears,
+> without trusting a mutable public object, exposing private authority, or
+> silently selecting a fork.
 
-The product sentence remains:
+The product sentence remains **Create once. Continue elsewhere.** The protocol
+claim is narrower than “decentralized”, “ownerless”, or “immortal”: a verified
+quorum can continue one exact lineage and resource state under declared failure
+assumptions.
 
-> **Create once. Continue elsewhere.**
+## 2. Most fundamental improvement
 
-`Elsewhere` now means a separately persisted process, device, credential boundary,
-or transport—not merely another tab or an isolated browser context.
+The root problem is not a missing feature. It is an incomplete trust boundary.
+Branding an outer authority did not secure mutable store methods; owning a method
+did not secure borrowed data across `await`; and hiding a non-extractable key from
+public APIs did not stop compromised same-origin code from using the persisted key
+directly. A green test or historical receipt could then overstate the current source.
 
-### 1.1 North Star acceptance trial
+The governing rule is now:
 
-One versioned `2-of-3` resource must pass all of the following in one immutable
-candidate:
+> Every security-sensitive async entrypoint must own its complete transitive
+> invocation before its first `await`, and every authority-changing commit must
+> use a module-private capability followed by exact readback. Any claim that must
+> survive same-origin compromise must additionally move key use and monotonic policy
+> state into a separate trust domain; API redaction alone is not custody isolation.
 
-1. Three participants hold three distinct current keys in three separately
-   persisted stores.
-2. No one runtime, host, cloud service, relay, or administrative credential can use
-   enough keys to satisfy the threshold.
-3. The harness selects and hard-stops any one participant, deletes its local
-   authority and state replica, and blocks the primary relay.
-4. The two survivors cold-start from disk or browser storage and use a replaceable
-   transport to reconstruct one byte-identical recognized head and resource state.
-5. The surviving quorum commits one new canonical transition and admits a new
-   replacement participant.
-6. Recovery completes within five minutes.
-7. One hundred seeded trials complete consecutively with:
-   - `100/100` exact-state recovery;
-   - `100/100` authorized continuation;
-   - zero unauthorized acceptance;
-   - zero silent rollback;
-   - zero hidden fork selection; and
-   - zero false death classification.
-8. The same candidate remains healthy through a seven-day natural burn-in without
-   changing source, protocol version, state format, topology contract, or evidence
-   policy.
+This rule controls S2 sign-once, S3/S4 recovery, S4 rotation, S7 counter allocation,
+Capsule activation, fuzzing, documentation, and promotion evidence.
 
-This trial proves separation of technical and credential failure domains. It does
-not prove that distinct humans or legal organizations independently control them.
-That stronger claim requires separately administered participants and its own
-external evidence.
+## 3. Current implementation ledger
 
-## 2. Current verified baseline and the root gap
+| Stage | Candidate state | Local evidence | Promotion state |
+| --- | --- | --- | --- |
+| S0/S1 | Historical baseline and Participant Core retained | Existing exact-commit receipts | Historical promotion only |
+| S2 | Endpoint and raw store capability share one module-private closure with no raw exports; public document redacts `CryptoKey`; sign invocation owned before await | Node durable matrix and Chromium/Firefox persistent-profile matrix pass for conforming callers | **REOPENED / HOLD**; XSS-resistant sign-once additionally requires isolated signer custody |
+| S3 | Limits generated from one protocol profile; real relay fragment data plane; activation CAS/readback is idempotent | 1 MiB reconstruction, 10,000 recovery corpus, real relay message test pass | Existing promotion remains historical; new data plane is candidate |
+| S4 | Recovery inputs owned; epoch activation uses private capability and exact readback; public decrypt/recovery results omit epoch keys | Node, Chromium, and Firefox cryptographic/rotation gates pass for the stated compromised-browser non-claim | **REOPENED / HOLD**; same-origin counter-key use remains outside the current custody boundary |
+| S5 | Authority-free `@mortal-os/core` export map and `mortalos` CLI | SDK allowlist, CLI, and package allowlist pass | Candidate only |
+| S6 | Canonical Continuity Capsule binds lineage, latest state transition, manifest, receipt, chunks, and exact resource | Cross-process CLI verification and tamper rejection pass | Candidate only |
+| S7 | Majority counter store, three process-isolated HTTP CAS replicas, disk restart, repair, and topology validator | Concurrent coordinators, one replica loss, restart, and no-overlap gates pass | Local topology PASS; real independent providers/admins **HOLD** |
+| S8 | Stateful mutation corpus and 2-of-3 adversarial Capsule custody | S2/S4 accessor/Proxy/prototype/array corpus; corrupt/lost/fork custody gate pass | Chromium/Firefox full local PASS; WebKit capability-routed exact-head CI **HOLD** |
 
-The following observations are planning inputs, not permanent completion claims.
-They must be refreshed at S0.
+## 4. Global gate and evidence rules
 
-| Area | Baseline at planning base | Root gap |
-| --- | --- | --- |
-| Kernel | Canonical parsing, Ed25519 validation, lineage, mortality, state, R1, transport, and stable rejection tests exist. | The kernel is strong enough to build on; rewriting it is not the priority. |
-| Live handoff | A→B preserves identity and B advances after A closes. | The live participant keeps key and evidence in memory; B is not cold-restarted before continuation. |
-| Durable participant | A consent-gated IndexedDB `1-of-1` participant restores after reload. | It is separate from live handoff and quorum, expires after 1–30 days, and cannot durably operate `2-of-3`. |
-| Quorum | A/B/C logical `2-of-3`, every one-endpoint loss pair, and D repair pass in isolated Chromium contexts. | Context isolation is not independently persisted process/device/credential-domain evidence. |
-| State | `mortalos-state/1` binds bounded deterministic transitions; the S3 candidate additionally binds canonical resource manifests, chunks, and JS/Python receipts. | Physical-domain availability, confidentiality, and global retrievability remain unproven. |
-| Relay | Cloudflare Durable Object relay is bounded and non-authoritative. | Public evidence is retained for one to seven days; it is not the resource durability or confidentiality layer. |
-| Product surface | A bilingual Lab exposes continuity, guided falsification, durability, corpus, and diagnostics. | Three participant implementations and a large Lab controller are not a stable SDK or one coherent product path. |
-| Distribution | Source exports exist internally. | The package remains private `0.0.0` with no supported CLI/package contract. |
-| Dependency health | Prerequisite PR #29 upgraded `wrangler` and `@cloudflare/vitest-pool-workers`, preserved both Windows workerd layouts, and restored the 2026-07-25 audit to zero findings. The before snapshot contained five high-severity findings through `wrangler`, `miniflare`, `sharp`, `fast-uri`, and the pool package. | S0 must bind the before/after advisory evidence and exact lockfile digest into the baseline receipt; any new high/critical finding returns the stage to HOLD. |
-| Documentation | Protocol, threat model, traceability, a current roadmap/claim matrix, and an explicitly historical contest archive exist. | S0 remains unpromoted until exact receipt, issue tracking, review, and post-merge evidence pass. |
+A stage passes only when all of the following bind the same immutable SHA:
 
-### 2.1 Most fundamental implementation decision
+1. locked install, generated-profile check, focused tests, full suite, and clean
+   package build;
+2. no skipped required runtime and no undisclosed capability downgrade;
+3. exact source inventory plus machine-readable receipt;
+4. immutable independent review on the final diff;
+5. expected-head merge, post-merge CI, and exact deployment readback when a live
+   claim changes.
 
-The first runtime change is a **single Participant Core**. Durable storage,
-multi-endpoint handoff, quorum signing, state replay, transport catch-up, and
-authority removal must be adapters around one state machine. No new UI, model
-feature, browser engine, or arbitrary genome precedes this convergence.
+Any source edit after review invalidates that review. Any source edit covered by an
+older receipt reopens the claim. Locally separate processes are not physically or
+administratively independent providers.
 
-### 2.2 Dependency correction from the initial proposal
+An old green run does not cover a new SHA.
 
-The bounded real-resource vertical is implemented before the final independent
-failure-domain burn-in. A burn-in using only the toy pulse counter would prove
-infrastructure mechanics but not useful state survival. This plan therefore orders
-the work as:
+## 5. Required verification commands
 
-`baseline → unified core → crash-safe durable quorum → recoverable state →
-confidentiality → SDK/CLI → real resource → independent-domain burn-in →
-advanced adversaries and browser parity`
+```bash
+npm ci
+npm run verify:protocol-profile
+npm run verify:security-boundaries
+npm run test:durable-quorum
+npm run test:state-package
+npm run test:confidentiality
+npm run test:protocol-profile
+npm run test:transport
+npm run test:distributed-counter
+npm run test:security-fuzz
+npm run test:sdk
+npm run test:capsule
+npm run test:browser-capabilities
+npm run test:browser-parity
+npm test
+```
 
-## 3. Global invariants
-
-Every stage must preserve these rules.
-
-1. Only canonical bytes, signatures, recognized lineage, and the deterministic
-   state contract establish validity.
-2. UI, storage, transport order, relay presence, Cloudflare, model output, and
-   cached verdicts never establish acceptance.
-3. Importing evidence grants observation, not signing authority.
-4. A participant signs at most one exact successor body per
-   `(organism_id, sequence, parent_hash)` tuple.
-5. A signature is never released before its sign-once intent is durably recorded.
-6. A storage error, incomplete transaction, missing state chunk, unknown version,
-   malformed evidence, or unavailable dependency fails closed.
-7. State unavailable, key unavailable, transport unavailable, below quorum,
-   dormant, forked, and dead remain different statuses.
-8. Process exit, relay silence, storage absence, or timeout never becomes protocol
-   death.
-9. No stage weakens existing byte ceilings, depth limits, signature-work limits,
-   deterministic rejection precedence, or exact-runtime differentials.
-10. GPT or another model may propose or explain work but cannot sign, choose a head,
-    determine completeness, recover a key, decrypt state, or change a verdict.
-11. Every passing receipt binds the exact source commit, dependency lock digest,
-    command, environment, seed, timestamp, and evidence digest.
-12. An old PASS cannot authorize a changed source, protocol, state format, storage
-    schema, crypto suite, topology, or evidence policy.
-
-## 4. Stage status and promotion model
-
-Each stage has exactly one of these states:
-
-| State | Meaning |
-| --- | --- |
-| `PLANNED` | Scope and gate exist; no implementation claim. |
-| `IMPLEMENTED_LOCAL` | Code exists, but the complete stage gate has not passed. |
-| `CANDIDATE_PASS` | Exact-head automated and required physical/runtime evidence pass. |
-| `PROMOTED` | Independent review, expected-head merge, post-merge gates, and required burn-in/readback pass. |
-| `HOLD` | A mandatory input or gate failed, is stale, or is incomplete. |
-
-`PARTIAL PASS` is not a promotion state. Optional exploratory evidence may be
-recorded, but it cannot satisfy a strict gate.
-
-### 4.1 Per-stage execution and promotion contract
-
-Every S0–S8 stage is an independently reviewable release unit. A stage may move to
-`PROMOTED` only in this exact order:
-
-1. start from a freshly fetched `origin/main` in a dedicated stage branch/worktree;
-2. bind the stage issue, owner, intended paths, threat boundary, and rollback target;
-3. implement only that stage's deliverables and its negative/fault-injection tests;
-4. freeze one source commit and run every stage-specific and inherited regression
-   gate on that exact source;
-5. generate and machine-validate the stage receipt, including negative receipt
-   mutations that prove stale, incomplete, or altered evidence fails closed;
-6. freeze the final PR head and require all mandatory GitHub checks to pass on that
-   exact head;
-7. obtain an independent immutable-snapshot review that binds the PR body, base,
-   head, changed-file set, policy run, receipt, and unresolved findings;
-8. merge only the reviewed expected head;
-9. run the complete post-merge exact-main Verify and, where runtime or public
-   behavior changed, Deploy plus public/readback acceptance; and
-10. update the claim matrix, stage tracking, and this SSOT only after all earlier
-    gates pass.
-
-The stage result is **PASS** only when every strict criterion and every applicable
-step above passes. One failure, skipped runtime, stale receipt, changed head,
-unresolved review finding, failed deployment, or missing readback makes the result
-**HOLD**. On HOLD, preserve the last promoted main/deployment, invalidate the
-candidate receipt and review snapshot, repair in the same stage, and repeat from the
-earliest affected gate. Later-stage implementation must not be used to conceal or
-bypass an earlier HOLD.
-
-## 5. Priority and critical path
-
-| Stage | Priority | Estimated focused effort | Depends on | Promotion unlock |
-| --- | --- | ---: | --- | --- |
-| S0 — Post-hackathon baseline reset | P0 | 2–3 days | None | Current SSOT and exact baseline |
-| S1 — Unified Participant Core | P0 | 7–10 days | S0 | One authority/replay state machine |
-| S2 — Crash-safe Durable Quorum | P0 | 10–15 days | S1 | Cold-restart `2-of-3` continuity |
-| S3 — R3 State Availability and Recovery | P0 | 10–15 days | S2 | Exact resource recovery |
-| S4 — Confidential State and Epoch Keys | P1 | 7–12 days | S3 | Untrusted relay/storage privacy |
-| S5 — Versioned SDK and CLI | P1 | 5–10 days | S1–S4 | Reusable endpoint-neutral product surface |
-| S6 — Continuity Capsule vertical | P0 product | 7–10 days | S3–S5 | One useful resource, not a toy counter |
-| S7 — Independent Failure-Domain Trial | P0 promotion | 7 days setup + 7 days burn-in | S6 | North Star claim |
-| S8 — Adversarial Custody and Browser Parity | P2 | 10–20 days | S7 | Stronger threat model and reach |
-
-Expected critical path is roughly 8–12 focused weeks plus the immutable seven-day
-S7 burn-in. Estimates are planning ranges, never acceptance evidence.
+The million-IV test and the 100-run persistent browser matrices remain release
+gates even when a bounded local parity run is used for iteration.
 
 ## 6. S0 — Post-hackathon baseline reset
 
-Priority: **P0**
+Stage alias: **S0 — baseline reset:** current claim and evidence authority.
 
-Status: **PROMOTED — PR #38 merged; post-merge Verify 30124569468/1 passed**
+Goal: preserve historical receipts as immutable evidence while resetting current
+claim authority to the new candidate.
 
-### Goal
+Pass criteria:
 
-Create one current, non-contest SSOT and a reproducible exact-main baseline before
-runtime refactoring starts.
-
-### Implementation scope and deliverables
-
-1. Fetch current `origin/main` and record its exact commit.
-2. Replace the active short `NORTH_STAR_ROADMAP.md` with a post-hackathon summary
-   pointing to this plan.
-3. Move contest-specific release, Devpost, deadline, and demo-video documents into a
-   clearly labeled historical/archive map without deleting useful evidence.
-4. Reconcile v0 and v1 wording across protocol, threat model, traceability, and
-   README—especially state-transition and availability semantics.
-5. Define one current claim matrix:
-   - implemented;
-   - exact-head locally verified;
-   - physically verified;
-   - promoted;
-   - explicitly not claimed.
-6. Create tracked issues/milestones for S1–S8 and assign a single owner and evidence
-   path to each.
-7. Verify the dependency remediation merged by PR #29 on exact current main and
-   record its before/after advisory identifiers and exact lockfile delta. Preserve
-   zero high/critical findings without `audit fix --force`, overrides, or ignore
-   entries.
-8. Capture a clean baseline receipt containing:
-   - source commit;
-   - lockfile digest;
-   - full test results;
-   - Chromium results;
-   - coverage;
-   - dependency audit;
-   - active documentation inventory; and
-   - known limitations.
-
-### Strict PASS criteria
-
-- [ ] Baseline commit equals freshly fetched `origin/main`.
-- [ ] Working implementation tree is clean before the baseline run.
-- [ ] `npm ci`, current Chromium installation, full `npm test`,
-  `npm run verify:lab`, `npm run test:chromium`, coverage, and dependency audit all
-  pass on that same commit.
-- [ ] Active product documents contain no current contest deadline, judge path,
-  Devpost mutation, or submission-freeze priority.
-- [ ] Historical contest evidence remains discoverable but is explicitly marked
-  non-authoritative for new development.
-- [ ] Protocol/threat-model/traceability statements about v0 versus v1 state
-  transitions are mutually consistent.
-- [ ] Exactly one active North Star and one implementation SSOT exist.
-- [ ] Every S1–S8 issue links to this plan and declares required evidence.
-- [ ] Baseline receipt has no missing field and its digest is read back.
-
-### HOLD / rollback
-
-- HOLD if the baseline worktree is dirty, main changes during capture, a full gate
-  fails, or the documentation claim matrix contradicts executable behavior.
-- Do not begin S1 on a narrowed passing subset.
-- Documentation cleanup must not delete historical receipts until their archive
-  links and digests have been verified.
+- current claim matrix says S2/S4 are reopened;
+- old receipts still verify only their recorded commits;
+- this SSOT, roadmap, tracking, threat model, traceability, README, and browser
+  compatibility agree;
+- no current document treats a local green run as promotion.
 
 ## 7. S1 — Unified Participant Core
 
-Priority: **P0 — first runtime change**
-
-Status: **PROMOTED — exact receipt, independent review, merge, post-merge Verify,
-and Deploy passed**
-
-### Goal
-
-Replace the separate live, durable, and quorum authority paths with one pure,
-deterministic Participant Core and explicit I/O ports.
-
-### Target contract
-
-The core owns:
-
-- recognized lineage and state projection;
-- current custody and threshold;
-- proposal construction;
-- sign-once tuple policy;
-- approval and acceptance collection;
-- candidate verification and append;
-- pending-successor state;
-- catch-up and fork exposure;
-- authority and state availability classification; and
-- deterministic public snapshots.
-
-Adapters own:
-
-- key generation and signing;
-- durable key storage;
-- evidence/state storage;
-- transport;
-- clock and expiry policy;
-- user consent; and
-- UI presentation.
-
-Adapters may return bytes or capabilities. They may not return `accepted: true` or
-inject a recognized head.
-
-### Implementation scope and deliverables
-
-1. Add a versioned participant operation/snapshot contract.
-2. Define `KeyStore`, `EvidenceStore`, `StateStore`, `SignOnceJournal`, and
-   `Transport` interfaces with bounded inputs and explicit failure results.
-3. Move shared creation, join, handoff, quorum, proposal, append, replay, and
-   availability logic into one core module.
-4. Convert the existing Live, Durable, and Quorum classes into thin adapters or
-   remove them after all callers migrate.
-5. Make snapshots canonical and deterministic; exclude `CryptoKey`, DOM, store
-   handles, and transport objects.
-6. Add a model-based state-machine corpus covering permitted and rejected operation
-   sequences.
-7. Freeze the import boundary so presentation code cannot call low-level signing
-   message constructors directly.
-
-### Strict PASS criteria
-
-- [ ] Every existing single-browser, durable reload, A→B, A/B/C loss/repair,
-  out-of-order, fork, and negative handoff test uses the same Participant Core.
-- [ ] Only the Participant Core may construct candidate bodies, request signatures,
-  append accepted records, or advance a recognized state.
-- [ ] Key, storage, transport, and UI adapters contain no acceptance or head-selection
-  branch.
-- [ ] Ten thousand seeded participant-operation schedules produce deterministic,
-  byte-identical snapshots on two independent runs.
-- [ ] The same operation corpus agrees across Node and the browser-target runtime.
-- [ ] A below-quorum action, duplicate signature, conflicting tuple signature,
-  stale parent, missing state, corrupt evidence, and transport outage each return
-  distinct stable outcomes.
-- [ ] Existing `npm test`, R1, state, transport, Chromium, and Lab gates have zero
-  regression.
-- [ ] Coverage for the new core is at least 95% lines, 90% branches, and 95%
-  functions, with every rejection branch named by a test.
-- [ ] A static boundary test fails if an adapter imports forbidden validation
-  capability or direct signing-message construction APIs.
-
-### HOLD / rollback
-
-- HOLD if migration requires two authoritative participant paths at runtime.
-- HOLD if an adapter can make an invalid candidate appear accepted.
-- Preserve the pre-S1 implementation until the unified core passes the complete
-  existing behavior matrix. Do not delete old paths based only on unit tests.
-
-## 8. S2 — Crash-safe Durable Quorum
-
-Priority: **P0**
-
-Status: **PROMOTED — exact receipt, independent review, expected-head merge,
-post-merge Verify, and Deploy passed on main**
-
-### Goal
-
-Make a real `2-of-3` participant survive process termination, reload, and partial
-storage failure without double-signing, inventing a head, or losing accepted state.
-
-### Implementation scope and deliverables
-
-1. Introduce a versioned durable participant schema for:
-   - non-extractable key handle or supported platform key reference;
-   - canonical Genesis and Pulse evidence;
-   - state manifest references;
-   - sign-once journal;
-   - pending proposal/signature records;
-   - committed head metadata used only as a cache hint;
-   - expiry and authority-removal metadata; and
-   - migration version.
-2. Persist sign-once intent before releasing a signature.
-3. Make accepted evidence, state references, and journal completion one recoverable
-   transaction or write-ahead protocol.
-4. Restore by replaying canonical evidence and state proofs; never trust cached
-   acceptance or head fields.
-5. Support durable `2-of-3` birth, membership handoff, state transition, loss, and D
-   repair through the unified core.
-6. Add browser IndexedDB and local Node test adapters with identical failure
-   semantics. A production Node key-store choice requires a separate platform
-   security ADR.
-7. Add deterministic fault injection at every durable write and transaction boundary.
-
-### Strict PASS criteria
-
-- [ ] Browser B is fully closed after an accepted handoff, cold-started in a new
-  process, restores its key/evidence/state, and advances the same identity.
-- [ ] The above cold-restart handoff passes `100/100` consecutive seeded runs.
-- [ ] For each A/B/C loss choice, the remaining durable pair cold-starts, commits
-  one transition, and repairs membership with D in `100/100` runs.
-- [ ] Forced termination at every enumerated storage boundary yields exactly one of:
-  old committed head, recoverable pending successor, or new committed head.
-- [ ] No crash point releases a second body signature for the same tuple.
-- [ ] Two endpoint instances restored from the same revision cannot both release
-  conflicting signatures; the stale writer fails before signer invocation in Node
-  and actual IndexedDB.
-- [ ] Unknown schema, corrupt key handle, missing evidence, key/custody mismatch,
-  partial journal, state mismatch, and failed migration all fail closed.
-- [ ] Successful v1 migration creates the v2 document and retires every legacy
-  store atomically; after authority removal no legacy key can perform raw signing.
-- [ ] Authority removal atomically prevents future signing while retaining
-  read-only public evidence.
-- [ ] Expiry and renewal are explicit policy operations; no hard-coded 30-day
-  product lifetime remains.
-- [ ] Once expiry is observed, same-process and cold-restart clock rollback cannot
-  reactivate signing. Renewal must use a non-null expiry strictly beyond the
-  persisted observation high-water mark; null, stale, and equal renewals are
-  rejected while authority remains expired.
-- [ ] The complete durable-quorum suite passes in clean Chromium and Node test
-  adapters on the exact head.
-
-### HOLD / rollback
-
-- HOLD on any double-sign, cached-head trust, partial-state exposure, or
-  nondeterministic recovery.
-- A migration failure keeps the old schema read-only; it must never destructively
-  rewrite the only copy.
-- Do not promote Node production custody until its key-store threat model and
-  platform evidence pass.
-
-## 9. S3 — R3 State Availability and Recovery
-
-Priority: **P0**
-
-Status: **PROMOTED — PR #43 independently reviewed and expected-head merged;
-exact-main Verify 30202501790/1 and Deploy 30202501782/2 passed**
-
-### Goal
-
-Bind an actual bounded resource to lineage and prove that its exact bytes remain
-recoverable after one replica is lost.
-
-### Implementation scope and deliverables
-
-1. Specify a canonical versioned state-package manifest containing:
-   - resource format and schema version;
-   - ordered content chunk digests and sizes;
-   - aggregate resource root;
-   - prior and next state roots;
-   - transition input digest;
-   - deterministic receipt digest;
-   - storage/recovery policy identifier; and
-   - fixed resource ceilings.
-2. Separate small canonical transition metadata from bounded content chunks.
-3. Implement content-addressed local stores and a transport-neutral recovery
-   adapter.
-4. Extend the state engine so acceptance binds the exact manifest and transition
-   receipt, while availability remains an explicitly observed status.
-5. Add an independently written verifier for manifest/root/recovery records.
-6. Implement replica inventory, missing-chunk discovery, bounded fetch, exact
-   reconstruction, and post-recovery verification.
-7. Keep death semantics unchanged until the new availability evidence and threat
-   model are separately approved.
-
-### Reference acceptance resource
-
-The gate uses at least one deterministic 1 MiB resource split into fixed bounded
-chunks. Exact ceilings and chunk size are normative in the S3 protocol ADR and
-cannot be chosen from ambient runtime defaults.
-
-### Strict PASS criteria
-
-- [ ] JavaScript and an independently written non-JavaScript verifier produce
-  byte-identical manifest, chunk, state-root, input, and receipt results.
-- [ ] Any two current replicas reconstruct the exact 1 MiB reference resource after
-  the third replica and primary relay are deleted.
-- [ ] Reconstructed bytes match the pre-loss aggregate digest exactly.
-- [ ] Missing chunks report `state_unavailable`; they never become an empty/default
-  accepted state or protocol death.
-- [ ] A changed byte, reordered chunk, duplicate chunk, wrong size, wrong manifest,
-  stale root, oversized resource, and decompression/decoding bomb each fail with a
-  stable bounded result.
-- [ ] Ten thousand seeded loss, reorder, duplicate, partial-fetch, and tamper
-  schedules invoke the public recovery API end to end, including real inventory,
-  fetch, chunk verification, reconstruction, aggregate verification, and activation;
-  two executions produce byte-identical summaries with zero metadata-only or false
-  acceptance.
-- [ ] Recovery is resumable and idempotent; interruption never replaces the last
-  verified local state.
-- [ ] Existing v0/v1 corpus and mortality behavior remain byte-identical unless a
-  separately versioned specification change explicitly updates fixtures.
-
-### HOLD / rollback
-
-- HOLD if resource availability is inferred from relay presence, a cached flag, or
-  a single unverified store response.
-- HOLD if missing state changes candidate validity or death classification without
-  an approved protocol version.
-- Keep the last verified state package until the replacement manifest and every
-  required chunk pass.
-
-## 10. S4 — Confidential State and Epoch Keys
-
-Priority: **P1**
-
-Status: **IMPLEMENTATION CANDIDATE — ADR promoted; receipt/review/merge/deploy HOLD**
-
-### Goal
-
-Prevent relay and storage operators from learning resource contents while
-preserving deterministic integrity, recovery, and explicit membership changes.
-
-### Implementation scope and deliverables
-
-1. Approve the
-   [S4 confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md)
-   before implementation. It must define:
-   - audited WebCrypto-compatible AEAD;
-   - key derivation and domain separation;
-   - unique nonce construction and collision policy;
-   - epoch and membership binding;
-   - associated canonical metadata;
-   - participant key wrapping/distribution;
-   - removed-member semantics;
-   - recovery and rotation;
-   - metadata leakage; and
-   - algorithm/version migration.
-2. Encrypt resource chunks before transport or remote storage.
-3. Commit ciphertext and encryption metadata into the state package without making
-   the relay an oracle.
-4. Rotate the content epoch on accepted membership change.
-5. Make “removed participants cannot read future epochs” the claim; do not claim
-   erasure of data or keys they previously possessed.
-6. Add key-loss and partial-rotation recovery rules.
-
-### Strict PASS criteria
-
-- [x] The crypto ADR is independently reviewed before code is merged.
-- [x] Standard known-answer vectors and cross-runtime vectors pass.
-- [x] Relay and remote-store captures contain no plaintext resource content,
-  plaintext content key, private signing key, or unwrapped epoch key.
-- [x] Current quorum participants recover and decrypt exact state after one replica
-  and relay loss.
-- [x] A participant removed at epoch `N` cannot decrypt state first created at epoch
-  `N+1`, while authorized survivors can.
-- [x] Replayed, substituted, truncated, reordered, or cross-resource ciphertext
-  fails authentication without exposing partial plaintext.
-- [x] Nonce uniqueness is enforced through one epoch-wide linearizable counter
-  authority and tested across at least 1,000,000 records from concurrent writers
-  with zero collision; cross-endpoint failover, local-only allocation,
-  lost-authority, stale, rollback, and overflow all fail before
-  encryption.
-- [x] Two actual Chromium endpoints sharing the reference authority produce
-  exactly one CAS winner; after full browser-process termination, the persistent
-  profile restores the same non-extractable sign-only key, receipt-chain digest,
-  and next counter.
-- [x] The package manifest binds `transition_id`, and creation/import recompute
-  `epoch_id` from the exact authority receipt, current encryption-key set,
-  membership, organism, epoch, and transition; a failover-local allocator is
-  rejected before reservation or WebCrypto.
-- [x] The counter authority uses an epoch-bound strict Ed25519 public key and exact
-  domain-separated JCS reservation receipts; replacement keys, forged or altered
-  signatures, stale chains, and receipts not committed by the package all reject.
-- [x] A conforming authority's concurrent CAS emits one signed successor per prior
-  tuple. Jointly observed valid overlaps create explicit authority-equivocation
-  evidence and block the epoch; hidden forks and compromised-authority
-  confidentiality are explicit nonclaims.
-- [x] Every unsigned 64-bit epoch and counter is represented in JCS as a canonical
-  decimal string and boundary-tested across `2^53` through `2^64 - 1`; no JSON
-  number coercion is accepted.
-- [x] Rotation interrupted at every write boundary restores the old complete epoch
-  or the new complete epoch, never a mixed accepted state.
-- [x] Authority loss or equivocation can rotate `N→N+1` with unchanged membership,
-  a fresh authority key, fresh AES key, complete re-encryption/rewrapping, and
-  quorum-authorized atomic activation.
-- [x] Metadata leakage and absence of retroactive secrecy are visibly documented.
-
-These checked items are exact-head candidate evidence only. S4 is not promoted until
-the exact receipt, full ordered repository suite, immutable implementation review,
-expected-head merge, and exact-main Verify plus Deploy close.
-
-### HOLD / rollback
-
-- HOLD if code selects an algorithm before the ADR, uses custom cryptography,
-  permits nonce reuse, or treats decryption success as protocol acceptance.
-- On rotation failure retain the prior epoch and prior membership-readable state;
-  do not destroy the only decryptable copy.
-
-## 11. S5 — Versioned SDK and CLI
-
-Priority: **P1**
-
-Status: **PLANNED**
-
-### Goal
-
-Turn the internal Lab implementation into a reusable, endpoint-neutral developer
-surface without exposing validation capabilities or unstable storage internals.
-
-### Implementation scope and deliverables
-
-1. Define package boundaries for:
-   - deterministic kernel;
-   - Participant Core;
-   - browser adapters;
-   - Node/CLI adapters;
-   - state package and recovery; and
-   - test vectors.
-2. Publish an internal pre-release API contract before making the package public.
-3. Add CLI operations equivalent to:
-   - `create`;
-   - `join`;
-   - `status`;
-   - `propose`;
-   - `approve`;
-   - `continue`;
-   - `recover`;
-   - `repair`;
-   - `export`;
-   - `import`;
-   - `verify`; and
-   - `remove-authority`.
-4. Make CLI output canonical JSON by default with an explicit human-readable view.
-5. Provide transport and store adapter examples without embedding secrets.
-6. Freeze semver, migration, deprecation, and supported-runtime policy.
-
-### Strict PASS criteria
-
-- [ ] `npm pack` produces only allowlisted source, declarations, fixtures, license,
-  and documentation files.
-- [ ] A clean Windows environment and a clean Linux environment install the packed
-  artifacts and complete create→join→continue→recover→repair→verify.
-- [ ] Browser and CLI consume the same Participant Core and produce byte-identical
-  operation/result records.
-- [ ] No exported API can manufacture an accepted context, inject a head, access a
-  private validation brand, or bypass the sign-once journal.
-- [ ] Unknown/removed API fields and unsupported versions fail closed with stable
-  errors.
-- [ ] Public API type tests, examples, migration tests, license audit, secret scan,
-  package-content audit, and dependency audit pass.
-- [ ] Package version is no longer `0.0.0` before public publication.
-- [ ] Publication remains blocked until exact tarball digest, independent review,
-  and clean-install evidence are recorded.
-
-### HOLD / rollback
-
-- HOLD if browser and CLI maintain separate protocol logic.
-- HOLD if the package includes generated credentials, local stores, receipts with
-  private values, coverage output, or disposable artifacts.
-- Keep packages private until the compatibility and migration contracts pass.
-
-## 12. S6 — Continuity Capsule real-resource vertical
-
-Priority: **P0 product**
-
-Status: **PLANNED**
-
-### Goal
-
-Prove useful continuity with one bounded real resource before expanding to arbitrary
-applications or executable genomes.
-
-### Product choice
-
-Implement **Continuity Capsule v1**: a deterministic, encrypted, append-only resource
-containing bounded canonical entries and attachments. It may represent a durable
-note, configuration, evidence notebook, or agent-memory capsule, but a model is
-never required to create, verify, recover, or continue it.
-
-### Implementation scope and deliverables
-
-1. Specify the Capsule schema, limits, canonical operations, conflict behavior, and
-   deterministic state reducer.
-2. Support create, append, handoff, quorum approval, cold restart, recovery, member
-   repair, export, read-only import, and authority removal.
-3. Present one primary product path separate from protocol diagnostics.
-4. Keep raw bytes, corpus, model witness, and advanced mortality tools outside the
-   primary flow.
-5. Add a concise English/Korean status surface showing only:
-   - identity;
-   - accepted sequence;
-   - state digest and size;
-   - quorum and current custodians;
-   - replica availability;
-   - transport status; and
-   - pending/recovery/fork state.
-6. Make every claim expandable to its canonical evidence and local verifier result.
-
-### Strict PASS criteria
-
-- [ ] Capsule create→append→A/B/C commissioning→one-loss recovery→D repair completes
-  without enabling GPT or opening Advanced evidence.
-- [ ] The exact Capsule bytes and digest survive browser and CLI cold restarts.
-- [ ] One replica and primary relay can be removed without data loss or authority
-  concentration.
-- [ ] A read-only imported Capsule cannot sign or mutate.
-- [ ] Conflicting valid siblings show an explicit fork and stop automatic progress.
-- [ ] Invalid, oversized, corrupt, undecryptable, stale, and below-quorum operations
-  fail without changing the last accepted Capsule.
-- [ ] Automated desktop and mobile Chromium flows complete the primary path in under
-  five minutes on the reference environment.
-- [ ] English and Korean flows produce identical protocol/state values.
-- [ ] WCAG-oriented axe scan has zero critical/serious violations and keyboard-only
-  flow completes.
-- [ ] Primary-path application code uses only the public SDK contract.
-
-### HOLD / rollback
-
-- HOLD if the vertical requires protocol-specific manual JSON editing, a model call,
-  or direct access to internal participant objects.
-- Do not add a second resource type until Capsule v1 passes S7.
-- If the simplified UI hides uncertainty, fall back to explicit technical statuses
-  rather than optimistic “alive” language.
-
-## 13. S7 — Independent Failure-Domain Trial and burn-in
-
-Priority: **P0 promotion**
-
-Status: **PLANNED**
-
-### Goal
-
-Run the complete North Star trial on separately persisted endpoints and credential
-domains using the real Continuity Capsule.
-
-### Required topology
-
-At minimum:
-
-- three separately persisted participants;
-- three distinct key stores;
-- no credential capable of directly reading or using threshold private keys;
-- at least two host/process failure domains;
-- at least two transport paths, one of which is not the primary Cloudflare relay;
-- immutable topology manifest;
-- synchronized but non-authoritative observation clocks; and
-- out-of-band retention of public receipts only.
-
-One experimenter may own the test infrastructure. The promoted claim is therefore
-credential/host/provider separation, not independent-human governance. A separate
-human/organization-control claim requires externally administered custodians and
-must not reuse this receipt.
-
-### Implementation scope and deliverables
-
-1. Build a topology manifest binding endpoint, host, key-store class, administrative
-   credential, transport, software commit, package digest, and resource limits.
-2. Add remote harness commands that never export or centrally collect private keys.
-3. Implement seeded loss selection, relay blocking, cold restart, recovery timing,
-   next transition, and D repair.
-4. Produce one signed public receipt per trial plus one aggregate receipt.
-5. Run 100 consecutive randomized trials.
-6. Freeze the candidate and run a seven-day natural burn-in.
-7. Re-run the full trial after burn-in without changing the candidate.
-
-### Strict PASS criteria
-
-- [ ] Topology audit shows no runtime, host, relay, cloud service, or administrative
-  credential can use threshold private keys.
-- [ ] Each of A, B, and C is selected as the lost participant in the seeded matrix.
-- [ ] Primary relay is blocked during every recovery trial.
-- [ ] All `100/100` trials recover exact Capsule bytes, continue one sequence, and
-  repair membership.
-- [ ] Recovery time is ≤5 minutes for every trial; p95 is reported separately.
-- [ ] Unauthorized acceptance, silent rollback, hidden fork choice, false death,
-  plaintext relay leakage, and private-key collection are all zero.
-- [ ] Trial receipts bind the exact topology, source, package, protocol/state/crypto
-  versions, seed, and public evidence digest.
-- [ ] Seven-day burn-in has no source, config, topology, policy, or evidence-rule
-  change and no unresolved integrity incident.
-- [ ] The post-burn-in 100-trial rerun also passes.
-- [ ] Independent review reproduces at least one trial from public evidence and
-  confirms that imported evidence has no signing authority.
-
-### HOLD / rollback
-
-- Any candidate, topology, state-format, crypto, credential, or evidence-policy
-  change resets the burn-in clock.
-- HOLD if one orchestrator can access threshold private keys, even if the test uses
-  several processes.
-- HOLD if relay outage is simulated only in UI while the transport remains reachable.
-- Preserve the last S6 local candidate; do not call it independent-domain PASS.
+Stage alias: **S1 — Unified Participant Core:** one deterministic authority path.
+
+Goal: retain one deterministic lineage authority shared by UI, durable participant,
+CLI, and recovery adapters.
+
+Pass criteria:
+
+- adapters cannot construct accepted context or choose a head;
+- canonical Node/browser results remain byte-identical;
+- proxy, accessor, cloned-context, fork, and bounded-input negatives remain green.
+
+## 8. S2 — Durable capability and sign-once security
+
+Goal: a mutable or spoofed store cannot lie about a committed signing intent, and no
+supported public result exposes a usable signing key.
+
+Implemented work:
+
+- registered durable stores hold module-private read/write closures;
+- the endpoint implementation and raw store capability are co-located in that
+  closure; the former endpoint module is only a safe compatibility re-export;
+- the production module namespace exposes no raw document read/write function, and
+  tests create their own authority fixtures instead of extracting store internals;
+- endpoint code ignores replaced own/prototype `read` and `write` methods;
+- body, proposal, purpose, key id, and message are owned before the first await;
+- endpoint and store diagnostics are constructed without placing the private key in
+  the clone graph, contain key id and public key only, and reject public raw writes;
+- signer and WebCrypto facade injection cannot receive the key: signing calls a
+  captured native intrinsic and the optional test boundary receives one string;
+- expected-revision CAS occurs before signing and exact replay restores authority.
+
+Pass criteria:
+
+- concurrent same-revision writers produce one signer call and one released tuple;
+- every WAL boundary yields only old, pending, or complete new state;
+- cold restart, expiry rollback latch, migration, A/B/C loss, and D repair pass in
+  actual Chromium and Firefox;
+- accessor/Proxy/prototype/store/array fuzz releases no duplicate signature;
+- endpoint and store diagnostic graphs contain no private `CryptoKey`, and neither
+  surface permits raw durable writes;
+- the public module namespace contains no raw store capability and hostile
+  replacement of public `read`/`write` methods cannot affect endpoint commits.
+
+Boundary: these criteria prove public-API redaction and conforming concurrency, not
+same-origin/XSS-resistant sign-once. Strong custody is a separate P0 gate requiring
+an isolated signer that owns both key use and monotonic journal state.
+
+## 9. S3 — Protocol profile and real chunk data plane
+
+Goal: one generated profile governs state, transport, provider, and confidential
+limits, and a legal state chunk actually traverses relay messages.
+
+Implemented work:
+
+- `protocol/profile.v1.json` is the source for generated constants;
+- 64 KiB state chunks are split into 32 KiB relay fragments with domain-separated
+  digests and bounded reassembly;
+- recovery fetches actual relay frames, verifies fragment/chunk/root bindings, and
+  commits by CAS plus readback;
+- the transport method, outer chunk array, every nested byte array, and single-chunk
+  descriptor size are owned before the first transport await;
+- exact-max and max-plus-one cases are generated from the profile.
+
+Pass criteria:
+
+- generated file equals source profile byte-for-byte after regeneration;
+- no S3 chunk can exceed a transport/provider envelope;
+- a real 1 MiB package traverses relay frames and reconstructs exact bytes;
+- missing, duplicate, reordered, oversized, corrupt, or cross-chunk fragments never
+  activate state;
+- repeating the same completed activation succeeds idempotently; a conflicting
+  successor fails closed.
+
+## 10. S4 — Recovery, activation, and private-key containment
+
+Goal: ciphertext recovery cannot be redirected after verification, activation
+cannot be faked through a mutable facade, and supported public APIs return no epoch
+or private-key handle.
+
+Implemented work:
+
+- expected bindings and complete custodian membership are owned before await;
+- activation store capability is a private WeakMap record;
+- S3 recovery accepts only a branded destination capability; arbitrary public
+  `commitActive`/`readActive` pairs are never invoked;
+- commit verifies expected prior root, committed candidate, and exact readback;
+- retry of the identical candidate is idempotent;
+- public decrypt and combined recovery results omit `epoch_key`;
+- counter store methods and recovery destination methods may be replaced without
+  changing the trusted capability.
+
+Pass criteria:
+
+- any-two ciphertext recovery returns the exact 1 MiB resource;
+- no-op/throwing public commit methods cannot fabricate retirement or activation;
+- caller mutation during inventory/read/decrypt cannot change bindings;
+- non-extractable AES/RSA/Ed25519 key properties hold internally and package/SDK,
+  CLI, capsule, logs, and public documents contain no private handle;
+- one-million IVs contain no duplicate and rotation blocks the old authority.
+
+Boundary: the current browser adapter persists a non-extractable key in same-origin
+IndexedDB. This blocks export but not direct `sign` use by compromised same-origin
+code. Strong counter custody cannot pass until signing and counter state are moved
+together to a separate origin/service or hardware authorization domain.
+
+## 11. S5 — SDK and CLI
+
+Goal: installable consumers use one reviewed, authority-free protocol surface.
+
+Pass criteria:
+
+- package `exports` exposes only the SDK and protocol profile;
+- SDK export names exactly match the allowlist and contain no authority, store,
+  decrypt-key, or private-key primitive;
+- CLI verifies profiles, one Capsule, and quorum custody copies deterministically;
+- packed artifacts omit lab, evidence, tests, scripts, agents, and GitHub internals;
+- a clean temporary install runs on supported Node versions.
+
+## 12. S6 — Continuity Capsule
+
+Goal: one canonical bounded artifact carries enough public evidence and encrypted
+resource state to verify and continue elsewhere without private authority.
+
+Pass criteria:
+
+- Capsule binds organism, complete lineage, latest state-transition payload,
+  manifest, receipt, ordered chunks, and profile;
+- another process verifies the same capsule id/head/state/resource;
+- mutation, truncation, stale lineage, wrong chunk, or wrong receipt fails before
+  activation;
+- serialized bytes contain no private key, `CryptoKey`, PKCS#8, or raw epoch key.
+
+## 13. S7 — Independent counter authority and topology
+
+Goal: counter allocation survives one replica loss without releasing overlapping
+AES-GCM invocation counters.
+
+Pass criteria:
+
+- three-to-seven odd replicas use majority CAS and repair;
+- two concurrent coordinators have exactly one winner per prior revision;
+- below-quorum operation fails closed;
+- process-isolated HTTP replicas survive termination, disk restart, and repair;
+- production promotion additionally requires distinct provider, host,
+  administrator, and credential domains plus 100 failure trials and immutable
+  seven-day burn-in.
+
+The local process topology satisfies implementation verification only. It cannot
+promote the last production criterion.
 
 ## 14. S8 — Adversarial custody and browser parity
 
-Priority: **P2 after North Star promotion**
+Goal: hostile storage/custody behavior is classified without last-write-wins, and
+every browser gets an evidence-backed capability profile.
 
-Status: **PLANNED**
+Pass criteria:
 
-### Goal
+- deterministic stateful corpus combines accessor, Proxy, prototype, store-method,
+  and array mutation at await boundaries;
+- 2-of-3 Capsule custody recovers one lost/corrupt copy, rejects a valid fork, and
+  fails below quorum;
+- Chromium and Firefox pass portable validation, S2 durable restart/loss, and S4
+  counter/rotation in actual engines;
+- WebKit passes portable validation and capability detection; runtimes with native
+  non-extractable Ed25519 must also sign and verify through the canonical 65,536-byte
+  ceiling before running the full S2/S4 family; `NotSupportedError` or
+  `OperationError` keeps the runtime verifier-only;
+- no user-agent string grants support and no fallback exports raw key material.
 
-Strengthen the honest-but-fallible model with bounded malicious-custodian and
-key-compromise recovery, then expand durable runtime support beyond Chromium.
+WebKit full signing parity is therefore **HOLD**: the current Ubuntu build creates a
+key but fails the full protocol envelope. Non-capable runtimes remain an explicit
+verifier-only profile. Weakening key containment is not an acceptable workaround.
 
-### Implementation scope and deliverables
+## 15. GitHub merge authority
 
-1. Specify a versioned adversarial-custodian threat-model extension.
-2. Detect and preserve evidence of one custodian signing conflicting bodies.
-3. Support compromised-key removal and epoch rotation by an unaffected quorum.
-4. Add bounded recovery from stale, malicious, censoring, or equivocating transports.
-5. Decide through ADR whether threshold signatures, distributed key generation, or
-   proactive resharing are justified. They are not implicitly required.
-6. Run actual Firefox and WebKit capability, persistence, crash, migration, removal,
-   and recovery gates.
-7. Preserve honest capability downgrade when an engine cannot safely persist the
-   required key.
+Goal: native branch protection requires both a signed exact-snapshot attestation
+and approval from a separately credentialed GitHub identity, dismissing approval
+when the head changes.
 
-### Strict PASS criteria
+Pass criteria:
 
-- [ ] Conflicting signatures from one current custodian create explicit equivocation
-  evidence and never automatic winner selection.
-- [ ] An unaffected quorum removes a declared compromised key, rotates the content
-  epoch, repairs membership, and continues exact state.
-- [ ] The removed key cannot authorize a later successor or decrypt later epochs.
-- [ ] Censorship, duplicate floods, stale range results, and malicious transport
-  ordering cannot change the accepted result.
-- [ ] Updated threat model names every new assumption and excluded attack.
-- [ ] Firefox and WebKit each pass actual-engine creation, non-exportability,
-  reload/crash recovery, durable quorum, authority removal, corrupt-store failure,
-  and Capsule recovery—or remain visibly unsupported with no weakened fallback.
-- [ ] No browser uses user-agent detection to claim support.
-- [ ] Existing Chromium, Node, R1, state, recovery, confidentiality, and S7 evidence
-  matrices have zero regression.
-- [ ] Any threshold-crypto/DKG implementation, if chosen, has an independently
-  reviewed ADR, standard vectors, interoperability evidence, and separate audit.
+- default-branch ruleset requires pull request, one native approval, code-owner
+  review where applicable, conversation resolution, and required CI;
+- force push, deletion, and bypass are disabled except documented break-glass;
+- GitHub App `mortalos-review-gate` is repository-scoped, cannot bypass the ruleset,
+  and alone may emit required check `MortalOS Reviewer Attestation`;
+- machine-user `ant713900-web` is repository-scoped and has the minimum GitHub role
+  that makes native approval count; it has no ruleset bypass;
+- App and machine-user credentials remain outside the repository and every workflow
+  that can execute pull-request code;
+- the external runner binds head, body digest, base, changed-file digest,
+  Git-object diff digest, exact CI run identities, reviewer version, and independent
+  receipt digest before either attestation or approval;
+- an approval binds the exact immutable head and a changed head dismisses it;
+- the reviewer cannot alter the implementation branch or its own policy workflow;
+- machine-user 2FA, passkey, recovery isolation, and login alerts pass live preflight.
 
-### HOLD / rollback
+The identity and ruleset are provisioned. Promotion remains **HOLD** until the new
+policy head passes exact-head CI, independent review, App attestation, and native
+approval. This proves separate GitHub credentials under one operator, not separate
+human or administrative control.
 
-- HOLD if malicious behavior is “resolved” by last-write-wins, server choice, model
-  choice, or administrator deletion of inconvenient evidence.
-- Unsupported engines retain read-only/ephemeral capability only when explicitly
-  disclosed; they must not silently persist extractable keys.
-- Do not market Byzantine or Sybil resistance unless the exact implemented scope
-  passes.
+## 16. Completion and explicit nonclaims
 
-## 15. Verification command contract
+The program is complete only when all S0–S8 rows have exact receipts, independent
+review, expected-head merge, post-merge CI, and—where claimed—live topology/deploy
+evidence. Until then the aggregate status is **HOLD**.
 
-Existing commands remain mandatory until intentionally versioned:
+Explicit nonclaims:
 
-```text
-npm test
-npm run verify:lab
-npm run test:chromium
-npm run test:coverage
-npm run verify:r1
-npm run verify:state
-npm run verify:transport
-```
-
-The following target commands must be introduced by the owning stages:
-
-| Command | Owning stage | Required proof |
-| --- | --- | --- |
-| `npm run test:participant-core` | S1 | Model/state-machine and adapter-boundary corpus |
-| `npm run test:durable-quorum` | S2 | Cold restart, fault injection, sign-once durability |
-| `npm run test:state-package` | S3 | Chunk/manifest recovery and tamper matrix |
-| `npm run test:confidentiality` | S4 | AEAD, epoch, rotation, relay-capture matrix |
-| `npm run test:sdk` | S5 | Package/API/CLI clean-install interoperability |
-| `npm run test:capsule` | S6 | Complete bounded resource lifecycle |
-| `npm run verify:failure-domains` | S7 | Remote topology, 100 trials, burn-in receipts |
-| `npm run test:adversarial-custody` | S8 | Equivocation and compromised-key recovery |
-| `npm run test:browser-matrix` | S8 | Chromium/Firefox/WebKit actual-engine matrix |
-| `npm run verify:north-star` | S7/S8 | Exact receipt aggregation and final claim gate |
-
-No command may silently skip an unavailable required runtime. A missing dependency
-is a failed or explicitly unsupported gate, not PASS.
-
-## 16. Evidence receipt schema
-
-Every stage receipt must include:
-
-```text
-format
-stage
-status
-source_commit
-base_commit
-dependency_lock_digest
-protocol_versions
-state_versions
-storage_schema_versions
-crypto_versions
-package_digests
-topology_digest
-commands
-environment
-seeds
-started_at
-completed_at
-results
-failures
-artifact_digests
-review_snapshot
-```
-
-Fields not applicable to an early stage must be present as `not_applicable` with a
-reason. Missing fields fail receipt validation. Secrets, private keys, decrypted
-resource contents, personal data, and hidden reasoning are forbidden.
-
-## 17. Cross-stage acceptance matrix
-
-| Scenario | Expected result | First owning stage |
-| --- | --- | --- |
-| B cold restart after A→B handoff | Same identity and authority restored | S2 |
-| Any one of A/B/C hard-lost | Remaining pair continues and repairs | S2 |
-| Crash before signature journal | No signature released | S2 |
-| Crash after signature but before publish | Pending signed body recoverable; no second body signed | S2 |
-| One state replica and relay lost | Exact state reconstructed | S3 |
-| Chunk missing | `state_unavailable`, not empty state or death | S3 |
-| Chunk tampered | Stable rejection, no commit | S3 |
-| Removed custodian reads future state | Decryption denied | S4 |
-| Browser and CLI replay same evidence | Byte-identical result | S5 |
-| Read-only Capsule import attempts mutation | No signing authority | S6 |
-| Valid siblings arrive | Visible fork, no winner | S1/S6 |
-| Host plus primary relay lost | North Star recovery ≤5 minutes | S7 |
-| One signer equivocates | Evidence preserved, automatic progress halted | S8 |
-| Unsupported browser durable mode | Honest visible downgrade | S8 |
-
-## 18. Stop-work rules
-
-Immediately stop promotion and set the current stage to HOLD when:
-
-1. a private key or plaintext resource appears in relay, logs, receipts, or source;
-2. an adapter, relay, model, UI, or cached field changes a verdict;
-3. one credential or runtime controls threshold keys contrary to the declared
-   topology;
-4. crash recovery yields different heads from the same durable evidence;
-5. a missing state is accepted as an empty/default state;
-6. a changed source reuses an older PASS;
-7. a failing or unavailable runtime is silently skipped;
-8. evidence is incomplete, stale, non-reproducible, or not bound to the candidate;
-9. a fork is hidden or automatically resolved; or
-10. public/product wording exceeds the exact promoted evidence.
-
-## 19. Explicit non-goals before S7 PASS
-
-- additional GPT/model product features;
-- more Lab dashboards or decorative visualization;
-- arbitrary WASM or user-supplied genome execution;
-- background compute contribution or mining;
-- tokens, incentives, or Sybil-resistant economics;
+- Byzantine or Sybil resistance and automatic fork resolution;
+- proof that every hidden copy is erased;
+- physical independence inferred from profiles, ports, containers, or processes;
 - global death certificates;
-- ownerless or globally decentralized claims;
-- threshold signatures or DKG without an approved S8 ADR;
-- a second application workload; and
-- browser-market expansion that weakens the Participant Core.
-
-## 20. Whole-plan Definition of Done
-
-The post-hackathon North Star program is complete only when:
-
-- [ ] S0 through S8 are all `PROMOTED` with exact receipts.
-- [ ] One Participant Core serves browser, CLI, durable, handoff, and quorum paths.
-- [ ] A durable `2-of-3` Capsule survives every one-endpoint loss, cold restart,
-  primary-relay outage, exact state recovery, continuation, and repair.
-- [ ] State availability, confidentiality, and authority are independently verified
-  and separately reported.
-- [ ] Browser and CLI produce byte-identical canonical results.
-- [ ] The North Star 100-trial matrix passes before and after an immutable seven-day
-  burn-in.
-- [ ] Technical/credential failure-domain evidence is complete and does not imply
-  independent-human governance.
-- [ ] Compromised-key removal and explicit equivocation handling pass the bounded S8
-  threat model.
-- [ ] Chromium, Firefox, and WebKit support claims match actual-engine durable tests
-  with no silent downgrade.
-- [ ] All old contest priorities are historical, and current README, roadmap,
-  protocol, threat model, traceability, SDK, CLI, and product claims agree.
-- [ ] Full test, coverage, audit, package, secret, clean-install, clean-clone,
-  independent-review, and post-merge evidence pass on the final exact source.
-
-If any item is missing, the status is **HOLD**, not “mostly complete.”
-
-## 21. Current execution frontier
-
-S0 through S2 are promoted. S3 is the sole authorized implementation frontier and
-remains HOLD until all of the following occur:
-
-1. canonical manifest, input, receipt, chunk, resource, and state-root bytes are
-   reproduced by JavaScript and an independent non-JavaScript verifier;
-2. every surviving logical replica pair reconstructs the exact 1 MiB resource
-   after third-replica and primary-relay deletion;
-3. missing, changed, reordered, duplicate, wrong-size, stale, oversized, and
-   decoding inputs fail with stable bounded results;
-4. interruption remains resumable and idempotent without replacing the prior
-   verified active state;
-5. 10,000 deterministic loss/reorder/duplicate/partial/tamper schedules yield zero
-   metadata-only acceptance;
-6. v0/v1 conformance and mortality remain byte- and behavior-identical;
-7. an exact receipt binds the frozen source, commands, environment, artifacts, and
-   every strict S3 result; and
-8. the final PR head passes policy/Verify and fresh independent immutable review,
-   then only the expected head merges and passes exact-main Verify and Deploy.
-
-S4 may begin only after S3 is `PROMOTED`. Confidentiality and epoch keys must not be
-combined with S3 recovery because integrity/availability and secrecy/revocation need
-separate failure attribution.
+- GPT/model product features as protocol authority.

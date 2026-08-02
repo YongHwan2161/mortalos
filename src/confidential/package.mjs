@@ -61,6 +61,15 @@ const MANIFEST_KEYS = [
   "transition_id",
   "wraps"
 ];
+const uint8ArrayConstructor = Uint8Array;
+
+function ownCryptoInputBytes(value) {
+  return new uint8ArrayConstructor(new uint8ArrayConstructor(value));
+}
+
+function ownOptionalCryptoInputBytes(value) {
+  return value === undefined ? undefined : ownCryptoInputBytes(value);
+}
 const CHUNK_KEYS = [
   "aad",
   "aad_digest",
@@ -199,7 +208,11 @@ function resourcePlaintextParts(resourceBytes) {
     );
   }
   if (parts.length > CONFIDENTIAL_LIMITS.max_chunks) {
-    confidentialFail("E_CONFIDENTIAL_LIMIT", "/chunks", "64");
+    confidentialFail(
+      "E_CONFIDENTIAL_LIMIT",
+      "/chunks",
+      String(CONFIDENTIAL_LIMITS.max_chunks)
+    );
   }
   return { parts, resource };
 }
@@ -215,7 +228,11 @@ export function snapshotConfidentialCustodians(custodians) {
     entries.length < 1 ||
     entries.length > CONFIDENTIAL_LIMITS.max_custodians
   ) {
-    confidentialFail("E_CONFIDENTIAL_MEMBERSHIP", "/custodians", "1..16");
+    confidentialFail(
+      "E_CONFIDENTIAL_MEMBERSHIP",
+      "/custodians",
+      `1..${CONFIDENTIAL_LIMITS.max_custodians}`
+    );
   }
   const owned = entries.map((custodian, index) => {
     exactObjectKeys(
@@ -361,7 +378,11 @@ export async function createConfidentialPackage({
     });
     const aadBytes = canonicalBytes(aad);
     if (aadBytes.byteLength > CONFIDENTIAL_LIMITS.aad_bytes) {
-      confidentialFail("E_CONFIDENTIAL_LIMIT", `/chunks/${index}/aad`, "4096");
+      confidentialFail(
+        "E_CONFIDENTIAL_LIMIT",
+        `/chunks/${index}/aad`,
+        String(CONFIDENTIAL_LIMITS.aad_bytes)
+      );
     }
     const iv = counterToIv(invocationCounter);
     const ciphertext = new Uint8Array(
@@ -744,7 +765,7 @@ export function verifyConfidentialPackage({
   });
 }
 
-export async function decryptConfidentialPackage({
+async function decryptConfidentialPackageWithEpochKey({
   custodian,
   expectedCustodians,
   expectedEpochId,
@@ -755,6 +776,7 @@ export async function decryptConfidentialPackage({
   packageBytes,
   privateKey
 }) {
+  const ownedCustodian = snapshotConfidentialCustodians([custodian])[0];
   let verified;
   try {
     verified = verifyConfidentialPackage({
@@ -772,8 +794,8 @@ export async function decryptConfidentialPackage({
   }
   const wrap = verified.manifest.wraps.find(
     (entry) =>
-      entry.custodian_id === custodian?.custodian_id &&
-      entry.custodian_encryption_key === custodian?.encryption_key_digest
+      entry.custodian_id === ownedCustodian.custodian_id &&
+      entry.custodian_encryption_key === ownedCustodian.encryption_key_digest
   );
   if (!wrap) {
     confidentialFail("E_CONFIDENTIAL_KEY_UNAVAILABLE", "/wrap", "recipient");
@@ -781,7 +803,7 @@ export async function decryptConfidentialPackage({
   let epochKey;
   try {
     epochKey = await unwrapEpochKey({
-      custodian,
+      custodian: ownedCustodian,
       epoch: verified.manifest.epoch,
       epochId: verified.manifest.epoch_id,
       membershipHead: verified.manifest.membership_head,
@@ -862,6 +884,23 @@ export async function decryptConfidentialPackage({
   });
 }
 
+export async function decryptConfidentialPackage(options) {
+  const decrypted = await decryptConfidentialPackageWithEpochKey(options);
+  return Object.freeze({
+    confidential_root: decrypted.confidential_root,
+    resource_bytes: decrypted.resource_bytes,
+    resource_id: decrypted.resource_id,
+    status: decrypted.status
+  });
+}
+
+// Internal protocol composition only. This symbol is intentionally omitted from
+// src/index.mjs and the packaged SDK so the epoch-key handle cannot cross a
+// supported public API boundary.
+export function decryptConfidentialPackageForRecovery(options) {
+  return decryptConfidentialPackageWithEpochKey(options);
+}
+
 export async function aesGcmKnownAnswer({
   additionalData = new Uint8Array(),
   ciphertext,
@@ -869,28 +908,33 @@ export async function aesGcmKnownAnswer({
   key,
   plaintext
 }) {
+  const ownedAdditionalData = ownCryptoInputBytes(additionalData);
+  const ownedCiphertext = ownOptionalCryptoInputBytes(ciphertext);
+  const ownedIv = ownCryptoInputBytes(iv);
+  const ownedKey = ownCryptoInputBytes(key);
+  const ownedPlaintext = ownCryptoInputBytes(plaintext);
   const subtle = assertWebCrypto();
   const cryptoKey = await subtle.importKey(
     "raw",
-    key,
+    ownedKey,
     { name: "AES-GCM" },
     false,
     ["encrypt", "decrypt"]
   );
-  const encrypted = new Uint8Array(
+  const encrypted = new uint8ArrayConstructor(
     await subtle.encrypt(
       {
-        additionalData,
-        iv,
+        additionalData: ownedAdditionalData,
+        iv: ownedIv,
         name: "AES-GCM",
         tagLength: 128
       },
       cryptoKey,
-      plaintext
+      ownedPlaintext
     )
   );
-  if (ciphertext !== undefined) {
-    const expected = new Uint8Array(ciphertext);
+  if (ownedCiphertext !== undefined) {
+    const expected = ownedCiphertext;
     if (
       expected.byteLength !== encrypted.byteLength ||
       expected.some((byte, index) => byte !== encrypted[index])
@@ -898,11 +942,11 @@ export async function aesGcmKnownAnswer({
       confidentialFail("E_CONFIDENTIAL_CRYPTO", "/vector", "ciphertext");
     }
   }
-  const recovered = new Uint8Array(
+  const recovered = new uint8ArrayConstructor(
     await subtle.decrypt(
       {
-        additionalData,
-        iv,
+        additionalData: ownedAdditionalData,
+        iv: ownedIv,
         name: "AES-GCM",
         tagLength: 128
       },

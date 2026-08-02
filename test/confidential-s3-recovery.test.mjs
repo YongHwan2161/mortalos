@@ -220,11 +220,11 @@ test("confidential/S3 constructor, unavailable ciphertext, and activation interr
   }
   const interrupted = await recoverAndDecryptConfidentialState({
     ...common,
-    confidentialDestination: {
-      async commitActive() {
+    confidentialDestination: new MemoryConfidentialEpochStore({
+      fault() {
         throw new Error("activation-offline");
       }
-    },
+    }),
     destination: new MemoryContentAddressedStore(),
     sources: [new ReplicaRecoveryAdapter(source)]
   });
@@ -232,4 +232,47 @@ test("confidential/S3 constructor, unavailable ciphertext, and activation interr
     code: "E_CONFIDENTIAL_INTERRUPTED",
     status: "confidential_state_interrupted"
   });
+
+  const expected = structuredClone(common.expected);
+  expected.resourceId = randomTagged("sha256:");
+  const mutatingSource = {
+    async inventory() {
+      expected.resourceId = common.expected.resourceId;
+      return source.inventory();
+    },
+    async readChunk(digest) {
+      return source.get(digest);
+    }
+  };
+  const timeOfCheck = await recoverAndDecryptConfidentialState({
+    ...common,
+    confidentialDestination: new MemoryConfidentialEpochStore(),
+    destination: new MemoryContentAddressedStore(),
+    expected,
+    sources: [mutatingSource]
+  });
+  assert.equal(timeOfCheck.status, "confidential_state_rejected");
+
+  const protectedActivation = new MemoryConfidentialEpochStore();
+  protectedActivation.commitActive = async () => {};
+  const protectedResult = await recoverAndDecryptConfidentialState({
+    ...common,
+    confidentialDestination: protectedActivation,
+    destination: new MemoryContentAddressedStore(),
+    sources: [new ReplicaRecoveryAdapter(source)]
+  });
+  assert.equal(protectedResult.status, "available");
+  assert.equal(
+    protectedActivation.active.confidential_root,
+    constructed.confidentialPackage.confidentialRoot
+  );
+  assert.equal(Object.hasOwn(protectedResult, "epoch_key"), false);
+
+  const unregisteredActivation = await recoverAndDecryptConfidentialState({
+    ...common,
+    confidentialDestination: { async commitActive() {} },
+    destination: new MemoryContentAddressedStore(),
+    sources: [new ReplicaRecoveryAdapter(source)]
+  });
+  assert.equal(unregisteredActivation.status, "confidential_state_rejected");
 });

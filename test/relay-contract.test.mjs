@@ -3,8 +3,41 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { HttpRelayTransport } from "../lab/transport/http-relay.mjs";
 import { resolveWindowsWorkerdBinary } from "../scripts/resolve-workerd-binary.mjs";
 import { RELAY_RATE_POLICY, relayTwoBrowserRequestBudget } from "../src/transport/relay-policy.mjs";
+
+test("HTTP relay publisher owns borrowed bytes before the network await", async () => {
+  const originalFetch = globalThis.fetch;
+  let release;
+  let observed;
+  const barrier = new Promise((resolve) => {
+    release = resolve;
+  });
+  try {
+    globalThis.fetch = async (request) => {
+      observed = new Uint8Array(await request.clone().arrayBuffer());
+      await barrier;
+      return new Response('{"accepted":true}', {
+        headers: { "content-type": "application/json" },
+        status: 200
+      });
+    };
+    const transport = new HttpRelayTransport({
+      baseUrl: "https://relay.test",
+      endpointId: "endpoint-a",
+      roomId: "A".repeat(22)
+    });
+    const borrowed = new Uint8Array([1, 2, 3, 4]);
+    const publishing = transport.publish(borrowed);
+    borrowed.fill(9);
+    release();
+    await publishing;
+    assert.deepEqual(observed, new Uint8Array([1, 2, 3, 4]));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("relay cadence keeps two active browsers plus an explicit burst below the shared room ceiling", () => {
   const budget = relayTwoBrowserRequestBudget();

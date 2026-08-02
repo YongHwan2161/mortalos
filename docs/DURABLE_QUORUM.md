@@ -1,7 +1,23 @@
 # MortalOS crash-safe durable quorum
 
-Status: **S2 implementation present; promotion is bound to the exact S2 receipt,
+Status: **S2 CLAIM REOPENED; hardened implementation promotion is bound to a new exact S2 receipt,
 independent review, merge, and post-merge evidence**
+
+The current candidate co-locates the durable endpoint implementation and its
+WeakMap-registered raw store capability in one ES module closure. No production
+export can read or write a raw durable document. The endpoint owns the full signing
+invocation before its first await and redacts the private `CryptoKey` from both
+endpoint and store diagnostics. Public documents are built from a key-free graph,
+public raw writes fail closed, signing uses captured native WebCrypto operations,
+and the optional test boundary receives only a phase string. The historical S2
+receipt does not cover these edits and cannot promote the new source.
+
+This is public-API and conforming-concurrency hardening, not a same-origin/XSS
+custody boundary. Any script running with the application's origin can open the
+known IndexedDB, obtain the structured-cloned non-extractable `CryptoKey`, and ask
+WebCrypto to sign without exporting the key or consulting this journal. Strong
+sign-once enforcement therefore remains **HOLD** until key use and journal state
+are co-located in a separately isolated signer domain.
 
 Contract versions:
 
@@ -36,6 +52,11 @@ the consecutive revision inside the same strict transaction. A stale writer rece
 failure-semantics test adapter, not a production Node key-custody claim. Selecting a
 production Node key store requires a separate platform-security ADR.
 
+`lab/participant/durable-quorum-endpoint.mjs` is only a compatibility re-export.
+The class, private document accessors, store registration map, and sign-once commit
+path live together in `lab/storage/durable-store.mjs`; its public module namespace
+is regression-tested to contain no raw read/write capability.
+
 ## Write-ahead signing
 
 For every Genesis approval, Pulse approval, or custody acceptance:
@@ -57,7 +78,7 @@ returns the already stored signature without invoking the signer again. A crash
 around commit exposes only the old committed head with pending work or the new
 committed head.
 
-Two endpoints or tabs restored from the same revision may race, but only one
+Two conforming endpoints or tabs restored from the same revision may race, but only one
 reservation CAS can commit. The loser fails before invoking its signer. If two
 same-body signers race after one stored reservation, only the signer whose
 signature CAS commits may return to its caller.
@@ -126,6 +147,8 @@ The gate covers:
 - exact old/pending/new crash outcomes and signer-call accounting;
 - unknown/corrupt schema, key, evidence, journal, state, custody, and migration
   rejection;
+- the public durable-store module namespace contains no raw document read/write
+  capability, and public store methods cannot be replaced to affect endpoint I/O;
 - explicit renewal, expiry, and atomic authority removal;
 - actual Chromium IndexedDB migration with atomic legacy-store retirement and no
   sign-capable legacy key after removal, plus non-destructive corrupt,
@@ -138,4 +161,5 @@ The gate covers:
 
 These are same-host browser/profile and storage semantics. They do not prove
 separate devices, administrators, providers, confidential resource storage, or
-resource-byte reconstruction. Those remain S3, S4, and S7 work.
+resource-byte reconstruction. They also do not resist compromised same-origin code.
+Those remain S3, S4, S7, and signer-custody work.

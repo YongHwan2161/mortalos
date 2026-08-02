@@ -3,6 +3,21 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { canonicalBytes } from "../src/index.mjs";
 import {
+  createStatePackage,
+  createStatePackageInput,
+  deterministicReferenceResource,
+  statePackageChunkDigest
+} from "../src/state/package.mjs";
+import {
+  MemoryContentAddressedStore,
+  recoverStatePackage
+} from "../src/state/recovery.mjs";
+import {
+  publishStateChunk,
+  publishStatePackageChunks,
+  RelayChunkRecoveryAdapter
+} from "../src/transport/chunk-data-plane.mjs";
+import {
   createRelayFrame,
   createRelayMessage,
   decodeRelayFrame,
@@ -97,4 +112,100 @@ test("10,000 seeded virtual schedules recover all endpoints deterministically", 
   assert.ok(result.duplicated > 0);
   assert.ok(result.reordered > 0);
   assert.match(result.digest, /^sha256:[A-Za-z0-9_-]{43}$/);
+});
+
+test("real relay messages carry S3 chunks end to end without trusting metadata", async () => {
+  const resourceBytes = deterministicReferenceResource();
+  const inputBytes = createStatePackageInput({ transitionId: "relay-chunk-data-plane" });
+  const tagged = `sha256:${"A".repeat(43)}`;
+  const statePackage = createStatePackage({
+    genomeHash: tagged,
+    inputBytes,
+    priorStateRoot: tagged,
+    resourceBytes
+  });
+  const network = new VirtualTransportNetwork();
+  const publisher = network.endpoint(ROOM, "chunk-publisher");
+  const reader = network.endpoint(ROOM, "chunk-reader");
+  const descriptors = await publishStatePackageChunks({
+    chunkBytes: statePackage.chunkBytes,
+    transport: publisher
+  });
+  assert.equal(descriptors.length, statePackage.manifest.chunks.length);
+  const source = new RelayChunkRecoveryAdapter({
+    descriptors,
+    transport: { readRange: (after, limit) => reader.fetchRange(after, limit) }
+  });
+  const destination = new MemoryContentAddressedStore();
+  const recovered = await recoverStatePackage({
+    destination,
+    expectedGenomeHash: tagged,
+    expectedNextStateRoot: statePackage.nextStateRoot,
+    expectedPriorStateRoot: tagged,
+    inputBytes,
+    manifestBytes: statePackage.manifestBytes,
+    receiptBytes: statePackage.receiptBytes,
+    sources: [source]
+  });
+  assert.equal(recovered.status, "available");
+  assert.deepEqual(recovered.resource_bytes, resourceBytes);
+  publisher.close();
+  reader.close();
+});
+
+test("package publisher owns every chunk before the first transport await", async () => {
+  const first = new Uint8Array(65_536).fill(11);
+  const second = new Uint8Array(65_536).fill(22);
+  const chunks = [first, second];
+  const expectedSecondDigest = statePackageChunkDigest(second);
+  const network = new VirtualTransportNetwork();
+  const endpoint = network.endpoint(ROOM, "ownership-publisher");
+  let releaseFirst;
+  let observedFirst;
+  let calls = 0;
+  const entered = new Promise((resolve) => { observedFirst = resolve; });
+  const release = new Promise((resolve) => { releaseFirst = resolve; });
+  const transport = {
+    async publish(bytes) {
+      calls += 1;
+      if (calls === 1) {
+        observedFirst();
+        await release;
+      }
+      return endpoint.publish(bytes);
+    }
+  };
+  const publishing = publishStatePackageChunks({ chunkBytes: chunks, transport });
+  await entered;
+  second.fill(99);
+  chunks.splice(0, chunks.length);
+  transport.publish = async () => {
+    throw new Error("borrowed transport facade reached after await");
+  };
+  releaseFirst();
+  const descriptors = await publishing;
+  assert.equal(descriptors[1].chunk_digest, expectedSecondDigest);
+  assert.notEqual(descriptors[1].chunk_digest, statePackageChunkDigest(second));
+  endpoint.close();
+});
+
+test("single chunk publisher never re-reads borrowed bytes after await", async () => {
+  const chunk = new Uint8Array(1024).fill(37);
+  const expectedDigest = statePackageChunkDigest(chunk);
+  const expectedSize = chunk.byteLength;
+  const network = new VirtualTransportNetwork();
+  const endpoint = network.endpoint(ROOM, "single-ownership-publisher");
+  const descriptor = await publishStateChunk({
+    chunkBytes: chunk,
+    transport: {
+      async publish(bytes) {
+        structuredClone(chunk.buffer, { transfer: [chunk.buffer] });
+        return endpoint.publish(bytes);
+      }
+    }
+  });
+  assert.equal(chunk.byteLength, 0);
+  assert.equal(descriptor.chunk_digest, expectedDigest);
+  assert.equal(descriptor.chunk_size, expectedSize);
+  endpoint.close();
 });

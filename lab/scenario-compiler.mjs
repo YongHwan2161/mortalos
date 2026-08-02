@@ -32,17 +32,27 @@ export async function compileScenario(proposal, requestedKind = proposal?.scenar
 }
 
 export async function runCompiledScenario(compiled) {
-  const expectedBytes = canonicalBytes(compiled?.scenario);
-  if (!(compiled?.bytes instanceof Uint8Array) || expectedBytes.length !== compiled.bytes.length ||
-      !expectedBytes.every((byte, index) => byte === compiled.bytes[index])) {
+  const owned = {
+    bytes: compiled?.bytes instanceof Uint8Array ? new Uint8Array(compiled.bytes) : null,
+    digest: compiled?.digest,
+    scenario: compiled?.scenario === undefined
+      ? undefined
+      : JSON.parse(JSON.stringify(compiled.scenario)),
+    trusted_expected: compiled?.trusted_expected === undefined
+      ? undefined
+      : JSON.parse(JSON.stringify(compiled.trusted_expected))
+  };
+  const expectedBytes = canonicalBytes(owned.scenario);
+  if (!(owned.bytes instanceof Uint8Array) || expectedBytes.length !== owned.bytes.length ||
+      !expectedBytes.every((byte, index) => byte === owned.bytes[index])) {
     throw new Error("compiled scenario bytes do not match the canonical scenario");
   }
-  if (await digest(compiled.bytes) !== compiled.digest) throw new Error("compiled scenario digest mismatch");
-  const actual = runReferenceScenario({ mutation: compiled.scenario.mutation, lifecycle, fork });
+  if (await digest(owned.bytes) !== owned.digest) throw new Error("compiled scenario digest mismatch");
+  const actual = runReferenceScenario({ mutation: owned.scenario.mutation, lifecycle, fork });
   return Object.freeze({
     actual: Object.freeze({ code: actual.code ?? null, status: actual.status }),
     matches_trusted_expectation:
-      actual.status === compiled.trusted_expected.status &&
-      (actual.code ?? null) === compiled.trusted_expected.code
+      actual.status === owned.trusted_expected.status &&
+      (actual.code ?? null) === owned.trusted_expected.code
   });
 }

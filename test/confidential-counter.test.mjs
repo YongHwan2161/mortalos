@@ -6,6 +6,7 @@ import {
   MemoryCounterAuthorityStore,
   createCounterAuthorityFacade,
   detectCounterAuthorityEquivocation,
+  deriveCounterAuthorityId,
   deriveConfidentialEpochId,
   generateCounterAuthorityKeyMaterial,
   isLinearizableCounterAuthority,
@@ -13,10 +14,12 @@ import {
   reservationIvs,
   verifyCounterReservationReceipt
 } from "../src/confidential/counter.mjs";
+import { registerCounterAuthorityStoreInternal } from "../src/confidential/counter-authority-internal.mjs";
 import {
   counterToIv,
   randomTagged
 } from "../src/confidential/format.mjs";
+import { createForkableCounterAuthorityPair } from "./confidential-helpers.mjs";
 
 function epochIdFor(authority, epoch = "0") {
   return deriveConfidentialEpochId({
@@ -122,8 +125,9 @@ test(
 );
 
 test("lost authority state, cap overflow, receipt mutation, and rollback fail closed", async () => {
-  const store = new MemoryCounterAuthorityStore();
-  const authority = await LinearizableCounterAuthority.create({ store });
+  const controlled = await createForkableCounterAuthorityPair();
+  const store = controlled.leftStore;
+  const authority = controlled.left;
   const epochId = epochIdFor(authority);
   const first = await authority.reserveRange({
     count: "1",
@@ -160,10 +164,9 @@ test("lost authority state, cap overflow, receipt mutation, and rollback fail cl
     /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
   );
 
-  const capStore = new MemoryCounterAuthorityStore();
-  const capAuthority = await LinearizableCounterAuthority.create({
-    store: capStore
-  });
+  const capped = await createForkableCounterAuthorityPair();
+  const capStore = capped.leftStore;
+  const capAuthority = capped.left;
   const capEpochId = epochIdFor(capAuthority);
   await capStore.transact(capEpochId, async () => ({
     next: {
@@ -188,16 +191,10 @@ test("lost authority state, cap overflow, receipt mutation, and rollback fail cl
   );
 });
 
-test("jointly observed valid successors expose authority equivocation; either alone remains valid", async () => {
-  const material = await generateCounterAuthorityKeyMaterial();
-  const leftAuthority = new LinearizableCounterAuthority({
-    ...material,
-    store: new MemoryCounterAuthorityStore()
-  });
-  const rightAuthority = new LinearizableCounterAuthority({
-    ...material,
-    store: new MemoryCounterAuthorityStore()
-  });
+test("one store-bound signing key cannot issue conflicting same-prior successors", async () => {
+  const store = new MemoryCounterAuthorityStore();
+  const leftAuthority = await LinearizableCounterAuthority.create({ store });
+  const rightAuthority = await LinearizableCounterAuthority.create({ store });
   const epochId = epochIdFor(leftAuthority);
   const request = {
     count: "1",
@@ -206,62 +203,88 @@ test("jointly observed valid successors expose authority equivocation; either al
     expectedNextCounter: "0",
     expectedPriorReceiptDigest: null
   };
-  const [left, right] = await Promise.all([
+  const attempts = await Promise.allSettled([
     leftAuthority.reserveRange(request),
     rightAuthority.reserveRange({ ...request, count: "2" })
   ]);
-  assert.doesNotThrow(() =>
-    verifyCounterReservationReceipt({ receipt: left.receipt })
-  );
-  assert.doesNotThrow(() =>
-    verifyCounterReservationReceipt({ receipt: right.receipt })
-  );
+  const accepted = attempts.filter(({ status }) => status === "fulfilled");
+  const rejected = attempts.filter(({ status }) => status === "rejected");
+  assert.equal(accepted.length, 1);
+  assert.equal(rejected.length, 1);
+  assert.match(rejected[0].reason.code, /^E_CONFIDENTIAL_COUNTER_(STALE|AUTHORITY)$/u);
+  const receipt = accepted[0].value.receipt;
+  assert.doesNotThrow(() => verifyCounterReservationReceipt({ receipt }));
   assert.equal(
-    detectCounterAuthorityEquivocation(left.receipt, right.receipt).status,
-    "counter_authority_equivocation"
-  );
-  await assert.rejects(
-    observeCounterAuthorityEquivocation({
-      authority: {
-        descriptor: leftAuthority.descriptor,
-        inspect: async () => ({ retired: true }),
-        retire: async () => true
-      },
-      left: left.receipt,
-      right: right.receipt
-    }),
-    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
-  );
-  const originalInspect = LinearizableCounterAuthority.prototype.inspect;
-  const originalRetire = LinearizableCounterAuthority.prototype.retire;
-  LinearizableCounterAuthority.prototype.inspect = async () => ({
-    retired: false
-  });
-  LinearizableCounterAuthority.prototype.retire = async () => true;
-  let observed;
-  try {
-    observed = await observeCounterAuthorityEquivocation({
-      authority: leftAuthority,
-      left: left.receipt,
-      right: right.receipt
-    });
-  } finally {
-    LinearizableCounterAuthority.prototype.inspect = originalInspect;
-    LinearizableCounterAuthority.prototype.retire = originalRetire;
-  }
-  assert.equal(observed.status, "counter_authority_equivocation");
-  assert.equal((await leftAuthority.inspect(epochId)).retired, true);
-  await assert.rejects(
-    leftAuthority.reserveRange({
-      ...request,
-      expectedNextCounter: left.basis.next_counter,
-      expectedPriorReceiptDigest: left.digest
-    }),
-    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
-  );
-  assert.equal(
-    detectCounterAuthorityEquivocation(left.receipt, left.receipt).status,
+    detectCounterAuthorityEquivocation(receipt, receipt).status,
     "no_joint_equivocation"
+  );
+});
+
+test("package-private stores retain one default authority identity and public facades preserve retirement semantics", async () => {
+  let active = null;
+  const store = {};
+  registerCounterAuthorityStoreInternal(store, {
+    inspect: async () => active === null ? null : structuredClone(active),
+    loadAuthorityCapability: null,
+    transact: async (_epochId, operation) => {
+      const outcome = await operation(
+        active === null ? null : structuredClone(active)
+      );
+      active = outcome.next === null ? null : structuredClone(outcome.next);
+      return outcome.value;
+    }
+  });
+  Object.freeze(store);
+
+  const authority = await LinearizableCounterAuthority.create({ store });
+  const sameStoreAuthority = await LinearizableCounterAuthority.create({ store });
+  assert.deepEqual(sameStoreAuthority.descriptor, authority.descriptor);
+  const epochId = epochIdFor(authority);
+  let closes = 0;
+  const keyPolicy = Object.freeze({ custody: "test-only-module-private" });
+  const facade = createCounterAuthorityFacade({
+    authority,
+    close: () => { closes += 1; },
+    keyPolicy
+  });
+  assert.equal(facade.keyPolicy, keyPolicy);
+  assert.deepEqual(facade.descriptor, authority.descriptor);
+
+  const reserved = await facade.reserveRange({
+    count: "1",
+    epoch: "0",
+    epochId,
+    expectedNextCounter: "0",
+    expectedPriorReceiptDigest: null
+  });
+  assert.equal(reserved.basis.interval_start, "0");
+  assert.equal((await facade.inspect(epochId)).next_counter, "1");
+  assert.equal(await facade.retire(epochId), true);
+  assert.equal((await facade.inspect(epochId)).retired, true);
+  facade.close();
+  assert.equal(closes, 1);
+  await assert.rejects(
+    facade.reserveRange({
+      count: "1",
+      epoch: "0",
+      epochId,
+      expectedNextCounter: "1",
+      expectedPriorReceiptDigest: reserved.digest
+    }),
+    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
+  );
+
+  assert.throws(
+    () => createCounterAuthorityFacade({ authority, close: null }),
+    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
+  );
+  await assert.rejects(
+    LinearizableCounterAuthority.create({ store: Object.freeze({}) }),
+    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
+  );
+  assert.throws(
+    () => deriveCounterAuthorityId(`ed25519:${encodeBase64Url(new Uint8Array(32))}`),
+    /E_CONFIDENTIAL_COUNTER_RECEIPT/u
   );
 });
 
@@ -297,14 +320,8 @@ test("counter authority ignores store own and prototype method replacement befor
     MemoryCounterAuthorityStore.prototype.transact = originalTransact;
   }
 
-  const material = await generateCounterAuthorityKeyMaterial();
   const store = new MemoryCounterAuthorityStore();
-  const authority = new LinearizableCounterAuthority({ ...material, store });
-  const forkStore = new MemoryCounterAuthorityStore();
-  const forkAuthority = new LinearizableCounterAuthority({
-    ...material,
-    store: forkStore
-  });
+  const authority = await LinearizableCounterAuthority.create({ store });
   const epochId = epochIdFor(authority);
   const initialRequest = {
     count: "1",
@@ -313,40 +330,17 @@ test("counter authority ignores store own and prototype method replacement befor
     expectedNextCounter: "0",
     expectedPriorReceiptDigest: null
   };
-  const initial = await authority.reserveRange(initialRequest);
-  const active = await authority.inspect(epochId);
-  await forkStore.transact(epochId, async () => ({
-    next: active,
-    value: true
-  }));
-  const successorRequest = {
-    ...initialRequest,
-    expectedNextCounter: initial.basis.next_counter,
-    expectedPriorReceiptDigest: initial.digest
-  };
-  const [left, right] = await Promise.all([
-    authority.reserveRange(successorRequest),
-    forkAuthority.reserveRange({ ...successorRequest, count: "2" })
-  ]);
-
-  const fakeTransact = async (_epochId, operation) => {
-    const outcome = await operation(await originalInspect.call(store, epochId));
-    return outcome.value;
-  };
-  const fakeInspect = async () => ({
-    ...(await originalInspect.call(store, epochId)),
-    retired: true
-  });
+  await authority.reserveRange(initialRequest);
   let ownReplacementAccepted = false;
   try {
     Object.defineProperties(store, {
       inspect: {
         configurable: true,
-        value: fakeInspect
+        value: async () => ({ retired: true })
       },
       transact: {
         configurable: true,
-        value: fakeTransact
+        value: async () => ({ value: "spoofed" })
       }
     });
     ownReplacementAccepted = true;
@@ -354,33 +348,19 @@ test("counter authority ignores store own and prototype method replacement befor
     assert.ok(error instanceof TypeError);
   }
 
-  const evidence = await observeCounterAuthorityEquivocation({
-    authority,
-    left: left.receipt,
-    right: right.receipt
-  });
-  assert.equal(evidence.status, "counter_authority_equivocation");
-
   if (ownReplacementAccepted) {
     delete store.inspect;
     delete store.transact;
   }
   const actual = await originalInspect.call(store, epochId);
-  assert.equal(actual.retired, true);
-  await assert.rejects(
-    authority.reserveRange({
-      ...successorRequest,
-      expectedNextCounter: left.basis.next_counter,
-      expectedPriorReceiptDigest: left.digest
-    }),
-    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
-  );
+  assert.equal(actual.next_counter, "1");
 });
 
 test("epoch identity, authority construction, reservation surfaces, and receipt fields fail closed independently", async () => {
   const material = await generateCounterAuthorityKeyMaterial();
-  const authority = new LinearizableCounterAuthority({
-    ...material,
+  assert.equal(Object.hasOwn(material, "privateKey"), false);
+  assert.doesNotMatch(JSON.stringify(material), /private[_-]?key|CryptoKey/u);
+  const authority = await LinearizableCounterAuthority.create({
     store: new MemoryCounterAuthorityStore()
   });
   const epochId = epochIdFor(authority);
@@ -393,11 +373,7 @@ test("epoch identity, authority construction, reservation surfaces, and receipt 
   });
   class SpoofedCounterAuthority extends LinearizableCounterAuthority {}
   assert.throws(
-    () =>
-      new SpoofedCounterAuthority({
-        ...material,
-        store: new MemoryCounterAuthorityStore()
-      }),
+    () => new SpoofedCounterAuthority(null, {}),
     /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
   );
   assert.equal(
@@ -421,21 +397,11 @@ test("epoch identity, authority construction, reservation surfaces, and receipt 
   assert.deepEqual(facade.descriptor, authority.descriptor);
 
   assert.throws(
-    () =>
-      new LinearizableCounterAuthority({
-        ...material,
-        authorityId: randomTagged("sha256:"),
-        store: new MemoryCounterAuthorityStore()
-      }),
+    () => new LinearizableCounterAuthority(null, {}),
     /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
   );
   assert.throws(
-    () =>
-      new LinearizableCounterAuthority({
-        ...material,
-        privateKey: null,
-        store: new MemoryCounterAuthorityStore()
-      }),
+    () => new LinearizableCounterAuthority(null, { privateKey: null }),
     /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
   );
   assert.throws(
@@ -499,10 +465,8 @@ test("epoch identity, authority construction, reservation surfaces, and receipt 
     /E_CONFIDENTIAL_COUNTER_STALE/u
   );
   const invalidStore = new MemoryCounterAuthorityStore();
-  await assert.rejects(
-    invalidStore.transact(epochId, async () => ({ value: true })),
-    /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
-  );
+  assert.equal(invalidStore.transact, undefined);
+  assert.equal(invalidStore.lose, undefined);
   await assert.rejects(
     authority.retire(randomTagged("sha256:")),
     /E_CONFIDENTIAL_COUNTER_AUTHORITY/u
