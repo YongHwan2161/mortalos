@@ -25,6 +25,7 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "lab/participant/live-endpoint.mjs",
   "lab/participant/quorum-endpoint.mjs",
   "lab/participant/webcrypto-key-store.mjs",
+  "lab/product-continuity.mjs",
   "lab/storage/confidential-counter-authority-store.mjs",
   "lab/storage/durable-document.mjs",
   "lab/storage/durable-store.mjs",
@@ -35,6 +36,7 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "src/confidential/keys.mjs",
   "src/confidential/package.mjs",
   "src/confidential/recovery.mjs",
+  "src/continuity.mjs",
   "src/distributed/quorum-counter-store.mjs",
   "src/state/recovery.mjs",
   "src/transport/corpus.mjs",
@@ -56,6 +58,8 @@ const REQUIRED_ENTRYPOINTS = Object.freeze([
   "src/confidential/recovery.mjs:export async function createConfidentialStatePackage",
   "src/confidential/recovery.mjs:export async function recoverAndDecryptConfidentialState",
   "src/confidential/recovery.mjs:export async function rotateConfidentialState",
+  "src/continuity.mjs:export async function continueContinuity",
+  "src/continuity.mjs:export async function createContinuity",
   "src/state/recovery.mjs:export async function recoverStatePackage",
   "src/transport/chunk-data-plane.mjs:export async function publishStateChunk",
   "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks"
@@ -84,11 +88,15 @@ const DEEP_OWNERSHIP_PRIMITIVES = new Set([
   "ownRelayBytes",
   "ownCryptoInputBytes",
   "ownOptionalCryptoInputBytes",
+  "ownBytes",
   "ownSigningBytes",
   "recoverStatePackage",
   "reserveCounterAuthority",
   "resourcePlaintextParts",
   "snapshotConfidentialCustodians",
+  "snapshotAuthority",
+  "snapshotContinuityContinueInvocation",
+  "snapshotContinuityCreateInvocation",
   "snapshotDataMethod",
   "snapshotNamedOwnDataValues",
   "snapshotObservedCounterAuthorityEquivocation",
@@ -152,6 +160,13 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
     typedArraySet: ["import", "../primordials.mjs", "typedArraySet", "d6ce72e8529bc196e44993fa8b0fafacfdd896389e394ebffd7dddce47cbc433"],
     verifyConfidentialRotationAuthorization: ["local", null, null, "de4b18f2828ea56f3f424b2448a1b4d069c1663effd541f0c304f2f3adc4f611"]
   },
+  "src/continuity.mjs": {
+    ownBytes: ["local", null, null, "aed824d812b7c9116a8dec952fd972bce5fae552eb838593da1ecabdb5108645"],
+    snapshotAuthority: ["local", null, null, "730172da218ad6bb1d2cf50a945c74921bfe62a11a336bf1bc701dec34bcbf0b"],
+    snapshotContinuityContinueInvocation: ["local", null, null, "9108227e231da141e917a520e6e4109ba0bfa33290cb94031a6b9dad908efb45"],
+    snapshotContinuityCreateInvocation: ["local", null, null, "5fc26055c766919b534d24a97024f2b358f5b8bb2622d91cc6d9cee495362671"],
+    snapshotNamedOwnDataValues: ["import", "./primordials.mjs", "snapshotNamedOwnDataValues", "aab42c8f9795139df8c6073da9fd33656fb5858fc7e18fe466bc416b64c9f74d"]
+  },
   "src/state/recovery.mjs": {
     snapshotRecoveryInvocation: ["local", null, null, "f2bcec674dea7d59d65de8fafc0eea7de0bb0b57b8d2383afde0551bed427bfe"],
     verifyStatePackage: ["import", "./package.mjs", "verifyStatePackage", "0afe9e042d0173a57791681e879dc73b9f3341fffb834019df8656980ab36b10"]
@@ -183,6 +198,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/confidential/keys.mjs": "79f350b7704c3c9e6cc1d0f891364b0a9cc050f8cee249fd3cc445a5f2123285",
   "src/confidential/package.mjs": "2edf8c8fce50dc09ee33243affff99069c3c6a3efa74bdcf52327a3c60f7aab3",
   "src/confidential/recovery.mjs": "30d7453b1af1107c26d17f779600f6b8828d8d07759c2198f89f665f49c36feb",
+  "src/continuity.mjs": "dab9aa4b5c94575f140eb2b2c97ed5c566b598aeb003cfaf269e0e07ce9e3cd1",
   "src/distributed/quorum-counter-store.mjs": "5aa2d7c0257c6e4ba4ef5502dadbc485a8fd0e95ce56fc98da30a6ff84265869",
   "src/primordials.mjs": "832b606d2b3fa03ae2c926659d1416c5bac79d6489883eae7ef018f46805e9e1",
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
@@ -291,7 +307,9 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "src/state/recovery.mjs:ReplicaRecoveryAdapter.async readChunk": "859cc82184234b15f349e45c0fe9d53a09146a05acfde16d4fd19e9e3684a0c8",
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async #loadFrames": "54708a6560e0e7e59fcf8935444d440f2efc887f3a4f84888487014495536506",
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async inventory": "2d46193e7fb518c6f81a5c932b50710ad9b31d0871da5c3092b8e1fdfc41cc0f",
-  "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async readChunk": "94fe133d82c2e1c8dccf35daa5c4c31315b7c9003c3dfb2c8968ae34444cd1bb"
+  "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async readChunk": "94fe133d82c2e1c8dccf35daa5c4c31315b7c9003c3dfb2c8968ae34444cd1bb",
+  "src/continuity.mjs:export async function createContinuityAuthority": "69460632a27c0f14cf0324b58218fead5b48f6f125a9cf3ff400fcba02104a36",
+  "src/continuity.mjs:export async function handoffContinuity": "a4e20f4d1e592ccac90dc7d694da1f57d825190cd88cae941d0c6e55ac6b5254"
 });
 assert.deepEqual(
   Object.keys(CLASSIFICATION_DIGESTS).sort(),
@@ -321,7 +339,9 @@ const OWNERSHIP_PRELUDE_DIGESTS = Object.freeze({
   "src/confidential/recovery.mjs:export async function rotateConfidentialState": "d4809283cf035f4f668af691d30d1330b7edd01ca3354188d57e8c98c38b78f5",
   "src/state/recovery.mjs:export async function recoverStatePackage": "bcca8331c681c44960bab8425a473503eeb8919d49f8034cad56a678c3bc3aa6",
   "src/transport/chunk-data-plane.mjs:export async function publishStateChunk": "834a7fee1833a22ae4d55a1e1d024ce8b46493a62c0047483ee50abb350b4e84",
-  "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks": "c101407df7bd62263823c2c91d7edeef82336c6247db778eabfe68ab8be5452d"
+  "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks": "c101407df7bd62263823c2c91d7edeef82336c6247db778eabfe68ab8be5452d",
+  "src/continuity.mjs:export async function createContinuity": "7c3f5c2d75b2928e355d032b27062c1baf56cadc73aa5e87f3610863a9fa38a1",
+  "src/continuity.mjs:export async function continueContinuity": "5ffded5a3705401e8e2aff9cf0f6cd0c633827ca4097119356fb84b7ea38a715"
 });
 assert.deepEqual(
   Object.keys(OWNERSHIP_PRELUDE_DIGESTS).sort(),

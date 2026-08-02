@@ -1715,3 +1715,33 @@ result, and reproducible verification.
   specification with `73` relative links, governance `30/30`, historical receipt
   regressions S0-S4 `61/61`, Apache-2.0 verification, dependency audit with zero
   findings, and `git diff --check`.
+
+## 2026-08-02 — Real-file continuity vertical and public capability API
+
+- Added `@mortal-os/core/continuity` with create, inspect, three-phase handoff,
+  2-of-3 recovery, and continuation. WebCrypto authorities are branded,
+  non-extractable, sign-once, and redacted; the CLI uses distinct endpoint-local
+  authority files and never emits their PKCS#8 material.
+- Generalized Capsule verification so a verified state transition may be followed
+  by a custody membership transition while the latest head remains bound to the
+  same verified state root.
+- Added matching CLI commands plus a clean `npm pack` consumer gate. The external
+  consumer selects a runtime file, creates A/B authority files, accepts handoff,
+  corrupts one copy, recovers exact bytes from the other two, commits sequence 3,
+  and rejects one-copy, stale-head, and wrong-authority attempts.
+- Added a separate-process Node endpoint test: B accepts custody, A's real PID exits,
+  B recovers exact bytes after one corrupted copy, and the still-live B process
+  commits the next transition. Valid fork and first-await mutation regressions also
+  fail closed.
+- Added the same ordered scenario to the built Lab. Chromium and Firefox select an
+  actual File in isolated persistent endpoints, close A after B acceptance, recover
+  and continue on B, and expose no private material. WebKit remains capability-
+  routed verifier-only on the measured runtime.
+- Added verifier-pinned transitive create/continue invocation snapshots. Async
+  security inventory now reports `20 direct / 117 auto-discovered` entrypoints.
+- Validation: exact checkout `npm test` PASS in `2542.8s`; browser parity PASS in
+  `207.3s`; clean packed consumer PASS; focused continuity `4/4`; Chromium and
+  Firefox continuity PASS; portable `10000/10000`; `git diff --check` PASS.
+- Honest limits: three copies are one local administrative domain, product Capsules
+  are not confidential, CLI key files rely on endpoint OS custody, and no stage
+  receipt or production deployment is promoted by this candidate.

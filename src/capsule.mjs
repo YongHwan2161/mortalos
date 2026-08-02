@@ -129,14 +129,22 @@ export function verifyContinuityCapsule(capsuleBytes) {
   }
   const { lineage, opened } = verifyRecords(capsule.records);
   const latest = opened.at(-1).envelope;
-  const previous = opened.at(-2).envelope;
+  let stateTransitionIndex = -1;
+  for (let index = opened.length - 1; index >= 1; index -= 1) {
+    if (opened[index].envelope.body.event.kind === "state-transition") {
+      stateTransitionIndex = index;
+      break;
+    }
+  }
   if (
     latest.kind !== "mortalos.pulse" ||
-    latest.body.event.kind !== "state-transition" ||
+    stateTransitionIndex < 1 ||
     capsule.organism_id !== latest.body.organism_id
   ) {
-    fail("E_CAPSULE_LINEAGE", "latest-state-transition");
+    fail("E_CAPSULE_LINEAGE", "state-transition-required");
   }
+  const stateTransition = opened[stateTransitionIndex].envelope;
+  const previous = opened[stateTransitionIndex - 1].envelope;
   exactKeys(
     capsule.state,
     ["chunks", "input_base64url", "manifest_base64url", "receipt_base64url"],
@@ -151,8 +159,8 @@ export function verifyContinuityCapsule(capsuleBytes) {
   let verified;
   try {
     verified = verifyStatePackage({
-      expectedGenomeHash: latest.body.genome_hash,
-      expectedNextStateRoot: latest.body.state_root,
+      expectedGenomeHash: stateTransition.body.genome_hash,
+      expectedNextStateRoot: stateTransition.body.state_root,
       expectedPriorStateRoot: priorStateRoot,
       inputBytes,
       manifestBytes,
@@ -162,6 +170,7 @@ export function verifyContinuityCapsule(capsuleBytes) {
     fail("E_CAPSULE_STATE", error?.code ?? "invalid");
   }
   if (
+    latest.body.state_root !== verified.nextStateRoot ||
     !Array.isArray(capsule.state.chunks) ||
     capsule.state.chunks.length !== verified.manifest.chunks.length
   ) {

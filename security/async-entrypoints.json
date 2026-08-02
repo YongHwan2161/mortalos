@@ -7,6 +7,7 @@
     "lab/participant/live-endpoint.mjs",
     "lab/participant/quorum-endpoint.mjs",
     "lab/participant/webcrypto-key-store.mjs",
+    "lab/product-continuity.mjs",
     "lab/storage/confidential-counter-authority-store.mjs",
     "lab/storage/durable-document.mjs",
     "lab/storage/durable-store.mjs",
@@ -17,6 +18,7 @@
     "src/confidential/keys.mjs",
     "src/confidential/package.mjs",
     "src/confidential/recovery.mjs",
+    "src/continuity.mjs",
     "src/distributed/quorum-counter-store.mjs",
     "src/state/recovery.mjs",
     "src/transport/corpus.mjs",
@@ -168,6 +170,22 @@
       "post_await_forbidden": ["chunkBytes", "transport"],
       "test_file": "test/transport.test.mjs",
       "test_marker": "package publisher owns every chunk before the first transport await"
+    },
+    {
+      "file": "src/continuity.mjs",
+      "entrypoint": "export async function createContinuity",
+      "ownership_primitives": ["snapshotContinuityCreateInvocation"],
+      "post_await_forbidden": ["options"],
+      "test_file": "test/continuity.test.mjs",
+      "test_marker": "create owns resource bytes and signer capability before the first await"
+    },
+    {
+      "file": "src/continuity.mjs",
+      "entrypoint": "export async function continueContinuity",
+      "ownership_primitives": ["snapshotContinuityContinueInvocation"],
+      "post_await_forbidden": ["options"],
+      "test_file": "test/continuity.test.mjs",
+      "test_marker": "single copy, stale lineage, wrong authority, and divergent valid capsules fail closed"
     }
   ],
   "classifications": [
@@ -257,6 +275,9 @@
     { "file": "src/confidential/keys.mjs", "entrypoint": "export async function generateStagingEpochKey", "mode": "no-borrowed-mutable-input", "reason": "Accepts no caller input and creates a fresh staging key handle." },
 
     { "file": "src/confidential/recovery.mjs", "entrypoint": "MemoryConfidentialEpochStore.async #commitActive", "mode": "module-private-owned-state", "reason": "Commits a cloned candidate through a registered module-private capability." },
+
+    { "file": "src/continuity.mjs", "entrypoint": "export async function createContinuityAuthority", "mode": "no-borrowed-mutable-input", "reason": "Accepts no caller input and creates a branded non-extractable signing authority." },
+    { "file": "src/continuity.mjs", "entrypoint": "export async function handoffContinuity", "mode": "delegates-to-audited-boundary", "reason": "Dispatches synchronously to phase-specific routines that snapshot all caller input before signing suspension." },
 
     { "file": "src/distributed/quorum-counter-store.mjs", "entrypoint": "QuorumCounterAuthorityStore.async #inspect", "mode": "module-private-owned-state", "reason": "Operates on private replica records and returns a detached cloned value." },
     { "file": "src/distributed/quorum-counter-store.mjs", "entrypoint": "QuorumCounterAuthorityStore.async #transact", "mode": "module-private-owned-state", "reason": "Serializes a module-owned operation over detached quorum observations." },

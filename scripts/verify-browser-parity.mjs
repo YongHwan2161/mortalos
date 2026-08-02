@@ -10,7 +10,8 @@ const engines = process.env.MORTALOS_BROWSER_ENGINE
 const fullCustodyCommands = [
   "scripts/verify-chromium.mjs",
   "scripts/verify-confidential-chromium.mjs",
-  "scripts/verify-durable-quorum-chromium.mjs"
+  "scripts/verify-durable-quorum-chromium.mjs",
+  "scripts/verify-continuity-chromium.mjs"
 ];
 const commands = {
   chromium: fullCustodyCommands,

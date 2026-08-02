@@ -1,6 +1,6 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — PRODUCT CONTINUITY VERTICAL FIRST**
+Status: **ACTIVE IMPLEMENTATION SSOT — PRODUCT CONTINUITY VERTICAL IMPLEMENTED; PROMOTION HOLD**
 
 Last synchronized: **2026-08-02 KST**
 
@@ -24,18 +24,31 @@ assumptions.
 
 ## 2. Most fundamental improvement
 
-The root gap is now product composition, not another horizontal protocol primitive.
-Main contains a Participant Core, real relay fragments, confidential state, an SDK,
-a verification CLI, Capsules, and logical replica models. Those pieces are tested
-separately, but the Lab, Functions, Relay, examples, and CLI do not yet expose one
-supported path that creates a Capsule from a user-selected resource, completes an
-A-to-B custody handoff, recovers after A closes, and commits the next transition.
-The CLI currently verifies artifacts; it cannot create or continue them.
+The product-composition gap is implemented in this source tree. One shared core now
+creates a Capsule from a runtime file, completes A-to-B custody acceptance, recovers
+after A exits, and commits the next transition. The public continuity subpath, CLI,
+separate-process Node test, clean packed consumer, and built-Lab Chromium verifier
+exercise that contract.
+
+The most fundamental remaining gap is failure-domain authenticity. The three
+canonical copies currently traverse three real relay-fragment data-plane instances,
+but those instances are in one local process and administrative domain. They prove
+quorum behavior, corruption handling, lineage binding, and exact recovery; they do
+not prove survival of a host, provider, account, or administrator failure. The next
+architecture milestone is a provider-neutral durable copy adapter plus an
+independently operated authority service. A second important boundary is
+confidentiality: the product Capsule carries exact resource bytes. S4 confidentiality
+exists separately and must be composed explicitly rather than implied.
 
 The governing product rule is:
 
 > No new stage begins until one shared public workflow proves the North Star with a
 > real bounded file across two isolated clients and a fresh verifier process.
+
+That entry condition is now implemented locally. The governing promotion rule is:
+
+> No availability or confidentiality claim is promoted until the same public
+> workflow proves its declared failure domains and data-exposure boundary.
 
 Security hardening is deferred, not reversed. Existing capability ownership,
 private-key containment, exact-readback, bounded-input, and fail-closed browser
@@ -49,10 +62,10 @@ usable and stable.
 | --- | --- | --- | --- |
 | S0/S1 | Historical baseline and Participant Core retained | Existing exact-commit receipts | Historical promotion only |
 | S2 | Module-private durable capability, first-await ownership, key-redacted diagnostics | Node plus Chromium/Firefox conforming-caller matrices | Historical receipt only; XSS-resistant sign-once remains **HOLD** |
-| S3 | Generated profile and real relay fragment data plane | 1 MiB reconstruction, recovery corpus, real relay message test | Historical recovery promoted; new data-plane integration not yet product-proven |
+| S3 | Generated profile and real relay fragment data plane | 1 MiB reconstruction, recovery corpus, real relay message test | Product-integrated local candidate; independent provider topology remains unproven |
 | S4 | Private activation capability, exact readback, key-redacted recovery | Node plus Chromium/Firefox cryptographic and rotation gates | Historical receipt only; revised claim remains **HOLD** |
-| [S5](https://github.com/YongHwan2161/mortalos/issues/34) | Authority-free `@mortal-os/core` package and verification CLI | Export/pack/install/CLI tests | Merged, not published and not product-integrated |
-| [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and 2-of-3 content custody | Cross-process verification and tamper/fork rejection | Merged, but no end-to-end create/continue receipt |
+| [S5](https://github.com/YongHwan2161/mortalos/issues/34) | Authority-free default SDK plus explicit continuity capability subpath and full CLI | Export/pack/install/full-flow tests | Product-integrated candidate; publish and promotion pending |
+| [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and 2-of-3 content custody | Cross-process verification, handoff, exact recovery, and tamper/fork rejection | End-to-end candidate complete; integrated receipt pending |
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 
@@ -75,7 +88,7 @@ Stage coordination remains subordinate to this SSOT:
 
 Use one implementation path in the SDK, CLI, and Lab to prove this sequence:
 
-1. Endpoint A selects a real bounded file and creates the organism and encrypted
+1. Endpoint A selects a real bounded file and creates the organism and canonical
    state package.
 2. Endpoint B creates its own non-extractable key and accepts a canonical custody
    handoff; no private key crosses clients.
@@ -88,26 +101,27 @@ Use one implementation path in the SDK, CLI, and Lab to prove this sequence:
 
 Strict pass criteria:
 
-- the same scenario code drives Node integration, actual Chromium, and the Lab;
+- the same core and ordered scenario contract drive Node integration, actual
+  Chromium, and the built Lab;
 - the file is supplied at runtime, not embedded as a test fixture;
 - A's process is actually gone before B continues;
 - one missing or corrupt content copy recovers exact bytes, while one remaining
   copy, a valid fork, stale lineage, or altered chunk fails closed;
 - no internal `src/` authority module is imported by the product surface; public
   SDK boundaries are used throughout;
-- EN/KO users can finish the primary flow without opening Advanced evidence;
-- median local completion across ten clean runs is recorded, with zero flaky run
-  and no model call.
+- the programmatic Lab harness completes without a model call. A visible EN/KO
+  product journey and ten-run UX timing remain P1, not a hidden P0 claim.
 
 ### P0 — Complete the public package surface
 
-- add explicit create, inspect, handoff, recover, and continue orchestration APIs;
-- add CLI commands for the same operations with machine-readable JSON output;
-- add one minimal consumer example installed from the packed tarball;
-- retain the authority-free export allowlist and no-private-material invariant.
+- expose create, inspect, handoff, recover, and continue orchestration through the
+  explicit `@mortal-os/core/continuity` capability subpath;
+- expose matching CLI commands with machine-readable JSON output;
+- run the complete scenario from a clean packed-tarball consumer;
+- retain the authority-free default export and no-private-material invariant.
 
-Pass when a clean temporary consumer performs the full P0 vertical without a
-relative repository import and Windows plus Ubuntu package gates agree.
+Local Windows acceptance is implemented. Exact-head CI must still prove the clean
+temporary consumer on the repository's supported runner matrix before promotion.
 
 ### P1 — Make the Lab a product demonstration
 
@@ -306,13 +320,15 @@ together to a separate origin/service or hardware authorization domain.
 ## 12. S5 — SDK and CLI
 
 Goal: installable consumers create, inspect, hand off, recover, verify, and continue
-through one reviewed, authority-free orchestration surface.
+through an explicit capability surface while the default import remains
+authority-free.
 
 Pass criteria:
 
-- package `exports` exposes only the SDK and protocol profile;
-- SDK export names exactly match the allowlist and contain no authority, store,
-  decrypt-key, or private-key primitive;
+- package `exports` exposes the verification SDK, continuity capability subpath,
+  and protocol profile only;
+- default SDK names exactly match the authority-free allowlist; the explicit
+  continuity subpath exposes signer capabilities but never private key material;
 - CLI exposes the P0 create/handoff/recover/continue workflow and deterministic
   verification with stable JSON output;
 - packed artifacts omit lab, evidence, tests, scripts, agents, and GitHub internals;
@@ -321,8 +337,8 @@ Pass criteria:
 
 ## 13. S6 — Continuity Capsule
 
-Goal: one canonical bounded artifact carries enough public evidence and encrypted
-resource state to verify and continue elsewhere without private authority.
+Goal: one canonical bounded artifact carries enough public evidence and exact
+resource state to verify and continue elsewhere without private signing authority.
 
 Pass criteria:
 
@@ -332,8 +348,10 @@ Pass criteria:
 - mutation, truncation, stale lineage, wrong chunk, or wrong receipt fails before
   activation;
 - serialized bytes contain no private key, `CryptoKey`, PKCS#8, or raw epoch key;
-- the Lab and packed CLI produce and consume the same canonical Capsule bytes for
-  the P0 user-selected resource scenario.
+- the Lab and packed CLI produce and consume canonical Capsule bytes for the P0
+  user-selected resource scenario;
+- confidentiality is not inferred from Capsule custody; encrypted product Capsules
+  require an explicit S4 composition step.
 
 ## 14. S7 — Independent counter authority and topology
 
@@ -408,11 +426,11 @@ Future source changes must repeat the same exact-snapshot gate.
 
 ## 17. Completion and explicit nonclaims
 
-The next product milestone is complete only when the P0 real-file vertical and
-public package surface pass their strict criteria, then receive one integrated
-receipt, independent review, expected-head merge, post-merge CI, and public
-readback. S2/S4 strong-custody and S7 physical-independence claims remain **HOLD**
-without blocking ordinary product iteration.
+The P0 real-file vertical and public package surface are implemented locally but
+remain promotion **HOLD** until exact-head CI, immutable independent review,
+expected-head merge, and post-merge readback pass. S2/S4 strong-custody, product
+Capsule confidentiality, and S7 physical-independence claims remain **HOLD** without
+blocking ordinary product iteration.
 
 Explicit nonclaims:
 

@@ -13,7 +13,8 @@ relay, host, UI, or model as the source of truth.
 
 Main contains the unified Participant Core, crash-safe durable quorum, exact S3
 recovery over real relay fragments, confidential S4 state, an authority-free
-SDK/CLI, Continuity Capsules, and a replicated counter-authority model. The revised
+verification SDK plus an explicit continuity capability subpath, Continuity Capsules,
+and a replicated counter-authority model. The revised
 S2/S4 claims remain deliberately narrower than their merged implementation until
 new stage receipts promote them. The
 [claim matrix](docs/CLAIM_MATRIX.md) distinguishes
@@ -22,13 +23,16 @@ unclaimed behavior.
 
 ## Current development focus
 
-The next milestone is one real product vertical, not another isolated protocol
-layer: select a bounded file on endpoint A, move custody to endpoint B, close A,
-recover the exact resource from quorum content copies, commit the next transition
-on B, and verify the result from a clean CLI process. Today the SDK, verification
-CLI, Capsule, chunk data plane, and Lab prove their own contracts but do not yet
-expose that complete workflow through one public API. The strict goals and pass
-criteria are in the [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
+The real-file product vertical now exists in one core path: endpoint A selects a
+bounded runtime file, endpoint B accepts custody with a distinct key, A exits, and B
+recovers exact bytes from two of three canonical copies before committing the next
+transition. Node uses separate endpoint processes, Chromium uses separate persistent
+browser endpoints and the built Lab, and a clean `npm pack` consumer runs the matching
+CLI without repository-relative imports. Promotion still requires exact-head CI,
+independent review, merge, and any claimed live deployment readback. The next root
+gap is real failure-domain independence: the three local copies prove quorum logic,
+not independent providers or administrators. See the
+[implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof
 
@@ -55,7 +59,7 @@ proof.
 | L4 — deterministic state | JavaScript and an independently written Python verifier reproduce byte-identical next-state and receipt records; tamper and limits fail atomically. |
 | L5 — recoverable resource state | A canonical manifest binds a bounded resource to lineage; any two logical replicas reconstruct the exact 1 MiB reference after the third replica and primary relay are deleted. S3 is promoted. |
 | S4 revised implementation — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass; a new stage receipt and isolated-signer claim remain separate. |
-| S5/S6 merged implementation — portable use | The SDK/CLI surface contains no authority primitive, and a canonical Continuity Capsule binds lineage plus exact encrypted resource state for verification in another process. The end-to-end create/continue product path is not implemented yet. |
+| S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
 | S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 Capsule custody tolerates one corrupt/lost copy and rejects a valid fork. This is not evidence of independent providers or administrators. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
@@ -108,6 +112,8 @@ npm run test:distributed-counter
 npm run test:security-fuzz
 npm run test:sdk
 npm run test:capsule
+npm run test:continuity
+npm run verify:continuity-browser
 npm run test:browser-capabilities
 npm run test:browser-parity
 npm run verify:security-boundaries
@@ -119,6 +125,36 @@ npm run verify:cost-controls
 npm run test:chromium
 npm run test:coverage
 ```
+
+## Public continuity API and CLI
+
+The default `@mortal-os/core` export remains verification-only. Product code opts
+into authority use explicitly:
+
+```js
+import {
+  continuity,
+  createContinuityAuthority
+} from "@mortal-os/core/continuity";
+
+const authority = await createContinuityAuthority();
+const created = await continuity.create({ authority, resourceBytes });
+const verified = continuity.inspect({ capsuleBytes: created.capsule_bytes });
+```
+
+The CLI exposes the same lifecycle as machine-readable commands:
+
+```text
+mortalos create --resource FILE --authority A.key --out A.mosc --copies copies-a
+mortalos handoff request --capsule A.mosc --authority B.key --out request.json
+mortalos handoff propose --capsule A.mosc --authority A.key --request request.json --out proposal.json
+mortalos handoff accept --capsule A.mosc --authority B.key --proposal proposal.json --out B.mosc --copies copies-b
+mortalos recover --authority B.key --expected-head HASH --out-resource recovered.bin --copy COPY --copy COPY
+mortalos continue --authority B.key --capsule B.mosc --expected-head HASH --resource recovered.bin --out C.mosc --copies copies-c
+```
+
+CLI private keys remain endpoint-local authority files. Capsules, handoff messages,
+copy artifacts, SDK results, and CLI JSON never contain that private material.
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below

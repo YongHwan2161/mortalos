@@ -21,6 +21,7 @@ export * from "./transport/chunk-data-plane.mjs";
 export * from "./transport/protocol.mjs";
 export * from "./capsule.mjs";
 export * from "./custody.mjs";
+export * from "./continuity.mjs";
 export * from "./distributed/quorum-counter-store.mjs";
 export {
   isValidatedAcceptance,
