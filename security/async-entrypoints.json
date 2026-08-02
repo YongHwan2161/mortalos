@@ -32,7 +32,7 @@
       "ownership_primitives": ["ownSigningRequest"],
       "post_await_forbidden": ["request"],
       "test_file": "test/continuity.test.mjs",
-      "test_marker": "local CLI authority serializes conflicting cross-process sign-once attempts"
+      "test_marker": "local CLI authority serializes concurrent creation and conflicting cross-process sign-once attempts"
     },
     {
       "file": "lab/participant/live-endpoint.mjs",
@@ -286,7 +286,7 @@
 
     { "file": "src/confidential/recovery.mjs", "entrypoint": "MemoryConfidentialEpochStore.async #commitActive", "mode": "module-private-owned-state", "reason": "Commits a cloned candidate through a registered module-private capability." },
 
-    { "file": "src/continuity.mjs", "entrypoint": "export async function createContinuityAuthority", "mode": "no-borrowed-mutable-input", "reason": "Accepts no caller input and creates a branded non-extractable signing authority." },
+    { "file": "src/continuity.mjs", "entrypoint": "export async function createContinuityAuthority", "mode": "no-borrowed-mutable-input", "reason": "Accepts no caller input and creates a branded non-extractable signing authority whose sign-once journal uses captured Map operations." },
     { "file": "src/continuity.mjs", "entrypoint": "export async function handoffContinuity", "mode": "delegates-to-audited-boundary", "reason": "Dispatches synchronously to phase-specific routines that snapshot all caller input before signing suspension." },
 
     { "file": "src/distributed/quorum-counter-store.mjs", "entrypoint": "QuorumCounterAuthorityStore.async #inspect", "mode": "module-private-owned-state", "reason": "Operates on private replica records and returns a detached cloned value." },

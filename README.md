@@ -25,13 +25,14 @@ unclaimed behavior.
 
 The real-file product vertical now exists in one core path: endpoint A selects a
 bounded runtime file, endpoint B accepts custody with a distinct key, A exits, and B
-recovers exact bytes from two of three canonical copies before committing the next
+recovers exact bytes from two of three current-custodian-signed copy envelopes before committing the next
 transition. Node uses separate endpoint processes, Chromium uses separate persistent
 browser endpoints and the built Lab, and a clean `npm pack` consumer runs the matching
 CLI without repository-relative imports. Promotion still requires exact-head CI,
 independent review, merge, and any claimed live deployment readback. The next root
-gap is real failure-domain independence: the three local copies prove quorum logic,
-not independent providers or administrators. See the
+gap is real failure-domain independence: distinct signed logical copy/provider
+identities prevent one file from being counted twice, but the local adapters prove
+quorum logic, not independent providers or administrators. See the
 [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof
@@ -60,7 +61,7 @@ proof.
 | L5 — recoverable resource state | A canonical manifest binds a bounded resource to lineage; any two logical replicas reconstruct the exact 1 MiB reference after the third replica and primary relay are deleted. S3 is promoted. |
 | S4 revised implementation — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass; a new stage receipt and isolated-signer claim remain separate. |
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
-| S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 Capsule custody tolerates one corrupt/lost copy and rejects a valid fork. This is not evidence of independent providers or administrators. |
+| S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
@@ -158,7 +159,16 @@ copy artifacts, SDK results, and CLI JSON never contain that private material.
 Each authority file is serialized by an exclusive sibling lock before its sign-once
 journal is flushed and atomically replaced. A conflicting second process fails
 closed; a lock left by a crashed signer is never guessed stale and requires explicit
-operator recovery.
+operator recovery. Persisted authority and custodian records use exact-key validation,
+the sign-once journal is normalized into a null-prototype own-data record and read
+with captured JSON/object operations, and public custodian objects are rebuilt from
+`key_id` and `public_key` only.
+
+`mortalos custody verify` and `recoverContinuityCapsuleQuorum` remain compatibility
+tools for raw canonical Capsule integrity; byte-identical raw inputs do not prove
+independent copies. Product recovery uses signed `mortalos-continuity-copy/1`
+envelopes through `mortalos recover` or `recoverContinuityCopyQuorum`, and requires
+distinct copy and logical-provider identities.
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { fork, spawn } from "node:child_process";
 import { generateKeyPairSync, sign } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -92,6 +92,33 @@ function nodeAuthoritySigner(authorityPath, byte) {
         tuple: "pulse.race-organism.7.parent"
       });
       process.stdout.write("signed");
+    } catch (error) {
+      process.stderr.write(String(error?.code ?? error));
+      process.exitCode = 17;
+    }
+  `;
+  const child = spawn(process.execPath, ["--input-type=module", "--eval", source], {
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  let stderr = "";
+  let stdout = "";
+  child.stderr.setEncoding("utf8");
+  child.stdout.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => { stderr += chunk; });
+  child.stdout.on("data", (chunk) => { stdout += chunk; });
+  return new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", (code) => resolve({ code, stderr, stdout }));
+  });
+}
+
+function nodeAuthorityCreator(authorityPath) {
+  const moduleUrl = new URL("../cli/node-authority.mjs", import.meta.url).href;
+  const source = `
+    const { loadNodeAuthority } = await import(${JSON.stringify(moduleUrl)});
+    try {
+      const authority = await loadNodeAuthority(${JSON.stringify(authorityPath)}, { create: true });
+      process.stdout.write(authority.custodian.key_id);
     } catch (error) {
       process.stderr.write(String(error?.code ?? error));
       process.exitCode = 17;
@@ -295,6 +322,15 @@ test("single copy, stale lineage, wrong authority, and divergent valid capsules 
   assert.throws(
     () => recoverContinuity({
       authority: fixture.authorityB,
+      copies: [fixture.handed.copies[0], fixture.handed.copies[0]],
+      expectedHeadHash: fixture.handed.head_hash,
+      quorum: 2
+    }),
+    (error) => error.code === "E_CONTINUITY_DUPLICATE_COPY"
+  );
+  assert.throws(
+    () => recoverContinuity({
+      authority: fixture.authorityA,
       copies: fixture.created.copies,
       expectedHeadHash: fixture.handed.head_hash,
       quorum: 2
@@ -332,18 +368,25 @@ test("single copy, stale lineage, wrong authority, and divergent valid capsules 
   assert.throws(
     () => recoverContinuity({
       authority: malicious,
-      copies: [left.capsule_bytes, left.capsule_bytes, right.capsule_bytes],
+      copies: [left.copies[0], left.copies[1], right.copies[2]],
       quorum: 2
     }),
     (error) => error.code === "E_CUSTODY_EQUIVOCATION"
   );
 });
 
-test("local CLI authority serializes conflicting cross-process sign-once attempts", async (t) => {
+test("local CLI authority serializes concurrent creation and conflicting cross-process sign-once attempts", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "mortalos-authority-race-"));
-  const authorityPath = join(directory, "authority.json");
+  const authorityPath = join(directory, "missing-parent", "authority.json");
   t.after(() => rm(directory, { force: true, recursive: true }));
-  await loadNodeAuthority(authorityPath, { create: true });
+  const created = await Promise.all(Array.from(
+    { length: 4 },
+    () => nodeAuthorityCreator(authorityPath)
+  ));
+  assert.equal(created.every(({ code, stderr }) => code === 0 && stderr === ""), true);
+  assert.equal(new Set(created.map(({ stdout }) => stdout)).size, 1);
+  const authorityDocument = JSON.parse(await readFile(authorityPath, "utf8"));
+  assert.equal(authorityDocument.custodian.key_id, created[0].stdout);
   const tuple = "pulse.race-organism.7.parent";
   const results = await Promise.all([
     nodeAuthoritySigner(authorityPath, 1),
@@ -355,11 +398,111 @@ test("local CLI authority serializes conflicting cross-process sign-once attempt
   assert.equal(signed.length, 1);
   assert.equal(rejected.length, 1);
   const document = JSON.parse(await readFile(authorityPath, "utf8"));
+  assert.equal(document.custodian.key_id, created[0].stdout);
   assert.equal(Object.keys(document.sign_once).length, 1);
   assert.ok([
     encodeBase64Url(new Uint8Array([1])),
     encodeBase64Url(new Uint8Array([2]))
   ].includes(document.sign_once[tuple]));
+});
+
+test("local CLI authority stale lock fails closed without identity or journal mutation", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "mortalos-authority-lock-"));
+  const authorityPath = join(directory, "nested", "authority.json");
+  const lockPath = `${authorityPath}.lock`;
+  t.after(() => rm(directory, { force: true, recursive: true }));
+  await mkdir(join(directory, "nested"), { recursive: true });
+  await writeFile(lockPath, "operator-owned-stale-lock", "utf8");
+  await assert.rejects(
+    loadNodeAuthority(authorityPath, { create: true }),
+    (error) => error.code === "E_CONTINUITY_AUTHORITY_LOCK"
+  );
+  await assert.rejects(readFile(authorityPath), (error) => error.code === "ENOENT");
+  assert.equal(await readFile(lockPath, "utf8"), "operator-owned-stale-lock");
+
+  await rm(lockPath);
+  const authority = await loadNodeAuthority(authorityPath, { create: true });
+  const before = await readFile(authorityPath, "utf8");
+  await writeFile(lockPath, "operator-owned-stale-lock", "utf8");
+  await assert.rejects(
+    authority.sign({ message: new Uint8Array([7]), tuple: "pulse.lock.1.parent" }),
+    (error) => error.code === "E_CONTINUITY_AUTHORITY_LOCK"
+  );
+  assert.equal(await readFile(authorityPath, "utf8"), before);
+  assert.equal(await readFile(lockPath, "utf8"), "operator-owned-stale-lock");
+});
+
+test("local CLI authority rejects persisted private-material smuggling in public custodian", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "mortalos-authority-redaction-"));
+  const authorityPath = join(directory, "authority.json");
+  t.after(() => rm(directory, { force: true, recursive: true }));
+  await loadNodeAuthority(authorityPath, { create: true });
+  const document = JSON.parse(await readFile(authorityPath, "utf8"));
+  document.custodian.private_pkcs8_base64url = document.private_pkcs8_base64url;
+  await writeFile(authorityPath, `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  await assert.rejects(
+    loadNodeAuthority(authorityPath),
+    /local authority custodian has unexpected keys/u
+  );
+
+  delete document.custodian.private_pkcs8_base64url;
+  await writeFile(authorityPath, `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  const authority = await loadNodeAuthority(authorityPath);
+  assert.deepEqual(Object.keys(authority.custodian).sort(), ["key_id", "public_key"]);
+  assert.doesNotMatch(JSON.stringify(authority), /private|pkcs8/iu);
+});
+
+test("local CLI authority journal rejects transient JSON and Object prototype lies", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "mortalos-authority-prototype-"));
+  const authorityPath = join(directory, "authority.json");
+  t.after(() => rm(directory, { force: true, recursive: true }));
+  const authority = await loadNodeAuthority(authorityPath, { create: true });
+  const tuple = "pulse.attack.slot";
+  await authority.sign({ message: new Uint8Array([1]), tuple });
+  const jsonParse = JSON.parse;
+  let jsonError = null;
+  try {
+    JSON.parse = function poisonedJsonParse(...args) {
+      JSON.parse = jsonParse;
+      const document = jsonParse(...args);
+      document.sign_once = {};
+      return document;
+    };
+    try {
+      await authority.sign({ message: new Uint8Array([2]), tuple });
+    } catch (error) {
+      jsonError = error;
+    }
+  } finally {
+    JSON.parse = jsonParse;
+  }
+  assert.ok([
+    "E_CONTINUITY_EQUIVOCATION",
+    "E_CONTINUITY_RUNTIME"
+  ].includes(jsonError?.code));
+
+  let prototypeError = null;
+  try {
+    Object.defineProperty(Object.prototype, tuple, {
+      configurable: true,
+      get() { return undefined; },
+      set() {}
+    });
+    try {
+      await authority.sign({ message: new Uint8Array([2]), tuple });
+    } catch (error) {
+      prototypeError = error;
+    }
+  } finally {
+    delete Object.prototype[tuple];
+  }
+  assert.equal(prototypeError?.code, "E_CONTINUITY_RUNTIME");
+  await assert.rejects(
+    authority.sign({ message: new Uint8Array([2]), tuple }),
+    (error) => error.code === "E_CONTINUITY_EQUIVOCATION"
+  );
+  const document = JSON.parse(await readFile(authorityPath, "utf8"));
+  assert.equal(document.sign_once[tuple], encodeBase64Url(new Uint8Array([1])));
 });
 
 test("create owns resource bytes and signer capability before the first await", async () => {
@@ -392,5 +535,76 @@ test("create owns resource bytes and signer capability before the first await", 
       quorum: 2
     }).resource_bytes,
     expected
+  );
+});
+
+test("signed-copy quorum rejects duplicate identity under hostile Set and Array prototypes", async () => {
+  const fixture = await transferred(runtimeResource(32_769));
+  const setHas = Set.prototype.has;
+  const setAdd = Set.prototype.add;
+  const arrayMap = Array.prototype.map;
+  const arraySome = Array.prototype.some;
+  let caught = null;
+  try {
+    Set.prototype.has = () => false;
+    Set.prototype.add = function poisonedSetAdd() { return this; };
+    Array.prototype.map = function poisonedArrayMap() { return [this[0], this[0]]; };
+    Array.prototype.some = () => false;
+    try {
+      recoverContinuity({
+        authority: fixture.authorityB,
+        copies: [fixture.handed.copies[0], fixture.handed.copies[0]],
+        expectedHeadHash: fixture.handed.head_hash,
+        quorum: 2
+      });
+    } catch (error) {
+      caught = error;
+    }
+  } finally {
+    Set.prototype.has = setHas;
+    Set.prototype.add = setAdd;
+    Array.prototype.map = arrayMap;
+    Array.prototype.some = arraySome;
+  }
+  assert.equal(caught?.code, "E_CONTINUITY_RUNTIME");
+});
+
+test("browser authority sign-once survives transient Map prototype replacement", async () => {
+  const inner = await createContinuityAuthority();
+  const mapGet = Map.prototype.get;
+  const mapSet = Map.prototype.set;
+  const authority = Object.freeze({
+    custodian: inner.custodian,
+    async sign(request) {
+      Map.prototype.get = () => undefined;
+      Map.prototype.set = function poisonedMapSet() { return this; };
+      try {
+        return inner.sign(request);
+      } finally {
+        Map.prototype.get = mapGet;
+        Map.prototype.set = mapSet;
+      }
+    }
+  });
+  const created = await createContinuity({
+    authority,
+    resourceBytes: runtimeResource(32_769),
+    transitionId: "map-prototype-create"
+  });
+  const left = await continueContinuity({
+    authority,
+    capsuleBytes: created.capsule_bytes,
+    expectedHeadHash: created.head_hash,
+    transitionId: "map-prototype-left"
+  });
+  assert.equal(left.sequence, "2");
+  await assert.rejects(
+    continueContinuity({
+      authority,
+      capsuleBytes: created.capsule_bytes,
+      expectedHeadHash: created.head_hash,
+      transitionId: "map-prototype-right"
+    }),
+    (error) => error.code === "E_CONTINUITY_EQUIVOCATION"
   );
 });

@@ -8,6 +8,7 @@ import * as continuitySdk from "../sdk/continuity.mjs";
 test("S5 SDK exports only the reviewed authority-free surface", () => {
   assert.deepEqual(Object.keys(sdk).sort(), [
     "CONTINUITY_CAPSULE_FORMAT",
+    "CONTINUITY_COPY_FORMAT",
     "CUSTODY_LIMITS",
     "ContinuityCapsuleError",
     "PROTOCOL_PROFILE",
@@ -17,9 +18,11 @@ test("S5 SDK exports only the reviewed authority-free surface", () => {
     "createStatePackageInput",
     "isValidatedAcceptance",
     "recoverContinuityCapsuleQuorum",
+    "recoverContinuityCopyQuorum",
     "validateGenesis",
     "validatePulse",
     "verifyContinuityCapsule",
+    "verifyContinuityCopy",
     "verifyStatePackage"
   ]);
   assert.doesNotMatch(Object.keys(sdk).join(" "), /private|CryptoKey|decrypt|authority|store/i);

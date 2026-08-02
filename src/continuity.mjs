@@ -15,12 +15,20 @@ import {
   verifyEd25519
 } from "./crypto.mjs";
 import { createContinuityCapsule, verifyContinuityCapsule } from "./capsule.mjs";
-import { CUSTODY_LIMITS, recoverContinuityCapsuleQuorum } from "./custody.mjs";
+import {
+  CONTINUITY_COPY_FORMAT,
+  CUSTODY_LIMITS,
+  recoverContinuityCopyQuorum
+} from "./custody.mjs";
 import { PROTOCOL_PROFILE } from "./generated/protocol-profile.mjs";
 import { createLineage } from "./lineage.mjs";
 import {
   copyBoundedOwnDataArray,
+  createMap,
   freeze,
+  mapClear,
+  mapGet,
+  mapSet,
   ownDataArrayLength,
   realmIntrinsicsIntact,
   snapshotDataMethod,
@@ -99,6 +107,10 @@ function fail(code, detail) {
   throw new ContinuityError(code, detail);
 }
 
+function assertContinuityRealm() {
+  if (!realmIntrinsicsIntact()) fail("E_CONTINUITY_RUNTIME", "realm-integrity");
+}
+
 function ownBytes(value, maximum, label) {
   try {
     return snapshotBytes(value, maximum);
@@ -138,6 +150,7 @@ function ownJson(value, label) {
 }
 
 function exactKeys(value, expected, label) {
+  assertContinuityRealm();
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     fail("E_CONTINUITY_INPUT", `${label}-object`);
   }
@@ -160,6 +173,7 @@ function ownCustodian(value, label = "custodian") {
 function snapshotAuthority(authority, label = "authority") {
   const [custodian] = snapshotNamedOwnDataValues(authority, ["custodian"], label);
   const sign = snapshotDataMethod(authority, "sign", label);
+  assertContinuityRealm();
   return freeze({ custodian: ownCustodian(custodian, `${label}-custodian`), sign });
 }
 
@@ -200,7 +214,9 @@ async function assertPrivateKey(privateKey) {
   let rejected = false;
   try {
     await reflectApply(subtleExportKey, subtle, ["pkcs8", privateKey]);
+    assertContinuityRealm();
   } catch {
+    assertContinuityRealm();
     rejected = true;
   }
   if (!rejected) fail("E_CONTINUITY_CRYPTO", "private-export-succeeded");
@@ -213,17 +229,21 @@ export async function createContinuityAuthority() {
   const generated = await reflectApply(subtleGenerateKey, subtle, [
     { name: "Ed25519" }, false, ["sign", "verify"]
   ]);
+  assertContinuityRealm();
   await assertPrivateKey(generated.privateKey);
-  const raw = new Uint8Array(await reflectApply(subtleExportKey, subtle, ["raw", generated.publicKey]));
+  assertContinuityRealm();
+  const exported = await reflectApply(subtleExportKey, subtle, ["raw", generated.publicKey]);
+  assertContinuityRealm();
+  const raw = new Uint8Array(exported);
   const publicKey = `ed25519:${encodeBase64Url(raw)}`;
   const custodian = freeze({ key_id: derivePeerId(publicKey), public_key: publicKey });
-  const journal = new Map();
+  const journal = createMap();
   let privateKey = generated.privateKey;
   const authority = {
     custodian,
     destroy() {
       privateKey = null;
-      journal.clear();
+      mapClear(journal);
     },
     async sign(request) {
       const [messageSource, tupleSource] = snapshotNamedOwnDataValues(
@@ -235,13 +255,15 @@ export async function createContinuityAuthority() {
       const tuple = ownTuple(tupleSource);
       if (!privateKey) fail("E_CONTINUITY_AUTHORITY", "authority-destroyed");
       const body = encodeBase64Url(message);
-      const prior = journal.get(tuple);
+      const prior = mapGet(journal, tuple);
       if (prior && prior !== body) fail("E_CONTINUITY_EQUIVOCATION", tuple);
-      journal.set(tuple, body);
+      mapSet(journal, tuple, body);
       await assertPrivateKey(privateKey);
+      assertContinuityRealm();
       const signature = new Uint8Array(
         await reflectApply(subtleSign, subtle, ["Ed25519", privateKey, message])
       );
+      assertContinuityRealm();
       return freeze({
         key_id: custodian.key_id,
         signature: `ed25519:${encodeBase64Url(signature)}`
@@ -268,6 +290,7 @@ export function describeContinuityAuthority(authority) {
 async function signWithAuthority(authority, messageSource, tuple) {
   const message = ownBytes(messageSource, 4_096, "authority-message");
   const result = await authority.sign(freeze({ message, tuple }));
+  assertContinuityRealm();
   const owned = ownJson(result, "authority-result");
   exactKeys(owned, ["key_id", "signature"], "authority-result");
   if (
@@ -315,6 +338,7 @@ function pulseBody({ eventKind, genomeHash, nextCustodians, organismId, parent, 
 
 function openCapsule(capsuleSource) {
   const capsuleBytes = ownBytes(capsuleSource, PROTOCOL_PROFILE.provider.object_bytes, "capsule");
+  assertContinuityRealm();
   const verified = verifyContinuityCapsule(capsuleBytes);
   const capsuleDocument = parseJsonBytes(capsuleBytes, {
     maxBytes: PROTOCOL_PROFILE.provider.object_bytes,
@@ -368,7 +392,7 @@ function memoryRelayTransport() {
   });
 }
 
-async function materializeCopies(records, statePackage) {
+async function materializeCopies(authority, records, statePackage) {
   const recordSnapshot = ownJson(records, "records");
   const chunkCount = ownDataArrayLength(statePackage.chunkBytes, "state package chunks");
   const ownedChunks = copyBoundedOwnDataArray(
@@ -382,14 +406,17 @@ async function materializeCopies(records, statePackage) {
   if (!realmIntrinsicsIntact()) fail("E_CONTINUITY_RUNTIME", "realm-integrity");
   const copies = [];
   const providers = [];
-  for (let provider = 0; provider < 3; provider += 1) {
+  let canonicalCapsule = null;
+  for (let provider = 0; provider < CUSTODY_LIMITS.signed_copies; provider += 1) {
     const transport = memoryRelayTransport();
     const descriptors = await publishStatePackageChunks({ chunkBytes: ownedChunks, transport });
+    assertContinuityRealm();
     const adapter = new RelayChunkRecoveryAdapter({ descriptors, transport });
     const recoveredChunks = [];
     let fragmentCount = 0;
     for (const descriptor of descriptors) {
       const chunk = await adapter.readChunk(descriptor.chunk_digest);
+      assertContinuityRealm();
       if (!chunk) fail("E_CONTINUITY_TRANSPORT", `provider-${provider}-chunk`);
       recoveredChunks.push(chunk);
       fragmentCount += descriptor.message_ids.length;
@@ -398,26 +425,58 @@ async function materializeCopies(records, statePackage) {
       records: recordSnapshot,
       statePackage: { chunkBytes: recoveredChunks, inputBytes, manifestBytes, receiptBytes }
     });
-    copies.push(new Uint8Array(capsule.bytes));
+    const capsuleBytes = new Uint8Array(capsule.bytes);
+    if (canonicalCapsule && !equalBytes(capsuleBytes, canonicalCapsule)) {
+      fail("E_CONTINUITY_TRANSPORT", "provider-copy-mismatch");
+    }
+    canonicalCapsule ??= capsuleBytes;
+    const inspected = inspectContinuity({ capsuleBytes });
+    const copyId = `copy-${provider + 1}`;
+    const providerId = `logical-provider-${provider + 1}`;
+    const descriptor = freeze({
+      capsule_id: inspected.capsule_id,
+      copy_id: copyId,
+      head_hash: inspected.head_hash,
+      organism_id: inspected.organism_id,
+      provider_id: providerId
+    });
+    const attestation = await signWithAuthority(
+      authority,
+      canonicalBytes(descriptor),
+      `copy.${inspected.organism_id}.${inspected.head_hash}.${copyId}`
+    );
+    const copyEnvelope = canonicalBytes({
+      attestation,
+      capsule_base64url: encodeBase64Url(capsuleBytes),
+      descriptor,
+      format: CONTINUITY_COPY_FORMAT
+    });
+    if (copyEnvelope.byteLength > CUSTODY_LIMITS.copy_bytes) {
+      fail("E_CONTINUITY_TRANSPORT", `provider-${provider}-copy-limit`);
+    }
+    copies.push(new Uint8Array(copyEnvelope));
     providers.push(freeze({
       chunk_count: descriptors.length,
+      copy_id: copyId,
       fragment_count: fragmentCount,
       provider: provider + 1,
+      provider_id: providerId,
       transport: "relay-fragment-data-plane"
     }));
   }
-  if (!copies.every((copy) => equalBytes(copy, copies[0]))) {
-    fail("E_CONTINUITY_TRANSPORT", "provider-copy-mismatch");
-  }
-  return freeze({ copies: freeze(copies), provider_receipts: freeze(providers) });
+  return freeze({
+    capsule_bytes: new Uint8Array(canonicalCapsule),
+    copies: freeze(copies),
+    provider_receipts: freeze(providers)
+  });
 }
 
 function resultFromMaterialized(materialized, extra = {}) {
-  const inspected = inspectContinuity({ capsuleBytes: materialized.copies[0] });
+  const inspected = inspectContinuity({ capsuleBytes: materialized.capsule_bytes });
   return freeze({
     ...inspected,
     ...extra,
-    capsule_bytes: new Uint8Array(materialized.copies[0]),
+    capsule_bytes: new Uint8Array(materialized.capsule_bytes),
     copies: materialized.copies,
     format: CONTINUITY_RESULT_FORMAT,
     provider_receipts: materialized.provider_receipts
@@ -431,6 +490,7 @@ function snapshotContinuityCreateInvocation(options) {
       ["authority", "avatarSeed", "nonce", "resourceBytes", "transitionId"],
       "continuity create options"
     );
+  assertContinuityRealm();
   const authority = snapshotAuthority(authoritySource, "origin authority");
   const resourceBytes = ownBytes(resourceSource, PROTOCOL_PROFILE.state.resource_bytes, "resource");
   if (resourceBytes.byteLength < 1) fail("E_CONTINUITY_INPUT", "resource-empty");
@@ -495,7 +555,9 @@ export async function createContinuity(options) {
     { envelope: birth, payload: {} },
     { envelope: stateEnvelope, payload: statePackage.payload }
   ];
-  return resultFromMaterialized(await materializeCopies(records, statePackage));
+  const materialized = await materializeCopies(authority, records, statePackage);
+  assertContinuityRealm();
+  return resultFromMaterialized(materialized);
 }
 
 export function inspectContinuity(options) {
@@ -504,6 +566,7 @@ export function inspectContinuity(options) {
     ["capsuleBytes"],
     "continuity inspect options"
   );
+  assertContinuityRealm();
   const opened = openCapsule(capsuleSource);
   const head = opened.lineage.head;
   return freeze({
@@ -527,6 +590,7 @@ async function requestHandoff(options) {
     ["authority", "capsuleBytes", "nonce"],
     "continuity handoff request options"
   );
+  assertContinuityRealm();
   const authority = snapshotAuthority(authoritySource, "successor authority");
   const opened = openCapsule(capsuleSource);
   const nonce = nonceSource === undefined
@@ -546,6 +610,7 @@ async function proposeHandoff(options) {
     ["authority", "capsuleBytes", "request"],
     "continuity handoff propose options"
   );
+  assertContinuityRealm();
   const authority = snapshotAuthority(authoritySource, "origin authority");
   const opened = openCapsule(capsuleSource);
   const request = ownJson(requestSource, "handoff-request");
@@ -607,6 +672,7 @@ async function acceptHandoff(options) {
     ["authority", "capsuleBytes", "proposal"],
     "continuity handoff accept options"
   );
+  assertContinuityRealm();
   const authority = snapshotAuthority(authoritySource, "successor authority");
   const opened = openCapsule(capsuleSource);
   const proposal = ownJson(proposalSource, "handoff-proposal");
@@ -637,7 +703,8 @@ async function acceptHandoff(options) {
   });
   if (appended.status !== "accept") fail("E_CONTINUITY_HANDOFF", appended.code);
   const records = [...opened.records, { envelope, payload: proposal.payload }];
-  const materialized = await materializeCopies(records, opened.statePackage);
+  const materialized = await materializeCopies(authority, records, opened.statePackage);
+  assertContinuityRealm();
   return resultFromMaterialized(materialized, {
     handoff: freeze({
       from_key_id: proposal.payload.from_key_id,
@@ -648,6 +715,7 @@ async function acceptHandoff(options) {
 
 export async function handoffContinuity(options) {
   const [phase] = snapshotNamedOwnDataValues(options, ["phase"], "continuity handoff options");
+  assertContinuityRealm();
   if (phase === "request") return requestHandoff(options);
   if (phase === "propose") return proposeHandoff(options);
   if (phase === "accept") return acceptHandoff(options);
@@ -661,9 +729,10 @@ export function recoverContinuity(options) {
       ["authority", "copies", "expectedHeadHash", "expectedOrganismId", "quorum"],
       "continuity recover options"
     );
+  assertContinuityRealm();
   const authority = snapshotAuthority(authoritySource, "recovery authority");
   const count = ownDataArrayLength(copiesSource, "continuity copies");
-  const quorum = quorumSource === undefined ? 2 : quorumSource;
+  const quorum = quorumSource === undefined ? CUSTODY_LIMITS.signed_quorum : quorumSource;
   if (
     !Number.isSafeInteger(quorum) ||
     quorum < 2 ||
@@ -671,8 +740,19 @@ export function recoverContinuity(options) {
     count > CUSTODY_LIMITS.copies
   ) fail("E_CONTINUITY_QUORUM", "bounded-custody-quorum-required");
   const copies = copyBoundedOwnDataArray(copiesSource, count, "continuity copies")
-    .map((copy, index) => ownBytes(copy, PROTOCOL_PROFILE.provider.object_bytes, `copy-${index}`));
-  const recovered = recoverContinuityCapsuleQuorum({ copies, quorum });
+    .map((copy, index) => ownBytes(copy, CUSTODY_LIMITS.copy_bytes, `copy-${index}`));
+  let recovered;
+  try {
+    recovered = recoverContinuityCopyQuorum({ copies, quorum });
+  } catch (error) {
+    if (error?.code === "E_CUSTODY_DUPLICATE_COPY") {
+      fail("E_CONTINUITY_DUPLICATE_COPY", "duplicate-signed-copy-identity");
+    }
+    if (error?.code === "E_CUSTODY_QUORUM_UNAVAILABLE") {
+      fail("E_CONTINUITY_QUORUM", "valid-distinct-copies-below-quorum");
+    }
+    throw error;
+  }
   const opened = openCapsule(recovered.capsule_bytes);
   const head = opened.lineage.head;
   if (expectedHeadSource !== undefined && head.object_hash !== expectedHeadSource) {
@@ -706,6 +786,7 @@ function snapshotContinuityContinueInvocation(options) {
       ["authority", "capsuleBytes", "expectedHeadHash", "resourceBytes", "transitionId"],
       "continuity continue options"
     );
+  assertContinuityRealm();
   const authority = snapshotAuthority(authoritySource, "continuation authority");
   const opened = openCapsule(capsuleSource);
   const head = opened.lineage.head;
@@ -757,7 +838,9 @@ export async function continueContinuity(options) {
   });
   if (appended.status !== "accept") fail("E_CONTINUITY_LINEAGE", appended.code);
   const records = [...opened.records, { envelope, payload: statePackage.payload }];
-  return resultFromMaterialized(await materializeCopies(records, statePackage));
+  const materialized = await materializeCopies(authority, records, statePackage);
+  assertContinuityRealm();
+  return resultFromMaterialized(materialized);
 }
 
 export const continuity = freeze({

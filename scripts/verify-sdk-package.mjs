@@ -183,9 +183,17 @@ try {
     cli, "recover",
     "--authority", authorityB,
     "--expected-head", handed.head_hash,
+    "--out-resource", join(temporary, "duplicate-copy.bin"),
+    "--copy", join(handedCopies, "copy-2.mosc"),
+    "--copy", join(handedCopies, "copy-2.mosc")
+  ], "E_CONTINUITY_DUPLICATE_COPY", { cwd: temporary });
+  reject(process.execPath, [
+    cli, "recover",
+    "--authority", authorityB,
+    "--expected-head", created.head_hash,
     "--out-resource", join(temporary, "stale.bin"),
-    "--copy", join(createdCopies, "copy-1.mosc"),
-    "--copy", join(createdCopies, "copy-2.mosc")
+    "--copy", join(handedCopies, "copy-1.mosc"),
+    "--copy", join(handedCopies, "copy-2.mosc")
   ], "E_CONTINUITY_STALE_HEAD", { cwd: temporary });
   reject(process.execPath, [
     cli, "recover",
@@ -217,7 +225,7 @@ try {
   console.log("MortalOS S5 clean package install and continuity CLI: PASS");
   console.log("- public API: create/inspect/handoff/recover/continue");
   console.log("- real external file: A handoff -> B 2-of-3 recovery -> B continuation");
-  console.log("- one corrupt copy tolerated; one copy, stale head, and wrong authority rejected");
+console.log("- one corrupt copy tolerated; one copy, duplicate identity, stale head, and wrong authority rejected");
   console.log("- endpoint-local private keys absent from exchanged artifacts");
 } finally {
   await rm(temporary, { force: true, recursive: true });

@@ -116,7 +116,7 @@ const DEEP_OWNERSHIP_PRIMITIVES = new Set([
 // implementation digest is pinned here; a same-named local function is never sufficient.
 const OWNERSHIP_PROVENANCE = Object.freeze({
   "cli/node-authority.mjs": {
-    ownSigningRequest: ["local", null, null, "d6ca615864fdf29fa848822b19b798e7705919e215111b24609f0641cf446afb"]
+    ownSigningRequest: ["local", null, null, "52744fd986a85ad456efa128950a1378e70872bd36c3a9aca484af52ecd1800f"]
   },
   "lab/participant/live-endpoint.mjs": {
     clone: ["local", null, null, "ad23ae7000029bb45a994f26519180b268e8aa8a309674fd59b939f63f27c67a"]
@@ -168,9 +168,9 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
   },
   "src/continuity.mjs": {
     ownBytes: ["local", null, null, "aed824d812b7c9116a8dec952fd972bce5fae552eb838593da1ecabdb5108645"],
-    snapshotAuthority: ["local", null, null, "730172da218ad6bb1d2cf50a945c74921bfe62a11a336bf1bc701dec34bcbf0b"],
-    snapshotContinuityContinueInvocation: ["local", null, null, "9108227e231da141e917a520e6e4109ba0bfa33290cb94031a6b9dad908efb45"],
-    snapshotContinuityCreateInvocation: ["local", null, null, "5fc26055c766919b534d24a97024f2b358f5b8bb2622d91cc6d9cee495362671"],
+    snapshotAuthority: ["local", null, null, "4da0c43baa145830a6776e92790263112e5b97be969c35ad2e8615e3165904cf"],
+    snapshotContinuityContinueInvocation: ["local", null, null, "0aa1431f952a7579c1dbce981b3b4627ebdf46d5a1598bbe27e5a0ca2d71ed16"],
+    snapshotContinuityCreateInvocation: ["local", null, null, "4d63780c80c014e7815db639b1b4e13f14d0aefe9917a50f6395673358927f7c"],
     snapshotNamedOwnDataValues: ["import", "./primordials.mjs", "snapshotNamedOwnDataValues", "aab42c8f9795139df8c6073da9fd33656fb5858fc7e18fe466bc416b64c9f74d"]
   },
   "src/state/recovery.mjs": {
@@ -186,7 +186,7 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
 });
 
 const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
-  "cli/node-authority.mjs": "40cf6b9c3a5f54fe6547ff313a9ae711662e5aee69431862e04b64cefdb6b1b1",
+  "cli/node-authority.mjs": "1382e82cf9cd5e7d129dee4f89a0e6e270c3dc326dc6d8ae82973a2a8896b0cd",
   "lab/distributed/http-counter-replica.mjs": "a2cdda85d3b77347f69237eab4f23a7de258573f50f2a30ae83cc7832d17a5ac",
   "lab/live-incubator.mjs": "c813cfe5a98f6415ab8310f18c36a7db7c5100b499f5dde037b8575c57db988c",
   "lab/participant/durable-participant.mjs": "d4cf3f3c2190f080a0310437bb438c4456a7a9feb1258aef25e4cb1075feecb0",
@@ -205,9 +205,9 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/confidential/keys.mjs": "79f350b7704c3c9e6cc1d0f891364b0a9cc050f8cee249fd3cc445a5f2123285",
   "src/confidential/package.mjs": "2edf8c8fce50dc09ee33243affff99069c3c6a3efa74bdcf52327a3c60f7aab3",
   "src/confidential/recovery.mjs": "30d7453b1af1107c26d17f779600f6b8828d8d07759c2198f89f665f49c36feb",
-  "src/continuity.mjs": "dab9aa4b5c94575f140eb2b2c97ed5c566b598aeb003cfaf269e0e07ce9e3cd1",
+  "src/continuity.mjs": "defc12d9cd7d6aec2ecb0e9ca875a99375703d94e9210ecb41bbbea435dd3f76",
   "src/distributed/quorum-counter-store.mjs": "5aa2d7c0257c6e4ba4ef5502dadbc485a8fd0e95ce56fc98da30a6ff84265869",
-  "src/primordials.mjs": "832b606d2b3fa03ae2c926659d1416c5bac79d6489883eae7ef018f46805e9e1",
+  "src/primordials.mjs": "75784b17c238638772df8377ecff2e7fa1d64f25b0321a47b258079679b3ca78",
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
@@ -218,7 +218,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
 // exemption. Pin both its exact function and its complete module so any drift
 // requires the reviewer to revisit the classification before CI can pass.
 const CLASSIFICATION_DIGESTS = Object.freeze({
-  "cli/node-authority.mjs:export async function loadNodeAuthority": "3d5da253d5e9c406235f3551c6069491e4d94a488bbb193889d6ac870070e707",
+  "cli/node-authority.mjs:export async function loadNodeAuthority": "5b0dcbd55cf97aadd22be8cc54f793156514e34c4f8eeb7416bf54b725bc3d65",
   "lab/live-incubator.mjs:BrowserIncubator.async birth": "eb0852385f67cc7a5957c821ed3c7e137604f3765780781dfb966a190f7b2592",
   "lab/live-incubator.mjs:BrowserIncubator.async completeHeartbeat": "87588c407a0f9d9be0f414c44c3254b3573797eba23b870d4db97395dbb7052d",
   "lab/live-incubator.mjs:BrowserIncubator.async nurture": "06ffca93c66f38faa0d979e2af41c394d89ff8f14df3b42f6256fa40e3393089",
@@ -316,8 +316,8 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async #loadFrames": "54708a6560e0e7e59fcf8935444d440f2efc887f3a4f84888487014495536506",
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async inventory": "2d46193e7fb518c6f81a5c932b50710ad9b31d0871da5c3092b8e1fdfc41cc0f",
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async readChunk": "94fe133d82c2e1c8dccf35daa5c4c31315b7c9003c3dfb2c8968ae34444cd1bb",
-  "src/continuity.mjs:export async function createContinuityAuthority": "69460632a27c0f14cf0324b58218fead5b48f6f125a9cf3ff400fcba02104a36",
-  "src/continuity.mjs:export async function handoffContinuity": "a4e20f4d1e592ccac90dc7d694da1f57d825190cd88cae941d0c6e55ac6b5254"
+  "src/continuity.mjs:export async function createContinuityAuthority": "4e27da7380ce0fe1ede42a239dc7fc38ba2404f548e86b886de662a2a5528b75",
+  "src/continuity.mjs:export async function handoffContinuity": "547901d2b13e6634d9b6419496be097bbde4fc25998acd6c5d033e924fbd62dd"
 });
 assert.deepEqual(
   Object.keys(CLASSIFICATION_DIGESTS).sort(),
@@ -330,7 +330,7 @@ assert.deepEqual(
 // Exact reviewed ownership-prelude language. Any syntax or sequencing change before
 // the first suspension requires an explicit verifier-policy review and digest update.
 const OWNERSHIP_PRELUDE_DIGESTS = Object.freeze({
-  "cli/node-authority.mjs:export async function signNodeAuthority": "53c62a54e83876bf049de5f6467ddde8473b0bb27a32bbc5d094901447fd36c0",
+  "cli/node-authority.mjs:export async function signNodeAuthority": "0a2da011598ab831937e11877798257e6979a5f04eb8b7de2e1ca90a5356e44d",
   "lab/participant/live-endpoint.mjs:LiveEndpointParticipant.async acceptHandoff": "7b71f3d8d456ca81d2a96dfd06a43f3462a38b3b0888972b6f8e1a8a4d7580e9",
   "lab/participant/webcrypto-key-store.mjs:async function signBytes": "3c9e2428f10143ee1d2de0cab9df0c2b4be4b85f96b77e42352cb7829fd5373f",
   "lab/storage/durable-document.mjs:export async function replayDurableDocument": "56382ef1faf80912cd2601b6db12666db1d466b3d434bab8f365c25f43d2238e",

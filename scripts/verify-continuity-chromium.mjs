@@ -122,10 +122,21 @@ try {
   await assert.rejects(
     endpointB.page.evaluate((value) =>
       globalThis.__MORTALOS_PRODUCT_CONTINUITY__.recover(
+        [value.copy, value.copy], value.expectedHead, value.expectedOrganism
+      ), {
+      copy: handed.copies[1],
+      expectedHead: handed.head_hash,
+      expectedOrganism: handed.organism_id
+    }),
+    /E_CONTINUITY_DUPLICATE_COPY/u
+  );
+  await assert.rejects(
+    endpointB.page.evaluate((value) =>
+      globalThis.__MORTALOS_PRODUCT_CONTINUITY__.recover(
         value.copies, value.expectedHead, value.expectedOrganism
       ), {
-      copies: created.copies.slice(0, 2),
-      expectedHead: handed.head_hash,
+      copies: handed.copies.slice(0, 2),
+      expectedHead: created.head_hash,
       expectedOrganism: handed.organism_id
     }),
     /E_CONTINUITY_STALE_HEAD/u
@@ -150,7 +161,7 @@ try {
   console.log(`MortalOS ${engineName} real-file continuity vertical: PASS`);
   console.log("- actual File selected in endpoint A; separate persistent endpoint B accepted custody");
   console.log("- endpoint A browser context closed before B recovery and continuation");
-  console.log("- one corrupt copy tolerated; one copy and stale lineage rejected");
+console.log("- one corrupt copy tolerated; one copy, duplicate identity, and stale lineage rejected");
   console.log("- exact bytes recovered, sequence 3 committed, private key material not transferred");
 } finally {
   await endpointA?.context.close();

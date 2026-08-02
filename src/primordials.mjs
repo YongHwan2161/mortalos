@@ -44,6 +44,7 @@ const int32ArrayConstructor = Int32Array;
 const jsonParseIntrinsic = JSON.parse;
 const jsonStringifyIntrinsic = JSON.stringify;
 const mapConstructor = Map;
+const mapClearIntrinsic = Map.prototype.clear;
 const mapGetIntrinsic = Map.prototype.get;
 const mapHasIntrinsic = Map.prototype.has;
 const mapKeysIntrinsic = Map.prototype.keys;
@@ -665,6 +666,14 @@ export function objectValues(value) {
   return reflectApply(objectValuesIntrinsic, undefined, [value]);
 }
 
+export function jsonParse(value, reviver) {
+  return reflectApply(jsonParseIntrinsic, JSON, [value, reviver]);
+}
+
+export function jsonStringify(value, replacer, space) {
+  return reflectApply(jsonStringifyIntrinsic, JSON, [value, replacer, space]);
+}
+
 export function numberIsFinite(value) {
   return reflectApply(numberIsFiniteIntrinsic, undefined, [value]);
 }
@@ -760,6 +769,10 @@ export function typeError(message) {
 
 export function createMap() {
   return new mapConstructor();
+}
+
+export function mapClear(target) {
+  reflectApply(mapClearIntrinsic, target, []);
 }
 
 export function mapGet(target, key) {

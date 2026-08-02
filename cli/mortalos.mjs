@@ -189,7 +189,7 @@ async function main(argv) {
       authority,
       copies: await Promise.all(parsed.copy.map(async (path) => new Uint8Array(await readFile(path)))),
       expectedHeadHash: requireTextOption(parsed["expected-head"], "expected-head"),
-      quorum: 2
+      quorum: PROTOCOL_PROFILE.continuity.signed_copy_quorum
     });
     const resource = requireOption(parsed["out-resource"], "out-resource");
     await writeArtifact(resource, recovered.resource_bytes);

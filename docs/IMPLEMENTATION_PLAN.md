@@ -31,10 +31,11 @@ separate-process Node test, clean packed consumer, and built-Lab Chromium verifi
 exercise that contract.
 
 The most fundamental remaining gap is failure-domain authenticity. The three
-canonical copies currently traverse three real relay-fragment data-plane instances,
-but those instances are in one local process and administrative domain. They prove
-quorum behavior, corruption handling, lineage binding, and exact recovery; they do
-not prove survival of a host, provider, account, or administrator failure. The next
+current-custodian-signed copy envelopes traverse three real relay-fragment data-plane
+instances. Distinct signed copy/provider identities stop one file from being counted
+twice, but those adapters remain in one local process and administrative domain.
+They prove quorum behavior, corruption handling, lineage binding, and exact recovery;
+they do not prove survival of a host, provider, account, or administrator failure. The next
 architecture milestone is a provider-neutral durable copy adapter plus an
 independently operated authority service. A second important boundary is
 confidentiality: the product Capsule carries exact resource bytes. S4 confidentiality
@@ -65,7 +66,7 @@ usable and stable.
 | S3 | Generated profile and real relay fragment data plane | 1 MiB reconstruction, recovery corpus, real relay message test | Product-integrated local candidate; independent provider topology remains unproven |
 | S4 | Private activation capability, exact readback, key-redacted recovery | Node plus Chromium/Firefox cryptographic and rotation gates | Historical receipt only; revised claim remains **HOLD** |
 | [S5](https://github.com/YongHwan2161/mortalos/issues/34) | Authority-free default SDK plus explicit continuity capability subpath and full CLI | Export/pack/install/full-flow tests | Product-integrated candidate; publish and promotion pending |
-| [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and 2-of-3 content custody | Cross-process verification, handoff, exact recovery, and tamper/fork rejection | End-to-end candidate complete; integrated receipt pending |
+| [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and signed 2-of-3 content custody | Cross-process verification, handoff, exact recovery, and duplicate/tamper/fork rejection | End-to-end candidate complete; integrated receipt pending |
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 
@@ -93,7 +94,8 @@ Use one implementation path in the SDK, CLI, and Lab to prove this sequence:
 2. Endpoint B creates its own non-extractable key and accepts a canonical custody
    handoff; no private key crosses clients.
 3. The resource, lineage, and manifest are exported as a canonical Capsule and
-   stored as three content copies through the real chunk data plane.
+   wrapped in three current-custodian-signed copy/provider envelopes after traversal
+   through the real chunk data plane.
 4. A is closed. B recovers the exact resource from any two copies, verifies the
    Capsule, and commits the next authorized state transition.
 5. A fresh CLI process verifies the new organism ID, head, state root, resource
@@ -105,8 +107,9 @@ Strict pass criteria:
   Chromium, and the built Lab;
 - the file is supplied at runtime, not embedded as a test fixture;
 - A's process is actually gone before B continues;
-- one missing or corrupt content copy recovers exact bytes, while one remaining
-  copy, a valid fork, stale lineage, or altered chunk fails closed;
+- one missing or corrupt signed copy recovers exact bytes, while one remaining
+  copy, a repeated copy identity, a valid fork, stale lineage, or altered chunk
+  fails closed;
 - no internal `src/` authority module is imported by the product surface; public
   SDK boundaries are used throughout;
 - the programmatic Lab harness completes without a model call. A visible EN/KO
@@ -334,6 +337,11 @@ Pass criteria:
 - concurrent CLI processes serialize an authority file before journal commit, a
   conflicting tuple has exactly one signer, and a crash-left lock fails closed
   until explicit operator recovery;
+- concurrent first-use creators produce one identity, and exact persisted-file
+  schemas prevent extra private material from entering public custodian output;
+- captured JSON operations plus a null-prototype own-data journal reject transient
+  parser replacement and `Object.prototype` tuple accessors without changing the
+  first committed signing intent;
 - packed artifacts omit lab, evidence, tests, scripts, agents, and GitHub internals;
 - a clean temporary install executes the real-file continuity vertical on supported
   Windows and Ubuntu Node versions.
@@ -351,6 +359,9 @@ Pass criteria:
 - mutation, truncation, stale lineage, wrong chunk, or wrong receipt fails before
   activation;
 - serialized bytes contain no private key, `CryptoKey`, PKCS#8, or raw epoch key;
+- each product copy binds Capsule ID, head, organism, copy ID, and logical provider
+  under the current custodian signature; duplicate copy/provider identities cannot
+  satisfy quorum;
 - the Lab and packed CLI produce and consume canonical Capsule bytes for the P0
   user-selected resource scenario;
 - confidentiality is not inferred from Capsule custody; encrypted product Capsules
@@ -383,8 +394,10 @@ Pass criteria:
 
 - deterministic stateful corpus combines accessor, Proxy, prototype, store-method,
   and array mutation at await boundaries;
-- 2-of-3 Capsule custody recovers one lost/corrupt copy, rejects a valid fork, and
-  fails below quorum;
+- 2-of-3 signed Capsule-copy custody recovers one lost/corrupt copy, rejects a
+  repeated copy/provider identity and valid fork, and fails below quorum;
+- transient `Map` replacement cannot bypass sign-once, while persistent hostile
+  `Set`/`Array` replacement fails realm integrity before quorum bookkeeping;
 - Chromium and Firefox pass portable validation, S2 durable restart/loss, and S4
   counter/rotation in actual engines;
 - WebKit passes portable validation and capability detection; runtimes with native
