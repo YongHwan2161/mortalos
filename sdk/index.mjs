@@ -5,8 +5,11 @@ export {
   verifyContinuityCapsule
 } from "../src/capsule.mjs";
 export {
+  CONTINUITY_COPY_FORMAT,
   CUSTODY_LIMITS,
-  recoverContinuityCapsuleQuorum
+  recoverContinuityCapsuleQuorum,
+  recoverContinuityCopyQuorum,
+  verifyContinuityCopy
 } from "../src/custody.mjs";
 export { PROTOCOL_PROFILE } from "../src/generated/protocol-profile.mjs";
 export {

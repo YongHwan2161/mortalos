@@ -5,32 +5,49 @@ not active locks.
 
 ## Active intent
 
-### ACTIVE — Recenter development on one end-to-end continuity product path
+### ACTIVE — Real-file product continuity vertical ready for immutable review
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
-- Base: `12e90e6199b16b5379a6d4c1caa62cd24f7446e5`
-- Work branch: `agent/codex-protocol-kernel--product-continuity-docs`
-- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--product-continuity-docs`
-- Exact intended shared paths: `README.md`, `docs/README.md`,
-  `docs/CLAIM_MATRIX.md`, new `docs/IMPLEMENTATION_PLAN.md`,
-  retired `docs/NORTH_STAR_ROADMAP.md`,
-  `docs/POST_HACKATHON_NORTH_STAR_IMPLEMENTATION_PLAN.md`,
-  `docs/STAGE_TRACKING.md`, `docs/archive/README.md`,
-  `scripts/verify-links.mjs`, and `scripts/verify-spec.mjs`.
+- Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
+- Work branch: `agent/codex-protocol-kernel--product-continuity-vertical`
+- Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--product-continuity-vertical`
+- Exact intended shared paths: `package.json`, `sdk/index.mjs`,
+  new `sdk/continuity.mjs`,
+  `cli/mortalos.mjs`, new `cli/node-authority.mjs`,
+  new `src/continuity.mjs`, `src/capsule.mjs`, `src/index.mjs`,
+  new `lab/product-continuity.mjs`, `lab/app.mjs`,
+  new `test/continuity.test.mjs`, new `test/continuity-node-endpoint.mjs`,
+  `test/sdk.test.mjs`,
+  new `scripts/verify-continuity-chromium.mjs`,
+  `scripts/verify-browser-parity.mjs`, `scripts/verify-sdk-package.mjs`,
+  `security/async-entrypoints.json`, `scripts/verify-security-boundaries.mjs`,
+  `README.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/CLAIM_MATRIX.md`,
+  and `docs/TRACEABILITY.md`.
 - Exact agent paths: `agents/codex-protocol-kernel/HANDOFF.md`,
   `agents/codex-protocol-kernel/MEMORY.md`, and
   `agents/codex-protocol-kernel/WORKLOG.md`.
-- Intended change: replace the security-first current priority with the user-directed
-  product priority; make one file-to-Capsule-to-recovery-to-next-transition vertical
-  slice the North Star; rename the sole active implementation SSOT; fold duplicate
-  roadmap and stage ledgers into it; preserve normative and historical evidence.
-- Required gates: no runtime/package/schema change; all claims distinguish merged
-  implementation from promoted evidence; internal Markdown links pass; spec and
-  governance checks pass; diff contains no credential or generated artifact; exact
-  head receives normal CI and independent review before merge.
-- Excluded: deleting historical evidence, cleaning any dirty worktree, publishing
-  the package, changing production, claiming independent failure domains, or
-  implementing the product vertical in this documentation-only change.
+- Intended change: expose one public create/inspect/handoff/recover/continue API and
+  matching CLI; move a caller-supplied real file through the existing state-package,
+  relay-fragment data plane, canonical Capsule, 2-of-3 custody, A-to-B acceptance,
+  A process exit, B recovery, and next transition; run the same contract in Node,
+  packed-package CLI, actual browser contexts, and the built Lab.
+- Required gates: all borrowed mutable inputs and signer methods are owned before
+  the first await; every returned signature is verified; private key material is
+  absent from every exchanged/public artifact; one corrupt copy recovers exact bytes;
+  valid fork, stale head, wrong authority, and one-copy recovery fail closed; clean
+  packed consumer uses no repository-relative import; normal full CI, immutable
+  independent review, expected-head merge, and exact post-merge readback pass.
+- Excluded: package registry publication, claim promotion without a new receipt,
+  physical provider independence, WebKit full signing, and changing existing S2/S4
+  nonclaims.
+- Candidate validation: pre-lock full `npm test` PASS in `2542.8s` and browser
+  parity PASS in `207.3s`; post-lock continuity Node `5/5`, clean packed consumer,
+  cross-process conflicting sign-once serialization, and security inventory
+  `21 direct / 119 auto-discovered` PASS. Exact-head CI must supersede the earlier
+  full run before review.
+- Remaining gate: final commit/push, exact-head CI, immutable reviewer freeze, GitHub App
+  attestation plus machine-user native approval, expected-head merge, post-merge CI,
+  and exact-main readback. No receipt or production claim is promoted by local PASS.
 
 ## Closed intents
 

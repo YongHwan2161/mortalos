@@ -13,6 +13,11 @@ const profile = {
     resource_bytes: 3098890,
     rsa_wrapped_bytes: 384
   },
+  continuity: {
+    copy_envelope_bytes: 11188908,
+    signed_copy_count: 3,
+    signed_copy_quorum: 2
+  },
   format: "mortalos-protocol-profile/1",
   provider: {
     object_bytes: 8388608,

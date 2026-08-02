@@ -21,11 +21,13 @@ import {
   decodeRelayFrame
 } from "../src/transport/protocol.mjs";
 import { runReferenceProof } from "./reference-engine.mjs";
+import { installProductContinuityHarness } from "./product-continuity.mjs";
 import { scenarioApiUrl } from "./runtime-endpoints.mjs";
 import { createCuratedScenarioProposal, SCENARIO_REQUEST_FORMAT } from "./scenario-contract.mjs";
 import { compileScenario, runCompiledScenario } from "./scenario-compiler.mjs";
 
 const byId = (id) => document.getElementById(id);
+installProductContinuityHarness();
 let currentLocale = documentLocale();
 let t = createTranslator(currentLocale);
 const liveStatus = byId("live-status");

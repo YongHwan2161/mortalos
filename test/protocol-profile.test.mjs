@@ -13,6 +13,7 @@ import {
 } from "../src/state/package.mjs";
 import { canonicalBytes } from "../src/codec.mjs";
 import { CONFIDENTIAL_LIMITS } from "../src/confidential/format.mjs";
+import { CUSTODY_LIMITS, verifyContinuityCopy } from "../src/custody.mjs";
 
 test("canonical protocol profile is the exact generated cross-layer source", async () => {
   const source = JSON.parse(await readFile(
@@ -23,6 +24,13 @@ test("canonical protocol profile is the exact generated cross-layer source", asy
   assert.deepEqual(STATE_PACKAGE_LIMITS, source.state);
   assert.deepEqual(RELAY_LIMITS, source.transport);
   assert.ok(source.transport.room_bytes <= source.provider.object_bytes);
+  assert.equal(source.continuity.signed_copy_count, 3);
+  assert.equal(source.continuity.signed_copy_quorum, 2);
+  assert.equal(
+    source.continuity.copy_envelope_bytes,
+    4 * Math.ceil(source.provider.object_bytes / 3) + 4_096,
+    "the signed-copy envelope must cover a maximum Capsule plus bounded metadata"
+  );
   assert.equal(
     Math.ceil(source.state.chunk_bytes / source.transport.data_fragment_bytes),
     2
@@ -101,5 +109,21 @@ test("exact chunk envelope limits pass and every plus-one boundary fails closed"
       new Uint8Array(PROTOCOL_PROFILE.state.chunk_bytes + 1)
     ),
     (error) => error.code === "E_STATE_PACKAGE_LIMIT_EXCEEDED"
+  );
+});
+
+test("signed continuity-copy envelope ceiling is profile-generated and fails at plus one", () => {
+  assert.equal(
+    CUSTODY_LIMITS.copy_bytes,
+    PROTOCOL_PROFILE.continuity.copy_envelope_bytes
+  );
+  assert.throws(
+    () => verifyContinuityCopy(new Uint8Array(CUSTODY_LIMITS.copy_bytes)),
+    (error) => !/bounded Uint8Array/u.test(error.message),
+    "the exact ceiling reaches format validation rather than failing the byte bound"
+  );
+  assert.throws(
+    () => verifyContinuityCopy(new Uint8Array(CUSTODY_LIMITS.copy_bytes + 1)),
+    /bounded Uint8Array/u
   );
 });

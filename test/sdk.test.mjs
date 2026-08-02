@@ -3,10 +3,12 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import * as sdk from "../sdk/index.mjs";
+import * as continuitySdk from "../sdk/continuity.mjs";
 
 test("S5 SDK exports only the reviewed authority-free surface", () => {
   assert.deepEqual(Object.keys(sdk).sort(), [
     "CONTINUITY_CAPSULE_FORMAT",
+    "CONTINUITY_COPY_FORMAT",
     "CUSTODY_LIMITS",
     "ContinuityCapsuleError",
     "PROTOCOL_PROFILE",
@@ -16,12 +18,36 @@ test("S5 SDK exports only the reviewed authority-free surface", () => {
     "createStatePackageInput",
     "isValidatedAcceptance",
     "recoverContinuityCapsuleQuorum",
+    "recoverContinuityCopyQuorum",
     "validateGenesis",
     "validatePulse",
     "verifyContinuityCapsule",
+    "verifyContinuityCopy",
     "verifyStatePackage"
   ]);
   assert.doesNotMatch(Object.keys(sdk).join(" "), /private|CryptoKey|decrypt|authority|store/i);
+});
+
+test("product continuity subpath exposes the complete capability-oriented API", () => {
+  assert.deepEqual(Object.keys(continuitySdk.continuity).sort(), [
+    "continue", "create", "handoff", "inspect", "recover"
+  ]);
+  assert.deepEqual(Object.keys(continuitySdk).sort(), [
+    "CONTINUITY_HANDOFF_PROPOSAL_FORMAT",
+    "CONTINUITY_HANDOFF_REQUEST_FORMAT",
+    "CONTINUITY_RESULT_FORMAT",
+    "CONTINUITY_SCENARIO_FORMAT",
+    "CONTINUITY_SCENARIO_STEPS",
+    "ContinuityError",
+    "continueContinuity",
+    "continuity",
+    "createContinuity",
+    "createContinuityAuthority",
+    "describeContinuityAuthority",
+    "handoffContinuity",
+    "inspectContinuity",
+    "recoverContinuity"
+  ]);
 });
 
 test("S5 CLI is deterministic and the package tarball excludes lab and evidence internals", () => {
@@ -46,6 +72,8 @@ test("S5 CLI is deterministic and the package tarball excludes lab and evidence 
   const report = JSON.parse(packed.stdout)[0];
   const paths = report.files.map(({ path }) => path);
   assert.ok(paths.includes("cli/mortalos.mjs"));
+  assert.ok(paths.includes("cli/node-authority.mjs"));
+  assert.ok(paths.includes("sdk/continuity.mjs"));
   assert.ok(paths.includes("sdk/index.mjs"));
   for (const forbidden of ["agents/", "docs/", "evidence/", "lab/", "scripts/", "test/", ".github/"]) {
     assert.equal(paths.some((path) => path.startsWith(forbidden)), false, forbidden);

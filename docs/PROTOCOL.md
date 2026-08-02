@@ -748,3 +748,13 @@ reassembles only after exact fragment, chunk, and resource-root verification.
 lineage records and one exact state package. A Capsule is not an accepted lineage
 record, private-key container, fork-choice vote, or mortality observation. It must
 be verified through the same lineage/state validators before any local activation.
+
+`mortalos-continuity-copy/1` is the product custody wrapper. It carries one Capsule
+and a current-custodian signature over Capsule ID, head hash, organism ID, copy ID,
+and logical provider ID. A 2-of-3 product recovery counts only distinct signed copy
+and provider identities; repeating byte-identical copy files cannot create quorum.
+The wrapper ceiling is generated from the maximum provider object after base64url
+expansion plus bounded metadata. Signed logical identity is not evidence that the
+providers have independent hosts, credentials, administrators, or failure domains.
+The raw Capsule quorum compatibility API only counts valid content observations and
+must not be used to make that distinct-copy claim.

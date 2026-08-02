@@ -2,9 +2,9 @@
 
 Last reconciled: 2026-08-02 KST
 
-Branch: `agent/codex-protocol-kernel--product-continuity-docs`
+Branch: `agent/codex-protocol-kernel--product-continuity-vertical`
 
-Base: `12e90e6199b16b5379a6d4c1caa62cd24f7446e5`
+Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
 
 ## Verified merged state
 
@@ -19,26 +19,38 @@ Base: `12e90e6199b16b5379a6d4c1caa62cd24f7446e5`
   not re-promote S2/S4 claims or prove same-origin signer isolation, WebKit signing,
   independent providers, administrators, devices, or global availability.
 
-## Product gap
+## Product-continuity candidate
 
-- The SDK, CLI, Capsule, data plane, and Lab pass separate tests but do not form one
-  supported create/handoff/recover/continue workflow.
-- The CLI verifies profiles, Capsules, and custody copies only. It cannot create a
-  real-file Capsule or continue a lineage.
-- The Lab, Functions, Relay, and examples do not import the Capsule or chunk data-
-  plane product surface.
-- S5/S6 have no integrated stage receipt. The next evidence freeze must cover the
-  composed product, not another disconnected layer.
+- The explicit `@mortal-os/core/continuity` surface and CLI now expose
+  create/inspect/handoff/recover/continue over one core implementation.
+- A runtime file is bound to lineage/state, copied through the relay-fragment data
+  plane, transferred from A to B, recovered exactly from two of three copies after
+  A exits, and committed as the next transition by B.
+- Separate Node endpoint processes, a clean packed-package consumer, Chromium, and
+  Firefox execute the same ordered scenario contract. Browser endpoints use
+  non-extractable Ed25519 keys; CLI private keys remain endpoint-local files.
+- One corrupt copy recovers. One copy, stale lineage, wrong authority, and a valid
+  fork fail closed. Exchanged artifacts contain no private signing material.
+- CLI authority files now use a flushed exclusive lock plus atomic journal replace;
+  two conflicting Node processes yield exactly one signer and one equivocation
+  rejection. A crash-left lock deliberately requires explicit recovery.
+- The pre-lock checkout passed `npm test` in 2,542.8 seconds and browser parity in
+  207.3 seconds; post-lock focused continuity, packed consumer, and the `21/119`
+  async security inventory pass. Promotion still requires exact-head CI, immutable review, native
+  approval/App attestation, expected-head merge, and post-merge readback.
 
 ## Current priority
 
-1. Build one real-file A-to-B vertical through the public SDK, CLI, and Lab.
-2. Close A, recover exact bytes from two of three content copies on B, and commit
-   the next transition for the same organism.
-3. Verify the result in a fresh packed-package consumer process.
-4. Simplify the EN/KO Lab around that journey, then freeze one integrated receipt.
-5. Defer isolated signer custody, full WebKit signing, and real provider burn-in
-   without weakening their explicit nonclaims or regression tests.
+1. Promote the exact product-continuity candidate through CI, immutable review,
+   expected-head merge, and post-merge readback.
+2. Replace the three in-process copy transports with provider-neutral durable
+   adapters and prove distinct failure/credential domains.
+3. Compose S4 confidentiality explicitly; the current product Capsule carries
+   exact resource bytes and is not an encryption claim.
+4. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
+   freeze one integrated UX/runtime receipt.
+5. Move signing plus sign-once state to an isolated authority service or hardware
+   boundary before making XSS-resistant custody claims.
 
 ## Stable decisions
 

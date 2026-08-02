@@ -188,8 +188,12 @@ are specified in [`PROTOCOL.md`](PROTOCOL.md#8-validation-context-and-dependency
 S6/S8 local Capsule custody APIs additionally use `E_CUSTODY_EQUIVOCATION` for
 multiple different valid Capsules, `E_CUSTODY_QUORUM_UNAVAILABLE` when valid copies
 are below the requested quorum, and `E_CUSTODY_NONCANONICAL` if one capsule identity
-is represented by different bytes. These are local activation errors, not v0/v1
-lineage rejection codes.
+is represented by different bytes. Signed product-copy recovery also uses
+`E_CUSTODY_DUPLICATE_COPY` (surfaced as `E_CONTINUITY_DUPLICATE_COPY`) for a repeated
+copy/provider identity and `E_CUSTODY_RUNTIME`/`E_CONTINUITY_RUNTIME` for corrupted
+realm intrinsics. Raw `recoverContinuityCapsuleQuorum` is compatibility integrity
+counting; only `recoverContinuityCopyQuorum` proves distinct signed logical identities.
+These are local activation errors, not v0/v1 lineage rejection codes.
 
 - Malformed JSON with forged signatures returns `E_PARSE_INVALID_JSON` before any cryptographic result.
 - An invalid-UTF-8 envelope with an oversized payload returns envelope `E_PARSE_INVALID_UTF8`; payload acquisition cannot overtake envelope parsing.
