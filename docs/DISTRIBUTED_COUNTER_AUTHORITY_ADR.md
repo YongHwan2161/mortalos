@@ -47,3 +47,7 @@ That script proves a network/process failure boundary only. Its local node/provi
 labels are test metadata, not production independence. Production promotion still
 requires three externally administered hosts/providers/credentials, 100 live trials,
 and the seven-day burn-in receipt.
+
+Content possession is a separate contract from counter linearizability. The
+provider-signed copy path, topology evidence levels, and external promotion gate are
+defined in [Provider-signed possession and S7/S8 topology](PROVIDER_POSSESSION_TOPOLOGY.md).

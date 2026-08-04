@@ -71,6 +71,12 @@ try {
   assert.deepEqual(JSON.parse(continuityOutput.trim()), [
     "continue", "create", "handoff", "inspect", "recover"
   ]);
+  const providerOutput = run(process.execPath, [
+    "--input-type=module",
+    "--eval",
+    "import('@mortal-os/core/continuity').then((m)=>console.log(JSON.stringify(['registerCustodyProviderCapability','storeContinuityCopiesWithProviders','recoverContinuityProviderQuorum','verifyProviderPossessionReceipt'].every((name)=>typeof m[name]==='function'))))"
+  ], { cwd: temporary });
+  assert.equal(JSON.parse(providerOutput.trim()), true);
   const blocked = spawnSync(process.execPath, [
     "--input-type=module",
     "--eval",

@@ -503,8 +503,21 @@ The revision must identify the new trust assumption, affected invariant, failure
 
 - Majority CAS tolerates crash/partition faults only; it does not tolerate Byzantine
   replicas or a compromised signing authority.
-- Three localhost processes and three files prove process/network restart semantics,
-  not separate hosts, providers, administrators, or credential domains.
+- Three localhost provider processes now hold separate test credentials, stores,
+  provider signing keys, and signed identity declarations. Actual process
+  termination, object loss, restart, repair, and a second provider termination prove
+  process/network restart semantics, not separate hosts, provider accounts,
+  administrators, or credential domains.
+- A provider possession receipt binds exact write/readback bytes, copy descriptor,
+  provider public key, and the declared topology fields. It prevents receipt or
+  object substitution. It cannot attest that the declared account, region,
+  administrator, credential, or failure domain is controlled by an independent
+  party; that evidence must come from each provider control plane and an out-of-band
+  verifier.
+- The Durable Object provider uses immutable identity, a private stored signing seed,
+  SQLite object chunks, and readback-before-signing. Instance eviction proves
+  persistence behavior in workerd. Three Durable Objects in one Cloudflare account
+  remain one administrative/provider domain.
 - A Continuity Capsule contains public lineage plus encrypted resource state and no
   signing authority. A 2-of-3 Capsule quorum is content availability, not key quorum.
 - Chromium and Firefox have actual-engine candidate evidence. WebKit is selected by

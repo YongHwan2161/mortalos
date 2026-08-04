@@ -27,6 +27,8 @@ import { createCuratedScenarioProposal, SCENARIO_REQUEST_FORMAT } from "./scenar
 import { compileScenario, runCompiledScenario } from "./scenario-compiler.mjs";
 
 const byId = (id) => document.getElementById(id);
+const queryParameters = new URLSearchParams(globalThis.location.search);
+byId("advanced-evidence").hidden = queryParameters.get("advanced") !== "1";
 installProductContinuityHarness();
 let currentLocale = documentLocale();
 let t = createTranslator(currentLocale);
@@ -54,8 +56,8 @@ let turnstileScriptPromise = null;
 let turnstileToken = null;
 let turnstileWidgetId = null;
 let logIndex = 1;
-const continuityRoomParameter = new URLSearchParams(globalThis.location.search).get("room");
-const continuityJoinMode = new URLSearchParams(globalThis.location.search).get("join") === "1";
+const continuityRoomParameter = queryParameters.get("room");
+const continuityJoinMode = queryParameters.get("join") === "1";
 const continuityRole = continuityJoinMode ? "B" : "A";
 const continuityEndpointId = `${continuityRole}-${encodeBase64Url(crypto.getRandomValues(new Uint8Array(8)))}`;
 let continuityParticipant = null;
@@ -269,16 +271,23 @@ function renderContinuity(message = null, stateKind = "neutral") {
     byId("continuity-avatar").style.setProperty("--avatar-color", `hsl(${hue} 82% 68%)`);
     byId("continuity-avatar").style.setProperty("--avatar-glow", `${0.8 + (state.pulse_count ?? 0) * 0.12}rem`);
   }
-  byId("continuity-create").hidden = continuityJoinMode;
-  byId("continuity-join").hidden = !continuityJoinMode;
+  byId("continuity-create").hidden = continuityJoinMode || Boolean(continuityParticipant);
+  byId("continuity-join").hidden = !continuityJoinMode || Boolean(continuityParticipant);
   byId("continuity-create").disabled = Boolean(continuityParticipant);
   byId("continuity-join").disabled = Boolean(continuityParticipant) || !/^[A-Za-z0-9_-]{22}$/.test(continuityRoomId ?? "");
-  byId("continuity-approve").disabled = continuityRole !== "A" || !continuityJoinRequest || continuityProgress.handoff;
-  byId("continuity-accept").disabled = continuityRole !== "B" || !continuityProposal || continuityProgress.handoff;
+  const approveButton = byId("continuity-approve");
+  approveButton.hidden = continuityRole !== "A" || !continuityJoinRequest || continuityProgress.handoff;
+  approveButton.disabled = approveButton.hidden;
+  const acceptButton = byId("continuity-accept");
+  acceptButton.hidden = continuityRole !== "B" || !continuityProposal || continuityProgress.handoff;
+  acceptButton.disabled = acceptButton.hidden;
   const continueButton = byId("continuity-continue");
-  continueButton.disabled = continuityRole !== "B" || !continuityProgress.handoff || !continuityProgress.offline || continuityProgress.continue;
+  continueButton.hidden = continuityRole !== "B" || !continuityProgress.handoff || !continuityProgress.offline || continuityProgress.continue;
+  continueButton.disabled = continueButton.hidden;
   continueButton.className = continueButton.disabled ? "button" : "button primary";
-  byId("continuity-remove-a").disabled = continuityRole !== "A" || !continuityProgress.handoff || continuityProgress.offline;
+  const removeAButton = byId("continuity-remove-a");
+  removeAButton.hidden = continuityRole !== "A" || !continuityProgress.handoff || continuityProgress.offline;
+  removeAButton.disabled = removeAButton.hidden;
   byId("continuity-join-panel").hidden = !continuityJoinUrl;
   if (continuityJoinUrl) {
     byId("continuity-join-link").href = continuityJoinUrl;

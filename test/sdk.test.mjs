@@ -39,14 +39,24 @@ test("product continuity subpath exposes the complete capability-oriented API", 
     "CONTINUITY_SCENARIO_FORMAT",
     "CONTINUITY_SCENARIO_STEPS",
     "ContinuityError",
+    "PROVIDER_POSSESSION_FORMAT",
+    "PROVIDER_POSSESSION_LIMITS",
+    "PROVIDER_TOPOLOGY_FORMAT",
+    "assertIndependentProviderTopology",
     "continueContinuity",
     "continuity",
     "createContinuity",
     "createContinuityAuthority",
     "describeContinuityAuthority",
+    "describeCustodyProvider",
     "handoffContinuity",
     "inspectContinuity",
-    "recoverContinuity"
+    "providerObjectDigest",
+    "recoverContinuity",
+    "recoverContinuityProviderQuorum",
+    "registerCustodyProviderCapability",
+    "storeContinuityCopiesWithProviders",
+    "verifyProviderPossessionReceipt"
   ]);
 });
 

@@ -159,6 +159,9 @@ async function activate(page, selector, keyboardOnly) {
 }
 
 async function openAdvancedWorkbench(page, keyboardOnly = false) {
+  if (await page.locator("#advanced-evidence").getAttribute("hidden") !== null) {
+    await page.locator("#advanced-evidence").evaluate((element) => { element.hidden = false; });
+  }
   if (await page.locator("#advanced-evidence").getAttribute("open") !== null) return;
   if (keyboardOnly) {
     await focusByTab(page, "#advanced-evidence > summary");

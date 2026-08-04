@@ -2,13 +2,12 @@
 
 Status: **ACTIVE IMPLEMENTATION SSOT — PRODUCT CONTINUITY VERTICAL IMPLEMENTED; PROMOTION HOLD**
 
-Last synchronized: **2026-08-02 KST**
+Last synchronized: **2026-08-04 KST**
 
 This is the sole current direction, stage ledger, and ordered implementation plan.
-Historical receipts remain valid only for their named commits. Main
-`12e90e6199b16b5379a6d4c1caa62cd24f7446e5` contains the reviewed S2-S8 platform
-implementation; merge alone does not manufacture a stage receipt or a physical-
-independence claim.
+Historical receipts remain valid only for their named commits. This candidate starts
+from reviewed main `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`; merge alone does not manufacture a
+stage receipt or a physical-independence claim.
 
 ## 1. North Star
 
@@ -30,14 +29,16 @@ after A exits, and commits the next transition. The public continuity subpath, C
 separate-process Node test, clean packed consumer, and built-Lab Chromium verifier
 exercise that contract.
 
-The most fundamental remaining gap is failure-domain authenticity. The three
-current-custodian-signed copy envelopes traverse three real relay-fragment data-plane
-instances. Distinct signed copy/provider identities stop one file from being counted
-twice, but those adapters remain in one local process and administrative domain.
-They prove quorum behavior, corruption handling, lineage binding, and exact recovery;
-they do not prove survival of a host, provider, account, or administrator failure. The next
-architecture milestone is a provider-neutral durable copy adapter plus an
-independently operated authority service. A second important boundary is
+The most fundamental remaining gap is failure-domain authenticity. Provider-neutral
+capabilities, provider-owned signing keys, canonical possession receipts, three
+actual HTTP provider processes, and a private-service Durable Object implementation
+now prove exact write/readback, process termination, restart, repair, persistent
+SQLite storage, and one-provider-loss recovery. They still run under one local
+operator or one provider account. Signed account/region/administrator/credential
+fields prevent substitution but do not prove that those domains are independently
+controlled. The next architecture milestone is an externally provisioned three-
+account topology with out-of-band control-plane receipts and live outage evidence.
+A second important boundary is
 confidentiality: the product Capsule carries exact resource bytes. S4 confidentiality
 exists separately and must be composed explicitly rather than implied.
 
@@ -67,8 +68,8 @@ usable and stable.
 | S4 | Private activation capability, exact readback, key-redacted recovery | Node plus Chromium/Firefox cryptographic and rotation gates | Historical receipt only; revised claim remains **HOLD** |
 | [S5](https://github.com/YongHwan2161/mortalos/issues/34) | Authority-free default SDK plus explicit continuity capability subpath and full CLI | Export/pack/install/full-flow tests | Product-integrated candidate; publish and promotion pending |
 | [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and signed 2-of-3 content custody | Cross-process verification, handoff, exact recovery, and duplicate/tamper/fork rejection | End-to-end candidate complete; integrated receipt pending |
-| [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
-| [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
+| [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP replicas plus provider-signed object possession and Durable Object persistence | Actual process loss/restart/repair; exact provider readback; workerd SQLite eviction and corruption gates | Process/runtime candidate; external multi-account independence deferred |
+| [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus, provider receipt substitution/forgery negatives, and capability-routed browser parity | Provider/copy/fork/below-quorum fail-closed tests; Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; external adversarial custody deferred |
 
 Stage coordination remains subordinate to this SSOT:
 

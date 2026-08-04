@@ -30,10 +30,13 @@ transition. Node uses separate endpoint processes, Chromium uses separate persis
 browser endpoints and the built Lab, and a clean `npm pack` consumer runs the matching
 CLI without repository-relative imports. Promotion still requires exact-head CI,
 independent review, merge, and any claimed live deployment readback. The next root
-gap is real failure-domain independence: distinct signed logical copy/provider
-identities prevent one file from being counted twice, but the local adapters prove
-quorum logic, not independent providers or administrators. See the
-[implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
+gap is real failure-domain independence. Providers now sign canonical possession
+receipts only after exact write/readback; three actual provider processes survive
+termination, storage loss, restart, repair, and a second provider loss, while a
+Durable Object implementation passes SQLite eviction and corruption gates. These
+remain one-operator test domains, not proof of independent provider accounts or
+administrators. See the [provider topology boundary](docs/PROVIDER_POSSESSION_TOPOLOGY.md)
+and [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof
 
@@ -45,10 +48,10 @@ quorum logic, not independent providers or administrators. See the
 5. In Browser B, choose **Continue here** and confirm that the same `organism_id`
    advances from sequence 1 to 2 with a new deterministic state root.
 
-The page keeps one organism and one primary journey in view. GPT, the fixed reference
-fixture, corpus replay, raw bytes, durable storage, and protocol diagnostics remain
-available under **Advanced evidence**, but none is required to complete the main
-proof.
+The default page keeps one organism and one context-sensitive action in view. GPT,
+the fixed reference fixture, corpus replay, raw bytes, durable storage, and protocol
+diagnostics are absent from the normal journey and load only with `?advanced=1`;
+none is required to complete the main proof.
 
 ## What is implemented and what is promoted
 
@@ -61,7 +64,7 @@ proof.
 | L5 — recoverable resource state | A canonical manifest binds a bounded resource to lineage; any two logical replicas reconstruct the exact 1 MiB reference after the third replica and primary relay are deleted. S3 is promoted. |
 | S4 revised implementation — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass; a new stage receipt and isolated-signer claim remain separate. |
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
-| S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
+| S7/S8 provider custody candidate | Three provider processes issue provider-key possession receipts after exact write/readback, tolerate one process loss, repair after object loss and restart, then tolerate a second process loss. Durable Object SQLite persistence passes eviction and corruption gates. Signed topology declarations are not evidence of independently controlled provider accounts, regions, credentials, or administrators. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
@@ -114,6 +117,9 @@ npm run test:security-fuzz
 npm run test:sdk
 npm run test:capsule
 npm run test:continuity
+npm run test:provider-possession
+npm run verify:independent-provider-topology
+npm run test:provider-runtime
 npm run verify:continuity-browser
 npm run test:browser-capabilities
 npm run test:browser-parity
