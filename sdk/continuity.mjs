@@ -14,3 +14,15 @@ export {
   inspectContinuity,
   recoverContinuity
 } from "../src/continuity.mjs";
+export {
+  PROVIDER_POSSESSION_FORMAT,
+  PROVIDER_POSSESSION_LIMITS,
+  PROVIDER_TOPOLOGY_FORMAT,
+  assertIndependentProviderTopology,
+  describeCustodyProvider,
+  providerObjectDigest,
+  recoverContinuityProviderQuorum,
+  registerCustodyProviderCapability,
+  storeContinuityCopiesWithProviders,
+  verifyProviderPossessionReceipt
+} from "../src/provider/possession.mjs";

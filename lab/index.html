@@ -12,7 +12,7 @@
     <link rel="alternate" hreflang="en" href="https://mortal-os.com/">
     <link rel="alternate" hreflang="ko" href="https://mortal-os.com/ko/">
     <link rel="alternate" hreflang="x-default" href="https://mortal-os.com/">
-    <title>MortalOS — create once, continue elsewhere</title>
+    <title>MortalOS — keep one file alive across browsers</title>
     <link rel="stylesheet" href="/styles.css">
     <script type="module" src="/app.js"></script>
   </head>
@@ -20,27 +20,22 @@
     <a class="skip-link" href="#continuity-proof">Skip to the 90-second proof</a>
     <header class="hero">
       <nav class="language-nav" aria-label="Language"><a class="language-switch" href="/ko/" lang="ko" hreflang="ko">한국어</a></nav>
-      <div class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>MortalOS / cross-browser continuity proof</div>
-      <h1>Create once. Continue elsewhere.</h1>
-      <p class="lede">Move one state-bearing identity from Browser A to Browser B without moving either private key. Close A; B proves continuity locally.</p>
+      <div class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>MortalOS / file continuity</div>
+      <h1>Keep one file alive after Browser A closes.</h1>
+      <p class="lede">Create in A, move custody to B, close A, and continue the same verified bytes. Each browser keeps its own private key.</p>
       <p><a id="hero-proof-link" class="button hero-cta" href="#continuity-proof">Run the 90-second proof</a></p>
-      <div class="hero-chips" aria-label="Proof boundary summary">
-        <span>2 independent browsers</span>
-        <span>2 non-extractable keys</span>
-        <span>Relay is never the judge</span>
-      </div>
     </header>
 
     <main>
       <section id="continuity-proof" class="panel continuity-panel" aria-labelledby="continuity-title">
         <div class="section-heading">
           <div>
-            <p class="section-number">01 / main proof · two browsers</p>
-            <h2 id="continuity-title">Create once. Continue elsewhere.</h2>
+            <p class="section-number">Two-browser continuity</p>
+            <h2 id="continuity-title">Move custody from A to B.</h2>
           </div>
           <span id="continuity-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Ready to create in Browser A</span>
         </div>
-        <p class="section-copy">Browser B creates its own non-extractable key. Browser A authorizes one canonical custody handoff; no private key crosses the relay.</p>
+        <p class="section-copy">Follow the one action shown for this browser. B creates a different non-extractable key; neither private key is transferred.</p>
 
         <div class="continuity-layout">
           <article class="continuity-life-card" aria-label="Cross-browser Life Card">
@@ -62,10 +57,10 @@
           <div class="continuity-actions">
             <button id="continuity-create" class="button primary" type="button">Create in Browser A</button>
             <button id="continuity-join" class="button primary" type="button" hidden>Join in Browser B</button>
-            <button id="continuity-approve" class="button" type="button" disabled>Approve A → B handoff</button>
-            <button id="continuity-accept" class="button" type="button" disabled>Accept custody in B</button>
-            <button id="continuity-continue" class="button" type="button" disabled>Continue in Browser B</button>
-            <button id="continuity-remove-a" class="button danger" type="button" disabled>Remove Browser A authority</button>
+            <button id="continuity-approve" class="button" type="button" disabled hidden>Approve A → B handoff</button>
+            <button id="continuity-accept" class="button" type="button" disabled hidden>Accept custody in B</button>
+            <button id="continuity-continue" class="button" type="button" disabled hidden>Continue in Browser B</button>
+            <button id="continuity-remove-a" class="button danger" type="button" disabled hidden>Remove Browser A authority</button>
           </div>
         </div>
 
@@ -101,24 +96,14 @@
           <summary>Technical error code</summary>
           <code id="continuity-error-code">—</code>
         </details>
-        <p class="warning"><strong>Authority boundary:</strong> The relay stores and forwards public canonical messages. Each browser verifies locally; relay sequence and presence are never a validity verdict.</p>
+        <aside class="proof-summary" aria-label="Proof boundary">
+          <strong>What this proves</strong>
+          <p>After A closes, B recovers the same identity and advances its deterministic state. The relay only forwards public messages; each browser decides validity locally.</p>
+          <small>A room link is not authentication, and this finite proof is not a global death certificate.</small>
+        </aside>
       </section>
 
-      <details class="proof-boundary">
-        <summary>What this proof does—and does not—claim</summary>
-        <div class="boundary-grid">
-          <article>
-            <h3>It proves</h3>
-            <p>Two separate browser contexts use different non-extractable keys to authorize one canonical handoff. After A closes, B advances the same identity and deterministic state.</p>
-          </article>
-          <article>
-            <h3>It does not prove</h3>
-            <p>The relay is not an authority, a room link is not authentication, and no finite observation is a globally complete death certificate.</p>
-          </article>
-        </div>
-      </details>
-
-      <details id="advanced-evidence" class="advanced-workbench">
+      <details id="advanced-evidence" class="advanced-workbench" hidden>
         <summary>Open advanced evidence and falsification workbench</summary>
         <div class="advanced-workbench-content">
 

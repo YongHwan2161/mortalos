@@ -80,14 +80,14 @@ async function assertViewportContract(page, locale) {
       primary_ctas: [...document.querySelectorAll(".button.primary")].filter(inViewport).map((entry) => entry.id),
       protagonist_identities: [...document.querySelectorAll("#continuity-identity")].filter(inViewport).length,
       secondary_ctas: [...document.querySelectorAll("#hero-proof-link")].filter(inViewport).map((entry) => entry.id),
-      workbench_open: document.querySelector("#advanced-evidence").open
+      workbench_hidden: document.querySelector("#advanced-evidence").hidden
     };
   });
   assert.ok(contract.primary_ctas.length <= 1, `${locale} first viewport has multiple primary CTAs`);
   assert.ok(contract.secondary_ctas.length <= 1, `${locale} first viewport has multiple secondary CTAs`);
   assert.equal(contract.protagonist_identities, 1, `${locale} first viewport protagonist count`);
   assert.ok(contract.horizontal_overflow <= 1, `${locale} horizontal overflow`);
-  assert.equal(contract.workbench_open, false, `${locale} advanced workbench must be collapsed initially`);
+  assert.equal(contract.workbench_hidden, true, `${locale} advanced workbench must be absent by default`);
 }
 
 async function performanceRun(locale) {
@@ -193,7 +193,7 @@ try {
   assert.deepEqual(koreanAlive.b.errors, []);
   await koreanAlive.b.context.close();
 
-  const forked = await newPage("/");
+  const forked = await newPage("/?advanced=1");
   await forked.page.click("#advanced-evidence > summary");
   await forked.page.click("#run-reference");
   await forked.page.locator('#reference-status[data-state="accept"]').waitFor();
@@ -204,7 +204,7 @@ try {
 
   console.log("MortalOS UX and performance acceptance: PASS");
   console.log(`- cold-cache median: LCP ${perfSummary.lcp.toFixed(1)}ms / CLS ${perfSummary.cls.toFixed(3)} / TBT ${perfSummary.tbt.toFixed(1)}ms / DOM interactive ${perfSummary.dom_interactive.toFixed(1)}ms`);
-  console.log("- first viewport: <=1 primary CTA, <=1 secondary CTA, exactly 1 protagonist, advanced workbench collapsed");
+  console.log("- first viewport: <=1 primary CTA, <=1 secondary CTA, exactly 1 protagonist, advanced workbench absent by default");
   console.log("- automated two-browser judge path: under 90 seconds; premature A loss: honest read-only stall");
   console.log(`- stable screenshot states: ${Object.keys(screenshotDigests).join(", ")}`);
 } finally {

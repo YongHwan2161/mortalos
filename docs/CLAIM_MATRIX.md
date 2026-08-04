@@ -2,7 +2,7 @@
 
 Status: **ACTIVE — PRODUCT VERTICAL CANDIDATE, PROMOTION PENDING**
 
-Last synchronized: **2026-08-02 KST**
+Last synchronized: **2026-08-04 KST**
 
 This matrix is the current claim boundary. “Implemented” means code exists in main;
 “exact-source verified” means the named gates passed for that exact source;
@@ -25,8 +25,8 @@ No column inherits truth from another.
 | Public SDK/CLI package interoperability | Yes, this source tree | Default verification-only export, explicit continuity subpath, packed-file allowlist, clean temporary install create/inspect/handoff/recover/continue, concurrent first-use identity creation, cross-process conflicting sign-once serialization, captured JSON/null-prototype journal hardening, and persisted-file redaction | Not applicable | No | Package is not published; exact-head CI/review/merge remains required. CLI private keys stay in exact-schema endpoint-local authority files; crash-left locks require explicit recovery. |
 | Continuity Capsule resource lifecycle | Yes, this source tree | Canonical lineage/state/chunk binding, process-boundary verification, membership handoff, and tamper tests pass | No | No | Product Capsule carries public evidence and exact resource bytes, never signing authority. It is not a confidentiality envelope. |
 | Real-file A-to-B product continuity | Yes, this source tree | Separate Node endpoint processes, clean packed consumer, and actual built-Lab Chromium run A create → B accept → A exit → B signed 2-of-3 recover → B continue | No | No | One corrupt copy is tolerated; one copy, duplicate signed identity, stale lineage, wrong authority, and valid fork fail closed. Copy adapters remain one local administrative/failure domain. |
-| Independent host/relay/credential-domain survival | Process-isolated model only | Three HTTP CAS processes survive one termination and disk restart | No | No | Real S7 promotion still requires distinct provider, host, administrator, credential domains, 100 trials, and seven-day burn-in. |
-| Adversarial 2-of-3 Capsule custody | Yes, this source tree | Current-custodian-signed copy/provider identities recover with one lost/corrupt copy; duplicate identity, valid fork, and below-quorum sets reject | No | No | Signed logical identity prevents double-counting but does not prove an independent physical provider, private signing-key custody, or Byzantine resolution. |
+| Provider-signed possession and process failure recovery | Yes, candidate | Three provider processes sign exact write/readback receipts; one is terminated, repaired after storage loss, then a second is terminated while exact 2-of-3 recovery remains available. Durable Object SQLite eviction/corruption parity and deploy dry run pass. | No | No | Signed topology fields are declarations, not third-party proof of distinct accounts, regions, administrators, credentials, or physical failure domains. |
+| Adversarial 2-of-3 Capsule custody | Yes, this source tree | Current-custodian copy signatures plus provider possession signatures recover with one lost/corrupt copy; substituted/forged receipt, duplicate identity, valid fork, and below-quorum sets reject | No | No | Logical and process failure gates pass. External S7/S8 still requires independently controlled provider accounts and live control-plane failure evidence. |
 | Byzantine/Sybil resistance or automatic fork resolution | No | No | No | No | Forks halt automatic progress; no winner is selected. |
 | Global death certificate or proof all copies are gone | No | No | No | No | Mortality remains observer-domain-relative under explicit assumptions. |
 | Firefox durable participant parity | Yes, main | Portable, S2 restart/loss/repair, and S4 counter/rotation actual-engine gates passed on `12e90e6…` | No | No | Requires an integrated release receipt before a production support claim. |
