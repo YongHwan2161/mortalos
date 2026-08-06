@@ -1,8 +1,8 @@
 # MortalOS current claim matrix
 
-Status: **ACTIVE — PRODUCT VERTICAL CANDIDATE, PROMOTION PENDING**
+Status: **ACTIVE — HOSTLESS WEBRTC P0 CANDIDATE, PROMOTION PENDING**
 
-Last synchronized: **2026-08-02 KST**
+Last synchronized: **2026-08-07 KST**
 
 This matrix is the current claim boundary. “Implemented” means code exists in main;
 “exact-source verified” means the named gates passed for that exact source;
@@ -19,6 +19,8 @@ No column inherits truth from another.
 | Logical browser `2-of-3` loss and D repair | Yes | Yes, isolated Chromium contexts | No | Yes, as logical quorum evidence | Current contexts can share one host and administrative domain. |
 | Consent-gated durable `1-of-1` participant reload | Yes | Yes, Chromium schema v2 | No | Yes, within exact receipt/deploy evidence | Uses the same replay/WAL path as durable quorum; it remains one-key authority. |
 | Unified deterministic Participant Core | Yes | Yes, Node and Chromium | Not applicable | Yes | S1 receipt v2 is main-history portable; live, durable, handoff, quorum, catch-up, fork, snapshot, and availability paths use one core. |
+| Direct WebRTC participant data plane | Yes, this source tree | Node signal/transport boundaries plus two isolated actual Chromium processes: canonical manual offer/answer, all HTTP denied before Genesis/join/handoff, A authority removal and process exit, B sequence-2 continuation for the same organism | No | No | Uses one ordered binary DataChannel with no signaling service, STUN, TURN, HTTP/WebSocket relay, or fallback. Same-host connectivity does not prove cross-device or cross-NAT reachability. |
+| Fixed-backend-free continuation after load | Yes, for one loaded A/B pair | Random localhost bootstrap followed by zero browser/server HTTP requests during the complete signed lifecycle | No | No | Proves loss of the optional origin does not stop this pair. It does not prove peer-distributed application bundles, new-peer bootstrap without DNS/origin, participant leases, or a multi-peer repair fabric. |
 | Crash-safe durable `2-of-3` cold recovery and sign-once journal | Yes, for conforming endpoint concurrency | Yes on merged source `12e90e6…`: Node plus actual Chromium/Firefox bounded parity; historical Chromium `100/100` receipt remains commit-bound | No | Historical S2 claim only; revised claim reopened | Module-private capability and CAS block public-API/store-facade bypass. A same-origin script can still use the persisted non-extractable key outside the journal, so XSS-resistant sign-once is explicitly **HOLD** pending a separate signer trust domain. |
 | Exact R3 state replica recovery after storage/relay loss | Yes | Yes, 1 MiB/16-chunk logical stores, 20,000 end-to-end recovery executions, and JavaScript/Python differential | No | Yes, exact-main S3 receipt/review/Verify/Deploy | Inventory is a hint; exact fetched bytes and aggregate root are reverified. Logical stores do not prove independent domains. |
 | Confidential replicated state with epoch-key removal | Yes, main | Node plus actual Chromium/Firefox passed on `12e90e6…`; recovery/activation mutation corpus passed | No | Historical receipt only; revised claim reopened | Public results omit epoch keys; activation uses private capability plus exact readback. Browser non-extractability prevents export, not same-origin key use; XSS-resistant counter custody, WebKit signing, hidden forks, prior exposure, and physical independence remain unclaimed. |
@@ -26,6 +28,7 @@ No column inherits truth from another.
 | Continuity Capsule resource lifecycle | Yes, this source tree | Canonical lineage/state/chunk binding, process-boundary verification, membership handoff, and tamper tests pass | No | No | Product Capsule carries public evidence and exact resource bytes, never signing authority. It is not a confidentiality envelope. |
 | Real-file A-to-B product continuity | Yes, this source tree | Separate Node endpoint processes, clean packed consumer, and actual built-Lab Chromium run A create → B accept → A exit → B signed 2-of-3 recover → B continue | No | No | One corrupt copy is tolerated; one copy, duplicate signed identity, stale lineage, wrong authority, and valid fork fail closed. Copy adapters remain one local administrative/failure domain. |
 | Independent host/relay/credential-domain survival | Process-isolated model only | Three HTTP CAS processes survive one termination and disk restart | No | No | Real S7 promotion still requires distinct provider, host, administrator, credential domains, 100 trials, and seven-day burn-in. |
+| Participant resource market and deterministic scheduling | No | No | No | No | Storage/bandwidth/compute offers, bounded leases, revocation, accounting, repair, and migratable execution remain the next fundamental product layer. No server-side scheduler may be inferred. |
 | Adversarial 2-of-3 Capsule custody | Yes, this source tree | Current-custodian-signed copy/provider identities recover with one lost/corrupt copy; duplicate identity, valid fork, and below-quorum sets reject | No | No | Signed logical identity prevents double-counting but does not prove an independent physical provider, private signing-key custody, or Byzantine resolution. |
 | Byzantine/Sybil resistance or automatic fork resolution | No | No | No | No | Forks halt automatic progress; no winner is selected. |
 | Global death certificate or proof all copies are gone | No | No | No | No | Mortality remains observer-domain-relative under explicit assumptions. |

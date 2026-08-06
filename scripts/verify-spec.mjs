@@ -454,8 +454,8 @@ for (const [name, artifact] of Object.entries({
 
 const orderedGateStatement =
   "R1-C wire-only Lab → deterministic state → durable endpoint → " +
-  "transport-neutral runtime → Durable Object relay → two-browser succession → " +
-  "three-endpoint 2-of-3 repair";
+  "transport-neutral runtime → direct WebRTC participant channel → local validation → " +
+  "succession after optional origin loss → three-endpoint repair";
 for (const [name, artifact] of Object.entries({
   readme: text.readme,
   accessArchitecture: text.accessArchitecture
@@ -463,6 +463,44 @@ for (const [name, artifact] of Object.entries({
   assert(
     artifact.includes(orderedGateStatement),
     `${name} does not state the reviewed total gate order`
+  );
+}
+
+const northStarStatement =
+  "The network does not host MortalOS. The living network is MortalOS.";
+const fixedBackendBoundary =
+  "A fixed backend MUST NOT define identity, head, membership, quorum, scheduling, or continuity.";
+const optionalDomainBoundary =
+  "`mortal-os.com` is an optional bootstrap and demonstration origin, not a runtime " +
+  "authority or required protocol dependency.";
+for (const [name, artifact] of Object.entries({
+  readme: text.readme,
+  accessArchitecture: text.accessArchitecture,
+  currentPlan: text.currentPlan
+})) {
+  const normalized = artifact.replaceAll(/\s+/g, " ");
+  assert(normalized.includes(northStarStatement), `${name} omits the hostless North Star`);
+  assert(normalized.includes(optionalDomainBoundary), `${name} makes domain status ambiguous`);
+}
+for (const [name, artifact] of Object.entries({
+  readme: text.readme,
+  accessArchitecture: text.accessArchitecture,
+  currentPlan: text.currentPlan
+})) {
+  assert(
+    artifact.replaceAll(/\s+/g, " ").includes(fixedBackendBoundary),
+    `${name} omits the fixed-backend prohibition`
+  );
+}
+for (const statement of [
+  "manual WebRTC offer/answer exchange",
+  "no signaling service, STUN, TURN, HTTP/WebSocket relay, or fallback"
+]) {
+  assert(
+    text.currentPlan.includes(statement) ||
+      text.accessArchitecture.includes(statement) ||
+      text.claimMatrix.includes(statement),
+    `Current hostless evidence omits: ${statement}`
   );
 }
 
@@ -490,6 +528,8 @@ for (const statement of [
   "## 7. S0 — Current claim baseline",
   "## 15. S8 — Adversarial custody and browser parity",
   "No new stage begins until one shared public workflow proves the North Star",
+  "### P0 — Restore the North Star and forbidden boundary",
+  "### P0 — Actual WebRTC participant transport",
   "GPT/model product features"
 ]) {
   assert(

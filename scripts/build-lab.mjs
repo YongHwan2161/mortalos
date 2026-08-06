@@ -63,7 +63,8 @@ export async function buildLab({
     entryPoints: {
       app: "lab/app.mjs",
       "custodian-worker": "lab/custodian-worker.mjs",
-      "corpus-worker": "lab/corpus-worker.mjs"
+      "corpus-worker": "lab/corpus-worker.mjs",
+      "webrtc-participant": "lab/participant/direct-session.mjs"
     },
     outdir,
     bundle: true,

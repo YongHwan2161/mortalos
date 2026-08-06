@@ -1759,3 +1759,32 @@ result, and reproducible verification.
 - Added the CLI signer to the verifier-pinned first-await audit. Focused continuity
   `5/5`, clean packed consumer, and async security inventory `21 direct / 119
   auto-discovered` pass; prior CI is invalidated and must rerun on the new head.
+
+## 2026-08-07 — Hostless North Star and direct WebRTC participant P0
+
+- Restored the original architecture sentence: “The network does not host MortalOS.
+  The living network is MortalOS.” Reclassified the public domain, origin,
+  signaling, STUN/TURN, relay, and storage providers as optional replaceable
+  adapters that cannot decide identity, head, membership, quorum, scheduling, or
+  continuity.
+- Reordered the product roadmap around participant network embodiment: direct
+  transport, signed resource offers/leases, circulating memory/repair, migratable
+  deterministic computation, and peer-distributed bootstrap. Independent cloud
+  providers remain optional participants rather than the OS substrate.
+- Added canonical exact-key bounded manual WebRTC offer/answer signals and an
+  ordered binary DataChannel transport with `iceServers: []`, no signaling service,
+  and no HTTP/WebSocket/STUN/TURN/relay fallback.
+- Added a direct participant session over the existing signed core: A Genesis, B
+  join, A proposal, B custody acceptance, A authority removal, and B continuation.
+  Public snapshots contain no private key material.
+- Added an actual browser backend-cut gate. Separate A/B Chromium processes load
+  from a random localhost origin, exchange offer/answer, deny all HTTP before
+  Genesis, complete handoff, close A's browser process, and let B commit sequence 2
+  for the same organism with zero post-cut browser/server requests.
+- Focused PASS: spec, links, transport `9/9`, Lab build with four entries, WebRTC
+  browser proof, participant core `10/10`, continuity `10/10`, Lab `23/23`, i18n
+  `2/2`, UX, portable `10000/10000`, and async security inventory `21 direct / 119
+  auto-discovered`.
+- Exact working-tree `npm test` PASS in `3162.5s`; `git diff --check` PASS. Same-host
+  processes do not prove physical independence, peer bootstrap without an origin,
+  arbitrary NAT traversal, participant resource leases, or circulating compute.

@@ -25,7 +25,7 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run verify:protocol-profile && npm run verify:security-boundaries && npm run verify:ruleset-policy && npm run test:reviewer-attestation && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:s3-receipt && npm run test:s4-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:confidentiality && npm run test:protocol-profile && npm run test:transport && npm run test:distributed-counter && npm run test:security-fuzz && npm run test:sdk && npm run test:continuity && npm run verify:sdk-package && npm run test:capsule && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2 && npm run verify:s3 && npm run verify:s4",
+    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run verify:protocol-profile && npm run verify:security-boundaries && npm run verify:ruleset-policy && npm run test:reviewer-attestation && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:s3-receipt && npm run test:s4-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:confidentiality && npm run test:protocol-profile && npm run test:transport && npm run verify:webrtc-participants && npm run test:distributed-counter && npm run test:security-fuzz && npm run test:sdk && npm run test:continuity && npm run verify:sdk-package && npm run test:capsule && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2 && npm run verify:s3 && npm run verify:s4",
     "generate:protocol-profile": "node scripts/generate-protocol-profile.mjs",
     "verify:protocol-profile": "node scripts/generate-protocol-profile.mjs --check",
     "verify:license": "node scripts/verify-license.mjs",
@@ -59,7 +59,8 @@
     "verify:security-boundaries": "node --test test/security-boundary-verifier.test.mjs",
     "verify:ruleset-policy": "node scripts/verify-ruleset-policy.mjs",
     "test:reviewer-attestation": "node --test test/reviewer-attestation.test.mjs",
-    "test:transport": "node --test test/transport.test.mjs",
+    "test:transport": "node --test test/transport.test.mjs test/webrtc-transport.test.mjs",
+    "verify:webrtc-participants": "node scripts/verify-webrtc-participants.mjs",
     "test:sdk": "node --test test/sdk.test.mjs",
     "verify:sdk-package": "node scripts/verify-sdk-package.mjs",
     "test:capsule": "node --test test/capsule.test.mjs test/custody.test.mjs",

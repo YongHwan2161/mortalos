@@ -1,12 +1,15 @@
 # MortalOS
 
-> **Create once. Continue elsewhere.**
+> **The network does not host MortalOS. The living network is MortalOS.**
 
 MortalOS is an endpoint-neutral lifecycle protocol and falsification Lab for digital
 resources that must survive process and key rotation without trusting a browser,
-relay, host, UI, or model as the source of truth.
+relay, host, UI, or model as the source of truth. Opt-in participants contribute
+bounded storage, bandwidth, and eventually computation; identity, memory, and
+execution must be able to circulate among those participants without a fixed
+authoritative backend.
 
-- Live protocol Lab: [mortal-os.com](https://mortal-os.com/)
+- Optional public bootstrap and protocol Lab: [mortal-os.com](https://mortal-os.com/)
 - Korean experience: [mortal-os.com/ko/](https://mortal-os.com/ko/)
 - Source: [YongHwan2161/mortalos](https://github.com/YongHwan2161/mortalos)
 - Current North Star and execution plan: [implementation SSOT](docs/IMPLEMENTATION_PLAN.md)
@@ -23,16 +26,19 @@ unclaimed behavior.
 
 ## Current development focus
 
-The real-file product vertical now exists in one core path: endpoint A selects a
-bounded runtime file, endpoint B accepts custody with a distinct key, A exits, and B
-recovers exact bytes from two of three current-custodian-signed copy envelopes before committing the next
-transition. Node uses separate endpoint processes, Chromium uses separate persistent
-browser endpoints and the built Lab, and a clean `npm pack` consumer runs the matching
-CLI without repository-relative imports. Promotion still requires exact-head CI,
-independent review, merge, and any claimed live deployment readback. The next root
-gap is real failure-domain independence: distinct signed logical copy/provider
-identities prevent one file from being counted twice, but the local adapters prove
-quorum logic, not independent providers or administrators. See the
+The continuity vertical is one organ of MortalOS, not its whole body. The current P0
+candidate adds a direct participant-owned WebRTC DataChannel transport. Two isolated
+Chromium processes manually exchange canonical offer/answer signals, the verifier then
+cuts every HTTP request before Genesis, join, handoff, origin-A exit, and continuation,
+and B advances the same organism without a relay or origin. The transport reuses the
+same bounded canonical protocol frames and accepts no signaling-server, STUN, TURN,
+HTTP, or relay fallback.
+
+This proves a loaded pair can continue without a fixed backend. It does **not** yet
+prove peer-distributed application bootstrap, cross-network NAT traversal, three
+physical failure domains, or participant resource scheduling. Those are the next
+product milestones. `mortal-os.com` is an optional bootstrap and demonstration
+origin, not a runtime authority or required protocol dependency. See the
 [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof
@@ -62,6 +68,7 @@ proof.
 | S4 revised implementation — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass; a new stage receipt and isolated-signer claim remain separate. |
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
 | S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
+| Hostless WebRTC participant candidate | Two actual Chromium processes carry signed canonical Genesis, join, and handoff evidence directly over one ordered DataChannel after all HTTP is denied; A then removes its authority and its process exits, while B commits sequence 2 for the same organism. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
@@ -76,6 +83,11 @@ non-extractable `CryptoKey` can still sign without being exported.
 - A relay, room link, browser animation, GPT answer, process exit, or silence never
   establishes protocol validity or global death.
 - A single-browser logical quorum is one physical failure domain.
+- Same-host WebRTC proves a direct participant data plane, not physical independence
+  or connectivity through arbitrary NAT/firewall combinations. This P0 deliberately
+  configures no STUN or TURN service.
+- A loaded peer pair surviving origin loss does not yet prove that a new peer can
+  obtain and authenticate the application bundle without a domain or origin.
 - Finite evidence cannot prove that every hidden copy worldwide is gone.
 - Chromium and Firefox durable-key paths pass actual-engine candidate gates. WebKit
   is routed by a runtime capability probe that requires sign/verify through the
@@ -106,6 +118,7 @@ Focused gates:
 npm run test:i18n
 npm run test:state
 npm run test:transport
+npm run verify:webrtc-participants
 npm run test:relay
 npm run test:multi-browser
 npm run test:durable-quorum
@@ -182,23 +195,35 @@ The expected H2 trace digest remains:
 19fa3080831cb94f29bfda2e7e1f04f86927057f0823834a6bcbc7d746e25399
 ```
 
-## Trust boundary
+## Hostless runtime and trust boundary
+
+A fixed backend MUST NOT define identity, head, membership, quorum, scheduling, or
+continuity. A bootstrap origin, signaling rendezvous, STUN server, TURN relay, or
+storage provider may help peers discover or reach each other, but it must remain
+replaceable and unable to make a protocol decision. The P0 verifier uses manual
+WebRTC offer/answer exchange and an empty ICE-server list so that the direct path is
+observable without hiding a server dependency.
 
 ```text
-Browser A/B/C key custody
-        │ signed canonical public messages
-        ▼
-Cloudflare room relay (ordering, presence, and bounded storage only)
-        │ untrusted delivery
-        ▼
+Participant A key + kernel       Participant B key + kernel
+             │ signed canonical public messages │
+             └──────── WebRTC DataChannel ───────┘
+                          untrusted delivery
+                                  │
+                                  ▼
 R1 canonical operation/result bytes
         │
         ▼
 portable kernel → accepted lineage or stable rejection
+
+optional: static origin / manual or replaceable signaling / STUN / TURN
+          distribution and reachability only; never protocol authority
 ```
 
-Each endpoint verifies locally. The relay cannot return `accepted: true`, choose a
-head, sign, resolve a fork, or declare death. Durable Participant storage is consent-
+Each endpoint verifies locally. No transport can return `accepted: true`, choose a
+head, sign, resolve a fork, or declare death. The existing Cloudflare relay remains
+a compatibility transport and public-demonstration convenience, not part of the
+hostless protocol requirement. Durable Participant storage is consent-
 gated and uses one atomic versioned document for a non-extractable key, canonical
 public evidence, state references, sign-once journal, pending recovery, and explicit
 authority policy. Restore replays evidence instead of trusting cached verdicts.
@@ -209,9 +234,9 @@ they are not an XSS-resistant signer boundary. Strong sign-once custody remains 
 until key use and monotonic state move to a separately isolated origin/service or
 hardware-backed authorization domain.
 
-The implemented core sequence is:
+The current source sequence is:
 
-`R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → Durable Object relay → two-browser succession → three-endpoint 2-of-3 repair`
+`R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → direct WebRTC participant channel → local validation → succession after optional origin loss → three-endpoint repair`
 
 ## GPT-5.6 boundary and cost safety
 
@@ -227,10 +252,11 @@ or alter a kernel verdict.
 
 ## Release integrity
 
-Every publishable SHA must pass local tests, immutable independent review, exact-head
-CI, expected-head merge, post-merge CI, exact-main Cloudflare deployment, public
-manifest/asset/header readback, and clean Chromium acceptance. An old green run does
-not cover a new SHA.
+Every protocol or package SHA must pass local tests, immutable independent review,
+exact-head CI, expected-head merge, and post-merge CI. Any optional website deployment
+adds an exact-main deployment and public manifest/asset/header readback gate; failure
+to deploy the website does not invalidate already distributed participant state or
+make the domain authoritative. An old green run does not cover a new SHA.
 
 To verify the accepted production artifact:
 

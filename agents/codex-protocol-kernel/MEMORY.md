@@ -1,10 +1,10 @@
 # Durable memory
 
-Last reconciled: 2026-08-02 KST
+Last reconciled: 2026-08-07 KST
 
-Branch: `agent/codex-protocol-kernel--product-continuity-vertical`
+Branch: `agent/codex-protocol-kernel--hostless-webrtc-participants`
 
-Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
+Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 
 ## Verified merged state
 
@@ -41,16 +41,36 @@ Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
 
 ## Current priority
 
-1. Promote the exact product-continuity candidate through CI, immutable review,
-   expected-head merge, and post-merge readback.
-2. Replace the three in-process copy transports with provider-neutral durable
-   adapters and prove distinct failure/credential domains.
-3. Compose S4 confidentiality explicitly; the current product Capsule carries
-   exact resource bytes and is not an encryption claim.
-4. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
-   freeze one integrated UX/runtime receipt.
-5. Move signing plus sign-once state to an isolated authority service or hardware
-   boundary before making XSS-resistant custody claims.
+1. Promote the exact hostless WebRTC candidate through CI, immutable review,
+   expected-head merge, and post-merge verification.
+2. Define signed, bounded participant resource offers and leases for storage,
+   bandwidth, and deterministic compute. No server may schedule authoritatively.
+3. Compose Continuity Capsule chunks with at least three participant leases and
+   prove repair after origin plus one custodian disappear.
+4. Add a bounded deterministic WASM profile and migrate one computation A→B→C.
+5. Add signed peer-distributed bundle bootstrap and then replaceable rendezvous,
+   STUN/TURN, device/network, Firefox/WebKit, and signer-isolation gates.
+
+## Hostless WebRTC candidate
+
+- The governing North Star is restored: “The network does not host MortalOS. The
+  living network is MortalOS.” The domain is optional distribution and demonstration,
+  never protocol authority or a required runtime dependency.
+- `ManualWebRtcParticipantTransport` carries existing bounded canonical participant
+  messages over an ordered binary DataChannel with canonical manual offer/answer
+  signals and `iceServers: []`; it has no HTTP, WebSocket, STUN, TURN, or relay
+  fallback.
+- `DirectParticipantSession` composes Genesis, B join, signed custody handoff, A
+  authority removal, and B continuation without exporting private keys.
+- The exact local candidate loads A and B in separate Chromium processes from a
+  random localhost origin, denies every HTTP request before Genesis, closes A's
+  process after handoff, and lets B commit sequence 2 for the same organism.
+- Full `npm test` passed in 3,162.5 seconds. The async security inventory remains
+  `21 direct / 119 auto-discovered`; portable adversarial replay remains
+  `10000/10000` rejected.
+- Honest HOLD: same-host processes do not prove physical independence, arbitrary
+  NAT/firewall reachability, peer-distributed application bootstrap, participant
+  resource leases, or a circulating multi-peer memory/compute fabric.
 
 ## Stable decisions
 
