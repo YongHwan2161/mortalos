@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-02 KST**
+Last synchronized: **2026-08-07 KST**
 
 ## Current authority
 
@@ -60,8 +60,12 @@ claim matrix. Main `12e90e6199b16b5379a6d4c1caa62cd24f7446e5` also contains
 revised S2/S4 code and S5–S8 implementation surfaces. Their presence in main does
 not replace a stage receipt or prove physical independence.
 
-The immediate product priority is the real-file A-to-B continuity vertical defined
-in the implementation SSOT. It does not yet promote the revised confidential-state
-claim, independent failure domains, SDK/CLI/Capsule release, Byzantine/Sybil
-resistance, global death, or WebKit full signing parity. GPT is optional and
+The immediate product priority is the hostless participant substrate defined in the
+implementation SSOT. The direct WebRTC P0 candidate proves that an already-loaded
+A/B pair can complete signed Genesis, join, handoff, origin-A exit, and B continuation
+after every HTTP path is denied. `mortal-os.com` remains an optional bootstrap and
+demonstration origin, never a runtime authority. Peer-distributed application
+bootstrap, cross-network reachability, signed resource leases, circulating repair,
+migratable computation, independent failure domains, Byzantine/Sybil resistance,
+global death, and WebKit full signing parity remain unpromoted. GPT is optional and
 non-authoritative.

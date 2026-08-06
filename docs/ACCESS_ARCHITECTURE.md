@@ -1,11 +1,12 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **S1 promoted; S2 crash-safe participant storage implemented and exact-SHA
-promotion gated**
+Status: **HOSTLESS WEBRTC P0 CANDIDATE; EXACT-SHA PROMOTION GATED**
 
-Last synchronized: **2026-07-25 KST**
+Last synchronized: **2026-08-07 KST**
 
 ## Decision
+
+**The network does not host MortalOS. The living network is MortalOS.**
 
 MortalOS is not a browser-resident world. It is a protocol-defined world whose
 recognized identity, state, and authority are reconstructed from canonical evidence.
@@ -14,6 +15,8 @@ Creation is a protocol operation, not a UI privilege.
 The browser remains the first demonstration surface because it offers the shortest
 zero-install path to see custody, state, handoff, loss, repair, and fork behavior.
 Browser APIs, hosting, transport, and model output remain outside consensus validity.
+`mortal-os.com` is an optional bootstrap and demonstration origin, not a runtime
+authority or required protocol dependency.
 
 ## Layer boundary
 
@@ -26,7 +29,7 @@ browser | CLI | native | service | embedded
         │
         ▼
 transport adapter
-file | HTTP | WebSocket | future transports
+file | direct WebRTC DataChannel | HTTP | WebSocket | future transports
         │ bounded public messages
         ▼
 R1 canonical operation/result bytes
@@ -83,7 +86,32 @@ observation high-water mark. Null, stale, and equal renewals fail closed and ret
 the expired state, while explicit removal deletes the only key and retains public
 evidence read-only.
 
-## Relay boundary
+## Transport boundary
+
+### Hostless participant data plane
+
+A fixed backend MUST NOT define identity, head, membership, quorum, scheduling, or
+continuity. The current P0 uses `ManualWebRtcParticipantTransport` with one ordered
+binary DataChannel and `iceServers: []`. Canonical exact-key offer/answer records are
+copied manually in the verifier, so no signaling service participates. A replaceable
+rendezvous mechanism may carry the same records later but may not edit them or become
+authority.
+
+`DirectParticipantSession` composes the existing local participant kernel with this
+transport. A creates Genesis; B creates a separate non-extractable key and join
+request; A proposes the signed custody handoff; B accepts; A removes its authority
+and exits; B commits sequence 2 for the same organism. Only bounded canonical relay
+message bytes traverse the DataChannel, and public session snapshots contain no
+private keys.
+
+The actual-Chromium verifier loads two isolated browser processes from a random localhost
+origin, transfers the offer and answer, then denies every HTTP request in both
+contexts before completing the channel and starting Genesis. The full succession
+therefore continues without the origin, HTTP relay, WebSocket relay, signaling
+service, STUN, TURN, or fallback. This is an intentional backend-cut gate, not a
+claim about physical devices or cross-NAT Internet reachability.
+
+### Compatibility relay
 
 The Cloudflare Worker and Durable Object provide bounded room storage, presence,
 HTTP catch-up, WebSocket fan-out, TTL alarms, and strict origin/schema/size limits.
@@ -120,6 +148,9 @@ validation or erase already held evidence.
   and an independently written Python verifier.
 - The virtual transport runs seeded duplicate, reorder, drop, partition, reconnect,
   and fork schedules in Node and Chromium.
+- The direct WebRTC transport rejects non-canonical, wrong-role, unknown-key, and
+  oversized signals in Node, then actual Chromium completes backend-cut A→B custody
+  succession and B continuation after A exits.
 - Actual Chromium demonstrates A→B succession in English and Korean, 20 consecutive
   handoffs across two distinct persistent user-data profiles with A's process closed
   after acceptance, plus ten isolated three-endpoint `2-of-3` loss/repair runs.
@@ -138,6 +169,9 @@ Chromium for the exact reviewed head.
 - One browser holding three keys is still one physical failure domain.
 - Several isolated profiles prove process/profile isolation but not separate people,
   devices, networks, or administrators.
+- An already-loaded WebRTC pair continuing after origin loss does not prove
+  domain-free application distribution or bootstrap of a new peer.
+- Empty-ICE same-host connectivity does not prove arbitrary NAT/firewall traversal.
 - Non-extractable keys reduce accidental export; they do not prove erasure against a
   compromised browser or operating system.
 - Silence and process exit are ambiguous. Only the bounded mortality observer may
@@ -149,11 +183,15 @@ Chromium for the exact reviewed head.
 
 The source sequence is now:
 
-`R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → Durable Object relay → two-browser succession → three-endpoint 2-of-3 repair`
+`R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → direct WebRTC participant channel → local validation → succession after optional origin loss → three-endpoint repair`
 
 The publication sequence remains:
 
-`immutable independent review → expected-head merge → post-merge Verify → exact-main deploy → public EN/KO multi-browser readback`
+`immutable independent review → expected-head merge → post-merge Verify`
+
+An optional website release appends `exact-main deploy → public EN/KO readback` to
+that sequence. It is a distribution gate for those website bytes, not a protocol
+root of trust.
 
 Reopen this architecture decision if any endpoint accepts evidence rejected by another
 conforming endpoint, requires a browser-only signed value, treats relay/GPT/UI output
