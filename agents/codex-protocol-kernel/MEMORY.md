@@ -1,10 +1,67 @@
 # Durable memory
 
-Last reconciled: 2026-08-02 KST
+Last reconciled: 2026-08-08 KST
 
-Branch: `agent/codex-protocol-kernel--product-continuity-vertical`
+Branch: `agent/codex-protocol-kernel--resource-offer-leases`
 
-Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
+Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
+
+## Network-visible sign-once resource-contract candidate
+
+- A provider-signed canonical offer binds finite storage, bandwidth, compute, and
+  validity. One offer is a single-use capability; two distinct valid leases halt as
+  equivocation rather than selecting a winner or overcommitting silently.
+- A lease is contained by the offer and requires distinct provider and consumer
+  signatures. Usage receipts are jointly signed, predecessor-chained, cumulative,
+  and allocation-bounded. Either lease party can sign unilateral revocation; offer
+  revocation remains provider-only and cannot rewrite an already started lease.
+- An offer also signs a sorted, role-disjoint witness roster, declared Byzantine
+  bound `f`, and threshold `q`. The validator requires `n >= 3f + 1`,
+  `q <= n - f`, and `2q > n + f`. A lease stays `unwitnessed` until `q` distinct
+  valid announcements converge; minority partitions cannot activate it.
+- Each witness signs one offer/lease consumption under a distinct domain. Its
+  signing request reuses the existing endpoint-local sign-once journal with one
+  tuple per offer and a message bound to the exact lease. Duplicate gossip is
+  idempotent; provider conflict or witness double-sign halts with no winner.
+- The portable core owns no private key, clock, network, scheduler, storage, or
+  server. Default SDK exports verification/evaluation; the explicit package
+  subpath exposes draft/finalize functions and signing messages.
+- Generated profile limits bind 16,384-byte component documents, 65,536-byte
+  announcements, 16 witnesses, 64 observed announcements, 63-bit decimals,
+  365-day duration, eight observed leases, 4,096 receipts, and 32 revocations.
+- Focused resource/profile `15/15`, transport `8/8`, SDK `4/4`, clean packed full
+  witness flow, specification, links, conformance `76/76`, portable
+  `10,000/10,000`, security inventory `21/119`, and zero-vulnerability audit pass.
+  Fresh exact-tree full `npm test` also passed in `2,720.8s`; commit/push, exact-head
+  CI, and independent review remain.
+- Root product gap is now lease-bound storage/bandwidth/compute execution proof.
+  Quorum-visible signatures still do not prove possession, delivery, truthful
+  metering, witness independence, Sybil resistance, or independent provider
+  administration.
+
+## Lease-bound execution receipt candidate
+
+- A consumer-signed canonical challenge binds one offer, lease, consumption ID,
+  immutable workload, unpredictable 128-bit nonce, predecessor, sequence, and
+  explicit issue time. The verifier gains no clock, scheduler, lifecycle, network,
+  key, or storage authority.
+- A provider/consumer-signed execution receipt embeds the exact challenge and binds
+  deterministic result, workload ID, execution time, matching usage receipt, and
+  exact prior execution receipt. Usage and execution chains must be one-to-one
+  before `evaluateResourceExecutionContract` reports `proved`.
+- Storage verifies a nonce-selected 4,096-byte Merkle leaf against a content root;
+  bandwidth verifies an unpredictable payload round trip; compute reproduces a
+  bounded `sha256-chain/1` result. Generated 4 MiB resource, 4 KiB input/leaf, and
+  4,096-iteration limits pass at exact max and reject at plus one.
+- An actual child provider reads a runtime file and executes all three workload
+  classes. Its real PID exits and cannot sign again. A replacement provider needs a
+  new signed offer and mutual lease; the exact workload ID remains stable while the
+  old lease receipt is rejected.
+- Focused resource/profile `22/22`, SDK `4/4`, browser-target bundling, and clean
+  packed external-consumer compute receipt pass locally. Private material is absent
+  from exchanged offers, leases, challenges, usage, and execution receipts.
+- This is a local process-isolation candidate, not evidence of distinct hardware,
+  account, region, credential, administrator, honest meter, or independent provider.
 
 ## Verified merged state
 
@@ -41,15 +98,20 @@ Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
 
 ## Current priority
 
-1. Promote the exact product-continuity candidate through CI, immutable review,
-   expected-head merge, and post-merge readback.
-2. Replace the three in-process copy transports with provider-neutral durable
-   adapters and prove distinct failure/credential domains.
-3. Compose S4 confidentiality explicitly; the current product Capsule carries
+1. Promote the remediated lease-bound execution candidate through exact-head CI,
+   immutable re-review, expected-head merge, and post-merge readback. The first
+   review correctly BLOCKed provider/consumer key reuse and announcement-only
+   nested-object verification; both now have exact fail-closed regressions and the
+   full suite passes in 2,963 seconds.
+2. Compose offers, the real participant data plane, execution receipts, continuity,
+   and repair into one receipt-gated backend-free placement workflow.
+3. Replace local process adapters with provider-neutral durable adapters, then
+   prove distinct failure/credential/administrator domains.
+4. Compose S4 confidentiality explicitly; the current product Capsule carries
    exact resource bytes and is not an encryption claim.
-4. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
+5. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
    freeze one integrated UX/runtime receipt.
-5. Move signing plus sign-once state to an isolated authority service or hardware
+6. Move signing plus sign-once state to an isolated authority service or hardware
    boundary before making XSS-resistant custody claims.
 
 ## Stable decisions

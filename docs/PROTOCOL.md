@@ -114,6 +114,31 @@ MORTALOS/V0/CUSTODY-ACCEPTANCE\0
 MORTALOS/V0/CUSTODY-COMMITMENT\0
 MORTALOS/V0/EVENT-PAYLOAD\0
 MORTALOS/V0/PEER-ID\0
+MORTALOS/V1/RESOURCE-CONSUMPTION-ID\0
+MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-ID\0
+MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-SIGNATURE\0
+MORTALOS/V1/RESOURCE-CONTENT-LEAF\0
+MORTALOS/V1/RESOURCE-CONTENT-NODE\0
+MORTALOS/V1/RESOURCE-CONTENT-ROOT\0
+MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-ID\0
+MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-SIGNATURE\0
+MORTALOS/V1/RESOURCE-EXECUTION-CONSUMER-SIGNATURE\0
+MORTALOS/V1/RESOURCE-EXECUTION-PROVIDER-SIGNATURE\0
+MORTALOS/V1/RESOURCE-EXECUTION-PAYLOAD\0
+MORTALOS/V1/RESOURCE-EXECUTION-COMPUTE-STEP\0
+MORTALOS/V1/RESOURCE-EXECUTION-RECEIPT-ID\0
+MORTALOS/V1/RESOURCE-EXECUTION-WORKLOAD-ID\0
+MORTALOS/V1/RESOURCE-STORAGE-CHALLENGE-INDEX\0
+MORTALOS/V1/RESOURCE-OFFER-ID\0
+MORTALOS/V1/RESOURCE-OFFER-SIGNATURE\0
+MORTALOS/V1/RESOURCE-LEASE-ID\0
+MORTALOS/V1/RESOURCE-LEASE-PROVIDER-SIGNATURE\0
+MORTALOS/V1/RESOURCE-LEASE-CONSUMER-SIGNATURE\0
+MORTALOS/V1/RESOURCE-USAGE-ID\0
+MORTALOS/V1/RESOURCE-USAGE-PROVIDER-SIGNATURE\0
+MORTALOS/V1/RESOURCE-USAGE-CONSUMER-SIGNATURE\0
+MORTALOS/V1/RESOURCE-REVOCATION-ID\0
+MORTALOS/V1/RESOURCE-REVOCATION-SIGNATURE\0
 ```
 
 Let `H(x)` mean SHA-256 over bytes `x`, `JCS(x)` mean the RFC 8785 canonical UTF-8 bytes of JSON object `x`, and `B64(x)` mean unpadded base64url.
@@ -144,9 +169,44 @@ custody_commitment(custody_descriptor) =
 
 event_payload_hash(event_payload) =
   "sha256:" || B64(H(D_EVENT_PAYLOAD || JCS(event_payload)))
+
+resource_offer_id(offer_body) =
+  "resource-offer:" || B64(H(D_RESOURCE_OFFER_ID || JCS(offer_body)))
+
+resource_consumption_id({offer_id, lease_id}) =
+  "resource-consumption:" || B64(H(D_RESOURCE_CONSUMPTION_ID || JCS({offer_id, lease_id})))
+
+resource_consumption_witness_id(witness_body) =
+  "resource-witness:" || B64(H(D_RESOURCE_CONSUMPTION_WITNESS_ID || JCS(witness_body)))
+
+resource_lease_id(lease_body) =
+  "resource-lease:" || B64(H(D_RESOURCE_LEASE_ID || JCS(lease_body)))
+
+resource_usage_id(usage_body) =
+  "resource-usage:" || B64(H(D_RESOURCE_USAGE_ID || JCS(usage_body)))
+
+resource_revocation_id(revocation_body) =
+  "resource-revocation:" || B64(H(D_RESOURCE_REVOCATION_ID || JCS(revocation_body)))
+
+resource_execution_challenge_id(challenge_body) =
+  "resource-challenge:" || B64(H(D_RESOURCE_EXECUTION_CHALLENGE_ID || JCS(challenge_body)))
+
+resource_execution_receipt_id(receipt_body) =
+  "resource-execution:" || B64(H(D_RESOURCE_EXECUTION_RECEIPT_ID || JCS(receipt_body)))
+
+resource_execution_workload_id({kind, workload}) =
+  "resource-workload:" || B64(H(D_RESOURCE_EXECUTION_WORKLOAD_ID || JCS({kind, workload})))
 ```
 
 Here `D_*` is the corresponding domain separator above. `raw_digest` removes the textual prefix and base64url-decodes exactly 32 bytes.
+
+Resource-contract signatures hash the raw 32-byte derived ID under the exact
+role-specific separator above. Provider, consumer, and consumption-witness
+signatures are therefore not substitutable. The complete offer, mutual lease,
+network-visible sign-once witness, gossip announcement, chained usage, revocation,
+lease-bound execution challenge/receipt, content proof, deterministic work,
+limit, and explicit-time evaluation rules are normative in
+[`RESOURCE_CONTRACT.md`](RESOURCE_CONTRACT.md).
 
 ## 4. Operational vocabulary
 

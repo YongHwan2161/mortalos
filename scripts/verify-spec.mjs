@@ -38,6 +38,7 @@ const paths = {
   claimMatrix: "docs/CLAIM_MATRIX.md",
   historicalImplementationPlan: "docs/archive/MULTI_BROWSER_DIGITAL_LIFE_UX_IMPLEMENTATION_PLAN.md",
   browserCompatibility: "docs/BROWSER_PARTICIPANT_COMPATIBILITY.md",
+  resourceContract: "docs/RESOURCE_CONTRACT.md",
   readme: "README.md",
   genesisSchema: "schemas/genesis.schema.json",
   pulseSchema: "schemas/pulse.schema.json",
@@ -190,7 +191,32 @@ const domains = [
   "MORTALOS/V0/CUSTODY-ACCEPTANCE\\0",
   "MORTALOS/V0/CUSTODY-COMMITMENT\\0",
   "MORTALOS/V0/EVENT-PAYLOAD\\0",
-  "MORTALOS/V0/PEER-ID\\0"
+  "MORTALOS/V0/PEER-ID\\0",
+  "MORTALOS/V1/RESOURCE-CONSUMPTION-ID\\0",
+  "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-ID\\0",
+  "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-CONTENT-LEAF\\0",
+  "MORTALOS/V1/RESOURCE-CONTENT-NODE\\0",
+  "MORTALOS/V1/RESOURCE-CONTENT-ROOT\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-ID\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-CONSUMER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-PROVIDER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-PAYLOAD\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-COMPUTE-STEP\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-RECEIPT-ID\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-WORKLOAD-ID\\0",
+  "MORTALOS/V1/RESOURCE-STORAGE-CHALLENGE-INDEX\\0",
+  "MORTALOS/V1/RESOURCE-OFFER-ID\\0",
+  "MORTALOS/V1/RESOURCE-OFFER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-LEASE-ID\\0",
+  "MORTALOS/V1/RESOURCE-LEASE-PROVIDER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-LEASE-CONSUMER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-USAGE-ID\\0",
+  "MORTALOS/V1/RESOURCE-USAGE-PROVIDER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-USAGE-CONSUMER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-REVOCATION-ID\\0",
+  "MORTALOS/V1/RESOURCE-REVOCATION-SIGNATURE\\0"
 ];
 for (const domain of domains) {
   assert(text.protocol.includes(domain), `Missing domain separator: ${domain}`);
@@ -331,6 +357,26 @@ for (const statement of [
   "Creation is a protocol operation, not a UI privilege."
 ]) {
   assert(text.accessArchitecture.includes(statement), `Access architecture is missing: ${statement}`);
+}
+
+for (const statement of [
+  "single-use capability",
+  "Both signatures are mandatory",
+  "Network-visible sign-once consumption",
+  "n >= 3f + 1",
+  "2q > n + f",
+  "minority partition cannot activate it",
+  "witness-double-sign",
+  "The earliest valid effective revocation wins",
+  "It does not discover peers, schedule work",
+  "Lease-bound execution evidence",
+  "one-to-one usage/execution enforcement",
+  "new provider-signed offer and mutually signed lease"
+]) {
+  assert(
+    text.resourceContract.replace(/\s+/g, " ").includes(statement),
+    `Resource contract is missing: ${statement}`
+  );
 }
 
 assert(
@@ -513,7 +559,8 @@ const currentDocLinks = [
   "TRACEABILITY.md",
   "AGENT_COLLABORATION.md",
   "archive/README.md",
-  "BROWSER_PARTICIPANT_COMPATIBILITY.md"
+  "BROWSER_PARTICIPANT_COMPATIBILITY.md",
+  "RESOURCE_CONTRACT.md"
 ];
 for (const fileName of currentDocLinks) {
   assert(text.readme.includes(`docs/${fileName}`), `README does not link current document: ${fileName}`);

@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-02 KST**
+Last synchronized: **2026-08-08 KST**
 
 ## Current authority
 
@@ -18,6 +18,7 @@ coordination metadata; historical plans cannot promote a current claim.
 - [Threat model](THREAT_MODEL.md)
 - [Rejection codes](REJECTION_CODES.md)
 - [Requirements traceability](TRACEABILITY.md)
+- [Signed bounded resource contract](RESOURCE_CONTRACT.md)
 
 `mortalos/0` preserves an opaque declared state root and has no state-transition
 event. `mortalos/1` binds exact bounded state artifacts and deterministic
@@ -56,12 +57,17 @@ The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
 `2-of-3` loss/repair, the S1 Participant Core, the historical S2 durable quorum
 claim, and S3 exact logical resource recovery within the qualifications in the
-claim matrix. Main `12e90e6199b16b5379a6d4c1caa62cd24f7446e5` also contains
+claim matrix. Main `7c9f6a46f4a26debba6902121bdb36c2b791ffc7` also contains
 revised S2/S4 code and S5–S8 implementation surfaces. Their presence in main does
 not replace a stage receipt or prove physical independence.
 
-The immediate product priority is the real-file A-to-B continuity vertical defined
-in the implementation SSOT. It does not yet promote the revised confidential-state
-claim, independent failure domains, SDK/CLI/Capsule release, Byzantine/Sybil
-resistance, global death, or WebKit full signing parity. GPT is optional and
-non-authoritative.
+The real-file A-to-B continuity vertical is merged. The current candidate adds a
+portable signed resource contract, threshold network-visible sign-once gossip, and
+lease-bound storage/bandwidth/compute receipts from an actual local provider
+process. Missing, tampered, replayed, forked, or cross-lease work evidence cannot be
+reported as proved. Provider loss requires a newly signed offer and lease while the
+same immutable workload ID can be retained. This does not prove independent
+witnesses, providers, credentials, administrators, regions, or failure domains. It does not promote
+the revised confidential-state claim, provider independence, SDK publication,
+Byzantine/Sybil resistance, global death, or WebKit full signing parity. GPT is
+optional and non-authoritative.

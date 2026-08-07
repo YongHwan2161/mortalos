@@ -1,12 +1,12 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — PRODUCT CONTINUITY VERTICAL IMPLEMENTED; PROMOTION HOLD**
+Status: **ACTIVE IMPLEMENTATION SSOT — LEASE-BOUND EXECUTION CANDIDATE; PROMOTION HOLD**
 
-Last synchronized: **2026-08-02 KST**
+Last synchronized: **2026-08-08 KST**
 
 This is the sole current direction, stage ledger, and ordered implementation plan.
 Historical receipts remain valid only for their named commits. Main
-`12e90e6199b16b5379a6d4c1caa62cd24f7446e5` contains the reviewed S2-S8 platform
+`7c9f6a46f4a26debba6902121bdb36c2b791ffc7` contains the reviewed product-continuity
 implementation; merge alone does not manufacture a stage receipt or a physical-
 independence claim.
 
@@ -30,16 +30,108 @@ after A exits, and commits the next transition. The public continuity subpath, C
 separate-process Node test, clean packed consumer, and built-Lab Chromium verifier
 exercise that contract.
 
-The most fundamental remaining gap is failure-domain authenticity. The three
-current-custodian-signed copy envelopes traverse three real relay-fragment data-plane
-instances. Distinct signed copy/provider identities stop one file from being counted
-twice, but those adapters remain in one local process and administrative domain.
-They prove quorum behavior, corruption handling, lineage binding, and exact recovery;
-they do not prove survival of a host, provider, account, or administrator failure. The next
-architecture milestone is a provider-neutral durable copy adapter plus an
-independently operated authority service. A second important boundary is
-confidentiality: the product Capsule carries exact resource bytes. S4 confidentiality
-exists separately and must be composed explicitly rather than implied.
+The signed resource-contract candidate now defines finite storage, bandwidth, and
+compute intent; mutual single-use leases; a signed Byzantine witness policy;
+threshold gossip before activation; jointly signed cumulative usage; and unilateral
+revocation without owning a key, clock, network, scheduler, or server. It reuses the
+endpoint-local sign-once authority tuple so a witness can retry one exact lease but
+cannot honestly witness two leases for the same offer. This closes the ambiguous
+“participants contribute resources” control-plane gap and makes conflicting
+consumption publicly detectable under the offer's declared witness-fault bound.
+
+The lease-bound execution candidate now closes the next local evidence gap. A
+consumer-signed challenge and dual-signed predecessor chain bind exact storage
+content proofs, bandwidth payload round trips, or deterministic bounded compute to
+one usage receipt and one witnessed lease. An actual child provider executes all
+three classes, is terminated, and can be replaced only under a newly signed offer
+and lease while retaining the immutable workload ID.
+
+The most fundamental remaining gap is **receipt-gated participant placement and
+repair over the real peer data plane**. Today the control contract, execution
+receipt, WebRTC/relay transport, Continuity Capsule, and repair logic are separately
+valid components. No one authority-free scheduler yet chooses bounded participant
+offers, sends useful encrypted chunks or work over the participant transport,
+accepts only verified execution receipts, and repairs lost placement with a new
+lease. Until that composition exists, the system proves local execution evidence
+but is not yet a self-sustaining backend-free resource network. Physical meter
+honesty, independent credentials/administrators, and confidentiality are later
+promotion gates, not facts inferred from this local proof.
+
+### P0 — Signed bounded participant resource contract (implemented candidate)
+
+Goal: make every storage, bandwidth, and compute grant finite, mutually accepted,
+measurable, revocable, replay-safe, and transport-neutral.
+
+Strict pass criteria:
+
+- one generated profile fixes document, decimal, duration, observation, receipt,
+  and revocation ceilings; exact max passes and max + 1 rejects;
+- strict provider identity signs the offer; provider and consumer both sign the
+  lease and usage; either lease party may sign a terminating revocation;
+- allocation never exceeds offer capacity or time, cumulative usage never regresses
+  or exceeds allocation, and every receipt binds its exact predecessor;
+- two different valid leases for one single-use offer return equivocation with no
+  winner; duplicate evidence returns replay;
+- a signed `n/f/q` witness policy satisfies `n >= 3f + 1`, `q <= n - f`, and
+  `2q > n + f`; provider, consumer, and witness roles cannot overlap;
+- fewer than `q` self-contained gossip announcements remain `unwitnessed`, exact
+  duplicate gossip is idempotent, and `q` distinct valid witnesses are required
+  before scheduled, active, exhausted, or completed state;
+- the endpoint-local sign-once tuple is one offer ID and its message binds the exact
+  lease ID; witness double-sign and provider conflict halt with no selected winner;
+- Node, browser-target bundling, portable 10,000-case regression, and a clean packed
+  external consumer pass without private key, clock, network, or repository-relative
+  authority in the core;
+- exact-head CI, immutable independent review, expected-head merge, and exact-main
+  readback remain required before this candidate becomes a main claim.
+
+### P0 — Lease-bound execution receipt vertical (implemented candidate)
+
+Goal: prove that a selected participant actually stored named bytes, transferred a
+challenge range, or executed a deterministic bounded task under one exact lease.
+
+Strict pass criteria:
+
+- the receipt binds `offer_id`, `lease_id`, resource/content root, challenge nonce,
+  input, deterministic output, measured usage, participant identity, and prior
+  receipt; replay and cross-lease substitution reject;
+- a verifier can issue unpredictable challenges without becoming lifecycle or
+  scheduling authority; no fixed backend is required for validity;
+- provider loss moves the task only through a new signed lease and preserves exact
+  lineage; unsigned telemetry or UI state never counts as service evidence;
+- one local multi-process topology passes first, but any independent-provider claim
+  remains HOLD until distinct account, credential, administrator, and failure-domain
+  evidence passes the declared trial and burn-in gates.
+
+Local source acceptance is implemented: all three workload classes execute in an
+actual child provider process; exact/max + 1, replay, fork, cross-lease, tamper,
+unsigned-usage, process termination, reassignment, browser-target, and clean packed
+consumer gates pass. Promotion remains HOLD until exact-head CI, immutable review,
+governed merge, and exact-main readback complete.
+
+### P0 next — Receipt-gated participant placement and repair
+
+Goal: compose the existing offer/lease, participant transport, execution receipt,
+continuity, and repair primitives into one backend-free useful-resource vertical.
+
+Strict pass criteria:
+
+- a consumer selects bounded offers from untrusted gossip and grants no discovery,
+  signaling, relay, domain, or UI component validation authority;
+- useful encrypted chunks or deterministic work traverse the real participant data
+  plane, and placement becomes usable only after
+  `evaluateResourceExecutionContract(...).execution_status === "proved"`;
+- termination of one provider makes its placement unavailable; repair chooses a
+  different offer, signs a new lease, preserves the exact workload/content ID, and
+  produces a new valid receipt before counting restored redundancy;
+- stale, forked, revoked, exhausted, unproved, or cross-lease receipts never count
+  toward placement, repair quorum, billing, or continuity;
+- no fixed Cloudflare Worker, Durable Object, domain, relay, rendezvous service, or
+  model is required for protocol validity; optional infrastructure is replaceable
+  transport/discovery only;
+- local multi-process and two-browser profiles pass the same scenario first.
+  Distinct-account/region/credential/administrator trials and burn-in remain a
+  separate S7/S8 promotion gate.
 
 The governing product rule is:
 
@@ -69,6 +161,7 @@ usable and stable.
 | [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and signed 2-of-3 content custody | Cross-process verification, handoff, exact recovery, and duplicate/tamper/fork rejection | End-to-end candidate complete; integrated receipt pending |
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
+| Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer | Exact-head candidate; physical independence **HOLD** |
 
 Stage coordination remains subordinate to this SSOT:
 
@@ -442,11 +535,12 @@ Future source changes must repeat the same exact-snapshot gate.
 
 ## 17. Completion and explicit nonclaims
 
-The P0 real-file vertical and public package surface are implemented locally but
-remain promotion **HOLD** until exact-head CI, immutable independent review,
-expected-head merge, and post-merge readback pass. S2/S4 strong-custody, product
-Capsule confidentiality, and S7 physical-independence claims remain **HOLD** without
-blocking ordinary product iteration.
+The P0 real-file vertical and public package surface are merged on main. The signed
+resource-contract and lease-bound execution candidates remain promotion **HOLD** until exact-head CI,
+immutable independent review, expected-head merge, and post-merge readback pass.
+Receipt-gated peer placement/repair, S2/S4 strong custody, product Capsule
+confidentiality, and S7 physical independence remain **HOLD** without blocking
+ordinary product iteration.
 
 Explicit nonclaims:
 

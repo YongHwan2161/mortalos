@@ -1759,3 +1759,104 @@ result, and reproducible verification.
 - Added the CLI signer to the verifier-pinned first-await audit. Focused continuity
   `5/5`, clean packed consumer, and async security inventory `21 direct / 119
   auto-discovered` pass; prior CI is invalidated and must rerun on the new head.
+
+## 2026-08-07 — Signed bounded resource offer, lease, usage, and revocation
+
+- Added one generated finite profile and portable canonical contract for provider
+  offers, mutual single-use leases, dual-signed cumulative usage chains, unilateral
+  revocation, and deterministic explicit-time evaluation.
+- Added ten role/ID domain separators, strict identity/signature/capacity/time
+  binding, stable rejection codes, stale/replay/fork detection, and fail-closed
+  offer equivocation with no automatic winner.
+- Added authority-free default verification/evaluation plus the explicit
+  `@mortal-os/core/resource-contract` draft/finalize subpath. A clean packed external
+  consumer imports it without repository-relative paths or private authority.
+- Updated the normative protocol, threat boundary, claim matrix, traceability,
+  documentation map, README, and North Star SSOT. Signed intent is not described as
+  physical capacity or delivery evidence.
+- Validation: resource/profile `12/12`, SDK `4/4`, existing conformance `76/76`,
+  portable `10,000/10,000`, specification/link checks, clean package consumer, and
+  full `npm test` PASS in `3,329.6s`. Exact-head CI, immutable independent review,
+  governed merge, and exact-main readback remain.
+
+## 2026-08-07 — Network-visible sign-once consumption candidate
+
+- Extended every offer with a sorted finite witness roster, declared Byzantine
+  bound `f`, and activation threshold `q`. Unsafe policies, provider/consumer role
+  overlap, and out-of-roster witnesses fail closed. The accepted inequalities are
+  `n >= 3f + 1`, `q <= n - f`, and `2q > n + f`.
+- Added domain-separated consumption and witness IDs, witness signatures, and a
+  bounded self-contained gossip announcement carrying exact offer, lease, and
+  witness evidence. Relay control transports the carrier but never decides its
+  cryptographic validity.
+- Reused the endpoint-local private sign-once authority through a request whose
+  tuple is one offer and whose message binds one exact lease. Idempotent retry is
+  permitted; signing a second lease for the offer rejects locally, while observed
+  double-signing remains public equivocation evidence.
+- Evaluation now requires threshold witness visibility before scheduled, active,
+  exhausted, or completed state. Minority partitions remain `unwitnessed`, exact
+  duplicate gossip does not inflate quorum, and provider conflict or witness
+  double-sign halts without selecting a winner.
+- Extended the authority-free default verifier and explicit drafting SDK. The clean
+  packed consumer now runs offer -> mutual lease -> three independent witness
+  signatures -> gossip -> active without repository-relative imports or transferring
+  private keys. A locale-dependent sorting failure found only in the clean consumer
+  was replaced with protocol-consistent code-point ordering.
+- Focused evidence before the full suite: resource/profile `15/15`, transport `8/8`,
+  SDK `4/4`, clean packed full witness flow, specification/link/profile checks,
+  conformance `76/76`, portable `10,000/10,000`, async security inventory
+  `21 direct / 119 auto-discovered`, dependency audit with zero vulnerabilities,
+  `git diff --check`, and fresh full `npm test` in `2,720.8s` PASS. The full chain
+  covered actual Chromium durability, multi-browser/Lab/UX, confidentiality,
+  continuity, and historical S0-S4 receipt regressions. Exact-head CI, immutable
+  review, governed merge, and exact-main readback remain.
+- Honest boundary: witness quorum proves only logical visibility under the offer's
+  declared fault bound. It does not prove witness independence, resource possession,
+  data-plane delivery, truthful metering, Sybil resistance, or physical topology.
+
+## 2026-08-08 — Lease-bound execution receipt vertical candidate
+
+- Added consumer-signed execution challenges and provider/consumer-signed execution
+  receipts that bind the exact offer, lease, consumption, immutable workload,
+  challenge, deterministic result, measured usage receipt, sequence, and predecessor.
+- Added bounded storage Merkle proofs, unpredictable bandwidth payload echoes, and
+  deterministic `sha256-chain/1` compute. A dedicated evaluator counts execution
+  only when the usage and execution chains are one-to-one and fully verified.
+- Added generated 4 MiB resource, 4 KiB leaf/input, and 4,096-iteration ceilings;
+  exact maxima pass and all relevant max + 1 inputs fail closed. Replays, forks,
+  cross-lease substitution, tampering, accessors, Proxies, and unproved usage reject.
+- Added an actual child provider endpoint. It reads a runtime file, executes all
+  three workload types, retains its private key, terminates, and cannot continue.
+  Repair succeeds only after a different provider signs a new offer and lease; the
+  workload ID remains exact while old-lease evidence is rejected.
+- Extended authority-free SDK verification, explicit drafting/result helpers,
+  browser-target bundling, and the clean packed consumer through one proved compute
+  receipt. No fixed backend, clock, scheduler, network, or private key entered core.
+- Focused evidence: resource/profile `22/22`, SDK `4/4`, packed consumer PASS.
+  Fresh full `npm test` PASS in `2,942.6s`, including actual browser, durability,
+  confidentiality, continuity, fuzz, Lab/UX, portable `10,000/10,000`, and
+  historical S0-S4 regression gates. Exact-head CI, immutable review, governed
+  merge, and exact-main readback remain pending at this checkpoint.
+- Honest boundary: process isolation does not prove independent hardware, account,
+  region, credential, administrator, physical meter, or Sybil resistance. The next
+  root gap is receipt-gated useful placement and repair over the participant data
+  plane, followed by real failure-domain evidence.
+
+## 2026-08-08 — Independent review BLOCK remediation
+
+- The first exact-snapshot review of PR #56 at `bc600a8` correctly BLOCKed merge.
+  A provider could reuse its own key as the lease consumer, collapsing provider,
+  consumer, usage, and execution consent into one authority. Lease validation now
+  rejects that role collision as `E_RESOURCE_IDENTITY` before any signature flow.
+- The same review found that execution evaluation with `leases: []` recovered the
+  nested lease object from a gossip announcement and passed it to the canonical-byte
+  verifier. The evaluator now reserializes that already-parsed value with the
+  module-private canonical encoder before verifying the exact lease envelope.
+- Added regressions for provider/consumer key reuse and a complete three-receipt
+  storage/bandwidth/compute evaluation using announcement-only lease discovery.
+  Corrected README next-gap language, the six-question contract count, rejection
+  semantics, the exact changed-path list, and the active handoff state.
+- Remediated evidence: resource/profile `22/22`, SDK/transport `12/12`, clean packed
+  external consumer PASS, specification PASS, zero-vulnerability audit, and fresh
+  full `npm test` PASS in `2,963s`. This does not reuse the pre-remediation CI or
+  review; a new exact-head CI and immutable re-review are required before merge.

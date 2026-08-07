@@ -211,6 +211,25 @@ function assertControl(kind, content) {
     }
     return;
   }
+  if (kind === "resource-consumption-announcement") {
+    exactKeys(
+      content,
+      ["format", "lease", "offer", "witness"],
+      "resource consumption announcement"
+    );
+    if (
+      content.format !== "mortalos-resource-consumption-announcement/1" ||
+      !content.offer || typeof content.offer !== "object" || Array.isArray(content.offer) ||
+      !content.lease || typeof content.lease !== "object" || Array.isArray(content.lease) ||
+      !content.witness || typeof content.witness !== "object" || Array.isArray(content.witness)
+    ) {
+      throw new RelayProtocolError(
+        "RELAY_SCHEMA",
+        "invalid resource consumption announcement"
+      );
+    }
+    return;
+  }
   throw new RelayProtocolError("RELAY_SCHEMA", "unsupported relay control kind");
 }
 

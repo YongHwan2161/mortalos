@@ -4,6 +4,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import * as sdk from "../sdk/index.mjs";
 import * as continuitySdk from "../sdk/continuity.mjs";
+import * as resourceContractSdk from "../sdk/resource-contract.mjs";
 
 test("S5 SDK exports only the reviewed authority-free surface", () => {
   assert.deepEqual(Object.keys(sdk).sort(), [
@@ -12,10 +13,17 @@ test("S5 SDK exports only the reviewed authority-free surface", () => {
     "CUSTODY_LIMITS",
     "ContinuityCapsuleError",
     "PROTOCOL_PROFILE",
+    "RESOURCE_CONTRACT_LIMITS",
+    "RESOURCE_EXECUTION_FORMATS",
+    "RESOURCE_EXECUTION_LIMITS",
+    "RESOURCE_FORMATS",
     "createContinuityCapsule",
     "createLineage",
+    "createResourceContentCommitment",
     "createStatePackage",
     "createStatePackageInput",
+    "evaluateResourceContract",
+    "evaluateResourceExecutionContract",
     "isValidatedAcceptance",
     "recoverContinuityCapsuleQuorum",
     "recoverContinuityCopyQuorum",
@@ -23,9 +31,63 @@ test("S5 SDK exports only the reviewed authority-free surface", () => {
     "validatePulse",
     "verifyContinuityCapsule",
     "verifyContinuityCopy",
+    "verifyResourceConsumptionAnnouncement",
+    "verifyResourceConsumptionWitness",
+    "verifyResourceExecutionChallenge",
+    "verifyResourceExecutionReceipt",
+    "verifyResourceLease",
+    "verifyResourceOffer",
+    "verifyResourceRevocation",
+    "verifyResourceUsageReceipt",
+    "verifyResourceUsageReceiptChain",
     "verifyStatePackage"
   ]);
   assert.doesNotMatch(Object.keys(sdk).join(" "), /private|CryptoKey|decrypt|authority|store/i);
+});
+
+test("resource-contract subpath exposes signing drafts without owning private authority", () => {
+  assert.deepEqual(Object.keys(resourceContractSdk).sort(), [
+    "RESOURCE_CONTRACT_LIMITS",
+    "RESOURCE_EXECUTION_FORMATS",
+    "RESOURCE_EXECUTION_LIMITS",
+    "RESOURCE_FORMATS",
+    "ResourceContractError",
+    "createResourceBandwidthExecutionResult",
+    "createResourceComputeExecutionResult",
+    "createResourceConsumptionAnnouncement",
+    "createResourceContentCommitment",
+    "createResourceStorageExecutionResult",
+    "derivePeerId",
+    "evaluateResourceContract",
+    "evaluateResourceExecutionContract",
+    "finalizeResourceConsumptionWitness",
+    "finalizeResourceExecutionChallenge",
+    "finalizeResourceExecutionReceipt",
+    "finalizeResourceLease",
+    "finalizeResourceOffer",
+    "finalizeResourceRevocation",
+    "finalizeResourceUsageReceipt",
+    "prepareResourceConsumptionWitness",
+    "prepareResourceExecutionChallenge",
+    "prepareResourceExecutionReceipt",
+    "prepareResourceLease",
+    "prepareResourceOffer",
+    "prepareResourceRevocation",
+    "prepareResourceUsageReceipt",
+    "verifyResourceConsumptionAnnouncement",
+    "verifyResourceConsumptionWitness",
+    "verifyResourceExecutionChallenge",
+    "verifyResourceExecutionReceipt",
+    "verifyResourceLease",
+    "verifyResourceOffer",
+    "verifyResourceRevocation",
+    "verifyResourceUsageReceipt",
+    "verifyResourceUsageReceiptChain"
+  ]);
+  assert.doesNotMatch(
+    Object.keys(resourceContractSdk).join(" "),
+    /private|CryptoKey|store|network|clock/i
+  );
 });
 
 test("product continuity subpath exposes the complete capability-oriented API", () => {
@@ -74,6 +136,7 @@ test("S5 CLI is deterministic and the package tarball excludes lab and evidence 
   assert.ok(paths.includes("cli/mortalos.mjs"));
   assert.ok(paths.includes("cli/node-authority.mjs"));
   assert.ok(paths.includes("sdk/continuity.mjs"));
+  assert.ok(paths.includes("sdk/resource-contract.mjs"));
   assert.ok(paths.includes("sdk/index.mjs"));
   for (const forbidden of ["agents/", "docs/", "evidence/", "lab/", "scripts/", "test/", ".github/"]) {
     assert.equal(paths.some((path) => path.startsWith(forbidden)), false, forbidden);

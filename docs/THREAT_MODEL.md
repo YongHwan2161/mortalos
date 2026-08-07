@@ -143,6 +143,40 @@ The following are explicitly out of scope for the foundational claim:
 
 The validator still rejects malformed or unauthorized inputs from outsiders. Exclusion means v0 does not guarantee continued safety if a current custodian behaves Byzantine or its key is compromised.
 
+### Signed resource-contract boundary
+
+The v1 resource contract narrows “resource contribution” to signed finite intent
+plus a network-visible sign-once claim. It rejects malformed identity, capacity
+overflow, out-of-window allocation, signature substitution, receipt
+regression/fork, replay, unsafe witness thresholds, role overlap, provider lease
+equivocation, and witness double-signing. Provider and consumer must both sign a
+lease and every usage receipt; either party may terminate their lease without
+waiting for the other.
+
+Each offer signs a sorted witness roster, a declared Byzantine bound `f`, and a
+threshold `q`. For roster size `n`, the validator requires `n >= 3f + 1`,
+`q <= n - f`, and `2q > n + f`. A lease cannot become scheduled, active,
+exhausted, or completed until `q` distinct roster witnesses announce the exact
+offer/lease consumption. A minority partition therefore remains `unwitnessed`.
+Two conflicting threshold certificates must intersect in more than `f` witnesses,
+so at least one identity has signed both claims if at most `f` are Byzantine. The
+evaluator exposes this equivocation and selects no winner. These properties are
+conditional on the signed fault bound; a roster does not establish independence.
+
+The lease-bound execution layer now adds a consumer-signed unpredictable challenge
+and a provider/consumer-signed receipt tied one-to-one to cumulative usage. It
+recomputes a challenged content proof, payload round trip, or deterministic bounded
+compute result and rejects replay, forks, cross-lease substitution, tampering, and
+unproved usage. A verifier can challenge work but gains no scheduler or lifecycle
+authority. Provider loss requires a new signed offer and lease; the stable workload
+ID recognizes the same work without inheriting the old provider's receipt chain.
+
+This still does not remove the Sybil/fake-independence threat. Provider and consumer
+can collude on usage, one administrator can control many valid keys and processes,
+and a local child process is not separate hardware, region, credential, or custody.
+No scheduler may convert a valid receipt into a physical-independence or honest-
+metering claim without a separate deployment evidence matrix.
+
 ## 7. Safety properties
 
 Under the v0 assumptions:

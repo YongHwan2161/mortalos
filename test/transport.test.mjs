@@ -19,6 +19,7 @@ import {
 } from "../src/transport/chunk-data-plane.mjs";
 import {
   createRelayFrame,
+  createRelayControlMessage,
   createRelayMessage,
   decodeRelayFrame,
   decodeRelayMessageBytes,
@@ -60,6 +61,32 @@ test("relay message and frame contracts reject authority hints, noncanonical byt
     (error) => error.code === "RELAY_DIGEST"
   );
   assert.throws(() => decodeRelayMessageBytes(new Uint8Array(RELAY_LIMITS.message_bytes + 1)));
+});
+
+test("relay control carries resource consumption announcements without deciding validity", () => {
+  const announcement = {
+    format: "mortalos-resource-consumption-announcement/1",
+    lease: { transported: true },
+    offer: { transported: true },
+    witness: { transported: true }
+  };
+  const messageBytes = canonicalBytes(createRelayControlMessage(
+    "resource-consumption-announcement",
+    announcement
+  ));
+  const opened = decodeRelayMessageBytes(messageBytes);
+  assert.equal(opened.control.kind, "resource-consumption-announcement");
+  assert.deepEqual(
+    canonicalBytes(opened.control.content),
+    canonicalBytes(announcement)
+  );
+  assert.throws(
+    () => createRelayControlMessage("resource-consumption-announcement", {
+      ...announcement,
+      witness: null
+    }),
+    (error) => error.code === "RELAY_SCHEMA"
+  );
 });
 
 test("virtual transport converges after duplicate, drop, reorder, disconnect, and range catch-up", async () => {

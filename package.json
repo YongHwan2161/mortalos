@@ -10,7 +10,8 @@
   "exports": {
     ".": "./sdk/index.mjs",
     "./continuity": "./sdk/continuity.mjs",
-    "./protocol-profile": "./src/generated/protocol-profile.mjs"
+    "./protocol-profile": "./src/generated/protocol-profile.mjs",
+    "./resource-contract": "./sdk/resource-contract.mjs"
   },
   "files": [
     "cli/",
@@ -53,7 +54,7 @@
     "test:state": "node --test test/state-engine.test.mjs",
     "test:state-package": "node --test test/state-package.test.mjs",
     "test:confidentiality": "node --test test/confidential-format.test.mjs test/confidential-counter.test.mjs test/confidential-crypto-vectors.test.mjs test/confidential-package.test.mjs test/confidential-s3-recovery.test.mjs && node scripts/verify-confidential-chromium.mjs",
-    "test:protocol-profile": "node --test test/protocol-profile.test.mjs",
+    "test:protocol-profile": "node --test test/protocol-profile.test.mjs test/resource-contract.test.mjs test/resource-execution.test.mjs test/resource-execution-process.test.mjs",
     "test:distributed-counter": "node --test test/distributed-counter.test.mjs && node scripts/verify-independent-counter-topology.mjs",
     "test:security-fuzz": "node --test test/security-stateful-fuzz.test.mjs",
     "verify:security-boundaries": "node --test test/security-boundary-verifier.test.mjs",
@@ -112,5 +113,10 @@
     "@noble/curves": "2.2.0",
     "@noble/hashes": "2.2.0",
     "qrcode-generator": "1.4.4"
+  },
+  "overrides": {
+    "fast-uri": "3.1.5",
+    "postcss": "8.5.23",
+    "undici": "7.29.0"
   }
 }

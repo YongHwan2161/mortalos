@@ -44,7 +44,37 @@ export const DOMAINS = Object.freeze({
   CUSTODY_ACCEPTANCE: "MORTALOS/V0/CUSTODY-ACCEPTANCE\0",
   CUSTODY_COMMITMENT: "MORTALOS/V0/CUSTODY-COMMITMENT\0",
   EVENT_PAYLOAD: "MORTALOS/V0/EVENT-PAYLOAD\0",
-  PEER_ID: "MORTALOS/V0/PEER-ID\0"
+  PEER_ID: "MORTALOS/V0/PEER-ID\0",
+  RESOURCE_CONSUMPTION_ID: "MORTALOS/V1/RESOURCE-CONSUMPTION-ID\0",
+  RESOURCE_CONSUMPTION_WITNESS_ID: "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-ID\0",
+  RESOURCE_CONSUMPTION_WITNESS_SIGNATURE:
+    "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-SIGNATURE\0",
+  RESOURCE_CONTENT_LEAF: "MORTALOS/V1/RESOURCE-CONTENT-LEAF\0",
+  RESOURCE_CONTENT_NODE: "MORTALOS/V1/RESOURCE-CONTENT-NODE\0",
+  RESOURCE_CONTENT_ROOT: "MORTALOS/V1/RESOURCE-CONTENT-ROOT\0",
+  RESOURCE_EXECUTION_CHALLENGE_ID: "MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-ID\0",
+  RESOURCE_EXECUTION_CHALLENGE_SIGNATURE:
+    "MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-SIGNATURE\0",
+  RESOURCE_EXECUTION_CONSUMER_SIGNATURE:
+    "MORTALOS/V1/RESOURCE-EXECUTION-CONSUMER-SIGNATURE\0",
+  RESOURCE_EXECUTION_PROVIDER_SIGNATURE:
+    "MORTALOS/V1/RESOURCE-EXECUTION-PROVIDER-SIGNATURE\0",
+  RESOURCE_EXECUTION_PAYLOAD: "MORTALOS/V1/RESOURCE-EXECUTION-PAYLOAD\0",
+  RESOURCE_EXECUTION_COMPUTE_STEP: "MORTALOS/V1/RESOURCE-EXECUTION-COMPUTE-STEP\0",
+  RESOURCE_EXECUTION_RECEIPT_ID: "MORTALOS/V1/RESOURCE-EXECUTION-RECEIPT-ID\0",
+  RESOURCE_EXECUTION_WORKLOAD_ID: "MORTALOS/V1/RESOURCE-EXECUTION-WORKLOAD-ID\0",
+  RESOURCE_STORAGE_CHALLENGE_INDEX:
+    "MORTALOS/V1/RESOURCE-STORAGE-CHALLENGE-INDEX\0",
+  RESOURCE_LEASE_CONSUMER_SIGNATURE: "MORTALOS/V1/RESOURCE-LEASE-CONSUMER-SIGNATURE\0",
+  RESOURCE_LEASE_ID: "MORTALOS/V1/RESOURCE-LEASE-ID\0",
+  RESOURCE_LEASE_PROVIDER_SIGNATURE: "MORTALOS/V1/RESOURCE-LEASE-PROVIDER-SIGNATURE\0",
+  RESOURCE_OFFER_ID: "MORTALOS/V1/RESOURCE-OFFER-ID\0",
+  RESOURCE_OFFER_SIGNATURE: "MORTALOS/V1/RESOURCE-OFFER-SIGNATURE\0",
+  RESOURCE_REVOCATION_ID: "MORTALOS/V1/RESOURCE-REVOCATION-ID\0",
+  RESOURCE_REVOCATION_SIGNATURE: "MORTALOS/V1/RESOURCE-REVOCATION-SIGNATURE\0",
+  RESOURCE_USAGE_CONSUMER_SIGNATURE: "MORTALOS/V1/RESOURCE-USAGE-CONSUMER-SIGNATURE\0",
+  RESOURCE_USAGE_ID: "MORTALOS/V1/RESOURCE-USAGE-ID\0",
+  RESOURCE_USAGE_PROVIDER_SIGNATURE: "MORTALOS/V1/RESOURCE-USAGE-PROVIDER-SIGNATURE\0"
 });
 
 const DOMAIN_BYTES = Object.freeze(
@@ -110,6 +140,157 @@ export function custodyCommitment(descriptor) {
 
 export function eventPayloadHash(payload) {
   return tagged("sha256:", hash(DOMAIN_BYTES.EVENT_PAYLOAD, canonicalBytes(payload)));
+}
+
+function deriveResourceId(prefix, domain, body) {
+  return tagged(prefix, hash(domain, canonicalBytes(body)));
+}
+
+function resourceSignatureMessage(prefix, identifier, domain) {
+  const raw = decodeTagged(identifier, prefix, 32);
+  return raw ? hash(domain, raw) : null;
+}
+
+export function deriveResourceOfferId(body) {
+  return deriveResourceId("resource-offer:", DOMAIN_BYTES.RESOURCE_OFFER_ID, body);
+}
+
+export function resourceOfferSigningMessage(offerId) {
+  return resourceSignatureMessage(
+    "resource-offer:", offerId, DOMAIN_BYTES.RESOURCE_OFFER_SIGNATURE
+  );
+}
+
+export function deriveResourceConsumptionId(body) {
+  return deriveResourceId(
+    "resource-consumption:", DOMAIN_BYTES.RESOURCE_CONSUMPTION_ID, body
+  );
+}
+
+export function deriveResourceConsumptionWitnessId(body) {
+  return deriveResourceId(
+    "resource-witness:", DOMAIN_BYTES.RESOURCE_CONSUMPTION_WITNESS_ID, body
+  );
+}
+
+export function resourceConsumptionWitnessSigningMessage(witnessId) {
+  return resourceSignatureMessage(
+    "resource-witness:",
+    witnessId,
+    DOMAIN_BYTES.RESOURCE_CONSUMPTION_WITNESS_SIGNATURE
+  );
+}
+
+export function deriveResourceLeaseId(body) {
+  return deriveResourceId("resource-lease:", DOMAIN_BYTES.RESOURCE_LEASE_ID, body);
+}
+
+export function resourceLeaseProviderSigningMessage(leaseId) {
+  return resourceSignatureMessage(
+    "resource-lease:", leaseId, DOMAIN_BYTES.RESOURCE_LEASE_PROVIDER_SIGNATURE
+  );
+}
+
+export function resourceLeaseConsumerSigningMessage(leaseId) {
+  return resourceSignatureMessage(
+    "resource-lease:", leaseId, DOMAIN_BYTES.RESOURCE_LEASE_CONSUMER_SIGNATURE
+  );
+}
+
+export function deriveResourceUsageId(body) {
+  return deriveResourceId("resource-usage:", DOMAIN_BYTES.RESOURCE_USAGE_ID, body);
+}
+
+export function resourceUsageProviderSigningMessage(receiptId) {
+  return resourceSignatureMessage(
+    "resource-usage:", receiptId, DOMAIN_BYTES.RESOURCE_USAGE_PROVIDER_SIGNATURE
+  );
+}
+
+export function resourceUsageConsumerSigningMessage(receiptId) {
+  return resourceSignatureMessage(
+    "resource-usage:", receiptId, DOMAIN_BYTES.RESOURCE_USAGE_CONSUMER_SIGNATURE
+  );
+}
+
+export function deriveResourceRevocationId(body) {
+  return deriveResourceId(
+    "resource-revocation:", DOMAIN_BYTES.RESOURCE_REVOCATION_ID, body
+  );
+}
+
+export function deriveResourceExecutionChallengeId(body) {
+  return deriveResourceId(
+    "resource-challenge:", DOMAIN_BYTES.RESOURCE_EXECUTION_CHALLENGE_ID, body
+  );
+}
+
+export function resourceExecutionChallengeSigningMessage(challengeId) {
+  return resourceSignatureMessage(
+    "resource-challenge:",
+    challengeId,
+    DOMAIN_BYTES.RESOURCE_EXECUTION_CHALLENGE_SIGNATURE
+  );
+}
+
+export function deriveResourceExecutionReceiptId(body) {
+  return deriveResourceId(
+    "resource-execution:", DOMAIN_BYTES.RESOURCE_EXECUTION_RECEIPT_ID, body
+  );
+}
+
+export function resourceExecutionProviderSigningMessage(receiptId) {
+  return resourceSignatureMessage(
+    "resource-execution:",
+    receiptId,
+    DOMAIN_BYTES.RESOURCE_EXECUTION_PROVIDER_SIGNATURE
+  );
+}
+
+export function resourceExecutionConsumerSigningMessage(receiptId) {
+  return resourceSignatureMessage(
+    "resource-execution:",
+    receiptId,
+    DOMAIN_BYTES.RESOURCE_EXECUTION_CONSUMER_SIGNATURE
+  );
+}
+
+export function deriveResourceExecutionWorkloadId(body) {
+  return deriveResourceId(
+    "resource-workload:", DOMAIN_BYTES.RESOURCE_EXECUTION_WORKLOAD_ID, body
+  );
+}
+
+export function resourceContentLeafDigest(body) {
+  return deriveResourceId("sha256:", DOMAIN_BYTES.RESOURCE_CONTENT_LEAF, body);
+}
+
+export function resourceContentNodeDigest(body) {
+  return deriveResourceId("sha256:", DOMAIN_BYTES.RESOURCE_CONTENT_NODE, body);
+}
+
+export function deriveResourceContentRoot(body) {
+  return deriveResourceId("resource-content:", DOMAIN_BYTES.RESOURCE_CONTENT_ROOT, body);
+}
+
+export function deriveResourceStorageChallengeDigest(body) {
+  return deriveResourceId(
+    "sha256:", DOMAIN_BYTES.RESOURCE_STORAGE_CHALLENGE_INDEX, body
+  );
+}
+
+export function resourceExecutionPayloadDigest(bytes) {
+  return tagged("sha256:", hash(DOMAIN_BYTES.RESOURCE_EXECUTION_PAYLOAD, bytes));
+}
+
+export function resourceExecutionComputeStep(body) {
+  return deriveResourceId("sha256:", DOMAIN_BYTES.RESOURCE_EXECUTION_COMPUTE_STEP, body);
+}
+
+export function resourceRevocationSigningMessage(revocationId) {
+  return resourceSignatureMessage(
+    "resource-revocation:", revocationId, DOMAIN_BYTES.RESOURCE_REVOCATION_SIGNATURE
+  );
 }
 
 function copyBytes(value, expectedLength) {
