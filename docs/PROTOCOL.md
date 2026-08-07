@@ -114,6 +114,9 @@ MORTALOS/V0/CUSTODY-ACCEPTANCE\0
 MORTALOS/V0/CUSTODY-COMMITMENT\0
 MORTALOS/V0/EVENT-PAYLOAD\0
 MORTALOS/V0/PEER-ID\0
+MORTALOS/V1/RESOURCE-CONSUMPTION-ID\0
+MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-ID\0
+MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-SIGNATURE\0
 MORTALOS/V1/RESOURCE-OFFER-ID\0
 MORTALOS/V1/RESOURCE-OFFER-SIGNATURE\0
 MORTALOS/V1/RESOURCE-LEASE-ID\0
@@ -158,6 +161,12 @@ event_payload_hash(event_payload) =
 resource_offer_id(offer_body) =
   "resource-offer:" || B64(H(D_RESOURCE_OFFER_ID || JCS(offer_body)))
 
+resource_consumption_id({offer_id, lease_id}) =
+  "resource-consumption:" || B64(H(D_RESOURCE_CONSUMPTION_ID || JCS({offer_id, lease_id})))
+
+resource_consumption_witness_id(witness_body) =
+  "resource-witness:" || B64(H(D_RESOURCE_CONSUMPTION_WITNESS_ID || JCS(witness_body)))
+
 resource_lease_id(lease_body) =
   "resource-lease:" || B64(H(D_RESOURCE_LEASE_ID || JCS(lease_body)))
 
@@ -171,9 +180,10 @@ resource_revocation_id(revocation_body) =
 Here `D_*` is the corresponding domain separator above. `raw_digest` removes the textual prefix and base64url-decodes exactly 32 bytes.
 
 Resource-contract signatures hash the raw 32-byte derived ID under the exact
-role-specific separator above. Provider and consumer signatures are therefore not
-substitutable. The complete offer, mutual lease, chained usage, revocation, limit,
-and explicit-time evaluation rules are normative in
+role-specific separator above. Provider, consumer, and consumption-witness
+signatures are therefore not substitutable. The complete offer, mutual lease,
+network-visible sign-once witness, gossip announcement, chained usage, revocation,
+limit, and explicit-time evaluation rules are normative in
 [`RESOURCE_CONTRACT.md`](RESOURCE_CONTRACT.md).
 
 ## 4. Operational vocabulary

@@ -29,6 +29,8 @@ export {
   RESOURCE_CONTRACT_LIMITS,
   RESOURCE_FORMATS,
   evaluateResourceContract,
+  verifyResourceConsumptionAnnouncement,
+  verifyResourceConsumptionWitness,
   verifyResourceLease,
   verifyResourceOffer,
   verifyResourceRevocation,

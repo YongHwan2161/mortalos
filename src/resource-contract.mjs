@@ -10,10 +10,13 @@ import {
 } from "./codec.mjs";
 import {
   derivePeerId,
+  deriveResourceConsumptionId,
+  deriveResourceConsumptionWitnessId,
   deriveResourceLeaseId,
   deriveResourceOfferId,
   deriveResourceRevocationId,
   deriveResourceUsageId,
+  resourceConsumptionWitnessSigningMessage,
   resourceLeaseConsumerSigningMessage,
   resourceLeaseProviderSigningMessage,
   resourceOfferSigningMessage,
@@ -30,10 +33,14 @@ import {
   bigInt,
   copyArrayByIndex,
   copyBoundedOwnDataArray,
+  createMap,
   createSet,
   createUint8Array,
   freeze,
   isArray,
+  mapGet,
+  mapSet,
+  numberIsSafeInteger,
   objectKeys,
   objectValues,
   ownDataArrayLength,
@@ -43,10 +50,13 @@ import {
   regexpTest,
   setAdd,
   setHas,
+  setSize,
   snapshotOwnDataRecord
 } from "./primordials.mjs";
 
 export const RESOURCE_FORMATS = freeze({
+  announcement: "mortalos-resource-consumption-announcement/1",
+  consumption_witness: "mortalos-resource-consumption-witness/1",
   lease: "mortalos-resource-lease/1",
   offer: "mortalos-resource-offer/1",
   revocation: "mortalos-resource-revocation/1",
@@ -54,6 +64,9 @@ export const RESOURCE_FORMATS = freeze({
 });
 
 export const RESOURCE_CONTRACT_LIMITS = freeze({
+  announcement_bytes: PROTOCOL_PROFILE.resource_contract.announcement_bytes,
+  announcements_per_evaluation_max:
+    PROTOCOL_PROFILE.resource_contract.announcements_per_evaluation_max,
   decimal_max: bigInt(PROTOCOL_PROFILE.resource_contract.decimal_max),
   document_bytes: PROTOCOL_PROFILE.resource_contract.document_bytes,
   lease_duration_ms_max: bigInt(PROTOCOL_PROFILE.resource_contract.lease_duration_ms_max),
@@ -61,7 +74,8 @@ export const RESOURCE_CONTRACT_LIMITS = freeze({
     PROTOCOL_PROFILE.resource_contract.leases_per_offer_observation_max,
   receipts_per_lease_max: PROTOCOL_PROFILE.resource_contract.receipts_per_lease_max,
   revocations_per_evaluation_max:
-    PROTOCOL_PROFILE.resource_contract.revocations_per_evaluation_max
+    PROTOCOL_PROFILE.resource_contract.revocations_per_evaluation_max,
+  witnesses_per_offer_max: PROTOCOL_PROFILE.resource_contract.witnesses_per_offer_max
 });
 
 const DECIMAL_PATTERN = /^(?:0|[1-9][0-9]*)$/u;
@@ -168,10 +182,14 @@ function exactOptions(value, names, label) {
   return result;
 }
 
-function parseCanonicalDocument(source, path) {
+function parseCanonicalDocument(
+  source,
+  path,
+  maximum = RESOURCE_CONTRACT_LIMITS.document_bytes
+) {
   let bytes;
   try {
-    bytes = snapshotBytes(source, RESOURCE_CONTRACT_LIMITS.document_bytes);
+    bytes = snapshotBytes(source, maximum);
   } catch (error) {
     fail(
       error?.code === "E_PARSE_LIMIT_EXCEEDED" ? "E_RESOURCE_LIMIT" : "E_RESOURCE_FORMAT",
@@ -182,7 +200,7 @@ function parseCanonicalDocument(source, path) {
   let value;
   try {
     value = parseJsonBytes(bytes, {
-      maxBytes: RESOURCE_CONTRACT_LIMITS.document_bytes,
+      maxBytes: maximum,
       maxDepth: 16
     });
   } catch {
@@ -192,18 +210,22 @@ function parseCanonicalDocument(source, path) {
   return { bytes, value };
 }
 
-function ownCanonicalValue(source, path) {
+function ownCanonicalValue(
+  source,
+  path,
+  maximum = RESOURCE_CONTRACT_LIMITS.document_bytes
+) {
   let bytes;
   try {
     bytes = canonicalBytes(source);
   } catch {
     fail("E_RESOURCE_FORMAT", path, "ordinary-own-data-json");
   }
-  if (byteLengthOfBytes(bytes) > RESOURCE_CONTRACT_LIMITS.document_bytes) {
+  if (byteLengthOfBytes(bytes) > maximum) {
     fail("E_RESOURCE_LIMIT", path, "document-bytes");
   }
   return parseJsonBytes(bytes, {
-    maxBytes: RESOURCE_CONTRACT_LIMITS.document_bytes,
+    maxBytes: maximum,
     maxDepth: 16
   });
 }
@@ -236,6 +258,63 @@ function validateIdentity(value, path) {
   if (derivePeerId(value.public_key) !== value.key_id) {
     fail("E_RESOURCE_IDENTITY", path, "strict-ed25519-peer-binding");
   }
+}
+
+function validateWitnessPolicy(value, provider, path) {
+  exactKeys(value, ["max_faulty", "threshold", "witnesses"], path);
+  const maxFaulty = value.max_faulty;
+  const threshold = value.threshold;
+  if (
+    !numberIsSafeInteger(maxFaulty) ||
+    !numberIsSafeInteger(threshold) ||
+    maxFaulty < 0 ||
+    threshold < 1
+  ) {
+    fail("E_RESOURCE_WITNESS", path, "safe-integer-policy");
+  }
+  let count;
+  let witnesses;
+  try {
+    count = ownDataArrayLength(value.witnesses, "resource witness policy");
+    witnesses = copyBoundedOwnDataArray(
+      value.witnesses,
+      count,
+      "resource witness policy"
+    );
+  } catch {
+    fail("E_RESOURCE_FORMAT", `${path}/witnesses`, "ordinary-dense-array");
+  }
+  if (count < 1 || count > RESOURCE_CONTRACT_LIMITS.witnesses_per_offer_max) {
+    fail("E_RESOURCE_LIMIT", `${path}/witnesses`, "witness-count");
+  }
+  let previousKeyId = null;
+  for (let index = 0; index < count; index += 1) {
+    const witness = arrayValueAt(witnesses, index);
+    validateIdentity(witness, `${path}/witnesses/${index}`);
+    if (witness.key_id === provider.key_id) {
+      fail("E_RESOURCE_WITNESS", `${path}/witnesses/${index}`, "provider-disjoint");
+    }
+    if (previousKeyId !== null && previousKeyId >= witness.key_id) {
+      fail("E_RESOURCE_WITNESS", `${path}/witnesses/${index}`, "strict-key-order");
+    }
+    previousKeyId = witness.key_id;
+  }
+  if (
+    count < 3 * maxFaulty + 1 ||
+    threshold > count - maxFaulty ||
+    2 * threshold <= count + maxFaulty
+  ) {
+    fail("E_RESOURCE_WITNESS", path, "unsafe-byzantine-quorum");
+  }
+  return { maxFaulty, threshold, witnesses };
+}
+
+function witnessByKeyId(policy, keyId) {
+  for (let index = 0; index < arrayLength(policy.witnesses); index += 1) {
+    const witness = arrayValueAt(policy.witnesses, index);
+    if (witness.key_id === keyId) return witness;
+  }
+  return null;
 }
 
 function validateCapacity(value, path) {
@@ -331,7 +410,14 @@ function assertAllocationWithin(allocation, capacity, path) {
 function validateOfferBody(body) {
   exactKeys(
     body,
-    ["capacity", "expires_at_ms", "offer_nonce", "provider", "valid_from_ms"],
+    [
+      "capacity",
+      "expires_at_ms",
+      "offer_nonce",
+      "provider",
+      "valid_from_ms",
+      "witness_policy"
+    ],
     "/body"
   );
   validateIdentity(body.provider, "/body/provider");
@@ -345,7 +431,12 @@ function validateOfferBody(body) {
   return {
     capacity: validateCapacity(body.capacity, "/body/capacity"),
     expiresAt,
-    validFrom
+    validFrom,
+    witnessPolicy: validateWitnessPolicy(
+      body.witness_policy,
+      body.provider,
+      "/body/witness_policy"
+    )
   };
 }
 
@@ -425,6 +516,9 @@ function validateLeaseBody(body, offer) {
   const startsAt = canonicalDecimal(body.starts_at_ms, "/body/starts_at_ms");
   const endsAt = canonicalDecimal(body.ends_at_ms, "/body/ends_at_ms");
   const offerTimes = validateOfferBody(offer.body);
+  if (witnessByKeyId(offerTimes.witnessPolicy, body.consumer.key_id)) {
+    fail("E_RESOURCE_WITNESS", "/body/consumer", "consumer-witness-role-conflict");
+  }
   if (endsAt <= startsAt) fail("E_RESOURCE_TIME", "/body/ends_at_ms", "after-start");
   if (startsAt < offerTimes.validFrom || endsAt > offerTimes.expiresAt) {
     fail("E_RESOURCE_TIME", "/body", "offer-window");
@@ -525,6 +619,204 @@ export function verifyResourceLease(options) {
   );
   const offer = verifyResourceOffer(offerSource);
   return verifyLeaseEnvelope(offer, parseCanonicalDocument(leaseSource, "/lease"));
+}
+
+function resourceConsumptionBasis(offer, lease) {
+  return {
+    lease_id: lease.lease_id,
+    offer_id: offer.offer_id
+  };
+}
+
+function validateConsumptionWitnessBody(body, offer, lease) {
+  exactKeys(
+    body,
+    ["consumption_id", "lease_id", "offer_id", "witness_key_id"],
+    "/body"
+  );
+  if (body.offer_id !== offer.offer_id || body.lease_id !== lease.lease_id) {
+    fail("E_RESOURCE_BINDING", "/body", "consumption-parent-ids");
+  }
+  const expectedConsumptionId = deriveResourceConsumptionId(
+    resourceConsumptionBasis(offer, lease)
+  );
+  if (body.consumption_id !== expectedConsumptionId) {
+    fail("E_RESOURCE_BINDING", "/body/consumption_id", "offer-lease-id");
+  }
+  const policy = validateOfferBody(offer.body).witnessPolicy;
+  const witness = witnessByKeyId(policy, body.witness_key_id);
+  if (!witness) {
+    fail("E_RESOURCE_WITNESS", "/body/witness_key_id", "offer-witness-membership");
+  }
+  return { consumptionId: expectedConsumptionId, witness };
+}
+
+function resourceConsumptionWitnessDraft(offerSource, leaseSource, witnessKeyId) {
+  const offer = verifyResourceOffer(offerSource);
+  const lease = verifyLeaseEnvelope(
+    offer,
+    parseCanonicalDocument(leaseSource, "/lease")
+  );
+  const consumptionId = deriveResourceConsumptionId(resourceConsumptionBasis(offer, lease));
+  const body = ownCanonicalValue({
+    consumption_id: consumptionId,
+    lease_id: lease.lease_id,
+    offer_id: offer.offer_id,
+    witness_key_id: witnessKeyId
+  }, "/body");
+  validateConsumptionWitnessBody(body, offer, lease);
+  const witnessId = deriveResourceConsumptionWitnessId(body);
+  const signingMessage = resourceConsumptionWitnessSigningMessage(witnessId);
+  return { body, consumptionId, lease, offer, signingMessage, witnessId };
+}
+
+function verifyConsumptionWitnessEnvelope(offer, lease, parsedDocument) {
+  const envelope = parsedDocument.value;
+  exactKeys(
+    envelope,
+    ["body", "format", "witness_id", "witness_signature"],
+    ""
+  );
+  if (envelope.format !== RESOURCE_FORMATS.consumption_witness) {
+    fail(
+      "E_RESOURCE_FORMAT",
+      "/format",
+      RESOURCE_FORMATS.consumption_witness
+    );
+  }
+  const context = validateConsumptionWitnessBody(envelope.body, offer, lease);
+  const expectedWitnessId = deriveResourceConsumptionWitnessId(envelope.body);
+  if (envelope.witness_id !== expectedWitnessId) {
+    fail("E_RESOURCE_BINDING", "/witness_id", "body-id");
+  }
+  if (!verifyEd25519(
+    context.witness.public_key,
+    resourceConsumptionWitnessSigningMessage(expectedWitnessId),
+    envelope.witness_signature
+  )) {
+    fail("E_RESOURCE_SIGNATURE", "/witness_signature", "consumption-witness");
+  }
+  return freeze({
+    body: deepFreeze(envelope.body),
+    bytes: createUint8Array(parsedDocument.bytes),
+    consumption_id: context.consumptionId,
+    lease_id: lease.lease_id,
+    offer_id: offer.offer_id,
+    status: "verified",
+    witness_id: expectedWitnessId,
+    witness_key_id: context.witness.key_id
+  });
+}
+
+export function prepareResourceConsumptionWitness(options) {
+  assertRuntime();
+  const [offer, lease, witnessKeyId] = exactOptions(
+    options,
+    ["offer", "lease", "witness_key_id"],
+    "resource consumption witness draft options"
+  );
+  const draft = resourceConsumptionWitnessDraft(offer, lease, witnessKeyId);
+  const message = createUint8Array(draft.signingMessage);
+  return freeze({
+    body: deepFreeze(draft.body),
+    body_bytes: canonicalBytes(draft.body),
+    consumption_id: draft.consumptionId,
+    signing_message: createUint8Array(message),
+    signing_request: freeze({
+      message,
+      tuple: `resource-consumption:${draft.offer.offer_id}`
+    }),
+    witness_id: draft.witnessId
+  });
+}
+
+export function finalizeResourceConsumptionWitness(options) {
+  assertRuntime();
+  const [offer, lease, witnessKeyId, witnessSignature] = exactOptions(
+    options,
+    ["offer", "lease", "witness_key_id", "witness_signature"],
+    "resource consumption witness options"
+  );
+  const draft = resourceConsumptionWitnessDraft(offer, lease, witnessKeyId);
+  const bytes = canonicalBytes({
+    body: draft.body,
+    format: RESOURCE_FORMATS.consumption_witness,
+    witness_id: draft.witnessId,
+    witness_signature: witnessSignature
+  });
+  return verifyResourceConsumptionWitness({ offer, lease, witness: bytes }).bytes;
+}
+
+export function verifyResourceConsumptionWitness(options) {
+  assertRuntime();
+  const [offerSource, leaseSource, witnessSource] = exactOptions(
+    options,
+    ["offer", "lease", "witness"],
+    "resource consumption witness verification options"
+  );
+  const offer = verifyResourceOffer(offerSource);
+  const lease = verifyLeaseEnvelope(
+    offer,
+    parseCanonicalDocument(leaseSource, "/lease")
+  );
+  return verifyConsumptionWitnessEnvelope(
+    offer,
+    lease,
+    parseCanonicalDocument(witnessSource, "/witness")
+  );
+}
+
+export function createResourceConsumptionAnnouncement(options) {
+  assertRuntime();
+  const [offerSource, leaseSource, witnessSource] = exactOptions(
+    options,
+    ["offer", "lease", "witness"],
+    "resource consumption announcement options"
+  );
+  verifyResourceConsumptionWitness({
+    offer: offerSource,
+    lease: leaseSource,
+    witness: witnessSource
+  });
+  const bytes = canonicalBytes({
+    format: RESOURCE_FORMATS.announcement,
+    lease: parseCanonicalDocument(leaseSource, "/lease").value,
+    offer: parseCanonicalDocument(offerSource, "/offer").value,
+    witness: parseCanonicalDocument(witnessSource, "/witness").value
+  });
+  return verifyResourceConsumptionAnnouncement(bytes).bytes;
+}
+
+export function verifyResourceConsumptionAnnouncement(source) {
+  assertRuntime();
+  const parsed = parseCanonicalDocument(
+    source,
+    "/announcement",
+    RESOURCE_CONTRACT_LIMITS.announcement_bytes
+  );
+  const announcement = parsed.value;
+  exactKeys(announcement, ["format", "lease", "offer", "witness"], "");
+  if (announcement.format !== RESOURCE_FORMATS.announcement) {
+    fail("E_RESOURCE_FORMAT", "/format", RESOURCE_FORMATS.announcement);
+  }
+  const offerBytes = canonicalBytes(announcement.offer);
+  const leaseBytes = canonicalBytes(announcement.lease);
+  const witnessBytes = canonicalBytes(announcement.witness);
+  const offer = verifyResourceOffer(offerBytes);
+  const lease = verifyResourceLease({ offer: offerBytes, lease: leaseBytes });
+  const witness = verifyResourceConsumptionWitness({
+    offer: offerBytes,
+    lease: leaseBytes,
+    witness: witnessBytes
+  });
+  return freeze({
+    bytes: createUint8Array(parsed.bytes),
+    consumption_id: witness.consumption_id,
+    lease,
+    offer,
+    status: "verified",
+    witness
+  });
 }
 
 function validateUsageShape(value, allocation) {
@@ -975,12 +1267,30 @@ function usageExhausted(receipt, lease) {
 
 export function evaluateResourceContract(options) {
   assertRuntime();
-  const [offerSource, leaseSourcesValue, receiptSourcesValue, revocationSourcesValue, observed] =
-    exactOptions(
-      options,
-      ["offer", "leases", "usage_receipts", "revocations", "observed_at_ms"],
-      "resource evaluation options"
-    );
+  const [
+    announcementSourcesValue,
+    offerSource,
+    leaseSourcesValue,
+    observed,
+    receiptSourcesValue,
+    revocationSourcesValue
+  ] = exactOptions(
+    options,
+    [
+      "consumption_announcements",
+      "offer",
+      "leases",
+      "observed_at_ms",
+      "usage_receipts",
+      "revocations"
+    ],
+    "resource evaluation options"
+  );
+  const announcementSources = boundedArray(
+    announcementSourcesValue,
+    RESOURCE_CONTRACT_LIMITS.announcements_per_evaluation_max,
+    "resource consumption announcements"
+  );
   const leaseSources = boundedArray(
     leaseSourcesValue,
     RESOURCE_CONTRACT_LIMITS.leases_per_offer_observation_max,
@@ -1014,6 +1324,49 @@ export function evaluateResourceContract(options) {
       );
     }
     lease = candidate;
+  }
+
+  const witnessCommitments = createMap();
+  const witnessedKeys = createSet();
+  for (let index = 0; index < arrayLength(announcementSources); index += 1) {
+    const announcement = verifyResourceConsumptionAnnouncement(
+      arrayValueAt(announcementSources, index)
+    );
+    if (announcement.offer.offer_id !== offer.offer_id) {
+      fail(
+        "E_RESOURCE_BINDING",
+        `/consumption_announcements/${index}/offer`,
+        "evaluation-offer"
+      );
+    }
+    const witnessKeyId = announcement.witness.witness_key_id;
+    const priorLeaseId = mapGet(witnessCommitments, witnessKeyId);
+    if (priorLeaseId && priorLeaseId !== announcement.lease.lease_id) {
+      fail(
+        "E_RESOURCE_EQUIVOCATION",
+        `/consumption_announcements/${index}/witness`,
+        "witness-double-sign"
+      );
+    }
+    if (!priorLeaseId) {
+      mapSet(witnessCommitments, witnessKeyId, announcement.lease.lease_id);
+    }
+    if (lease && announcement.lease.lease_id !== lease.lease_id) {
+      fail(
+        "E_RESOURCE_EQUIVOCATION",
+        `/consumption_announcements/${index}/lease`,
+        "single-use-offer"
+      );
+    }
+    lease ??= announcement.lease;
+    setAdd(witnessedKeys, witnessKeyId);
+  }
+
+  const witnessesVerified = setSize(witnessedKeys);
+  const witnessThreshold = offerTimes.witnessPolicy.threshold;
+  const witnessed = lease !== null && witnessesVerified >= witnessThreshold;
+  if (arrayLength(receiptSources) > 0 && !witnessed) {
+    fail("E_RESOURCE_WITNESS", "/usage_receipts", "witness-quorum-required");
   }
 
   const context = { lease, offer };
@@ -1082,6 +1435,8 @@ export function evaluateResourceContract(options) {
     ) {
       status = "revoked";
       effectiveRevocation = earliestLeaseRevocation.revocation;
+    } else if (!witnessed) {
+      status = "unwitnessed";
     } else if (observedAt < leaseTimes.startsAt) {
       status = "scheduled";
     } else if (observedAt > leaseTimes.endsAt) {
@@ -1094,12 +1449,18 @@ export function evaluateResourceContract(options) {
   }
 
   return freeze({
+    announcements_verified: arrayLength(announcementSources),
+    consumption_id: lease === null
+      ? null
+      : deriveResourceConsumptionId(resourceConsumptionBasis(offer, lease)),
     effective_revocation_id: effectiveRevocation?.revocation_id ?? null,
     lease_id: lease?.lease_id ?? null,
     offer_id: offer.offer_id,
     observed_at_ms: observed,
     receipts_verified: arrayLength(receiptSources),
-    status
+    status,
+    witness_threshold: witnessThreshold,
+    witnesses_verified: witnessesVerified
   });
 }
 

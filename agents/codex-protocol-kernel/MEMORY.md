@@ -6,7 +6,7 @@ Branch: `agent/codex-protocol-kernel--resource-offer-leases`
 
 Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 
-## Signed bounded resource-contract candidate
+## Network-visible sign-once resource-contract candidate
 
 - A provider-signed canonical offer binds finite storage, bandwidth, compute, and
   validity. One offer is a single-use capability; two distinct valid leases halt as
@@ -15,19 +15,29 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
   signatures. Usage receipts are jointly signed, predecessor-chained, cumulative,
   and allocation-bounded. Either lease party can sign unilateral revocation; offer
   revocation remains provider-only and cannot rewrite an already started lease.
+- An offer also signs a sorted, role-disjoint witness roster, declared Byzantine
+  bound `f`, and threshold `q`. The validator requires `n >= 3f + 1`,
+  `q <= n - f`, and `2q > n + f`. A lease stays `unwitnessed` until `q` distinct
+  valid announcements converge; minority partitions cannot activate it.
+- Each witness signs one offer/lease consumption under a distinct domain. Its
+  signing request reuses the existing endpoint-local sign-once journal with one
+  tuple per offer and a message bound to the exact lease. Duplicate gossip is
+  idempotent; provider conflict or witness double-sign halts with no winner.
 - The portable core owns no private key, clock, network, scheduler, storage, or
   server. Default SDK exports verification/evaluation; the explicit package
   subpath exposes draft/finalize functions and signing messages.
-- Generated profile limits bind 16,384-byte documents, 63-bit decimal values,
+- Generated profile limits bind 16,384-byte component documents, 65,536-byte
+  announcements, 16 witnesses, 64 observed announcements, 63-bit decimals,
   365-day duration, eight observed leases, 4,096 receipts, and 32 revocations.
-- Focused resource/profile `12/12`, SDK `4/4`, clean packed consumer, specification,
-  links, conformance `76/76`, portable `10,000/10,000`, and full `npm test` PASS in
-  `3,329.6s`.
-- Root remaining safety gap: equivocation is detected only when conflicting leases
-  meet. Network-visible sign-once/consumption evidence precedes scheduling. Root
-  product gap after that is lease-bound storage/bandwidth/compute execution proof;
-  signatures alone do not prove possession, delivery, truthful metering, Sybil
-  resistance, or independent provider administration.
+- Focused resource/profile `15/15`, transport `8/8`, SDK `4/4`, clean packed full
+  witness flow, specification, links, conformance `76/76`, portable
+  `10,000/10,000`, security inventory `21/119`, and zero-vulnerability audit pass.
+  Fresh exact-tree full `npm test` also passed in `2,720.8s`; commit/push, exact-head
+  CI, and independent review remain.
+- Root product gap is now lease-bound storage/bandwidth/compute execution proof.
+  Quorum-visible signatures still do not prove possession, delivery, truthful
+  metering, witness independence, Sybil resistance, or independent provider
+  administration.
 
 ## Verified merged state
 
@@ -64,15 +74,17 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 
 ## Current priority
 
-1. Promote the exact product-continuity candidate through CI, immutable review,
-   expected-head merge, and post-merge readback.
-2. Replace the three in-process copy transports with provider-neutral durable
+1. Complete the exact network-visible sign-once full suite, then promote through
+   CI, immutable review, expected-head merge, and post-merge readback.
+2. Bind the witnessed lease to content-addressed storage, bandwidth, and compute
+   challenge receipts emitted by the actual participant data plane.
+3. Replace the three in-process copy transports with provider-neutral durable
    adapters and prove distinct failure/credential domains.
-3. Compose S4 confidentiality explicitly; the current product Capsule carries
+4. Compose S4 confidentiality explicitly; the current product Capsule carries
    exact resource bytes and is not an encryption claim.
-4. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
+5. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
    freeze one integrated UX/runtime receipt.
-5. Move signing plus sign-once state to an isolated authority service or hardware
+6. Move signing plus sign-once state to an isolated authority service or hardware
    boundary before making XSS-resistant custody claims.
 
 ## Stable decisions

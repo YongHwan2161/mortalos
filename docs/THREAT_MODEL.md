@@ -145,15 +145,28 @@ The validator still rejects malformed or unauthorized inputs from outsiders. Exc
 
 ### Signed resource-contract boundary
 
-The v1 resource contract narrows “resource contribution” to signed finite intent.
-It rejects malformed identity, capacity overflow, out-of-window allocation,
-signature substitution, receipt regression/fork, replay, and offer equivocation.
-Provider and consumer must both sign a lease and every usage receipt; either party
-may terminate their lease without waiting for the other.
+The v1 resource contract narrows “resource contribution” to signed finite intent
+plus a network-visible sign-once claim. It rejects malformed identity, capacity
+overflow, out-of-window allocation, signature substitution, receipt
+regression/fork, replay, unsafe witness thresholds, role overlap, provider lease
+equivocation, and witness double-signing. Provider and consumer must both sign a
+lease and every usage receipt; either party may terminate their lease without
+waiting for the other.
+
+Each offer signs a sorted witness roster, a declared Byzantine bound `f`, and a
+threshold `q`. For roster size `n`, the validator requires `n >= 3f + 1`,
+`q <= n - f`, and `2q > n + f`. A lease cannot become scheduled, active,
+exhausted, or completed until `q` distinct roster witnesses announce the exact
+offer/lease consumption. A minority partition therefore remains `unwitnessed`.
+Two conflicting threshold certificates must intersect in more than `f` witnesses,
+so at least one identity has signed both claims if at most `f` are Byzantine. The
+evaluator exposes this equivocation and selects no winner. These properties are
+conditional on the signed fault bound; a roster does not establish independence.
 
 This does not remove the excluded Sybil/fake-contribution threat. A provider can
-sign capacity it does not possess, the parties can collude on false usage, and one
-administrator can control many valid keys. Until execution receipts bind the lease
+sign capacity it does not possess, the parties and witnesses can collude on false
+usage or visibility, and one administrator can control many valid keys. Until
+execution receipts bind the witnessed lease
 to observable data-plane work across independently evidenced runtimes, the contract
 is accounting/control-plane evidence only. No scheduler may convert a signature
 into a physical-independence claim.

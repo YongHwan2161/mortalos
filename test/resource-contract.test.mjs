@@ -6,23 +6,33 @@ import { build } from "esbuild";
 import {
   RESOURCE_CONTRACT_LIMITS,
   ResourceContractError,
+  createResourceConsumptionAnnouncement,
   evaluateResourceContract,
+  finalizeResourceConsumptionWitness,
   finalizeResourceLease,
   finalizeResourceOffer,
   finalizeResourceRevocation,
   finalizeResourceUsageReceipt,
+  prepareResourceConsumptionWitness,
   prepareResourceLease,
   prepareResourceOffer,
   prepareResourceRevocation,
   prepareResourceUsageReceipt,
+  verifyResourceConsumptionAnnouncement,
+  verifyResourceConsumptionWitness,
   verifyResourceLease,
   verifyResourceOffer,
   verifyResourceRevocation,
   verifyResourceUsageReceipt
 } from "../src/resource-contract.mjs";
-import { canonicalBytes } from "../src/codec.mjs";
+import { canonicalBytes, parseJsonBytes } from "../src/codec.mjs";
 import { derivePeerId } from "../src/crypto.mjs";
 import { encodeBase64Url } from "../src/bytes.mjs";
+import { createContinuityAuthority } from "../src/continuity.mjs";
+import {
+  createRelayControlMessage,
+  decodeRelayMessageBytes
+} from "../src/transport/protocol.mjs";
 
 function actor() {
   const { privateKey, publicKey } = generateKeyPairSync("ed25519");
@@ -33,6 +43,18 @@ function actor() {
 
 function identity(value) {
   return { key_id: value.key_id, public_key: value.public_key };
+}
+
+const DEFAULT_WITNESSES = [actor(), actor(), actor(), actor()];
+
+function witnessPolicy(witnesses = DEFAULT_WITNESSES, overrides = {}) {
+  return {
+    max_faulty: overrides.max_faulty ?? 1,
+    threshold: overrides.threshold ?? 3,
+    witnesses: witnesses
+      .map(identity)
+      .sort((left, right) => left.key_id < right.key_id ? -1 : 1)
+  };
 }
 
 function signature(value, message) {
@@ -73,7 +95,8 @@ function offerBody(provider, overrides = {}) {
     expires_at_ms: overrides.expires_at_ms ?? "2000",
     offer_nonce: overrides.offer_nonce ?? nonce(1),
     provider: identity(provider),
-    valid_from_ms: overrides.valid_from_ms ?? "1000"
+    valid_from_ms: overrides.valid_from_ms ?? "1000",
+    witness_policy: overrides.witness_policy ?? witnessPolicy()
   };
 }
 
@@ -170,6 +193,32 @@ function signedRevocation(signer, offer, lease, body) {
   });
 }
 
+function signedConsumptionWitness(signer, offer, lease) {
+  const draft = prepareResourceConsumptionWitness({
+    offer,
+    lease,
+    witness_key_id: signer.key_id
+  });
+  return finalizeResourceConsumptionWitness({
+    offer,
+    lease,
+    witness_key_id: signer.key_id,
+    witness_signature: signature(signer, draft.signing_message)
+  });
+}
+
+function consumptionAnnouncement(signer, offer, lease) {
+  return createResourceConsumptionAnnouncement({
+    offer,
+    lease,
+    witness: signedConsumptionWitness(signer, offer, lease)
+  });
+}
+
+function witnessQuorum(offer, lease, witnesses = DEFAULT_WITNESSES.slice(0, 3)) {
+  return witnesses.map((witness) => consumptionAnnouncement(witness, offer, lease));
+}
+
 function code(expected) {
   return (error) => error instanceof ResourceContractError && error.code === expected;
 }
@@ -186,6 +235,10 @@ test("provider offer, mutual lease, chained usage, and unilateral revocation for
     leaseBody(verifiedOffer.offer_id, consumer)
   );
   const verifiedLease = verifyResourceLease({ offer, lease });
+  const announcements = witnessQuorum(offer, lease);
+  const consumptionId = verifyResourceConsumptionAnnouncement(
+    announcements[0]
+  ).consumption_id;
   const receipt0 = signedUsage(
     provider,
     consumer,
@@ -227,6 +280,7 @@ test("provider offer, mutual lease, chained usage, and unilateral revocation for
 
   assert.deepEqual(
     evaluateResourceContract({
+      consumption_announcements: announcements,
       offer,
       leases: [lease],
       usage_receipts: [receipt0, receipt1],
@@ -234,12 +288,16 @@ test("provider offer, mutual lease, chained usage, and unilateral revocation for
       observed_at_ms: "1350"
     }),
     {
+      announcements_verified: 3,
+      consumption_id: consumptionId,
       effective_revocation_id: null,
       lease_id: verifiedLease.lease_id,
       offer_id: verifiedOffer.offer_id,
       observed_at_ms: "1350",
       receipts_verified: 2,
-      status: "active"
+      status: "active",
+      witness_threshold: 3,
+      witnesses_verified: 3
     }
   );
 
@@ -253,6 +311,7 @@ test("provider offer, mutual lease, chained usage, and unilateral revocation for
   });
   assert.equal(verifyResourceRevocation({ offer, lease, revocation }).status, "verified");
   const revoked = evaluateResourceContract({
+    consumption_announcements: announcements,
     offer,
     leases: [lease],
     usage_receipts: [receipt0, receipt1],
@@ -285,8 +344,35 @@ test("finite decimal, duration, allocation, usage, and envelope ceilings fail cl
     })),
     code("E_RESOURCE_DECIMAL")
   );
+  assert.throws(
+    () => prepareResourceOffer(offerBody(provider, {
+      witness_policy: witnessPolicy(
+        new Array(RESOURCE_CONTRACT_LIMITS.witnesses_per_offer_max + 1)
+          .fill(null)
+          .map(() => actor()),
+        { max_faulty: 0, threshold: 9 }
+      )
+    })),
+    code("E_RESOURCE_LIMIT")
+  );
+  assert.throws(
+    () => prepareResourceOffer(offerBody(provider, {
+      witness_policy: witnessPolicy(DEFAULT_WITNESSES, {
+        max_faulty: 1,
+        threshold: 2
+      })
+    })),
+    code("E_RESOURCE_WITNESS")
+  );
   const offer = signedOffer(provider);
   const offerId = verifyResourceOffer(offer).offer_id;
+  assert.throws(
+    () => prepareResourceLease({
+      offer,
+      body: leaseBody(offerId, DEFAULT_WITNESSES[0])
+    }),
+    code("E_RESOURCE_WITNESS")
+  );
   assert.throws(
     () => prepareResourceLease({
       offer,
@@ -297,6 +383,7 @@ test("finite decimal, duration, allocation, usage, and envelope ceilings fail cl
     code("E_RESOURCE_CAPACITY")
   );
   const lease = signedLease(provider, consumer, offer, leaseBody(offerId, consumer));
+  const announcement = consumptionAnnouncement(DEFAULT_WITNESSES[0], offer, lease);
   const leaseId = verifyResourceLease({ offer, lease }).lease_id;
   assert.throws(
     () => prepareResourceUsageReceipt({
@@ -322,8 +409,22 @@ test("finite decimal, duration, allocation, usage, and envelope ceilings fail cl
   );
   assert.throws(
     () => evaluateResourceContract({
+      consumption_announcements: [],
       offer,
       leases: new Array(RESOURCE_CONTRACT_LIMITS.leases_per_offer_observation_max + 1).fill(lease),
+      usage_receipts: [],
+      revocations: [],
+      observed_at_ms: "1200"
+    }),
+    code("E_RESOURCE_LIMIT")
+  );
+  assert.throws(
+    () => evaluateResourceContract({
+      consumption_announcements: new Array(
+        RESOURCE_CONTRACT_LIMITS.announcements_per_evaluation_max + 1
+      ).fill(announcement),
+      offer,
+      leases: [],
       usage_receipts: [],
       revocations: [],
       observed_at_ms: "1200"
@@ -344,6 +445,27 @@ test("signature substitution, noncanonical bytes, unknown fields, and hostile ob
     code("E_RESOURCE_SIGNATURE")
   );
   const offer = signedOffer(provider);
+  const consumer = actor();
+  const lease = signedLease(
+    provider,
+    consumer,
+    offer,
+    leaseBody(verifyResourceOffer(offer).offer_id, consumer)
+  );
+  const witnessDraft = prepareResourceConsumptionWitness({
+    offer,
+    lease,
+    witness_key_id: DEFAULT_WITNESSES[0].key_id
+  });
+  assert.throws(
+    () => finalizeResourceConsumptionWitness({
+      offer,
+      lease,
+      witness_key_id: DEFAULT_WITNESSES[0].key_id,
+      witness_signature: signature(attacker, witnessDraft.signing_message)
+    }),
+    code("E_RESOURCE_SIGNATURE")
+  );
   const noncanonical = new TextEncoder().encode(` ${new TextDecoder().decode(offer)}`);
   assert.throws(() => verifyResourceOffer(noncanonical), code("E_RESOURCE_FORMAT"));
   const extra = { ...offerBody(provider), surprise: true };
@@ -385,6 +507,7 @@ test("evaluator owns dense arrays and rejects accessor or future receipt observa
   });
   assert.throws(
     () => evaluateResourceContract({
+      consumption_announcements: [],
       offer,
       leases: hostileLeases,
       usage_receipts: [],
@@ -393,8 +516,25 @@ test("evaluator owns dense arrays and rejects accessor or future receipt observa
     }),
     code("E_RESOURCE_FORMAT")
   );
+  const hostileAnnouncements = witnessQuorum(offer, lease);
+  Object.defineProperty(hostileAnnouncements, "0", {
+    enumerable: true,
+    get() { return consumptionAnnouncement(DEFAULT_WITNESSES[0], offer, lease); }
+  });
   assert.throws(
     () => evaluateResourceContract({
+      consumption_announcements: hostileAnnouncements,
+      offer,
+      leases: [lease],
+      usage_receipts: [],
+      revocations: [],
+      observed_at_ms: "1200"
+    }),
+    code("E_RESOURCE_FORMAT")
+  );
+  assert.throws(
+    () => evaluateResourceContract({
+      consumption_announcements: witnessQuorum(offer, lease),
       offer,
       leases: [lease],
       usage_receipts: [receipt],
@@ -466,6 +606,7 @@ test("one signed offer is single-use and conflicting mutual leases are equivocat
   );
   assert.throws(
     () => evaluateResourceContract({
+      consumption_announcements: [],
       offer,
       leases: [first, second],
       usage_receipts: [],
@@ -476,6 +617,7 @@ test("one signed offer is single-use and conflicting mutual leases are equivocat
   );
   assert.throws(
     () => evaluateResourceContract({
+      consumption_announcements: [],
       offer,
       leases: [first, first],
       usage_receipts: [],
@@ -483,6 +625,203 @@ test("one signed offer is single-use and conflicting mutual leases are equivocat
       observed_at_ms: "1200"
     }),
     code("E_RESOURCE_REPLAY")
+  );
+});
+
+test("network-visible witness quorum gates activation and gossip is idempotent", () => {
+  const provider = actor();
+  const consumer = actor();
+  const witnesses = [actor(), actor(), actor(), actor()];
+  const offer = signedOffer(provider, offerBody(provider, {
+    witness_policy: witnessPolicy(witnesses)
+  }));
+  const offerId = verifyResourceOffer(offer).offer_id;
+  const lease = signedLease(provider, consumer, offer, leaseBody(offerId, consumer));
+  const announcements = witnesses.map((witness) =>
+    consumptionAnnouncement(witness, offer, lease));
+
+  const none = evaluateResourceContract({
+    consumption_announcements: [],
+    offer,
+    leases: [lease],
+    observed_at_ms: "1200",
+    revocations: [],
+    usage_receipts: []
+  });
+  assert.equal(none.status, "unwitnessed");
+  assert.equal(none.witnesses_verified, 0);
+
+  const minority = evaluateResourceContract({
+    consumption_announcements: announcements.slice(0, 2),
+    offer,
+    leases: [lease],
+    observed_at_ms: "1200",
+    revocations: [],
+    usage_receipts: []
+  });
+  assert.equal(minority.status, "unwitnessed");
+  assert.equal(minority.witnesses_verified, 2);
+
+  const quorum = evaluateResourceContract({
+    consumption_announcements: [
+      announcements[0],
+      announcements[0],
+      announcements[1],
+      announcements[2]
+    ],
+    offer,
+    leases: [],
+    observed_at_ms: "1200",
+    revocations: [],
+    usage_receipts: []
+  });
+  assert.equal(quorum.status, "active");
+  assert.equal(quorum.announcements_verified, 4);
+  assert.equal(quorum.witnesses_verified, 3);
+  assert.equal(quorum.witness_threshold, 3);
+
+  const opened = verifyResourceConsumptionAnnouncement(announcements[0]);
+  assert.equal(opened.offer.offer_id, offerId);
+  assert.equal(opened.lease.lease_id, verifyResourceLease({ offer, lease }).lease_id);
+  assert.equal(opened.witness.status, "verified");
+
+  const control = createRelayControlMessage(
+    "resource-consumption-announcement",
+    parseJsonBytes(announcements[0])
+  );
+  const relayed = decodeRelayMessageBytes(canonicalBytes(control));
+  assert.equal(relayed.control.kind, "resource-consumption-announcement");
+  assert.equal(
+    verifyResourceConsumptionAnnouncement(
+      canonicalBytes(relayed.control.content)
+    ).consumption_id,
+    opened.consumption_id
+  );
+});
+
+test("partitioned claims halt on provider conflict and expose witness double-sign", () => {
+  const provider = actor();
+  const firstConsumer = actor();
+  const secondConsumer = actor();
+  const witnesses = [actor(), actor(), actor(), actor()];
+  const offer = signedOffer(provider, offerBody(provider, {
+    witness_policy: witnessPolicy(witnesses)
+  }));
+  const offerId = verifyResourceOffer(offer).offer_id;
+  const first = signedLease(
+    provider,
+    firstConsumer,
+    offer,
+    leaseBody(offerId, firstConsumer)
+  );
+  const second = signedLease(
+    provider,
+    secondConsumer,
+    offer,
+    leaseBody(offerId, secondConsumer, { lease_nonce: nonce(12) })
+  );
+  const firstPartition = witnesses.slice(0, 2).map((witness) =>
+    consumptionAnnouncement(witness, offer, first));
+  const secondPartition = witnesses.slice(2).map((witness) =>
+    consumptionAnnouncement(witness, offer, second));
+
+  for (const [lease, announcements] of [
+    [first, firstPartition],
+    [second, secondPartition]
+  ]) {
+    assert.equal(evaluateResourceContract({
+      consumption_announcements: announcements,
+      offer,
+      leases: [lease],
+      observed_at_ms: "1200",
+      revocations: [],
+      usage_receipts: []
+    }).status, "unwitnessed");
+  }
+
+  assert.throws(
+    () => evaluateResourceContract({
+      consumption_announcements: [...firstPartition, ...secondPartition],
+      offer,
+      leases: [],
+      observed_at_ms: "1200",
+      revocations: [],
+      usage_receipts: []
+    }),
+    code("E_RESOURCE_EQUIVOCATION")
+  );
+
+  const doubleSigned = [
+    consumptionAnnouncement(witnesses[0], offer, first),
+    consumptionAnnouncement(witnesses[0], offer, second)
+  ];
+  assert.throws(
+    () => evaluateResourceContract({
+      consumption_announcements: doubleSigned,
+      offer,
+      leases: [],
+      observed_at_ms: "1200",
+      revocations: [],
+      usage_receipts: []
+    }),
+    (error) => code("E_RESOURCE_EQUIVOCATION")(error) &&
+      error.detail === "witness-double-sign"
+  );
+});
+
+test("consumption signing request reuses the existing private sign-once authority", async () => {
+  const provider = actor();
+  const firstConsumer = actor();
+  const secondConsumer = actor();
+  const authority = await createContinuityAuthority();
+  const otherWitnesses = [actor(), actor(), actor()];
+  const witnesses = [
+    { ...authority.custodian },
+    ...otherWitnesses.map(identity)
+  ];
+  const offer = signedOffer(provider, offerBody(provider, {
+    witness_policy: witnessPolicy(witnesses)
+  }));
+  const offerId = verifyResourceOffer(offer).offer_id;
+  const first = signedLease(
+    provider,
+    firstConsumer,
+    offer,
+    leaseBody(offerId, firstConsumer)
+  );
+  const second = signedLease(
+    provider,
+    secondConsumer,
+    offer,
+    leaseBody(offerId, secondConsumer, { lease_nonce: nonce(13) })
+  );
+  const firstDraft = prepareResourceConsumptionWitness({
+    offer,
+    lease: first,
+    witness_key_id: authority.custodian.key_id
+  });
+  const signed = await authority.sign(firstDraft.signing_request);
+  const evidence = finalizeResourceConsumptionWitness({
+    offer,
+    lease: first,
+    witness_key_id: authority.custodian.key_id,
+    witness_signature: signed.signature
+  });
+  assert.equal(
+    verifyResourceConsumptionWitness({ offer, lease: first, witness: evidence }).status,
+    "verified"
+  );
+
+  const conflict = prepareResourceConsumptionWitness({
+    offer,
+    lease: second,
+    witness_key_id: authority.custodian.key_id
+  });
+  assert.equal(firstDraft.signing_request.tuple, conflict.signing_request.tuple);
+  assert.notDeepEqual(firstDraft.signing_message, conflict.signing_message);
+  await assert.rejects(
+    authority.sign(conflict.signing_request),
+    (error) => error?.code === "E_CONTINUITY_EQUIVOCATION"
   );
 });
 
@@ -507,6 +846,7 @@ test("provider offer revocation has deterministic earliest-effect semantics", ()
     target_kind: "offer"
   });
   assert.equal(evaluateResourceContract({
+    consumption_announcements: [],
     offer,
     leases: [],
     usage_receipts: [],

@@ -74,11 +74,33 @@ try {
   const resourceOutput = run(process.execPath, [
     "--input-type=module",
     "--eval",
-    `import { generateKeyPairSync } from "node:crypto";
-     import { derivePeerId, prepareResourceOffer } from "@mortal-os/core/resource-contract";
-     const { publicKey } = generateKeyPairSync("ed25519");
-     const raw = publicKey.export({ type: "spki", format: "der" }).subarray(-32);
-     const public_key = "ed25519:" + Buffer.from(raw).toString("base64url");
+    `import { generateKeyPairSync, sign } from "node:crypto";
+     import {
+       createResourceConsumptionAnnouncement,
+       derivePeerId,
+       evaluateResourceContract,
+       finalizeResourceConsumptionWitness,
+       finalizeResourceLease,
+       finalizeResourceOffer,
+       prepareResourceConsumptionWitness,
+       prepareResourceLease,
+       prepareResourceOffer,
+       verifyResourceConsumptionAnnouncement
+     } from "@mortal-os/core/resource-contract";
+     const actor = () => {
+       const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+       const raw = publicKey.export({ type: "spki", format: "der" }).subarray(-32);
+       const public_key = "ed25519:" + Buffer.from(raw).toString("base64url");
+       return { key_id: derivePeerId(public_key), privateKey, public_key };
+     };
+     const identity = ({ key_id, public_key }) => ({ key_id, public_key });
+     const signature = (signer, message) =>
+       "ed25519:" + Buffer.from(sign(null, message, signer.privateKey)).toString("base64url");
+     const provider = actor();
+     const consumer = actor();
+     const witnessActors = Array.from({ length: 4 }, actor)
+       .sort((left, right) => left.key_id < right.key_id ? -1 : 1);
+     const witnesses = witnessActors.map(identity);
      const draft = prepareResourceOffer({
        capacity: {
          bandwidth: { burst_bytes: "0", egress_bytes_total: "0", ingress_bytes_total: "0", rate_bytes_per_second: "0" },
@@ -87,14 +109,68 @@ try {
        },
        expires_at_ms: "2000",
        offer_nonce: "AAAAAAAAAAAAAAAAAAAAAA",
-       provider: { key_id: derivePeerId(public_key), public_key },
-       valid_from_ms: "1000"
+       provider: identity(provider),
+       valid_from_ms: "1000",
+       witness_policy: { max_faulty: 1, threshold: 3, witnesses }
      });
-     console.log(JSON.stringify({ id: draft.offer_id, message: draft.provider_signing_message.byteLength }));`
+     const offer = finalizeResourceOffer({
+       body: draft.body,
+       provider_signature: signature(provider, draft.provider_signing_message)
+     });
+     const leaseDraft = prepareResourceLease({
+       offer,
+       body: {
+         allocation: draft.body.capacity,
+         consumer: identity(consumer),
+         ends_at_ms: "1900",
+         lease_nonce: "AQEBAQEBAQEBAQEBAQEBAQ",
+         offer_id: draft.offer_id,
+         starts_at_ms: "1100"
+       }
+     });
+     const lease = finalizeResourceLease({
+       offer,
+       body: leaseDraft.body,
+       consumer_signature: signature(consumer, leaseDraft.consumer_signing_message),
+       provider_signature: signature(provider, leaseDraft.provider_signing_message)
+     });
+     const announcements = witnessActors.slice(0, 3).map((witness) => {
+       const witnessDraft = prepareResourceConsumptionWitness({
+         offer,
+         lease,
+         witness_key_id: witness.key_id
+       });
+       const witnessBytes = finalizeResourceConsumptionWitness({
+         offer,
+         lease,
+         witness_key_id: witness.key_id,
+         witness_signature: signature(witness, witnessDraft.signing_message)
+       });
+       return createResourceConsumptionAnnouncement({ offer, lease, witness: witnessBytes });
+     });
+     const opened = verifyResourceConsumptionAnnouncement(announcements[0]);
+     const evaluated = evaluateResourceContract({
+       consumption_announcements: announcements,
+       offer,
+       leases: [],
+       observed_at_ms: "1200",
+       revocations: [],
+       usage_receipts: []
+     });
+     console.log(JSON.stringify({
+       announcement: opened.status,
+       id: draft.offer_id,
+       message: draft.provider_signing_message.byteLength,
+       status: evaluated.status,
+       witnesses: evaluated.witnesses_verified
+     }));`
   ], { cwd: temporary });
   const resourceDraft = JSON.parse(resourceOutput.trim());
   assert.match(resourceDraft.id, /^resource-offer:/u);
   assert.equal(resourceDraft.message, 32);
+  assert.equal(resourceDraft.announcement, "verified");
+  assert.equal(resourceDraft.status, "active");
+  assert.equal(resourceDraft.witnesses, 3);
   const blocked = spawnSync(process.execPath, [
     "--input-type=module",
     "--eval",
@@ -248,7 +324,7 @@ try {
 
   console.log("MortalOS S5 clean package install and continuity CLI: PASS");
   console.log("- public API: create/inspect/handoff/recover/continue");
-  console.log("- resource-contract subpath: external bounded offer draft PASS");
+  console.log("- resource-contract subpath: external offer -> lease -> 3-of-4 witness gossip -> active PASS");
   console.log("- real external file: A handoff -> B 2-of-3 recovery -> B continuation");
 console.log("- one corrupt copy tolerated; one copy, duplicate identity, stale head, and wrong authority rejected");
   console.log("- endpoint-local private keys absent from exchanged artifacts");

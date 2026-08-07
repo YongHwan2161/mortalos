@@ -38,6 +38,9 @@ test("canonical protocol profile is the exact generated cross-layer source", asy
   );
   assert.deepEqual(
     {
+      announcement_bytes: RESOURCE_CONTRACT_LIMITS.announcement_bytes,
+      announcements_per_evaluation_max:
+        RESOURCE_CONTRACT_LIMITS.announcements_per_evaluation_max,
       decimal_max: String(RESOURCE_CONTRACT_LIMITS.decimal_max),
       document_bytes: RESOURCE_CONTRACT_LIMITS.document_bytes,
       lease_duration_ms_max: String(RESOURCE_CONTRACT_LIMITS.lease_duration_ms_max),
@@ -45,7 +48,8 @@ test("canonical protocol profile is the exact generated cross-layer source", asy
         RESOURCE_CONTRACT_LIMITS.leases_per_offer_observation_max,
       receipts_per_lease_max: RESOURCE_CONTRACT_LIMITS.receipts_per_lease_max,
       revocations_per_evaluation_max:
-        RESOURCE_CONTRACT_LIMITS.revocations_per_evaluation_max
+        RESOURCE_CONTRACT_LIMITS.revocations_per_evaluation_max,
+      witnesses_per_offer_max: RESOURCE_CONTRACT_LIMITS.witnesses_per_offer_max
     },
     source.resource_contract,
     "resource offer, lease, usage, and revocation ceilings must share one profile"

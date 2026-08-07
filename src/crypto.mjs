@@ -45,6 +45,10 @@ export const DOMAINS = Object.freeze({
   CUSTODY_COMMITMENT: "MORTALOS/V0/CUSTODY-COMMITMENT\0",
   EVENT_PAYLOAD: "MORTALOS/V0/EVENT-PAYLOAD\0",
   PEER_ID: "MORTALOS/V0/PEER-ID\0",
+  RESOURCE_CONSUMPTION_ID: "MORTALOS/V1/RESOURCE-CONSUMPTION-ID\0",
+  RESOURCE_CONSUMPTION_WITNESS_ID: "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-ID\0",
+  RESOURCE_CONSUMPTION_WITNESS_SIGNATURE:
+    "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-SIGNATURE\0",
   RESOURCE_LEASE_CONSUMER_SIGNATURE: "MORTALOS/V1/RESOURCE-LEASE-CONSUMER-SIGNATURE\0",
   RESOURCE_LEASE_ID: "MORTALOS/V1/RESOURCE-LEASE-ID\0",
   RESOURCE_LEASE_PROVIDER_SIGNATURE: "MORTALOS/V1/RESOURCE-LEASE-PROVIDER-SIGNATURE\0",
@@ -138,6 +142,26 @@ export function deriveResourceOfferId(body) {
 export function resourceOfferSigningMessage(offerId) {
   return resourceSignatureMessage(
     "resource-offer:", offerId, DOMAIN_BYTES.RESOURCE_OFFER_SIGNATURE
+  );
+}
+
+export function deriveResourceConsumptionId(body) {
+  return deriveResourceId(
+    "resource-consumption:", DOMAIN_BYTES.RESOURCE_CONSUMPTION_ID, body
+  );
+}
+
+export function deriveResourceConsumptionWitnessId(body) {
+  return deriveResourceId(
+    "resource-witness:", DOMAIN_BYTES.RESOURCE_CONSUMPTION_WITNESS_ID, body
+  );
+}
+
+export function resourceConsumptionWitnessSigningMessage(witnessId) {
+  return resourceSignatureMessage(
+    "resource-witness:",
+    witnessId,
+    DOMAIN_BYTES.RESOURCE_CONSUMPTION_WITNESS_SIGNATURE
   );
 }
 

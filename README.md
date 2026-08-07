@@ -33,12 +33,15 @@ CLI without repository-relative imports.
 The current candidate adds a portable
 [signed bounded resource contract](docs/RESOURCE_CONTRACT.md): a strict provider
 offer defines finite storage, bandwidth, compute, and time; provider and consumer
-mutually sign one contained lease; both sign chained cumulative usage; either lease
-party can revoke. One offer is single-use, so two different valid leases halt as
-equivocation instead of overcommitting capacity. Promotion still requires exact-head
+mutually sign one contained lease; the offer's declared Byzantine witness quorum
+must gossip that exact consumption before activation; both parties sign chained
+cumulative usage; either lease party can revoke. One offer is single-use, so two
+different valid leases or one witness double-sign halt as equivocation instead of
+silently overcommitting capacity. Promotion still requires exact-head
 CI, independent review, merge, and any claimed runtime readback. The next root gap is
-execution accountability: a signed offer proves intent, not actual possession,
-delivery, truthful metering, or independent administration. See the
+execution accountability: a threshold-visible signed offer proves intent and
+logical observation, not actual possession, delivery, truthful metering, witness
+independence, or independent administration. See the
 [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof
@@ -68,7 +71,7 @@ proof.
 | S4 revised implementation — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass; a new stage receipt and isolated-signer claim remain separate. |
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
 | S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
-| Resource-contract candidate — bounded contribution | Canonical provider offers, mutual single-use leases, jointly signed usage chains, unilateral revocation, finite generated limits, and equivocation halt pass Node/browser-target/packed-consumer gates. This is signed logical evidence, not proof of delivered physical resources. |
+| Resource-contract candidate — bounded contribution | Canonical provider offers, mutual single-use leases, signed witness policies, threshold gossip before activation, jointly signed usage chains, unilateral revocation, finite generated limits, and provider/witness equivocation halt pass Node/browser-target/packed-consumer gates. This is quorum-visible logical evidence under a declared fault bound, not proof of delivered physical resources or independent witnesses. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
@@ -186,6 +189,7 @@ caller keeps its signer outside the core:
 
 ```js
 import {
+  prepareResourceConsumptionWitness,
   prepareResourceOffer,
   finalizeResourceOffer
 } from "@mortal-os/core/resource-contract";
@@ -198,9 +202,14 @@ const offerBytes = finalizeResourceOffer({
 });
 ```
 
-The same prepare/finalize/verify pattern applies to mutual leases, chained usage
-receipts, and revocations. The core receives tagged public signatures, never the
-private signer, ambient clock, transport, scheduler, or storage capability.
+The same prepare/finalize/verify pattern applies to mutual leases, consumption
+witnesses, chained usage receipts, and revocations. A witness draft exposes a
+sign-once request whose tuple is the offer ID and whose message binds the exact lease
+ID; the existing endpoint-local authority can sign it without moving private key
+material into the resource core. Bounded self-contained announcements can travel
+over relay control or WebRTC, but receivers always re-verify them. The core receives
+tagged public signatures, never the private signer, ambient clock, transport,
+scheduler, or storage capability.
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below

@@ -23,12 +23,15 @@
     "objects_per_room": 512
   },
   "resource_contract": {
+    "announcement_bytes": 65536,
+    "announcements_per_evaluation_max": 64,
     "decimal_max": "9223372036854775807",
     "document_bytes": 16384,
     "lease_duration_ms_max": "31536000000",
     "leases_per_offer_observation_max": 8,
     "receipts_per_lease_max": 4096,
-    "revocations_per_evaluation_max": 32
+    "revocations_per_evaluation_max": 32,
+    "witnesses_per_offer_max": 16
   },
   "state": {
     "chunk_bytes": 65536,

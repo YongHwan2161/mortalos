@@ -5,7 +5,7 @@ not active locks.
 
 ## Active intent
 
-### ACTIVE — Signed bounded resource offer and lease contract
+### ACTIVE — Signed bounded resource contract plus network-visible sign-once
 
 - From / to: `codex-protocol-kernel` / `reviewer-merge-gate`
 - Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
@@ -14,9 +14,10 @@ not active locks.
 - Exact intended shared paths: `package.json`, `protocol/profile.v1.json`,
   `src/generated/protocol-profile.mjs`, `src/crypto.mjs`,
   `src/rejection-codes.mjs`, new `src/resource-contract.mjs`, `src/index.mjs`,
+  `src/transport/protocol.mjs`,
   new `sdk/resource-contract.mjs`, `sdk/index.mjs`,
   new `test/resource-contract.test.mjs`, `test/protocol-profile.test.mjs`,
-  `test/rejection-codes.test.mjs`, `test/sdk.test.mjs`,
+  `test/rejection-codes.test.mjs`, `test/sdk.test.mjs`, `test/transport.test.mjs`,
   `scripts/verify-sdk-package.mjs`, `scripts/verify-spec.mjs`,
   `docs/PROTOCOL.md`, `docs/REJECTION_CODES.md`,
   new `docs/RESOURCE_CONTRACT.md`, `docs/README.md`,
@@ -28,23 +29,35 @@ not active locks.
 - Intended change: define canonical, domain-separated, provider-signed bounded
   storage/bandwidth/compute offers; provider-and-consumer-signed single-use leases;
   chained cumulative usage receipts; unilateral signed offer/lease revocations; and
-  an explicit-time deterministic evaluator with equivocation detection. The core
-  owns no private key, clock, network, storage provider, scheduler, or server.
+  an explicit-time deterministic evaluator with equivocation detection. Extend the
+  offer with a finite Byzantine-fault witness policy; add witness-signed sign-once
+  consumption evidence, self-contained transport-neutral gossip announcements,
+  quorum-gated lease activation, and deterministic double-sign/provider-conflict
+  rejection. The core owns no private key, clock, network, storage provider,
+  scheduler, witness service, or server.
 - Required gates: exact-key canonical envelopes, generated finite ceilings and every
   plus-one rejection; strict Ed25519 identity/signature binding; allocation and time
   containment; cumulative receipt monotonicity and fork/stale rejection; earliest
   revocation wins; two distinct leases for one offer fail closed as equivocation;
+  witness sets are sorted, unique, provider/consumer-disjoint, and satisfy
+  `n >= 3f + 1`, `q <= n - f`, and `2q > n + f`; below-threshold partitions remain
+  `unwitnessed`; threshold announcements activate exactly one lease; a witness
+  signing two lease IDs for one offer produces deterministic equivocation evidence;
   accessor/Proxy/prototype/array mutations cannot alter accepted bytes; Node,
   browser-target, packed external-consumer, focused, and full verification pass;
   exact-head CI and immutable independent review pass before merge.
-- Excluded: resource discovery, pricing/payment, reputation, NAT traversal, WebRTC
-  carriage (pending PR #55), physical provider independence, automatic scheduling,
+- Excluded: resource discovery, pricing/payment, reputation, NAT traversal, concrete
+  WebRTC carriage (pending PR #55), physical witness/provider independence,
+  Byzantine-fault truth beyond the offer's declared policy, automatic scheduling,
   package-registry publication, and any S7/S8 production claim.
-- Candidate validation: focused resource/profile `12/12`, SDK `4/4`, clean packed
-  consumer, specification/link checks, existing conformance `76/76`, portable
-  `10,000/10,000`, and full `npm test` PASS in `3,329.6s`. The full run covered
-  `21 direct / 119 auto-discovered` async security boundaries, actual browser/Lab,
-  confidentiality, continuity, and historical S0-S4 receipt regressions.
+- Candidate validation: focused resource/profile `15/15`, transport `8/8`, SDK
+  `4/4`, clean packed external offer -> lease -> 3-of-4 witness gossip -> active,
+  specification/link/profile checks, conformance `76/76`, portable
+  `10,000/10,000`, async security boundaries `21 direct / 119 auto-discovered`,
+  dependency audit with zero vulnerabilities, `git diff --check`, and fresh full
+  `npm test` PASS in `2,720.8s`. The full chain includes actual Chromium durability,
+  multi-browser/Lab/UX, confidentiality, continuity, and historical S0-S4 receipt
+  regressions.
 - Remaining gate: commit/push, exact-head CI, immutable independent review, GitHub
   App attestation plus machine-user native approval, expected-head merge, and
   exact-main readback. Signed logical contract, delivery, and provider independence

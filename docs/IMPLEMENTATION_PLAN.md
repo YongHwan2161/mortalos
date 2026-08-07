@@ -1,6 +1,6 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — SIGNED RESOURCE CONTRACT CANDIDATE; PROMOTION HOLD**
+Status: **ACTIVE IMPLEMENTATION SSOT — NETWORK-VISIBLE SIGN-ONCE CANDIDATE; PROMOTION HOLD**
 
 Last synchronized: **2026-08-07 KST**
 
@@ -31,13 +31,18 @@ separate-process Node test, clean packed consumer, and built-Lab Chromium verifi
 exercise that contract.
 
 The signed resource-contract candidate now defines finite storage, bandwidth, and
-compute intent; mutual single-use leases; jointly signed cumulative usage; and
-unilateral revocation without owning a key, clock, network, scheduler, or server.
-This closes the ambiguous “participants contribute resources” control-plane gap.
+compute intent; mutual single-use leases; a signed Byzantine witness policy;
+threshold gossip before activation; jointly signed cumulative usage; and unilateral
+revocation without owning a key, clock, network, scheduler, or server. It reuses the
+endpoint-local sign-once authority tuple so a witness can retry one exact lease but
+cannot honestly witness two leases for the same offer. This closes the ambiguous
+“participants contribute resources” control-plane gap and makes conflicting
+consumption publicly detectable under the offer's declared witness-fault bound.
 
 The most fundamental remaining gap is **execution accountability**. A valid offer
-proves only that a key signed a bounded claim. It does not prove possession, truthful
-metering, delivery, or an independent failure domain. The next architecture
+proves only that a key signed a bounded claim and that a declared witness quorum saw
+one lease. It does not prove possession, truthful metering, delivery, witness
+independence, or an independent failure domain. The next architecture
 milestone is to bind each lease to content-addressed challenge/work receipts emitted
 by the actual participant data plane, then reproduce those receipts across distinct
 credential and administrative domains. A scheduler must consume those proofs; it
@@ -61,6 +66,13 @@ Strict pass criteria:
   or exceeds allocation, and every receipt binds its exact predecessor;
 - two different valid leases for one single-use offer return equivocation with no
   winner; duplicate evidence returns replay;
+- a signed `n/f/q` witness policy satisfies `n >= 3f + 1`, `q <= n - f`, and
+  `2q > n + f`; provider, consumer, and witness roles cannot overlap;
+- fewer than `q` self-contained gossip announcements remain `unwitnessed`, exact
+  duplicate gossip is idempotent, and `q` distinct valid witnesses are required
+  before scheduled, active, exhausted, or completed state;
+- the endpoint-local sign-once tuple is one offer ID and its message binds the exact
+  lease ID; witness double-sign and provider conflict halt with no selected winner;
 - Node, browser-target bundling, portable 10,000-case regression, and a clean packed
   external consumer pass without private key, clock, network, or repository-relative
   authority in the core;

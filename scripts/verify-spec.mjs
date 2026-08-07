@@ -192,6 +192,9 @@ const domains = [
   "MORTALOS/V0/CUSTODY-COMMITMENT\\0",
   "MORTALOS/V0/EVENT-PAYLOAD\\0",
   "MORTALOS/V0/PEER-ID\\0",
+  "MORTALOS/V1/RESOURCE-CONSUMPTION-ID\\0",
+  "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-ID\\0",
+  "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-SIGNATURE\\0",
   "MORTALOS/V1/RESOURCE-OFFER-ID\\0",
   "MORTALOS/V1/RESOURCE-OFFER-SIGNATURE\\0",
   "MORTALOS/V1/RESOURCE-LEASE-ID\\0",
@@ -347,9 +350,14 @@ for (const statement of [
 for (const statement of [
   "single-use capability",
   "Both signatures are mandatory",
+  "Network-visible sign-once consumption",
+  "n >= 3f + 1",
+  "2q > n + f",
+  "minority partition cannot activate it",
+  "witness-double-sign",
   "The earliest valid effective revocation wins",
   "It does not discover peers, move bytes, execute jobs",
-  "bind a lease to data-plane execution receipts"
+  "bind the witnessed lease to data-plane execution receipts"
 ]) {
   assert(
     text.resourceContract.replace(/\s+/g, " ").includes(statement),

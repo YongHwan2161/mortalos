@@ -164,17 +164,18 @@ Signer equivocation in two accepted sibling appends is evidence attached to `E_F
 
 | Code | Condition |
 |---|---|
-| `E_RESOURCE_FORMAT` | An offer, lease, usage receipt, revocation, option record, array, nonce, or canonical byte envelope has the wrong exact shape or representation. |
-| `E_RESOURCE_LIMIT` | A generated document, observed-lease, receipt-chain, revocation-set, or sequence ceiling is exceeded. |
+| `E_RESOURCE_FORMAT` | An offer, lease, consumption witness, gossip announcement, usage receipt, revocation, option record, array, nonce, or canonical byte envelope has the wrong exact shape or representation. |
+| `E_RESOURCE_LIMIT` | A generated document, announcement, observed-lease, witness roster, announcement-set, receipt-chain, revocation-set, or sequence ceiling is exceeded. |
 | `E_RESOURCE_DECIMAL` | A resource capacity, usage, time, or sequence is not a canonical non-negative decimal string within the generated 63-bit maximum. |
-| `E_RESOURCE_IDENTITY` | A provider or consumer identity is not a strict Ed25519 public key bound to its derived peer ID. |
-| `E_RESOURCE_SIGNATURE` | A provider, consumer, usage, or revocation signature does not verify under its exact role-specific domain. |
+| `E_RESOURCE_IDENTITY` | A provider, consumer, or witness identity is not a strict Ed25519 public key bound to its derived peer ID. |
+| `E_RESOURCE_SIGNATURE` | A provider, consumer, witness, usage, or revocation signature does not verify under its exact role-specific domain. |
+| `E_RESOURCE_WITNESS` | The signed witness policy violates its generated roster limit or Byzantine quorum inequalities, a role overlaps, a witness is outside the roster, or usage is supplied before the declared threshold is visible. |
 | `E_RESOURCE_TIME` | An interval is empty, outside its parent interval, over the duration ceiling, non-monotonic, after its target, or observed in the future relative to explicit evaluation time. |
 | `E_RESOURCE_CAPACITY` | A capacity group is incoherent or empty, or a lease allocation exceeds its signed offer. |
 | `E_RESOURCE_BINDING` | A derived ID, offer reference, lease reference, target ID, or envelope body binding differs from the supplied parent evidence. |
 | `E_RESOURCE_USAGE` | Current/peak usage is inconsistent or a signed usage quantity exceeds its lease allocation. |
 | `E_RESOURCE_REPLAY` | A lease, revocation, receipt sequence, previous receipt ID, or cumulative quantity is duplicated, stale, reordered, or regressed. |
-| `E_RESOURCE_EQUIVOCATION` | Two different valid mutually signed leases consume the same single-use offer; no winner is selected. |
+| `E_RESOURCE_EQUIVOCATION` | Two different valid mutually signed leases consume the same single-use offer, or one witness signs different lease claims for that offer; no winner is selected. |
 | `E_RESOURCE_REVOCATION` | A revocation has an unsupported target/reason or is not signed by the provider for an offer or by one of the two lease parties. |
 
 ## 10. Internal fail-closed code

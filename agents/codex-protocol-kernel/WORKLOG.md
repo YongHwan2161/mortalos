@@ -1778,3 +1778,38 @@ result, and reproducible verification.
   portable `10,000/10,000`, specification/link checks, clean package consumer, and
   full `npm test` PASS in `3,329.6s`. Exact-head CI, immutable independent review,
   governed merge, and exact-main readback remain.
+
+## 2026-08-07 — Network-visible sign-once consumption candidate
+
+- Extended every offer with a sorted finite witness roster, declared Byzantine
+  bound `f`, and activation threshold `q`. Unsafe policies, provider/consumer role
+  overlap, and out-of-roster witnesses fail closed. The accepted inequalities are
+  `n >= 3f + 1`, `q <= n - f`, and `2q > n + f`.
+- Added domain-separated consumption and witness IDs, witness signatures, and a
+  bounded self-contained gossip announcement carrying exact offer, lease, and
+  witness evidence. Relay control transports the carrier but never decides its
+  cryptographic validity.
+- Reused the endpoint-local private sign-once authority through a request whose
+  tuple is one offer and whose message binds one exact lease. Idempotent retry is
+  permitted; signing a second lease for the offer rejects locally, while observed
+  double-signing remains public equivocation evidence.
+- Evaluation now requires threshold witness visibility before scheduled, active,
+  exhausted, or completed state. Minority partitions remain `unwitnessed`, exact
+  duplicate gossip does not inflate quorum, and provider conflict or witness
+  double-sign halts without selecting a winner.
+- Extended the authority-free default verifier and explicit drafting SDK. The clean
+  packed consumer now runs offer -> mutual lease -> three independent witness
+  signatures -> gossip -> active without repository-relative imports or transferring
+  private keys. A locale-dependent sorting failure found only in the clean consumer
+  was replaced with protocol-consistent code-point ordering.
+- Focused evidence before the full suite: resource/profile `15/15`, transport `8/8`,
+  SDK `4/4`, clean packed full witness flow, specification/link/profile checks,
+  conformance `76/76`, portable `10,000/10,000`, async security inventory
+  `21 direct / 119 auto-discovered`, dependency audit with zero vulnerabilities,
+  `git diff --check`, and fresh full `npm test` in `2,720.8s` PASS. The full chain
+  covered actual Chromium durability, multi-browser/Lab/UX, confidentiality,
+  continuity, and historical S0-S4 receipt regressions. Exact-head CI, immutable
+  review, governed merge, and exact-main readback remain.
+- Honest boundary: witness quorum proves only logical visibility under the offer's
+  declared fault bound. It does not prove witness independence, resource possession,
+  data-plane delivery, truthful metering, Sybil resistance, or physical topology.
