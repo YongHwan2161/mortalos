@@ -113,5 +113,10 @@
     "@noble/curves": "2.2.0",
     "@noble/hashes": "2.2.0",
     "qrcode-generator": "1.4.4"
+  },
+  "overrides": {
+    "fast-uri": "3.1.5",
+    "postcss": "8.5.23",
+    "undici": "7.29.0"
   }
 }
