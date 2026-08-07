@@ -14,6 +14,10 @@ not active locks.
 - Exact-main Verify `31215007053` passed protocol and browser parity; Deploy
   `31215005995` passed exact-source publication plus public artifact, relay, and
   bilingual-path readback.
+- The first closeout CI run then failed only its live dependency audit after GitHub
+  advisory `GHSA-2v37-7h3g-55p8` was refreshed. The compatible transitive lock is
+  patched from `nanoid@3.3.16` to `3.3.18`; no runtime source or direct dependency
+  changed, and a fresh zero-vulnerability audit plus exact-head CI are required.
 - The next implementation must compose untrusted offer gossip, mutual leases, the
   real participant transport, verified execution receipts, Continuity Capsules, and
   repair into one backend-free useful-resource workflow.

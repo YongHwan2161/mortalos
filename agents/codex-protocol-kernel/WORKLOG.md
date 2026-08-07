@@ -1880,3 +1880,10 @@ result, and reproducible verification.
 - Honest boundary remains unchanged: these receipts do not prove honest meters,
   distinct hardware/accounts/credentials/administrators, Sybil resistance, or
   physical witness/provider independence.
+- The first closeout PR run `31218354601` passed browser parity, the complete source
+  suite, portable/Lab/transport/coverage checks, and S0-S4 receipts, then correctly
+  failed its final audit because GitHub refreshed high advisory
+  `GHSA-2v37-7h3g-55p8`. The transitive `postcss` range accepts the patched line, so
+  only `package-lock.json` moved `nanoid` from `3.3.16` to `3.3.18`. Fresh local
+  `npm audit --audit-level=moderate` reports zero vulnerabilities; old CI is not
+  reused and the replacement head requires every gate again.
