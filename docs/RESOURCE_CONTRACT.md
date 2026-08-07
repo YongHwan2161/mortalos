@@ -1,6 +1,6 @@
 # Signed bounded resource contract v1
 
-Status: **Normative contract and lease-bound execution candidate; no independent-provider claim**
+Status: **Normative merged implementation; no honest-meter or independent-provider claim**
 
 This contract is the portable control plane for a participant that contributes
 finite storage, bandwidth, or compute to MortalOS. It answers six questions with

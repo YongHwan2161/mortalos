@@ -1860,3 +1860,41 @@ result, and reproducible verification.
   external consumer PASS, specification PASS, zero-vulnerability audit, and fresh
   full `npm test` PASS in `2,963s`. This does not reuse the pre-remediation CI or
   review; a new exact-head CI and immutable re-review are required before merge.
+
+## 2026-08-08 — PR #56 promotion and execution-document closeout
+
+- Final implementation head `f848b2248f0df9e39e80e1a8e90a4d804ff6bfc3`
+  passed trusted policy `31210644452/1` and Verify `31210597658` with browser job
+  `92972207663` and protocol job `92972207880`.
+- Fresh independent review PASS bound base, head, API body, all 33 changed files,
+  Git-object diff, and exact CI runs after independently reproducing both prior
+  findings as closed. GitHub App check `92985696733` and machine-user native review
+  `4886246982` bound the same attestation digest before no-bypass expected-head merge.
+- PR #56 squash-merged as `0779741402244d6cd802a1179bd2c94555bdd030` at
+  `2026-08-07T20:14:42Z`. Exact-main Verify `31215007053` passed protocol in 44m18s
+  and browser parity in 4m34s. Deploy `31215005995` passed exact-source deployment
+  and public artifact, relay, and bilingual-path verification.
+- README, claim matrix, implementation SSOT, resource contract, durable memory, and
+  handoff now describe resource execution as a merged local evidence claim and make
+  receipt-gated participant placement/repair the active P0 next step.
+- Honest boundary remains unchanged: these receipts do not prove honest meters,
+  distinct hardware/accounts/credentials/administrators, Sybil resistance, or
+  physical witness/provider independence.
+- The first closeout PR run `31218354601` passed browser parity, the complete source
+  suite, portable/Lab/transport/coverage checks, and S0-S4 receipts, then correctly
+  failed its final audit because GitHub refreshed high advisory
+  `GHSA-2v37-7h3g-55p8`. The transitive `postcss` range accepts the patched line, so
+  only `package-lock.json` moved `nanoid` from `3.3.16` to `3.3.18`. Fresh local
+  `npm audit --audit-level=moderate` reports zero vulnerabilities; old CI is not
+  reused and the replacement head requires every gate again.
+- Replacement head `a1f7b9be4458c8be5fd6d1cdaa2868dc66d83959` passed trusted
+  policy `31221495943/1` and Verify `31221375045`, including browser job
+  `93006491592`, protocol job `93006491652`, and the patched dependency audit.
+  Independent review `4887084891` still correctly BLOCKed promotion: current durable
+  memory retained pre-merge execution and continuity candidate language that
+  contradicted the closeout claim. No PASS receipt, App attestation, approval, or
+  merge was issued.
+- Remediation aligns durable memory, the documentation map, claim matrix, and stage
+  ledger with governed PR #53 and PR #56 merges while retaining public-registry,
+  honest-meter, and physical/administrative-independence HOLDs. The replacement head
+  must rerun every exact-head gate and receive a fresh immutable review.
