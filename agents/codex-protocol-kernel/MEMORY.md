@@ -2,11 +2,11 @@
 
 Last reconciled: 2026-08-08 KST
 
-Branch: `agent/codex-protocol-kernel--resource-offer-leases`
+Branch: `agent/codex-protocol-kernel--resource-execution-closeout`
 
-Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
+Base: `0779741402244d6cd802a1179bd2c94555bdd030`
 
-## Network-visible sign-once resource-contract candidate
+## Network-visible sign-once resource contract
 
 - A provider-signed canonical offer binds finite storage, bandwidth, compute, and
   validity. One offer is a single-use capability; two distinct valid leases halt as
@@ -39,7 +39,7 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
   metering, witness independence, Sybil resistance, or independent provider
   administration.
 
-## Lease-bound execution receipt candidate
+## Lease-bound execution receipt implementation
 
 - A consumer-signed canonical challenge binds one offer, lease, consumption ID,
   immutable workload, unpredictable 128-bit nonce, predecessor, sequence, and
@@ -75,6 +75,13 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 - Historical S1-S4 receipts remain exact-commit evidence. Merging revised code does
   not re-promote S2/S4 claims or prove same-origin signer isolation, WebKit signing,
   independent providers, administrators, devices, or global availability.
+- PR #56 passed remediated exact-head policy and browser/protocol CI, immutable
+  independent re-review, GitHub App attestation, separately credentialed native
+  approval, and no-bypass expected-head merge as `0779741402244d6cd802a1179bd2c94555bdd030`.
+  Its first review BLOCKed provider/consumer key reuse and announcement-only
+  nested-object verification; both were fixed and independently reproduced.
+  Exact-main Verify `31215007053` and Deploy `31215005995` then passed, including
+  public artifact, relay, and bilingual-path readback.
 
 ## Product-continuity candidate
 
@@ -98,20 +105,15 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 
 ## Current priority
 
-1. Promote the remediated lease-bound execution candidate through exact-head CI,
-   immutable re-review, expected-head merge, and post-merge readback. The first
-   review correctly BLOCKed provider/consumer key reuse and announcement-only
-   nested-object verification; both now have exact fail-closed regressions and the
-   full suite passes in 2,963 seconds.
-2. Compose offers, the real participant data plane, execution receipts, continuity,
+1. Compose offers, the real participant data plane, execution receipts, continuity,
    and repair into one receipt-gated backend-free placement workflow.
-3. Replace local process adapters with provider-neutral durable adapters, then
+2. Replace local process adapters with provider-neutral durable adapters, then
    prove distinct failure/credential/administrator domains.
-4. Compose S4 confidentiality explicitly; the current product Capsule carries
+3. Compose S4 confidentiality explicitly; the current product Capsule carries
    exact resource bytes and is not an encryption claim.
-5. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
+4. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
    freeze one integrated UX/runtime receipt.
-6. Move signing plus sign-once state to an isolated authority service or hardware
+5. Move signing plus sign-once state to an isolated authority service or hardware
    boundary before making XSS-resistant custody claims.
 
 ## Stable decisions

@@ -1,12 +1,12 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — LEASE-BOUND EXECUTION CANDIDATE; PROMOTION HOLD**
+Status: **ACTIVE IMPLEMENTATION SSOT — P0 NEXT: RECEIPT-GATED PARTICIPANT PLACEMENT AND REPAIR**
 
 Last synchronized: **2026-08-08 KST**
 
 This is the sole current direction, stage ledger, and ordered implementation plan.
 Historical receipts remain valid only for their named commits. Main
-`7c9f6a46f4a26debba6902121bdb36c2b791ffc7` contains the reviewed product-continuity
+`0779741402244d6cd802a1179bd2c94555bdd030` contains the reviewed product-continuity
 implementation; merge alone does not manufacture a stage receipt or a physical-
 independence claim.
 
@@ -30,7 +30,7 @@ after A exits, and commits the next transition. The public continuity subpath, C
 separate-process Node test, clean packed consumer, and built-Lab Chromium verifier
 exercise that contract.
 
-The signed resource-contract candidate now defines finite storage, bandwidth, and
+The merged signed resource contract defines finite storage, bandwidth, and
 compute intent; mutual single-use leases; a signed Byzantine witness policy;
 threshold gossip before activation; jointly signed cumulative usage; and unilateral
 revocation without owning a key, clock, network, scheduler, or server. It reuses the
@@ -39,7 +39,7 @@ cannot honestly witness two leases for the same offer. This closes the ambiguous
 “participants contribute resources” control-plane gap and makes conflicting
 consumption publicly detectable under the offer's declared witness-fault bound.
 
-The lease-bound execution candidate now closes the next local evidence gap. A
+The merged lease-bound execution vertical closes the next local evidence gap. A
 consumer-signed challenge and dual-signed predecessor chain bind exact storage
 content proofs, bandwidth payload round trips, or deterministic bounded compute to
 one usage receipt and one witnessed lease. An actual child provider executes all
@@ -57,7 +57,7 @@ but is not yet a self-sustaining backend-free resource network. Physical meter
 honesty, independent credentials/administrators, and confidentiality are later
 promotion gates, not facts inferred from this local proof.
 
-### P0 — Signed bounded participant resource contract (implemented candidate)
+### P0 — Signed bounded participant resource contract (merged)
 
 Goal: make every storage, bandwidth, and compute grant finite, mutually accepted,
 measurable, revocable, replay-safe, and transport-neutral.
@@ -82,10 +82,11 @@ Strict pass criteria:
 - Node, browser-target bundling, portable 10,000-case regression, and a clean packed
   external consumer pass without private key, clock, network, or repository-relative
   authority in the core;
-- exact-head CI, immutable independent review, expected-head merge, and exact-main
-  readback remain required before this candidate becomes a main claim.
+- PR #56 passed exact-head CI, immutable independent review, GitHub App attestation,
+  separately credentialed native approval, expected-head merge, and exact-main
+  readback; the contract is therefore a main implementation claim.
 
-### P0 — Lease-bound execution receipt vertical (implemented candidate)
+### P0 — Lease-bound execution receipt vertical (merged)
 
 Goal: prove that a selected participant actually stored named bytes, transferred a
 challenge range, or executed a deterministic bounded task under one exact lease.
@@ -103,11 +104,12 @@ Strict pass criteria:
   remains HOLD until distinct account, credential, administrator, and failure-domain
   evidence passes the declared trial and burn-in gates.
 
-Local source acceptance is implemented: all three workload classes execute in an
+Local source acceptance and promotion are complete: all three workload classes execute in an
 actual child provider process; exact/max + 1, replay, fork, cross-lease, tamper,
 unsigned-usage, process termination, reassignment, browser-target, and clean packed
-consumer gates pass. Promotion remains HOLD until exact-head CI, immutable review,
-governed merge, and exact-main readback complete.
+consumer gates pass. PR #56's first independent review BLOCKed provider/consumer
+key reuse and announcement-only nested-object verification; both were fixed and
+independently reproduced before the expected-head merge.
 
 ### P0 next — Receipt-gated participant placement and repair
 
@@ -161,7 +163,7 @@ usable and stable.
 | [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and signed 2-of-3 content custody | Cross-process verification, handoff, exact recovery, and duplicate/tamper/fork rejection | End-to-end candidate complete; integrated receipt pending |
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
-| Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer | Exact-head candidate; physical independence **HOLD** |
+| Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer, exact-head CI/review/App/native approval/merge | Merged local execution claim; physical independence **HOLD** |
 
 Stage coordination remains subordinate to this SSOT:
 
@@ -535,9 +537,9 @@ Future source changes must repeat the same exact-snapshot gate.
 
 ## 17. Completion and explicit nonclaims
 
-The P0 real-file vertical and public package surface are merged on main. The signed
-resource-contract and lease-bound execution candidates remain promotion **HOLD** until exact-head CI,
-immutable independent review, expected-head merge, and post-merge readback pass.
+The P0 real-file vertical, public package surface, signed resource contract, and
+lease-bound execution vertical are merged on main. Their local execution evidence
+does not promote the stronger topology or custody claims below.
 Receipt-gated peer placement/repair, S2/S4 strong custody, product Capsule
 confidentiality, and S7 physical independence remain **HOLD** without blocking
 ordinary product iteration.

@@ -30,15 +30,14 @@ transition. Node uses separate endpoint processes, Chromium uses separate persis
 browser endpoints and the built Lab, and a clean `npm pack` consumer runs the matching
 CLI without repository-relative imports.
 
-The current candidate adds a portable
+MortalOS includes a portable
 [signed bounded resource contract](docs/RESOURCE_CONTRACT.md): a strict provider
 offer defines finite storage, bandwidth, compute, and time; provider and consumer
 mutually sign one contained lease; the offer's declared Byzantine witness quorum
 must gossip that exact consumption before activation; both parties sign chained
 cumulative usage; either lease party can revoke. One offer is single-use, so two
 different valid leases or one witness double-sign halt as equivocation instead of
-silently overcommitting capacity. Promotion still requires exact-head
-CI, independent review, merge, and any claimed runtime readback. Lease-bound
+silently overcommitting capacity. Lease-bound
 challenge/receipt chains now prove bounded storage, bandwidth, and deterministic
 compute execution by the leased participant; they do not by themselves prove
 honest metering, physical provider/witness independence, or independent
@@ -73,7 +72,7 @@ proof.
 | S4 revised implementation — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass; a new stage receipt and isolated-signer claim remain separate. |
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
 | S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
-| Resource-contract candidate — bounded contribution | Canonical provider offers, mutual single-use leases, signed witness policies, threshold gossip before activation, jointly signed usage chains, unilateral revocation, finite generated limits, and provider/witness equivocation halt pass Node/browser-target/packed-consumer gates. This is quorum-visible logical evidence under a declared fault bound, not proof of delivered physical resources or independent witnesses. |
+| Resource execution — bounded contribution and verified work | Canonical offers, mutual single-use leases, threshold gossip, chained usage, and revocation are merged with lease-bound storage, bandwidth, and deterministic-compute challenge receipts. Actual child-process loss and new-lease reassignment pass, but this is not proof of honest meters or independent hardware, accounts, witnesses, or administrators. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
