@@ -1,8 +1,8 @@
 # MortalOS current claim matrix
 
-Status: **ACTIVE — NETWORK-VISIBLE SIGN-ONCE CANDIDATE, PROMOTION PENDING**
+Status: **ACTIVE — LEASE-BOUND EXECUTION CANDIDATE, PROMOTION PENDING**
 
-Last synchronized: **2026-08-07 KST**
+Last synchronized: **2026-08-08 KST**
 
 This matrix is the current claim boundary. “Implemented” means code exists in main;
 “exact-source verified” means the named gates passed for that exact source;
@@ -26,6 +26,7 @@ No column inherits truth from another.
 | Continuity Capsule resource lifecycle | Yes, this source tree | Canonical lineage/state/chunk binding, process-boundary verification, membership handoff, and tamper tests pass | No | No | Product Capsule carries public evidence and exact resource bytes, never signing authority. It is not a confidentiality envelope. |
 | Real-file A-to-B product continuity | Yes, this source tree | Separate Node endpoint processes, clean packed consumer, and actual built-Lab Chromium run A create → B accept → A exit → B signed 2-of-3 recover → B continue | No | No | One corrupt copy is tolerated; one copy, duplicate signed identity, stale lineage, wrong authority, and valid fork fail closed. Copy adapters remain one local administrative/failure domain. |
 | Signed bounded resource offer and network-visible consumption | Candidate in this branch | Canonical provider offer, mutual single-use lease, signed Byzantine witness policy, threshold gossip announcement, minority-partition `unwitnessed` halt, duplicate idempotence, provider/witness equivocation halt, chained usage, unilateral revocation, generated limits, browser-target bundle, portable scan, and clean packed consumer pass locally | No | No | This proves finite signed intent and quorum-visible logical consumption only under the declared witness fault bound. It does not prove witness independence, resource possession, truthful metering, service delivery, settlement, or Sybil resistance. |
+| Lease-bound storage/bandwidth/compute execution | Candidate in this branch | Consumer challenge, dual-signed predecessor chain, exact usage binding, Merkle storage proof, payload round trip, deterministic compute, actual child-provider PID termination, new-provider/new-lease reassignment with stable workload ID, browser-target bundle, and clean packed consumer pass locally | No | No | This proves deterministic evidence in a local multi-process topology. It does not prove distinct hardware, account, region, credential, administrator, honest physical metering, or Sybil resistance. |
 | Independent host/relay/credential-domain survival | Process-isolated model only | Three HTTP CAS processes survive one termination and disk restart | No | No | Real S7 promotion still requires distinct provider, host, administrator, credential domains, 100 trials, and seven-day burn-in. |
 | Adversarial 2-of-3 Capsule custody | Yes, this source tree | Current-custodian-signed copy/provider identities recover with one lost/corrupt copy; duplicate identity, valid fork, and below-quorum sets reject | No | No | Signed logical identity prevents double-counting but does not prove an independent physical provider, private signing-key custody, or Byzantine resolution. |
 | Byzantine/Sybil resistance or automatic fork resolution | No | No | No | No | Forks halt automatic progress; no winner is selected. |

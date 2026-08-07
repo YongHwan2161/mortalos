@@ -1813,3 +1813,31 @@ result, and reproducible verification.
 - Honest boundary: witness quorum proves only logical visibility under the offer's
   declared fault bound. It does not prove witness independence, resource possession,
   data-plane delivery, truthful metering, Sybil resistance, or physical topology.
+
+## 2026-08-08 — Lease-bound execution receipt vertical candidate
+
+- Added consumer-signed execution challenges and provider/consumer-signed execution
+  receipts that bind the exact offer, lease, consumption, immutable workload,
+  challenge, deterministic result, measured usage receipt, sequence, and predecessor.
+- Added bounded storage Merkle proofs, unpredictable bandwidth payload echoes, and
+  deterministic `sha256-chain/1` compute. A dedicated evaluator counts execution
+  only when the usage and execution chains are one-to-one and fully verified.
+- Added generated 4 MiB resource, 4 KiB leaf/input, and 4,096-iteration ceilings;
+  exact maxima pass and all relevant max + 1 inputs fail closed. Replays, forks,
+  cross-lease substitution, tampering, accessors, Proxies, and unproved usage reject.
+- Added an actual child provider endpoint. It reads a runtime file, executes all
+  three workload types, retains its private key, terminates, and cannot continue.
+  Repair succeeds only after a different provider signs a new offer and lease; the
+  workload ID remains exact while old-lease evidence is rejected.
+- Extended authority-free SDK verification, explicit drafting/result helpers,
+  browser-target bundling, and the clean packed consumer through one proved compute
+  receipt. No fixed backend, clock, scheduler, network, or private key entered core.
+- Focused evidence: resource/profile `22/22`, SDK `4/4`, packed consumer PASS.
+  Fresh full `npm test` PASS in `2,942.6s`, including actual browser, durability,
+  confidentiality, continuity, fuzz, Lab/UX, portable `10,000/10,000`, and
+  historical S0-S4 regression gates. Exact-head CI, immutable review, governed
+  merge, and exact-main readback remain pending at this checkpoint.
+- Honest boundary: process isolation does not prove independent hardware, account,
+  region, credential, administrator, physical meter, or Sybil resistance. The next
+  root gap is receipt-gated useful placement and repair over the participant data
+  plane, followed by real failure-domain evidence.

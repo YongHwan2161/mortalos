@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-07 KST**
+Last synchronized: **2026-08-08 KST**
 
 ## Current authority
 
@@ -62,11 +62,12 @@ revised S2/S4 code and S5–S8 implementation surfaces. Their presence in main d
 not replace a stage receipt or prove physical independence.
 
 The real-file A-to-B continuity vertical is merged. The current candidate adds a
-portable signed resource contract plus threshold network-visible sign-once gossip.
-It prevents activation in a minority partition and exposes provider or witness
-equivocation under the offer's declared fault bound, but does not yet bind its
-logical leases to actual participant execution or prove independent witnesses or
-failure domains. It does not promote
+portable signed resource contract, threshold network-visible sign-once gossip, and
+lease-bound storage/bandwidth/compute receipts from an actual local provider
+process. Missing, tampered, replayed, forked, or cross-lease work evidence cannot be
+reported as proved. Provider loss requires a newly signed offer and lease while the
+same immutable workload ID can be retained. This does not prove independent
+witnesses, providers, credentials, administrators, regions, or failure domains. It does not promote
 the revised confidential-state claim, provider independence, SDK publication,
 Byzantine/Sybil resistance, global death, or WebKit full signing parity. GPT is
 optional and non-authoritative.

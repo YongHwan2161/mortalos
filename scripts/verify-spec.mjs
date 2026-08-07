@@ -195,6 +195,18 @@ const domains = [
   "MORTALOS/V1/RESOURCE-CONSUMPTION-ID\\0",
   "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-ID\\0",
   "MORTALOS/V1/RESOURCE-CONSUMPTION-WITNESS-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-CONTENT-LEAF\\0",
+  "MORTALOS/V1/RESOURCE-CONTENT-NODE\\0",
+  "MORTALOS/V1/RESOURCE-CONTENT-ROOT\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-ID\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-CHALLENGE-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-CONSUMER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-PROVIDER-SIGNATURE\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-PAYLOAD\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-COMPUTE-STEP\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-RECEIPT-ID\\0",
+  "MORTALOS/V1/RESOURCE-EXECUTION-WORKLOAD-ID\\0",
+  "MORTALOS/V1/RESOURCE-STORAGE-CHALLENGE-INDEX\\0",
   "MORTALOS/V1/RESOURCE-OFFER-ID\\0",
   "MORTALOS/V1/RESOURCE-OFFER-SIGNATURE\\0",
   "MORTALOS/V1/RESOURCE-LEASE-ID\\0",
@@ -356,8 +368,10 @@ for (const statement of [
   "minority partition cannot activate it",
   "witness-double-sign",
   "The earliest valid effective revocation wins",
-  "It does not discover peers, move bytes, execute jobs",
-  "bind the witnessed lease to data-plane execution receipts"
+  "It does not discover peers, schedule work",
+  "Lease-bound execution evidence",
+  "one-to-one usage/execution enforcement",
+  "new provider-signed offer and mutually signed lease"
 ]) {
   assert(
     text.resourceContract.replace(/\s+/g, " ").includes(statement),

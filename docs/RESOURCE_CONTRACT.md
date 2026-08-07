@@ -1,6 +1,6 @@
 # Signed bounded resource contract v1
 
-Status: **Normative implementation candidate; no independent-provider claim**
+Status: **Normative contract and lease-bound execution candidate; no independent-provider claim**
 
 This contract is the portable control plane for a participant that contributes
 finite storage, bandwidth, or compute to MortalOS. It answers five questions with
@@ -11,10 +11,13 @@ canonical signed evidence:
 3. Which declared witness quorum made that one consumption visible to the network?
 4. What cumulative usage did both parties attest?
 5. Who revoked which authority, when, and with what deterministic effect?
+6. Which exact leased workload did the participant execute, with what verifiable
+   result and jointly signed measured usage?
 
-It does not discover peers, move bytes, execute jobs, determine price, take payment,
-or prove that a provider controls real hardware. Those are separate data-plane,
-scheduling, settlement, and topology claims.
+It does not discover peers, schedule work, determine price, take payment, or prove
+that a provider controls independent hardware. The execution layer verifies evidence
+produced by a participant data plane; it does not become that data plane or a fixed
+backend.
 
 ## 1. Trust and authority boundary
 
@@ -23,6 +26,12 @@ private key, clock, network, storage, scheduler, or server capability. Every tim
 an explicit canonical decimal-string input. Callers sign the returned 32-byte
 messages with endpoint-local Ed25519 authority and return tagged signatures for
 assembly and verification.
+
+[`src/resource-execution.mjs`](../src/resource-execution.mjs) has the same boundary.
+It accepts signed contract bytes, explicit challenges, results, and usage receipts.
+It never generates a key, reads ambient time, discovers a peer, or decides where a
+job runs. Result helpers are deterministic local computations over caller-supplied
+bytes.
 
 The default SDK exports read-only verification and evaluation. The explicit
 `@mortal-os/core/resource-contract` subpath additionally exports draft/finalize
@@ -44,6 +53,10 @@ all contract ceilings.
 | Revocations per evaluation | 32 | Revocation evaluation is bounded. |
 | Announcements per evaluation | 64 | Gossip convergence cannot create unbounded verification work. |
 | Witnesses per offer | 16 | A provider cannot create an unbounded witness policy. |
+| Execution resource | 4,194,304 bytes | A content commitment cannot hash an unbounded resource. |
+| Storage proof leaf | 4,096 bytes | Storage challenges use one fixed-size Merkle leaf profile. |
+| Bandwidth/compute input | 4,096 bytes | One challenge cannot force an unbounded input transfer. |
+| Compute iterations | 4,096 | One deterministic hash-chain challenge has finite work. |
 
 All integral protocol values are strings matching `0|[1-9][0-9]*`. JavaScript
 floating-point numbers, signs, leading zeroes, exponents, and values above the
@@ -181,7 +194,47 @@ egress, or CPU total reaches its lease allocation.
 Usage receipts require an already witnessed lease. A receipt supplied below witness
 quorum rejects instead of retroactively activating private work.
 
-## 8. Revocation
+## 8. Lease-bound execution evidence
+
+`mortalos-resource-execution-challenge/1` is signed by the lease consumer. Its
+canonical body binds the exact offer, lease, derived consumption ID, zero-based
+sequence, prior execution-receipt ID, issue time, 128-bit nonce, resource kind, and
+immutable workload. The verifier chooses the nonce; it receives no lifecycle,
+scheduling, storage, or signing authority by doing so.
+
+`mortalos-resource-execution-receipt/1` embeds that complete challenge and binds its
+ID to the exact result, execution time, workload ID, usage-receipt ID, sequence, and
+prior execution-receipt ID. Provider and consumer sign different role-separated
+messages over the same derived `resource-execution:` ID. Consequently a provider
+cannot manufacture consumer observation, a consumer cannot manufacture provider
+execution, and neither can move a valid receipt to another lease.
+
+The three v1 workload proofs are deliberately small and deterministic:
+
+- **storage** commits up to 4 MiB as a 4,096-byte-leaf Merkle tree. The challenge
+  nonce, content root, and lease ID select the leaf. The result carries that leaf
+  and its sibling path; verification recomputes the exact `resource-content:` root;
+- **bandwidth** carries an unpredictable bounded payload. The provider process must
+  return the same digest and exact ingress/egress byte counts, while the matching
+  usage receipt must advance both cumulative counters by at least that size;
+- **compute** carries a bounded input and iteration count for `sha256-chain/1`.
+  Every verifier independently recomputes the exact output, and the matching usage
+  receipt must advance cumulative CPU measurement.
+
+Every execution sequence has exactly one usage receipt with the same sequence and
+execution time. `evaluateResourceExecutionContract` returns `proved` only when the
+two chains have equal length and every challenge, result, signature, predecessor,
+and usage binding verifies. A valid lease with no execution receipts is `unproved`;
+an unleased offer is `not-applicable`. The original `evaluateResourceContract`
+remains a control-plane evaluator and must not be used to claim delivered service.
+
+After provider loss, receipts from the old lease cannot continue under another
+provider. Reassignment requires a new provider-signed offer and mutually signed
+lease. The workload ID excludes provider and lease identity, so an exact workload
+can be recognized across reassignment without treating the old receipt chain as the
+new provider's evidence.
+
+## 9. Revocation
 
 `mortalos-resource-revocation/1` binds a target kind and ID, actor key ID,
 effective time, 128-bit nonce, and one reason from:
@@ -199,7 +252,7 @@ lease whose start is at or after the revocation. Once a lease has begun, cancell
 that lease requires a lease-targeted revocation; an offer revocation cannot silently
 rewrite an already mutual contract.
 
-## 9. Explicit-time evaluation
+## 10. Explicit-time evaluation
 
 `evaluateResourceContract` verifies all supplied bytes before returning one state:
 
@@ -220,14 +273,16 @@ The evaluator receives `observed_at_ms`, explicit lease evidence, and bounded
 input throws a stable `ResourceContractError` code rather than falling back to
 availability.
 
-## 10. Domain separation
+## 11. Domain separation
 
-Offer, lease, consumption, consumption-witness, usage, and revocation IDs each hash
+Offer, lease, consumption, consumption-witness, usage, revocation, execution
+challenge, execution receipt, workload, content leaf/node/root, storage challenge,
+payload, and compute step each hash
 the exact canonical body under a distinct `MORTALOS/V1/...-ID\0` domain. Provider,
 consumer, and witness signatures use separate role domains. A signature from another
 artifact or role cannot be replayed as authorization here.
 
-## 11. Verification and claim boundary
+## 12. Verification and claim boundary
 
 The focused gate proves:
 
@@ -245,10 +300,16 @@ The focused gate proves:
 - accessor, hostile Proxy, prototype, signature-substitution, and array rejection;
 - Node execution, browser-target bundling, portable-source scanning, and clean
   packed-package consumption without repository-relative imports.
+- actual child-provider execution of storage, bandwidth, and compute; provider PID
+  termination; newly signed provider/offer/lease reassignment with the same workload
+  ID; and no private material in exchanged evidence;
+- one-to-one usage/execution enforcement, deterministic output, Merkle proof,
+  replay/fork/cross-lease/tamper rejection, exact maxima, and max + 1 rejection.
 
-This proves a signed logical contract and accountable network-visible consumption
-under the offer's declared witness-fault assumption. It does **not** prove the
-witness identities are independent, the declared fault bound is true, metering is
-honest, resources exist, work was delivered, or Sybil resistance/economic settlement.
-The next architecture gate must bind the witnessed lease to data-plane execution
-receipts produced by independently observable participant runtimes.
+This proves a signed logical contract plus verifiable lease-bound execution in a
+local multi-process topology under the offer's declared witness-fault assumption.
+It does **not** prove witness/provider identities are independently administered,
+the declared fault bound is true, cumulative metering is physically honest, the
+process ran on a distinct machine or region, or Sybil resistance/economic settlement.
+The next architecture gate is provider-neutral transport/adapters and a reproducible
+distinct-account, credential, administrator, and failure-domain evidence matrix.

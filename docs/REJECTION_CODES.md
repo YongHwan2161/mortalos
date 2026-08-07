@@ -177,6 +177,7 @@ Signer equivocation in two accepted sibling appends is evidence attached to `E_F
 | `E_RESOURCE_REPLAY` | A lease, revocation, receipt sequence, previous receipt ID, or cumulative quantity is duplicated, stale, reordered, or regressed. |
 | `E_RESOURCE_EQUIVOCATION` | Two different valid mutually signed leases consume the same single-use offer, or one witness signs different lease claims for that offer; no winner is selected. |
 | `E_RESOURCE_REVOCATION` | A revocation has an unsupported target/reason or is not signed by the provider for an offer or by one of the two lease parties. |
+| `E_RESOURCE_EXECUTION` | A lease-bound challenge, deterministic result, content proof, measured-usage binding, or one-to-one execution-receipt chain is missing, unsupported, or invalid. |
 
 ## 10. Internal fail-closed code
 

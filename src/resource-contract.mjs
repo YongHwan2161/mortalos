@@ -1092,6 +1092,32 @@ export function verifyResourceUsageReceipt(options) {
   );
 }
 
+export function verifyResourceUsageReceiptChain(options) {
+  assertRuntime();
+  const [offer, lease, receipts] = exactOptions(
+    options,
+    ["offer", "lease", "receipts"],
+    "resource usage chain verification options"
+  );
+  const context = verifiedLeaseContext(offer, lease);
+  const sources = boundedArray(
+    receipts,
+    RESOURCE_CONTRACT_LIMITS.receipts_per_lease_max,
+    "resource usage receipts"
+  );
+  const verified = [];
+  let previous = null;
+  for (let index = 0; index < arrayLength(sources); index += 1) {
+    previous = verifyUsageEnvelope(
+      context,
+      previous,
+      parseCanonicalDocument(arrayValueAt(sources, index), `/receipts/${index}`)
+    );
+    verified[index] = previous;
+  }
+  return freeze(verified);
+}
+
 function validateRevocationBody(body, context) {
   exactKeys(
     body,

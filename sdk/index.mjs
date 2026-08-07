@@ -34,5 +34,14 @@ export {
   verifyResourceLease,
   verifyResourceOffer,
   verifyResourceRevocation,
-  verifyResourceUsageReceipt
+  verifyResourceUsageReceipt,
+  verifyResourceUsageReceiptChain
 } from "../src/resource-contract.mjs";
+export {
+  RESOURCE_EXECUTION_FORMATS,
+  RESOURCE_EXECUTION_LIMITS,
+  createResourceContentCommitment,
+  evaluateResourceExecutionContract,
+  verifyResourceExecutionChallenge,
+  verifyResourceExecutionReceipt
+} from "../src/resource-execution.mjs";

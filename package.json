@@ -54,7 +54,7 @@
     "test:state": "node --test test/state-engine.test.mjs",
     "test:state-package": "node --test test/state-package.test.mjs",
     "test:confidentiality": "node --test test/confidential-format.test.mjs test/confidential-counter.test.mjs test/confidential-crypto-vectors.test.mjs test/confidential-package.test.mjs test/confidential-s3-recovery.test.mjs && node scripts/verify-confidential-chromium.mjs",
-    "test:protocol-profile": "node --test test/protocol-profile.test.mjs test/resource-contract.test.mjs",
+    "test:protocol-profile": "node --test test/protocol-profile.test.mjs test/resource-contract.test.mjs test/resource-execution.test.mjs test/resource-execution-process.test.mjs",
     "test:distributed-counter": "node --test test/distributed-counter.test.mjs && node scripts/verify-independent-counter-topology.mjs",
     "test:security-fuzz": "node --test test/security-stateful-fuzz.test.mjs",
     "verify:security-boundaries": "node --test test/security-boundary-verifier.test.mjs",

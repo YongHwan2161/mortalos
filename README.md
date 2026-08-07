@@ -183,7 +183,8 @@ distinct copy and logical-provider identities.
 
 ## Public resource-contract API
 
-The default SDK exposes verification and deterministic explicit-time evaluation.
+The default SDK exposes verification and deterministic explicit-time evaluation,
+including lease-bound execution evidence.
 Creating signed artifacts uses the explicit authority-free drafting subpath; the
 caller keeps its signer outside the core:
 
@@ -203,13 +204,24 @@ const offerBytes = finalizeResourceOffer({
 ```
 
 The same prepare/finalize/verify pattern applies to mutual leases, consumption
-witnesses, chained usage receipts, and revocations. A witness draft exposes a
+witnesses, chained usage receipts, revocations, consumer-signed execution
+challenges, and provider/consumer-signed execution receipts. Storage receipts
+verify a challenged Merkle leaf, bandwidth receipts verify an unpredictable
+payload round trip, and compute receipts reproduce a bounded deterministic hash
+chain. Every execution binds one exact usage receipt and predecessor; the dedicated
+execution evaluator rejects missing or cross-lease evidence. A witness draft exposes a
 sign-once request whose tuple is the offer ID and whose message binds the exact lease
 ID; the existing endpoint-local authority can sign it without moving private key
 material into the resource core. Bounded self-contained announcements can travel
 over relay control or WebRTC, but receivers always re-verify them. The core receives
 tagged public signatures, never the private signer, ambient clock, transport,
 scheduler, or storage capability.
+
+The focused local gate executes all three workload classes in an actual child
+provider process, terminates it, and permits reassignment only through a new signed
+offer and lease while preserving the immutable workload ID. This is process-level
+evidence, not a claim of separate hardware, account, region, administrator, or
+credential custody.
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below

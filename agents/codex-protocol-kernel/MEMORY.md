@@ -1,6 +1,6 @@
 # Durable memory
 
-Last reconciled: 2026-08-07 KST
+Last reconciled: 2026-08-08 KST
 
 Branch: `agent/codex-protocol-kernel--resource-offer-leases`
 
@@ -39,6 +39,30 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
   metering, witness independence, Sybil resistance, or independent provider
   administration.
 
+## Lease-bound execution receipt candidate
+
+- A consumer-signed canonical challenge binds one offer, lease, consumption ID,
+  immutable workload, unpredictable 128-bit nonce, predecessor, sequence, and
+  explicit issue time. The verifier gains no clock, scheduler, lifecycle, network,
+  key, or storage authority.
+- A provider/consumer-signed execution receipt embeds the exact challenge and binds
+  deterministic result, workload ID, execution time, matching usage receipt, and
+  exact prior execution receipt. Usage and execution chains must be one-to-one
+  before `evaluateResourceExecutionContract` reports `proved`.
+- Storage verifies a nonce-selected 4,096-byte Merkle leaf against a content root;
+  bandwidth verifies an unpredictable payload round trip; compute reproduces a
+  bounded `sha256-chain/1` result. Generated 4 MiB resource, 4 KiB input/leaf, and
+  4,096-iteration limits pass at exact max and reject at plus one.
+- An actual child provider reads a runtime file and executes all three workload
+  classes. Its real PID exits and cannot sign again. A replacement provider needs a
+  new signed offer and mutual lease; the exact workload ID remains stable while the
+  old lease receipt is rejected.
+- Focused resource/profile `22/22`, SDK `4/4`, browser-target bundling, and clean
+  packed external-consumer compute receipt pass locally. Private material is absent
+  from exchanged offers, leases, challenges, usage, and execution receipts.
+- This is a local process-isolation candidate, not evidence of distinct hardware,
+  account, region, credential, administrator, honest meter, or independent provider.
+
 ## Verified merged state
 
 - PR #51 passed exact-head policy and browser/protocol CI, immutable independent
@@ -74,12 +98,12 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 
 ## Current priority
 
-1. Complete the exact network-visible sign-once full suite, then promote through
+1. Complete the exact lease-bound execution full suite, then promote through
    CI, immutable review, expected-head merge, and post-merge readback.
-2. Bind the witnessed lease to content-addressed storage, bandwidth, and compute
-   challenge receipts emitted by the actual participant data plane.
-3. Replace the three in-process copy transports with provider-neutral durable
-   adapters and prove distinct failure/credential domains.
+2. Compose offers, the real participant data plane, execution receipts, continuity,
+   and repair into one receipt-gated backend-free placement workflow.
+3. Replace local process adapters with provider-neutral durable adapters, then
+   prove distinct failure/credential/administrator domains.
 4. Compose S4 confidentiality explicitly; the current product Capsule carries
    exact resource bytes and is not an encryption claim.
 5. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and

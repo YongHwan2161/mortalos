@@ -163,13 +163,19 @@ so at least one identity has signed both claims if at most `f` are Byzantine. Th
 evaluator exposes this equivocation and selects no winner. These properties are
 conditional on the signed fault bound; a roster does not establish independence.
 
-This does not remove the excluded Sybil/fake-contribution threat. A provider can
-sign capacity it does not possess, the parties and witnesses can collude on false
-usage or visibility, and one administrator can control many valid keys. Until
-execution receipts bind the witnessed lease
-to observable data-plane work across independently evidenced runtimes, the contract
-is accounting/control-plane evidence only. No scheduler may convert a signature
-into a physical-independence claim.
+The lease-bound execution layer now adds a consumer-signed unpredictable challenge
+and a provider/consumer-signed receipt tied one-to-one to cumulative usage. It
+recomputes a challenged content proof, payload round trip, or deterministic bounded
+compute result and rejects replay, forks, cross-lease substitution, tampering, and
+unproved usage. A verifier can challenge work but gains no scheduler or lifecycle
+authority. Provider loss requires a new signed offer and lease; the stable workload
+ID recognizes the same work without inheriting the old provider's receipt chain.
+
+This still does not remove the Sybil/fake-independence threat. Provider and consumer
+can collude on usage, one administrator can control many valid keys and processes,
+and a local child process is not separate hardware, region, credential, or custody.
+No scheduler may convert a valid receipt into a physical-independence or honest-
+metering claim without a separate deployment evidence matrix.
 
 ## 7. Safety properties
 
