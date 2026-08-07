@@ -32,12 +32,14 @@ Base: `0779741402244d6cd802a1179bd2c94555bdd030`
 - Focused resource/profile `15/15`, transport `8/8`, SDK `4/4`, clean packed full
   witness flow, specification, links, conformance `76/76`, portable
   `10,000/10,000`, security inventory `21/119`, and zero-vulnerability audit pass.
-  Fresh exact-tree full `npm test` also passed in `2,720.8s`; commit/push, exact-head
-  CI, and independent review remain.
-- Root product gap is now lease-bound storage/bandwidth/compute execution proof.
-  Quorum-visible signatures still do not prove possession, delivery, truthful
-  metering, witness independence, Sybil resistance, or independent provider
-  administration.
+  Fresh exact-tree full `npm test` also passed in `2,720.8s`. The subsequently
+  remediated contract and execution vertical passed exact-head gates and merged in
+  PR #56; the initial local run is retained only as candidate history.
+- Lease-bound storage/bandwidth/compute execution proof is now merged for the local
+  process topology. The root product gap has advanced to receipt-gated participant
+  placement and repair over the real peer data plane. Quorum-visible signatures
+  and local receipts still do not prove truthful physical metering, witness or
+  provider independence, Sybil resistance, or independent administration.
 
 ## Lease-bound execution receipt implementation
 
@@ -60,8 +62,9 @@ Base: `0779741402244d6cd802a1179bd2c94555bdd030`
 - Focused resource/profile `22/22`, SDK `4/4`, browser-target bundling, and clean
   packed external-consumer compute receipt pass locally. Private material is absent
   from exchanged offers, leases, challenges, usage, and execution receipts.
-- This is a local process-isolation candidate, not evidence of distinct hardware,
-  account, region, credential, administrator, honest meter, or independent provider.
+- PR #56 promotes this only as a merged local process-isolation execution claim.
+  It is not evidence of distinct hardware, account, region, credential,
+  administrator, honest meter, or independent provider.
 
 ## Verified merged state
 
@@ -83,7 +86,7 @@ Base: `0779741402244d6cd802a1179bd2c94555bdd030`
   Exact-main Verify `31215007053` and Deploy `31215005995` then passed, including
   public artifact, relay, and bilingual-path readback.
 
-## Product-continuity candidate
+## Product-continuity merged implementation
 
 - The explicit `@mortal-os/core/continuity` surface and CLI now expose
   create/inspect/handoff/recover/continue over one core implementation.
@@ -100,8 +103,11 @@ Base: `0779741402244d6cd802a1179bd2c94555bdd030`
   rejection. A crash-left lock deliberately requires explicit recovery.
 - The pre-lock checkout passed `npm test` in 2,542.8 seconds and browser parity in
   207.3 seconds; post-lock focused continuity, packed consumer, and the `21/119`
-  async security inventory pass. Promotion still requires exact-head CI, immutable review, native
-  approval/App attestation, expected-head merge, and post-merge readback.
+  async security inventory pass. PR #53 then passed exact-head policy and Verify,
+  immutable review, App attestation, separately credentialed native approval,
+  expected-head merge as `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`, and exact-main
+  Verify `30754511404` plus Deploy `30754511395`. Package-registry publication and
+  physical or administrative provider independence remain unclaimed.
 
 ## Current priority
 

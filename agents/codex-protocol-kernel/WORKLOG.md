@@ -1887,3 +1887,14 @@ result, and reproducible verification.
   only `package-lock.json` moved `nanoid` from `3.3.16` to `3.3.18`. Fresh local
   `npm audit --audit-level=moderate` reports zero vulnerabilities; old CI is not
   reused and the replacement head requires every gate again.
+- Replacement head `a1f7b9be4458c8be5fd6d1cdaa2868dc66d83959` passed trusted
+  policy `31221495943/1` and Verify `31221375045`, including browser job
+  `93006491592`, protocol job `93006491652`, and the patched dependency audit.
+  Independent review `4887084891` still correctly BLOCKed promotion: current durable
+  memory retained pre-merge execution and continuity candidate language that
+  contradicted the closeout claim. No PASS receipt, App attestation, approval, or
+  merge was issued.
+- Remediation aligns durable memory, the documentation map, claim matrix, and stage
+  ledger with governed PR #53 and PR #56 merges while retaining public-registry,
+  honest-meter, and physical/administrative-independence HOLDs. The replacement head
+  must rerun every exact-head gate and receive a fresh immutable review.

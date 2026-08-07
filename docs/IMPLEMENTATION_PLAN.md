@@ -159,8 +159,8 @@ usable and stable.
 | S2 | Module-private durable capability, first-await ownership, key-redacted diagnostics | Node plus Chromium/Firefox conforming-caller matrices | Historical receipt only; XSS-resistant sign-once remains **HOLD** |
 | S3 | Generated profile and real relay fragment data plane | 1 MiB reconstruction, recovery corpus, real relay message test | Product-integrated local candidate; independent provider topology remains unproven |
 | S4 | Private activation capability, exact readback, key-redacted recovery | Node plus Chromium/Firefox cryptographic and rotation gates | Historical receipt only; revised claim remains **HOLD** |
-| [S5](https://github.com/YongHwan2161/mortalos/issues/34) | Authority-free default SDK plus explicit continuity capability subpath and full CLI | Export/pack/install/full-flow tests | Product-integrated candidate; publish and promotion pending |
-| [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and signed 2-of-3 content custody | Cross-process verification, handoff, exact recovery, and duplicate/tamper/fork rejection | End-to-end candidate complete; integrated receipt pending |
+| [S5](https://github.com/YongHwan2161/mortalos/issues/34) | Authority-free default SDK plus explicit continuity capability subpath and full CLI | Export/pack/install/full-flow tests plus PR #53 exact-head and exact-main gates | Merged implementation; S5 receipt and public registry publication pending |
+| [S6](https://github.com/YongHwan2161/mortalos/issues/35) | Canonical Continuity Capsule and signed 2-of-3 content custody | Cross-process verification, handoff, exact recovery, duplicate/tamper/fork rejection, and PR #53 governed merge | Merged implementation; S6 integrated receipt and physical independence **HOLD** |
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 | Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer, exact-head CI/review/App/native approval/merge | Merged local execution claim; physical independence **HOLD** |
@@ -180,7 +180,7 @@ Stage coordination remains subordinate to this SSOT:
 
 ## 4. Priority order
 
-### P0 — One real continuity vertical
+### Completed P0 — One real continuity vertical
 
 Use one implementation path in the SDK, CLI, and Lab to prove this sequence:
 
@@ -210,7 +210,7 @@ Strict pass criteria:
 - the programmatic Lab harness completes without a model call. A visible EN/KO
   product journey and ten-run UX timing remain P1, not a hidden P0 claim.
 
-### P0 — Complete the public package surface
+### Completed P0 — Complete the public package surface
 
 - expose create, inspect, handoff, recover, and continue orchestration through the
   explicit `@mortal-os/core/continuity` capability subpath;
@@ -218,8 +218,10 @@ Strict pass criteria:
 - run the complete scenario from a clean packed-tarball consumer;
 - retain the authority-free default export and no-private-material invariant.
 
-Local Windows acceptance is implemented. Exact-head CI must still prove the clean
-temporary consumer on the repository's supported runner matrix before promotion.
+PR #53 exact-head CI proved the clean temporary consumer on the supported runner,
+then immutable review, App attestation, native approval, expected-head merge, and
+exact-main Verify/Deploy completed. Public package-registry publication remains a
+separate unclaimed distribution step.
 
 ### P1 — Make the Lab a product demonstration
 

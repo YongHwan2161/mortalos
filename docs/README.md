@@ -26,8 +26,8 @@ transitions. The [R3 state availability ADR](STATE_AVAILABILITY_AND_RECOVERY.md)
 adds the promoted bounded manifest/chunk recovery protocol, but does not prove
 physical-domain durability or global availability. The
 [S4 confidential-state ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is promoted. Its
-runtime is an exact-head candidate and grants no promoted confidentiality claim
-before its receipt, full suite, review, merge, and exact-main deployment pass.
+revised runtime is merged, but the revised confidentiality claim remains reopened
+until its own fresh stage receipt and promotion gates pass.
 
 ## Architecture and compatibility
 
@@ -57,17 +57,20 @@ The repository promotes portable lifecycle validation, deterministic v1 state
 transition, read-only evidence replay, Chromium A→B succession, logical Chromium
 `2-of-3` loss/repair, the S1 Participant Core, the historical S2 durable quorum
 claim, and S3 exact logical resource recovery within the qualifications in the
-claim matrix. Main `7c9f6a46f4a26debba6902121bdb36c2b791ffc7` also contains
-revised S2/S4 code and S5–S8 implementation surfaces. Their presence in main does
-not replace a stage receipt or prove physical independence.
+claim matrix. Main `0779741402244d6cd802a1179bd2c94555bdd030` also contains
+revised S2/S4 code, the governed PR #53 continuity vertical, S5–S8 implementation
+surfaces, and the governed PR #56 resource contract/execution vertical. Their
+presence in main does not replace a claim-specific receipt or prove physical
+independence.
 
-The real-file A-to-B continuity vertical is merged. The current candidate adds a
-portable signed resource contract, threshold network-visible sign-once gossip, and
-lease-bound storage/bandwidth/compute receipts from an actual local provider
-process. Missing, tampered, replayed, forked, or cross-lease work evidence cannot be
-reported as proved. Provider loss requires a newly signed offer and lease while the
-same immutable workload ID can be retained. This does not prove independent
-witnesses, providers, credentials, administrators, regions, or failure domains. It does not promote
-the revised confidential-state claim, provider independence, SDK publication,
+The real-file A-to-B continuity vertical, portable signed resource contract,
+threshold network-visible sign-once gossip, and lease-bound
+storage/bandwidth/compute receipts are merged. The execution proof is deliberately
+limited to an actual local provider process. Missing, tampered, replayed, forked,
+or cross-lease work evidence cannot be reported as proved. Provider loss requires a
+newly signed offer and lease while the same immutable workload ID can be retained.
+This does not prove independent witnesses, providers, credentials, administrators,
+regions, or failure domains. It does not promote the revised confidential-state
+claim, provider independence, public registry publication,
 Byzantine/Sybil resistance, global death, or WebKit full signing parity. GPT is
 optional and non-authoritative.
