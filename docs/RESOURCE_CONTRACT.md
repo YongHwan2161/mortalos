@@ -3,7 +3,7 @@
 Status: **Normative contract and lease-bound execution candidate; no independent-provider claim**
 
 This contract is the portable control plane for a participant that contributes
-finite storage, bandwidth, or compute to MortalOS. It answers five questions with
+finite storage, bandwidth, or compute to MortalOS. It answers six questions with
 canonical signed evidence:
 
 1. What exact capacity did a provider offer, and for what interval?

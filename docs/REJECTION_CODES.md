@@ -167,7 +167,7 @@ Signer equivocation in two accepted sibling appends is evidence attached to `E_F
 | `E_RESOURCE_FORMAT` | An offer, lease, consumption witness, gossip announcement, usage receipt, revocation, option record, array, nonce, or canonical byte envelope has the wrong exact shape or representation. |
 | `E_RESOURCE_LIMIT` | A generated document, announcement, observed-lease, witness roster, announcement-set, receipt-chain, revocation-set, or sequence ceiling is exceeded. |
 | `E_RESOURCE_DECIMAL` | A resource capacity, usage, time, or sequence is not a canonical non-negative decimal string within the generated 63-bit maximum. |
-| `E_RESOURCE_IDENTITY` | A provider, consumer, or witness identity is not a strict Ed25519 public key bound to its derived peer ID. |
+| `E_RESOURCE_IDENTITY` | A provider, consumer, or witness identity is not a strict Ed25519 public key bound to its derived peer ID, or one key attempts to occupy both provider and consumer roles in a lease. |
 | `E_RESOURCE_SIGNATURE` | A provider, consumer, witness, usage, or revocation signature does not verify under its exact role-specific domain. |
 | `E_RESOURCE_WITNESS` | The signed witness policy violates its generated roster limit or Byzantine quorum inequalities, a role overlaps, a witness is outside the roster, or usage is supplied before the declared threshold is visible. |
 | `E_RESOURCE_TIME` | An interval is empty, outside its parent interval, over the duration ceiling, non-monotonic, after its target, or observed in the future relative to explicit evaluation time. |

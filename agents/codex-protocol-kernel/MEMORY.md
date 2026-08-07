@@ -98,8 +98,11 @@ Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 
 ## Current priority
 
-1. Complete the exact lease-bound execution full suite, then promote through
-   CI, immutable review, expected-head merge, and post-merge readback.
+1. Promote the remediated lease-bound execution candidate through exact-head CI,
+   immutable re-review, expected-head merge, and post-merge readback. The first
+   review correctly BLOCKed provider/consumer key reuse and announcement-only
+   nested-object verification; both now have exact fail-closed regressions and the
+   full suite passes in 2,963 seconds.
 2. Compose offers, the real participant data plane, execution receipts, continuity,
    and repair into one receipt-gated backend-free placement workflow.
 3. Replace local process adapters with provider-neutral durable adapters, then

@@ -516,6 +516,9 @@ function validateLeaseBody(body, offer) {
   const startsAt = canonicalDecimal(body.starts_at_ms, "/body/starts_at_ms");
   const endsAt = canonicalDecimal(body.ends_at_ms, "/body/ends_at_ms");
   const offerTimes = validateOfferBody(offer.body);
+  if (body.consumer.key_id === offer.body.provider.key_id) {
+    fail("E_RESOURCE_IDENTITY", "/body/consumer", "provider-consumer-role-conflict");
+  }
   if (witnessByKeyId(offerTimes.witnessPolicy, body.consumer.key_id)) {
     fail("E_RESOURCE_WITNESS", "/body/consumer", "consumer-witness-role-conflict");
   }

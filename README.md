@@ -38,10 +38,12 @@ must gossip that exact consumption before activation; both parties sign chained
 cumulative usage; either lease party can revoke. One offer is single-use, so two
 different valid leases or one witness double-sign halt as equivocation instead of
 silently overcommitting capacity. Promotion still requires exact-head
-CI, independent review, merge, and any claimed runtime readback. The next root gap is
-execution accountability: a threshold-visible signed offer proves intent and
-logical observation, not actual possession, delivery, truthful metering, witness
-independence, or independent administration. See the
+CI, independent review, merge, and any claimed runtime readback. Lease-bound
+challenge/receipt chains now prove bounded storage, bandwidth, and deterministic
+compute execution by the leased participant; they do not by themselves prove
+honest metering, physical provider/witness independence, or independent
+administration. The next root gap is receipt-gated placement and repair over the
+real participant data plane. See the
 [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof

@@ -1129,7 +1129,9 @@ export function evaluateResourceExecutionContract(options) {
       "resource consumption announcements"
     );
     const leaseSource = arrayLength(leases) === 0
-      ? parseCanonicalDocument(arrayValueAt(announcements, 0), "/announcement").value.lease
+      ? canonicalBytes(
+          parseCanonicalDocument(arrayValueAt(announcements, 0), "/announcement").value.lease
+        )
       : arrayValueAt(leases, 0);
     const context = verifiedContext(offer, leaseSource);
     const verifiedUsage = executionUsageFor(context, usage);

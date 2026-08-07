@@ -392,6 +392,23 @@ test("lease-bound receipts prove actual storage, bandwidth, and deterministic co
   assert.equal(evaluated.execution_status, "proved");
   assert.equal(evaluated.executions_verified, 3);
   assert.equal(evaluated.last_execution_receipt_id, completed.fixture.executionIds.at(-1));
+
+  const announcementOnly = evaluateResourceExecutionContract({
+    consumption_announcements: completed.fixture.announcements,
+    offer: completed.fixture.offer,
+    leases: [],
+    observed_at_ms: "1500",
+    usage_receipts: completed.fixture.usages,
+    revocations: [],
+    execution_receipts: completed.executions
+  });
+  assert.equal(announcementOnly.status, "active");
+  assert.equal(announcementOnly.execution_status, "proved");
+  assert.equal(announcementOnly.executions_verified, 3);
+  assert.equal(
+    announcementOnly.last_execution_receipt_id,
+    completed.fixture.executionIds.at(-1)
+  );
 });
 
 test("replay, fork, cross-lease, tampering, and usage without execution fail closed", async () => {

@@ -376,6 +376,13 @@ test("finite decimal, duration, allocation, usage, and envelope ceilings fail cl
   assert.throws(
     () => prepareResourceLease({
       offer,
+      body: leaseBody(offerId, provider)
+    }),
+    code("E_RESOURCE_IDENTITY")
+  );
+  assert.throws(
+    () => prepareResourceLease({
+      offer,
       body: leaseBody(offerId, consumer, {
         allocation: capacity({ storage: { capacity_bytes: "10485761" } })
       })

@@ -11,7 +11,8 @@ not active locks.
 - Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
 - Work branch: `agent/codex-protocol-kernel--resource-offer-leases`
 - Worktree: `C:/Users/ant71/Documents/Codex/2026-07-17/yonghwan2161-mortalos-git-https-github-com/work/mortalos-worktrees/codex-protocol-kernel--resource-offer-leases`
-- Exact intended shared paths: `package.json`, `protocol/profile.v1.json`,
+- Exact intended shared paths: `package.json`, `package-lock.json`,
+  `protocol/profile.v1.json`,
   `src/generated/protocol-profile.mjs`, `src/crypto.mjs`,
   `src/rejection-codes.mjs`, new `src/resource-contract.mjs`,
   new `src/resource-execution.mjs`, `src/index.mjs`,
@@ -58,17 +59,19 @@ not active locks.
   WebRTC carriage (pending PR #55), physical witness/provider independence,
   Byzantine-fault truth beyond the offer's declared policy, automatic scheduling,
   package-registry publication, and any S7/S8 production claim.
-- Candidate validation: focused resource/profile `22/22`, transport `8/8`, SDK
+- Candidate validation after independent-review remediation: focused resource/profile `22/22`, transport `8/8`, SDK
   `4/4`, clean packed external offer -> lease -> 3-of-4 witness gossip -> proved
   compute execution receipt, actual child-provider storage/bandwidth/compute plus
   death/new-lease reassignment, specification/link/profile checks, conformance `76/76`, portable
   `10,000/10,000`, async security boundaries `21 direct / 119 auto-discovered`,
   dependency audit with zero vulnerabilities, `git diff --check`, and fresh full
-  `npm test` PASS in `2,942.6s`. The full chain includes actual Chromium durability,
+  `npm test` PASS in `2,963s`. The full chain includes actual Chromium durability,
   multi-browser/Lab/UX, confidentiality, continuity, and historical S0-S4 receipt
   regressions.
-- Remaining gate: implement and validate the lease-bound execution vertical,
-  refresh the protocol and claim documents, commit/push, exact-head CI, immutable independent review, GitHub
+- First immutable review BLOCKed provider/consumer key reuse and announcement-only
+  nested-object verification. The candidate now rejects role reuse at lease validation,
+  reserializes announcement leases to canonical bytes, and carries exact regressions.
+- Remaining gate: commit/push, exact-head CI, immutable independent re-review, GitHub
   App attestation plus machine-user native approval, expected-head merge, and
   exact-main readback. Signed logical contract, delivery, and provider independence
   remain separate claims.

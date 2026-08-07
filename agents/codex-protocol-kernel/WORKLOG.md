@@ -1841,3 +1841,22 @@ result, and reproducible verification.
   region, credential, administrator, physical meter, or Sybil resistance. The next
   root gap is receipt-gated useful placement and repair over the participant data
   plane, followed by real failure-domain evidence.
+
+## 2026-08-08 — Independent review BLOCK remediation
+
+- The first exact-snapshot review of PR #56 at `bc600a8` correctly BLOCKed merge.
+  A provider could reuse its own key as the lease consumer, collapsing provider,
+  consumer, usage, and execution consent into one authority. Lease validation now
+  rejects that role collision as `E_RESOURCE_IDENTITY` before any signature flow.
+- The same review found that execution evaluation with `leases: []` recovered the
+  nested lease object from a gossip announcement and passed it to the canonical-byte
+  verifier. The evaluator now reserializes that already-parsed value with the
+  module-private canonical encoder before verifying the exact lease envelope.
+- Added regressions for provider/consumer key reuse and a complete three-receipt
+  storage/bandwidth/compute evaluation using announcement-only lease discovery.
+  Corrected README next-gap language, the six-question contract count, rejection
+  semantics, the exact changed-path list, and the active handoff state.
+- Remediated evidence: resource/profile `22/22`, SDK/transport `12/12`, clean packed
+  external consumer PASS, specification PASS, zero-vulnerability audit, and fresh
+  full `npm test` PASS in `2,963s`. This does not reuse the pre-remediation CI or
+  review; a new exact-head CI and immutable re-review are required before merge.
