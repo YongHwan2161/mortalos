@@ -44,7 +44,17 @@ export const DOMAINS = Object.freeze({
   CUSTODY_ACCEPTANCE: "MORTALOS/V0/CUSTODY-ACCEPTANCE\0",
   CUSTODY_COMMITMENT: "MORTALOS/V0/CUSTODY-COMMITMENT\0",
   EVENT_PAYLOAD: "MORTALOS/V0/EVENT-PAYLOAD\0",
-  PEER_ID: "MORTALOS/V0/PEER-ID\0"
+  PEER_ID: "MORTALOS/V0/PEER-ID\0",
+  RESOURCE_LEASE_CONSUMER_SIGNATURE: "MORTALOS/V1/RESOURCE-LEASE-CONSUMER-SIGNATURE\0",
+  RESOURCE_LEASE_ID: "MORTALOS/V1/RESOURCE-LEASE-ID\0",
+  RESOURCE_LEASE_PROVIDER_SIGNATURE: "MORTALOS/V1/RESOURCE-LEASE-PROVIDER-SIGNATURE\0",
+  RESOURCE_OFFER_ID: "MORTALOS/V1/RESOURCE-OFFER-ID\0",
+  RESOURCE_OFFER_SIGNATURE: "MORTALOS/V1/RESOURCE-OFFER-SIGNATURE\0",
+  RESOURCE_REVOCATION_ID: "MORTALOS/V1/RESOURCE-REVOCATION-ID\0",
+  RESOURCE_REVOCATION_SIGNATURE: "MORTALOS/V1/RESOURCE-REVOCATION-SIGNATURE\0",
+  RESOURCE_USAGE_CONSUMER_SIGNATURE: "MORTALOS/V1/RESOURCE-USAGE-CONSUMER-SIGNATURE\0",
+  RESOURCE_USAGE_ID: "MORTALOS/V1/RESOURCE-USAGE-ID\0",
+  RESOURCE_USAGE_PROVIDER_SIGNATURE: "MORTALOS/V1/RESOURCE-USAGE-PROVIDER-SIGNATURE\0"
 });
 
 const DOMAIN_BYTES = Object.freeze(
@@ -110,6 +120,69 @@ export function custodyCommitment(descriptor) {
 
 export function eventPayloadHash(payload) {
   return tagged("sha256:", hash(DOMAIN_BYTES.EVENT_PAYLOAD, canonicalBytes(payload)));
+}
+
+function deriveResourceId(prefix, domain, body) {
+  return tagged(prefix, hash(domain, canonicalBytes(body)));
+}
+
+function resourceSignatureMessage(prefix, identifier, domain) {
+  const raw = decodeTagged(identifier, prefix, 32);
+  return raw ? hash(domain, raw) : null;
+}
+
+export function deriveResourceOfferId(body) {
+  return deriveResourceId("resource-offer:", DOMAIN_BYTES.RESOURCE_OFFER_ID, body);
+}
+
+export function resourceOfferSigningMessage(offerId) {
+  return resourceSignatureMessage(
+    "resource-offer:", offerId, DOMAIN_BYTES.RESOURCE_OFFER_SIGNATURE
+  );
+}
+
+export function deriveResourceLeaseId(body) {
+  return deriveResourceId("resource-lease:", DOMAIN_BYTES.RESOURCE_LEASE_ID, body);
+}
+
+export function resourceLeaseProviderSigningMessage(leaseId) {
+  return resourceSignatureMessage(
+    "resource-lease:", leaseId, DOMAIN_BYTES.RESOURCE_LEASE_PROVIDER_SIGNATURE
+  );
+}
+
+export function resourceLeaseConsumerSigningMessage(leaseId) {
+  return resourceSignatureMessage(
+    "resource-lease:", leaseId, DOMAIN_BYTES.RESOURCE_LEASE_CONSUMER_SIGNATURE
+  );
+}
+
+export function deriveResourceUsageId(body) {
+  return deriveResourceId("resource-usage:", DOMAIN_BYTES.RESOURCE_USAGE_ID, body);
+}
+
+export function resourceUsageProviderSigningMessage(receiptId) {
+  return resourceSignatureMessage(
+    "resource-usage:", receiptId, DOMAIN_BYTES.RESOURCE_USAGE_PROVIDER_SIGNATURE
+  );
+}
+
+export function resourceUsageConsumerSigningMessage(receiptId) {
+  return resourceSignatureMessage(
+    "resource-usage:", receiptId, DOMAIN_BYTES.RESOURCE_USAGE_CONSUMER_SIGNATURE
+  );
+}
+
+export function deriveResourceRevocationId(body) {
+  return deriveResourceId(
+    "resource-revocation:", DOMAIN_BYTES.RESOURCE_REVOCATION_ID, body
+  );
+}
+
+export function resourceRevocationSigningMessage(revocationId) {
+  return resourceSignatureMessage(
+    "resource-revocation:", revocationId, DOMAIN_BYTES.RESOURCE_REVOCATION_SIGNATURE
+  );
 }
 
 function copyBytes(value, expectedLength) {

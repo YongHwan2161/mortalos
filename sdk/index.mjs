@@ -25,3 +25,12 @@ export {
   validateGenesis,
   validatePulse
 } from "../src/validator.mjs";
+export {
+  RESOURCE_CONTRACT_LIMITS,
+  RESOURCE_FORMATS,
+  evaluateResourceContract,
+  verifyResourceLease,
+  verifyResourceOffer,
+  verifyResourceRevocation,
+  verifyResourceUsageReceipt
+} from "../src/resource-contract.mjs";

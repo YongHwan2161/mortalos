@@ -1,10 +1,33 @@
 # Durable memory
 
-Last reconciled: 2026-08-02 KST
+Last reconciled: 2026-08-07 KST
 
-Branch: `agent/codex-protocol-kernel--product-continuity-vertical`
+Branch: `agent/codex-protocol-kernel--resource-offer-leases`
 
-Base: `2dc63b2f8f43aa2a458a77035bf8933e973634c3`
+Base: `7c9f6a46f4a26debba6902121bdb36c2b791ffc7`
+
+## Signed bounded resource-contract candidate
+
+- A provider-signed canonical offer binds finite storage, bandwidth, compute, and
+  validity. One offer is a single-use capability; two distinct valid leases halt as
+  equivocation rather than selecting a winner or overcommitting silently.
+- A lease is contained by the offer and requires distinct provider and consumer
+  signatures. Usage receipts are jointly signed, predecessor-chained, cumulative,
+  and allocation-bounded. Either lease party can sign unilateral revocation; offer
+  revocation remains provider-only and cannot rewrite an already started lease.
+- The portable core owns no private key, clock, network, scheduler, storage, or
+  server. Default SDK exports verification/evaluation; the explicit package
+  subpath exposes draft/finalize functions and signing messages.
+- Generated profile limits bind 16,384-byte documents, 63-bit decimal values,
+  365-day duration, eight observed leases, 4,096 receipts, and 32 revocations.
+- Focused resource/profile `12/12`, SDK `4/4`, clean packed consumer, specification,
+  links, conformance `76/76`, portable `10,000/10,000`, and full `npm test` PASS in
+  `3,329.6s`.
+- Root remaining safety gap: equivocation is detected only when conflicting leases
+  meet. Network-visible sign-once/consumption evidence precedes scheduling. Root
+  product gap after that is lease-bound storage/bandwidth/compute execution proof;
+  signatures alone do not prove possession, delivery, truthful metering, Sybil
+  resistance, or independent provider administration.
 
 ## Verified merged state
 

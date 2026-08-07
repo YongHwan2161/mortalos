@@ -143,6 +143,21 @@ The following are explicitly out of scope for the foundational claim:
 
 The validator still rejects malformed or unauthorized inputs from outsiders. Exclusion means v0 does not guarantee continued safety if a current custodian behaves Byzantine or its key is compromised.
 
+### Signed resource-contract boundary
+
+The v1 resource contract narrows “resource contribution” to signed finite intent.
+It rejects malformed identity, capacity overflow, out-of-window allocation,
+signature substitution, receipt regression/fork, replay, and offer equivocation.
+Provider and consumer must both sign a lease and every usage receipt; either party
+may terminate their lease without waiting for the other.
+
+This does not remove the excluded Sybil/fake-contribution threat. A provider can
+sign capacity it does not possess, the parties can collude on false usage, and one
+administrator can control many valid keys. Until execution receipts bind the lease
+to observable data-plane work across independently evidenced runtimes, the contract
+is accounting/control-plane evidence only. No scheduler may convert a signature
+into a physical-independence claim.
+
 ## 7. Safety properties
 
 Under the v0 assumptions:

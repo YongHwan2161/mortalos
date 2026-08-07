@@ -28,11 +28,17 @@ bounded runtime file, endpoint B accepts custody with a distinct key, A exits, a
 recovers exact bytes from two of three current-custodian-signed copy envelopes before committing the next
 transition. Node uses separate endpoint processes, Chromium uses separate persistent
 browser endpoints and the built Lab, and a clean `npm pack` consumer runs the matching
-CLI without repository-relative imports. Promotion still requires exact-head CI,
-independent review, merge, and any claimed live deployment readback. The next root
-gap is real failure-domain independence: distinct signed logical copy/provider
-identities prevent one file from being counted twice, but the local adapters prove
-quorum logic, not independent providers or administrators. See the
+CLI without repository-relative imports.
+
+The current candidate adds a portable
+[signed bounded resource contract](docs/RESOURCE_CONTRACT.md): a strict provider
+offer defines finite storage, bandwidth, compute, and time; provider and consumer
+mutually sign one contained lease; both sign chained cumulative usage; either lease
+party can revoke. One offer is single-use, so two different valid leases halt as
+equivocation instead of overcommitting capacity. Promotion still requires exact-head
+CI, independent review, merge, and any claimed runtime readback. The next root gap is
+execution accountability: a signed offer proves intent, not actual possession,
+delivery, truthful metering, or independent administration. See the
 [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof
@@ -62,6 +68,7 @@ proof.
 | S4 revised implementation — confidential resource state | S3 stores only a canonical ciphertext package; authorized recovery returns exact bytes without exposing the internal epoch-key handle. Node, Chromium, and Firefox rotation/custody gates pass; a new stage receipt and isolated-signer claim remain separate. |
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
 | S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
+| Resource-contract candidate — bounded contribution | Canonical provider offers, mutual single-use leases, jointly signed usage chains, unilateral revocation, finite generated limits, and equivocation halt pass Node/browser-target/packed-consumer gates. This is signed logical evidence, not proof of delivered physical resources. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
@@ -110,6 +117,7 @@ npm run test:relay
 npm run test:multi-browser
 npm run test:durable-quorum
 npm run test:distributed-counter
+npm run test:protocol-profile
 npm run test:security-fuzz
 npm run test:sdk
 npm run test:capsule
@@ -169,6 +177,30 @@ tools for raw canonical Capsule integrity; byte-identical raw inputs do not prov
 independent copies. Product recovery uses signed `mortalos-continuity-copy/1`
 envelopes through `mortalos recover` or `recoverContinuityCopyQuorum`, and requires
 distinct copy and logical-provider identities.
+
+## Public resource-contract API
+
+The default SDK exposes verification and deterministic explicit-time evaluation.
+Creating signed artifacts uses the explicit authority-free drafting subpath; the
+caller keeps its signer outside the core:
+
+```js
+import {
+  prepareResourceOffer,
+  finalizeResourceOffer
+} from "@mortal-os/core/resource-contract";
+
+const draft = prepareResourceOffer(offerBody);
+const provider_signature = await endpointSigner(draft.provider_signing_message);
+const offerBytes = finalizeResourceOffer({
+  body: draft.body,
+  provider_signature
+});
+```
+
+The same prepare/finalize/verify pattern applies to mutual leases, chained usage
+receipts, and revocations. The core receives tagged public signatures, never the
+private signer, ambient clock, transport, scheduler, or storage capability.
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below

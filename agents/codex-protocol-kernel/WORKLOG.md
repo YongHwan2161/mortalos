@@ -1759,3 +1759,22 @@ result, and reproducible verification.
 - Added the CLI signer to the verifier-pinned first-await audit. Focused continuity
   `5/5`, clean packed consumer, and async security inventory `21 direct / 119
   auto-discovered` pass; prior CI is invalidated and must rerun on the new head.
+
+## 2026-08-07 — Signed bounded resource offer, lease, usage, and revocation
+
+- Added one generated finite profile and portable canonical contract for provider
+  offers, mutual single-use leases, dual-signed cumulative usage chains, unilateral
+  revocation, and deterministic explicit-time evaluation.
+- Added ten role/ID domain separators, strict identity/signature/capacity/time
+  binding, stable rejection codes, stale/replay/fork detection, and fail-closed
+  offer equivocation with no automatic winner.
+- Added authority-free default verification/evaluation plus the explicit
+  `@mortal-os/core/resource-contract` draft/finalize subpath. A clean packed external
+  consumer imports it without repository-relative paths or private authority.
+- Updated the normative protocol, threat boundary, claim matrix, traceability,
+  documentation map, README, and North Star SSOT. Signed intent is not described as
+  physical capacity or delivery evidence.
+- Validation: resource/profile `12/12`, SDK `4/4`, existing conformance `76/76`,
+  portable `10,000/10,000`, specification/link checks, clean package consumer, and
+  full `npm test` PASS in `3,329.6s`. Exact-head CI, immutable independent review,
+  governed merge, and exact-main readback remain.

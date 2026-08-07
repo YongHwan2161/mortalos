@@ -160,13 +160,30 @@ The mortality-feasibility validator described below is an internal helper intent
 
 Signer equivocation in two accepted sibling appends is evidence attached to `E_FORK_DETECTED`, not a competing first-error code. Strict-majority valid siblings necessarily have at least one approval signer in common. During conservative mortality analysis, authenticated multi-body evidence that cannot safely be promoted to an accepted fork instead yields the observer state `evidence_equivocation`; that state is not a rejection code.
 
-## 9. Internal fail-closed code
+## 9. Signed resource contract
+
+| Code | Condition |
+|---|---|
+| `E_RESOURCE_FORMAT` | An offer, lease, usage receipt, revocation, option record, array, nonce, or canonical byte envelope has the wrong exact shape or representation. |
+| `E_RESOURCE_LIMIT` | A generated document, observed-lease, receipt-chain, revocation-set, or sequence ceiling is exceeded. |
+| `E_RESOURCE_DECIMAL` | A resource capacity, usage, time, or sequence is not a canonical non-negative decimal string within the generated 63-bit maximum. |
+| `E_RESOURCE_IDENTITY` | A provider or consumer identity is not a strict Ed25519 public key bound to its derived peer ID. |
+| `E_RESOURCE_SIGNATURE` | A provider, consumer, usage, or revocation signature does not verify under its exact role-specific domain. |
+| `E_RESOURCE_TIME` | An interval is empty, outside its parent interval, over the duration ceiling, non-monotonic, after its target, or observed in the future relative to explicit evaluation time. |
+| `E_RESOURCE_CAPACITY` | A capacity group is incoherent or empty, or a lease allocation exceeds its signed offer. |
+| `E_RESOURCE_BINDING` | A derived ID, offer reference, lease reference, target ID, or envelope body binding differs from the supplied parent evidence. |
+| `E_RESOURCE_USAGE` | Current/peak usage is inconsistent or a signed usage quantity exceeds its lease allocation. |
+| `E_RESOURCE_REPLAY` | A lease, revocation, receipt sequence, previous receipt ID, or cumulative quantity is duplicated, stale, reordered, or regressed. |
+| `E_RESOURCE_EQUIVOCATION` | Two different valid mutually signed leases consume the same single-use offer; no winner is selected. |
+| `E_RESOURCE_REVOCATION` | A revocation has an unsupported target/reason or is not signed by the provider for an offer or by one of the two lease parties. |
+
+## 10. Internal fail-closed code
 
 | Code | Condition |
 |---|---|
 | `E_VALIDATOR_INTERNAL` | An unknown internal rejection identifier, hostile public input that cannot be safely inspected, or invariant-breaking exception is mapped to the stable fail-closed result. Public validation operations do not throw. |
 
-## 10. Mortality observer resource result
+## 11. Mortality observer resource result
 
 Mortality resource exhaustion is not a Pulse rejection and does not add an `E_*`
 code. The observer returns frozen `indeterminate / limit_exceeded` with
@@ -183,7 +200,7 @@ cannot produce a life, death, fork, opacity, equivocation, or latent-successor r
 and cannot mutate the accepted graph. Exact precedence and the normative result shape
 are specified in [`PROTOCOL.md`](PROTOCOL.md#8-validation-context-and-dependency-rules).
 
-## 11. Precedence examples
+## 12. Precedence examples
 
 S6/S8 local Capsule custody APIs additionally use `E_CUSTODY_EQUIVOCATION` for
 multiple different valid Capsules, `E_CUSTODY_QUORUM_UNAVAILABLE` when valid copies

@@ -23,6 +23,14 @@ const profile = {
     object_bytes: 8388608,
     objects_per_room: 512
   },
+  resource_contract: {
+    decimal_max: "9223372036854775807",
+    document_bytes: 16384,
+    lease_duration_ms_max: "31536000000",
+    leases_per_offer_observation_max: 8,
+    receipts_per_lease_max: 4096,
+    revocations_per_evaluation_max: 32
+  },
   state: {
     chunk_bytes: 65536,
     input_bytes: 4096,

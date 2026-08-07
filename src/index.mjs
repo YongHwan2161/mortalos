@@ -22,6 +22,7 @@ export * from "./transport/protocol.mjs";
 export * from "./capsule.mjs";
 export * from "./custody.mjs";
 export * from "./continuity.mjs";
+export * from "./resource-contract.mjs";
 export * from "./distributed/quorum-counter-store.mjs";
 export {
   isValidatedAcceptance,

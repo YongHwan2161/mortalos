@@ -71,6 +71,30 @@ try {
   assert.deepEqual(JSON.parse(continuityOutput.trim()), [
     "continue", "create", "handoff", "inspect", "recover"
   ]);
+  const resourceOutput = run(process.execPath, [
+    "--input-type=module",
+    "--eval",
+    `import { generateKeyPairSync } from "node:crypto";
+     import { derivePeerId, prepareResourceOffer } from "@mortal-os/core/resource-contract";
+     const { publicKey } = generateKeyPairSync("ed25519");
+     const raw = publicKey.export({ type: "spki", format: "der" }).subarray(-32);
+     const public_key = "ed25519:" + Buffer.from(raw).toString("base64url");
+     const draft = prepareResourceOffer({
+       capacity: {
+         bandwidth: { burst_bytes: "0", egress_bytes_total: "0", ingress_bytes_total: "0", rate_bytes_per_second: "0" },
+         compute: { concurrency: "0", cpu_millis_total: "0", memory_bytes: "0", task_millis_max: "0" },
+         storage: { capacity_bytes: "1024", max_object_bytes: "1024" }
+       },
+       expires_at_ms: "2000",
+       offer_nonce: "AAAAAAAAAAAAAAAAAAAAAA",
+       provider: { key_id: derivePeerId(public_key), public_key },
+       valid_from_ms: "1000"
+     });
+     console.log(JSON.stringify({ id: draft.offer_id, message: draft.provider_signing_message.byteLength }));`
+  ], { cwd: temporary });
+  const resourceDraft = JSON.parse(resourceOutput.trim());
+  assert.match(resourceDraft.id, /^resource-offer:/u);
+  assert.equal(resourceDraft.message, 32);
   const blocked = spawnSync(process.execPath, [
     "--input-type=module",
     "--eval",
@@ -224,6 +248,7 @@ try {
 
   console.log("MortalOS S5 clean package install and continuity CLI: PASS");
   console.log("- public API: create/inspect/handoff/recover/continue");
+  console.log("- resource-contract subpath: external bounded offer draft PASS");
   console.log("- real external file: A handoff -> B 2-of-3 recovery -> B continuation");
 console.log("- one corrupt copy tolerated; one copy, duplicate identity, stale head, and wrong authority rejected");
   console.log("- endpoint-local private keys absent from exchanged artifacts");
