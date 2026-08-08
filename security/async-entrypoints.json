@@ -23,7 +23,8 @@
     "src/distributed/quorum-counter-store.mjs",
     "src/state/recovery.mjs",
     "src/transport/corpus.mjs",
-    "src/transport/chunk-data-plane.mjs"
+    "src/transport/chunk-data-plane.mjs",
+    "lab/transport/webrtc-peer.mjs"
   ],
   "entries": [
     {
@@ -306,6 +307,15 @@
 
     { "file": "src/transport/chunk-data-plane.mjs", "entrypoint": "RelayChunkRecoveryAdapter.async #loadFrames", "mode": "module-private-owned-state", "reason": "Loads through a snapshotted transport method into private frame state." },
     { "file": "src/transport/chunk-data-plane.mjs", "entrypoint": "RelayChunkRecoveryAdapter.async inventory", "mode": "module-private-owned-state", "reason": "Builds inventory exclusively from validated module-private frames." },
-    { "file": "src/transport/chunk-data-plane.mjs", "entrypoint": "RelayChunkRecoveryAdapter.async readChunk", "mode": "module-private-owned-state", "reason": "Reassembles bytes exclusively from validated module-private frames." }
+    { "file": "src/transport/chunk-data-plane.mjs", "entrypoint": "RelayChunkRecoveryAdapter.async readChunk", "mode": "module-private-owned-state", "reason": "Reassembles bytes exclusively from validated module-private frames." },
+
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.static async createOffer", "mode": "module-private-owned-state", "reason": "Validates and copies the endpoint scalar before creating an isolated no-ICE-server peer connection and retains only private connection state." },
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.static async acceptOffer", "mode": "module-private-owned-state", "reason": "Canonicalizes the bounded offer signal and endpoint scalar before the first peer suspension and retains only private connection state." },
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.async complete", "mode": "module-private-owned-state", "reason": "Canonicalizes the bounded answer signal before suspension and applies it only to the module-private connection." },
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.async ready", "mode": "module-private-owned-state", "reason": "Uses only a bounded timeout scalar and the module-private channel readiness promise." },
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.async publish", "mode": "no-borrowed-mutable-input", "reason": "Copies and validates the complete canonical message before synchronously handing owned bytes to the DataChannel; the method has no suspension." },
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.async fetchRange", "mode": "module-private-owned-state", "reason": "Bounds scalar range arguments and reads only validated module-private frames without suspension." },
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.async touchPresence", "mode": "module-private-owned-state", "reason": "Returns only the private endpoint identifier and fixed transport label." },
+    { "file": "lab/transport/webrtc-peer.mjs", "entrypoint": "ManualWebRtcParticipantTransport.async presence", "mode": "module-private-owned-state", "reason": "Returns only validated private local and remote endpoint identifiers." }
   ]
 }

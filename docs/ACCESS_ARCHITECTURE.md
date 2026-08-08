@@ -1,9 +1,8 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **S1 promoted; S2 crash-safe participant storage implemented and exact-SHA
-promotion gated**
+Status: **PORTABLE CORE PROMOTED; CONFIDENTIAL P2P CONTROLLER LOCAL CANDIDATE**
 
-Last synchronized: **2026-07-25 KST**
+Last synchronized: **2026-08-09 KST**
 
 ## Decision
 
@@ -26,7 +25,7 @@ browser | CLI | native | service | embedded
         │
         ▼
 transport adapter
-file | HTTP | WebSocket | future transports
+file | direct WebRTC | HTTP | WebSocket | future transports
         │ bounded public messages
         ▼
 R1 canonical operation/result bytes
@@ -109,6 +108,19 @@ future records, surface sibling forks, and converge after reconnect by validatin
 the same canonical evidence locally. Relay loss pauses delivery; it does not weaken
 validation or erase already held evidence.
 
+## Direct peer boundary
+
+The local candidate adds canonical manual WebRTC signaling and one ordered binary
+DataChannel with `iceServers: []`. It carries the same bounded relay messages, chunk
+fragments, and untrusted placement-artifact wrappers. After the candidate bundle is
+loaded, the Chromium vertical denies origin and relay requests before transferring
+the runtime file or resource-contract evidence.
+
+Direct connection is not authority. Endpoints re-parse nested canonical bytes and
+count a placement only after exact resource-execution verification. Manual same-host
+ICE is a deterministic baseline, not arbitrary Internet/NAT proof. Replaceable
+signaling, STUN, TURN, and relay adapters may be added without entering validity.
+
 ## Implemented portability evidence
 
 - R1-A has frozen bounded, versioned JavaScript operation/result records and committed
@@ -127,6 +139,15 @@ validation or erase already held evidence.
   closes the browser process, and passes `100/100` B handoff recoveries plus
   `100/100` cold pair recovery/transition/D-repair/next-transition trials for each
   lost A, B, and C. This is same-host profile evidence, not S7 failure-domain proof.
+- The P2P candidate transfers one actual file and complete signed placement evidence
+  to three provider Chromium processes after the HTTP cut, terminates one provider,
+  repairs through D under a new lease, terminates consumer A, and lets B recover two
+  exact of three readbacks with one corrupt copy rejected.
+- The confidential composition encrypts another actual native File for B, transfers
+  only three distinct S4 package shards to providers, excludes max-age + 1 receipts,
+  restores a public-evidence journal fail-closed, terminates A, and lets B renew
+  placement with B-owned leases before exact 2-of-3 decrypt. Pages, origin, relay,
+  and domain remain absent from the validity path.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
 or ambient-random dependency. All portable corpus results must remain byte-identical
@@ -147,9 +168,13 @@ Chromium for the exact reviewed head.
 
 ## Release consequence
 
-The source sequence is now:
+The governed total gate order remains:
 
 `R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → Durable Object relay → two-browser succession → three-endpoint 2-of-3 repair`
+
+The local candidate extends that source foundation through:
+
+`portable kernel → S4 ciphertext shards → signed bounded lease → direct peer transfer → fresh receipt-gated placement → crash recovery → successor-owned repair → peer recovery`
 
 The publication sequence remains:
 

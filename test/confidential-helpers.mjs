@@ -212,11 +212,15 @@ export async function createForkableCounterAuthorityPair() {
 export async function createConfidentialFixture({
   counterAuthority = null,
   counterAuthorityStore = null,
+  custodianCount = 3,
   epoch = "0",
   priorConfidentialRoot = randomTagged("sha256:"),
   resourceBytes = deterministicSecret(131_072),
   transitionId = "s4-reference"
 } = {}) {
+  if (!Number.isSafeInteger(custodianCount) || custodianCount < 1 || custodianCount > 3) {
+    throw new TypeError("custodianCount must be between one and three");
+  }
   const rotationContext = createRotationContext();
   const counterStore = counterAuthorityStore ?? new MemoryCounterAuthorityStore();
   const authority = counterAuthority ?? await LinearizableCounterAuthority.create({
@@ -227,7 +231,7 @@ export async function createConfidentialFixture({
     authorityPublicKey: authority.descriptor.authority_public_key
   });
   const keyPairs = [];
-  for (let index = 0; index < 3; index += 1) {
+  for (let index = 0; index < custodianCount; index += 1) {
     keyPairs.push(
       await generateCustodianEncryptionKeyPair(randomTagged("mortalos-key:"))
     );

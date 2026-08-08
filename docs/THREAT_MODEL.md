@@ -548,3 +548,30 @@ The revision must identify the new trust assumption, affected invariant, failure
   verifier-only operation. Raw or exportable private-key fallback is forbidden.
 - Any valid divergent Capsule or lineage is equivocation evidence and halts automatic
   activation; MortalOS does not select a winner.
+
+## 21. Confidential P2P placement candidate boundary
+
+- WebRTC connection success, manual signaling text, a provider label, or receipt
+  delivery is not placement proof. Only the exact active lease and storage execution
+  chain for the requested workload can count.
+- Provider identity is derived from the signed offer. Repeated identity cannot count
+  as multiple failure domains.
+- A historical receipt proves possession at one challenge time. The confidential
+  evaluator applies a bounded local proof age: the exact maximum counts and maximum
+  plus one millisecond does not. This improves scheduling freshness but does not
+  prove continuous liveness; local failed readback remains non-global observation.
+- The composed path sends providers only canonical shards of an S4 encrypted
+  package. Providers receive no resource plaintext, epoch key, unwrap authority, or
+  custodian private key. This depends on S4 encryption; XOR shard coding itself is
+  availability coding and is not plaintext secret sharing.
+- A restored controller does not count the same prior receipt again. An existing
+  lease must extend the journaled receipt directly; after custody moves from A to B,
+  B uses new B-owned leases rather than receiving A's private consumer key.
+- The journal is local. Concurrent legitimate controllers or lineage forks can
+  still create redundant repair leases. Until placement generations are signed into
+  lifecycle lineage, this is not a globally serialized scheduler or billing truth.
+- Manual `iceServers: []` same-host success does not prove NAT traversal, Internet
+  reachability, or origin-free discovery. Signaling, STUN, TURN, and relays may be
+  replaceable availability capabilities but never validity authorities.
+- Separate browser and Node processes on this PC share hardware, network,
+  administrator, and credential domains. Physical S7/S8 claims remain HOLD.

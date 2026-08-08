@@ -41,7 +41,8 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "src/distributed/quorum-counter-store.mjs",
   "src/state/recovery.mjs",
   "src/transport/corpus.mjs",
-  "src/transport/chunk-data-plane.mjs"
+  "src/transport/chunk-data-plane.mjs",
+  "lab/transport/webrtc-peer.mjs"
 ]);
 const REQUIRED_ENTRYPOINTS = Object.freeze([
   "cli/node-authority.mjs:export async function signNodeAuthority",
@@ -211,7 +212,8 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
-  "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704"
+  "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
+  "lab/transport/webrtc-peer.mjs": "2f559490d7064e2b481d4f15926ef4bf91aa27bb4790fa4238caf6b79ebc95c5"
 });
 
 // A classification is a reviewed security decision, not a permanent textual
@@ -317,7 +319,15 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async inventory": "2d46193e7fb518c6f81a5c932b50710ad9b31d0871da5c3092b8e1fdfc41cc0f",
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async readChunk": "94fe133d82c2e1c8dccf35daa5c4c31315b7c9003c3dfb2c8968ae34444cd1bb",
   "src/continuity.mjs:export async function createContinuityAuthority": "4e27da7380ce0fe1ede42a239dc7fc38ba2404f548e86b886de662a2a5528b75",
-  "src/continuity.mjs:export async function handoffContinuity": "547901d2b13e6634d9b6419496be097bbde4fc25998acd6c5d033e924fbd62dd"
+  "src/continuity.mjs:export async function handoffContinuity": "547901d2b13e6634d9b6419496be097bbde4fc25998acd6c5d033e924fbd62dd",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async createOffer": "178765fd0b45ffcf66eaffec60f03ceaacc4cb98507257e7c2ab70a5bea35028",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "a82811e4091254092ee550d0686ca4750a8c5d69bb71e986c5342e427acc6a5b",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "eb41f82f1a2e55e0595e3024032d155d6a6aeeffea617efe345002be7d9c30cc",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "38342173112b034874a9056b4b897ee5b18eb23a713736b2471357969f4bbb89",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "ce44765c27b40ad06e30d0f0037f934a67a5e59615288ca9cffafb9e047f4a90",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "fca42c61f86556f7c784b3b014b406308cb6275cda053f86e4731f4b9c78f80f",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "3e3b66f1f0ce1ae532ac987f49d687f358a22f4a0a97e1181c10276c70256291",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "cf19d81b01ae59f487afc547d6872ff4147817195ca5f7833ce379f3ad28cb4c"
 });
 assert.deepEqual(
   Object.keys(CLASSIFICATION_DIGESTS).sort(),

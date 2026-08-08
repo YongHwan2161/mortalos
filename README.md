@@ -41,8 +41,21 @@ silently overcommitting capacity. Lease-bound
 challenge/receipt chains now prove bounded storage, bandwidth, and deterministic
 compute execution by the leased participant; they do not by themselves prove
 honest metering, physical provider/witness independence, or independent
-administration. The next root gap is receipt-gated placement and repair over the
-real participant data plane. See the
+administration.
+
+The current candidate composes those contracts with a real direct participant data
+plane. An actual runtime-selected file and every offer/lease/challenge/receipt
+artifact cross ordered WebRTC DataChannels after origin and relay access are cut.
+Only exact active storage execution receipts count as placement. One provider
+process loss degrades three copies to two; a distinct provider/new lease repairs the
+target, and after consumer A exits, B recovers exact bytes from two valid peer copies
+while rejecting one corrupt readback. The composed confidential controller encrypts
+the native file as an S4 package for B, sends three distinct ciphertext shards to
+providers, excludes stale receipts at max age + 1 ms, restores a public-evidence
+journal fail-closed, and makes B renew placement under B-owned keys after A exits.
+This is a local candidate, not merged, globally converged, Internet-reachable, or
+physically independent evidence. See [P2P placement and repair](docs/P2P_PLACEMENT_AND_REPAIR.md),
+[confidential P2P placement controller](docs/CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md), and the
 [implementation SSOT](docs/IMPLEMENTATION_PLAN.md).
 
 ## Guided two-browser proof
@@ -73,6 +86,7 @@ proof.
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
 | S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
 | Resource execution — bounded contribution and verified work | Canonical offers, mutual single-use leases, threshold gossip, chained usage, and revocation are merged with lease-bound storage, bandwidth, and deterministic-compute challenge receipts. Actual child-process loss and new-lease reassignment pass, but this is not proof of honest meters or independent hardware, accounts, witnesses, or administrators. |
+| Confidential P2P placement/repair candidate | A native 98,317-byte file becomes an S4 package for B and three distinct 2-of-3 ciphertext shards cross direct DataChannels. Fresh exact receipts gate placement, a crash-safe journal rejects replay, provider loss triggers repair, A exits, B renews all leases under its own key, and B rejects a corrupt shard while recovering exact bytes. Focused gates and final ordered `npm test` pass locally; governed merge/promotion, lineage-bound controller convergence, arbitrary NAT reachability, and physical independence remain HOLD. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
@@ -117,6 +131,7 @@ Focused gates:
 npm run test:i18n
 npm run test:state
 npm run test:transport
+npm run test:p2p-placement
 npm run test:relay
 npm run test:multi-browser
 npm run test:durable-quorum
@@ -213,8 +228,9 @@ chain. Every execution binds one exact usage receipt and predecessor; the dedica
 execution evaluator rejects missing or cross-lease evidence. A witness draft exposes a
 sign-once request whose tuple is the offer ID and whose message binds the exact lease
 ID; the existing endpoint-local authority can sign it without moving private key
-material into the resource core. Bounded self-contained announcements can travel
-over relay control or WebRTC, but receivers always re-verify them. The core receives
+material into the resource core. Bounded self-contained announcements and
+placement artifacts can travel over relay control or direct WebRTC, but receivers
+always re-verify them. The core receives
 tagged public signatures, never the private signer, ambient clock, transport,
 scheduler, or storage capability.
 
@@ -223,6 +239,12 @@ provider process, terminates it, and permits reassignment only through a new sig
 offer and lease while preserving the immutable workload ID. This is process-level
 evidence, not a claim of separate hardware, account, region, administrator, or
 credential custody.
+
+The candidate `npm run test:p2p-placement` gate additionally sends an actual file,
+offers, leases, witness announcements, challenge, usage, and execution evidence over
+direct DataChannels with `iceServers: []`. After bundle load, HTTP and relay access
+are denied. It proves same-host browser/process behavior only; manual ICE does not
+establish arbitrary Internet or NAT reachability.
 
 `verify:lab` includes the strict 20-run two-persistent-profile handoff gate. The
 focused command above runs that gate alone; it refuses a configured run count below
@@ -239,13 +261,13 @@ The expected H2 trace digest remains:
 ## Trust boundary
 
 ```text
-Browser A/B/C key custody
-        │ signed canonical public messages
+Endpoint key custody
+        │ signed canonical public messages and resource bytes
         ▼
-Cloudflare room relay (ordering, presence, and bounded storage only)
-        │ untrusted delivery
+replaceable carrier: direct WebRTC or untrusted relay
+        │ canonical bytes; no verdict authority
         ▼
-R1 canonical operation/result bytes
+resource/placement and lifecycle validators
         │
         ▼
 portable kernel → accepted lineage or stable rejection
@@ -263,9 +285,13 @@ they are not an XSS-resistant signer boundary. Strong sign-once custody remains 
 until key use and monotonic state move to a separately isolated origin/service or
 hardware-backed authorization domain.
 
-The implemented core sequence is:
+The governed total gate order remains:
 
 `R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → Durable Object relay → two-browser succession → three-endpoint 2-of-3 repair`
+
+The local candidate extends that foundation through:
+
+`portable kernel → S4 ciphertext shards → signed bounded lease → direct peer transfer → fresh receipt-gated placement → crash recovery → successor-owned repair → peer recovery`
 
 ## GPT-5.6 boundary and cost safety
 
@@ -302,6 +328,8 @@ out of band; a failed candidate preserves or restores the last accepted deployme
 - [Documentation map](docs/README.md)
 - [North Star implementation SSOT](docs/IMPLEMENTATION_PLAN.md)
 - [Current claim matrix](docs/CLAIM_MATRIX.md)
+- [P2P storage placement and repair](docs/P2P_PLACEMENT_AND_REPAIR.md)
+- [Confidential P2P placement controller](docs/CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md)
 - [Endpoint-neutral architecture](docs/ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](docs/BROWSER_PARTICIPANT_COMPATIBILITY.md)
 - [Crash-safe durable quorum](docs/DURABLE_QUORUM.md)

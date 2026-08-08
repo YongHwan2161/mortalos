@@ -1,10 +1,10 @@
 # Durable memory
 
-Last reconciled: 2026-08-08 KST
+Last reconciled: 2026-08-09 KST
 
-Branch: `agent/codex-protocol-kernel--resource-execution-closeout`
+Branch: `agent/codex-protocol-kernel--p2p-placement-repair`
 
-Base: `0779741402244d6cd802a1179bd2c94555bdd030`
+Base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
 
 ## Network-visible sign-once resource contract
 
@@ -109,18 +109,60 @@ Base: `0779741402244d6cd802a1179bd2c94555bdd030`
   Verify `30754511404` plus Deploy `30754511395`. Package-registry publication and
   physical or administrative provider independence remain unclaimed.
 
+## P2P placement/repair local candidate
+
+- The candidate adds a manual WebRTC browser-platform transport outside portable
+  `src/`, an untrusted
+  canonical placement-artifact carrier, and an authority-free storage placement
+  evaluator. Connection or delivery never counts without exact active storage
+  execution proof for the requested workload.
+- An actual runtime-selected file plus offer, lease, witness, challenge, usage, and
+  execution evidence cross direct Chromium DataChannels after HTTP/origin denial.
+  One provider process loss degrades three copies to two; D uses a new offer and
+  lease to repair the same workload to three.
+- Consumer A destroys authority and exits. Consumer B reads three peers, rejects one
+  corrupt readback by workload commitment, and recovers exact bytes from two.
+  Equivalent actual Node provider-process loss/repair and clean package import pass.
+- This is local candidate evidence only. Plaintext transfer, one-shot receipt
+  freshness, manual same-host ICE, same-origin signing, same-PC administration, and
+  external topology remain HOLD.
+- The first ordered full run correctly BLOCKed the WebRTC adapter when it lived
+  below portable `src/`. After moving it to `lab/transport`, the `21/127` async
+  inventory, actual Chromium vertical, portable `10,000/10,000` parity, and final
+  ordered `npm test` (`4,168.7s`) all pass locally.
+
 ## Current priority
 
-1. Compose offers, the real participant data plane, execution receipts, continuity,
-   and repair into one receipt-gated backend-free placement workflow.
-2. Replace local process adapters with provider-neutral durable adapters, then
-   prove distinct failure/credential/administrator domains.
-3. Compose S4 confidentiality explicitly; the current product Capsule carries
-   exact resource bytes and is not an encryption claim.
-4. Turn the programmatic Lab harness into a visible minimal EN/KO file journey and
-   freeze one integrated UX/runtime receipt.
-5. Move signing plus sign-once state to an isolated authority service or hardware
-   boundary before making XSS-resistant custody claims.
+1. Bind placement generation, proof set, repair intent, and active leases into the
+   current Continuity lineage so controller handoff has one fork-detecting SSOT.
+2. Make partitioned/restarted controllers converge byte-identically after heal and
+   prevent duplicate repair or billing authority without a fixed backend.
+3. Expose that lineage-bound controller through focused SDK/CLI commands while
+   retaining authority-free verification and private-key non-transfer.
+4. Add replaceable discovery/signaling/STUN/TURN adapters, then prove origin and
+   selected bootstrap loss without making them validity authorities.
+5. Prove distinct failure/credential/administrator domains and isolate signing
+   before promoting physical-independence or XSS-resistant custody claims.
+
+## Confidential P2P placement controller local candidate
+
+- `src/placement/confidential.mjs` encodes a verified S4 package into three
+  deterministic 2-of-3 ciphertext envelopes and binds each shard to its own exact
+  storage workload. Any two valid shards reconstruct and reverify the package;
+  one, duplicate, corrupt, or wrong-manifest shard fails closed.
+- Placement counts only fresh distinct-provider/distinct-shard receipts. Exact max
+  age passes and max+1 fails. A restored canonical journal refuses the same
+  pre-crash receipt and requires a direct chained successor or a new provider/lease.
+- The Node gate uses separate commit and load processes for the journal and runs
+  100 deterministic loss/stale/repair/corrupt policy cycles over cryptographically
+  verified states. This is not 100 physical failure domains.
+- The actual Chromium vertical encrypts a native 98,317-byte File for B, stores only
+  distinct ciphertext shards over direct DataChannels, cuts origin/relay requests,
+  loses a provider, exits A, and makes B renew all placements under B-owned keys.
+  B rejects one corrupt shard and decrypts exact bytes from another valid pair.
+- `npm run test:p2p-placement` passes 12 Node tests plus both Chromium verticals.
+  Same-PC administration, manual ICE, local outage observation, lineage-wide
+  controller serialization, exact-head governance, and physical independence HOLD.
 
 ## Stable decisions
 

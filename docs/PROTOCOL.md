@@ -818,3 +818,44 @@ expansion plus bounded metadata. Signed logical identity is not evidence that th
 providers have independent hosts, credentials, administrators, or failure domains.
 The raw Capsule quorum compatibility API only counts valid content observations and
 must not be used to make that distinct-copy claim.
+
+### Transport-neutral P2P placement extension
+
+`mortalos-webrtc-signal/1` is a bounded canonical manual signaling document for a
+replaceable browser transport. `mortalos-resource-placement-artifact/1` is an
+unsigned carrier for canonical offer, lease, announcement, challenge, usage,
+execution, and resource-descriptor payloads. Neither format is a lifecycle event,
+fork-choice input, signed placement verdict, or validity authority.
+
+A receiver MUST decode and verify the nested canonical bytes through the existing
+resource and placement validators. Connection state, endpoint labels, arrival order,
+presence, UI state, and carrier metadata MUST NOT make a placement usable. Direct
+WebRTC and relay delivery of identical bytes MUST produce the same core result.
+
+The current manual transport uses one ordered binary DataChannel and no configured
+ICE server or fallback. This is a deterministic candidate baseline, not a normative
+ban on replaceable signaling, STUN, TURN, or relay adapters and not proof of
+arbitrary Internet reachability.
+
+### Confidential placement policy extension
+
+`mortalos-confidential-placement-shard/1` is a canonical envelope over one of three
+deterministic availability shards of an already encrypted S4 package.
+`mortalos-confidential-placement-manifest/1` binds the S4 package digest and size,
+the `2-of-3` coding policy, every shard index/digest/size, and the exact storage
+workload ID for each shard. This coding improves ciphertext availability; it does
+not replace S4 encryption and does not grant decryption authority.
+
+`mortalos-confidential-placement-journal/1` is unsigned local policy evidence. It
+binds one manifest, generation, proof-age policy, recovery/target thresholds, and
+the last counted provider/shard/receipt tuples. It MUST NOT be interpreted as a
+lifecycle event, global placement consensus, or billing authority.
+
+A confidential shard counts only after the ordinary resource validators prove its
+exact active storage workload and the local evaluator proves distinct provider and
+shard identities. A proof issued in the future or older than the configured maximum
+MUST NOT count; exact maximum age MAY count. After journal restoration, an existing
+lease MUST present the direct successor of the journaled execution receipt before
+counting again. A new provider/lease MAY enter with a new valid first receipt. A
+custody successor MUST use successor-owned lease authority; transfer of the prior
+consumer private key is forbidden.

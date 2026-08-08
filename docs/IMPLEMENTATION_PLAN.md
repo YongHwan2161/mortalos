@@ -1,14 +1,16 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — P0 NEXT: RECEIPT-GATED PARTICIPANT PLACEMENT AND REPAIR**
+Status: **ACTIVE IMPLEMENTATION SSOT — CONFIDENTIAL P2P CONTROLLER LOCAL PASS; NEXT: LINEAGE-BOUND CONVERGENCE**
 
-Last synchronized: **2026-08-08 KST**
+Last synchronized: **2026-08-09 KST**
 
 This is the sole current direction, stage ledger, and ordered implementation plan.
 Historical receipts remain valid only for their named commits. Main
-`0779741402244d6cd802a1179bd2c94555bdd030` contains the reviewed product-continuity
-implementation; merge alone does not manufacture a stage receipt or a physical-
-independence claim.
+`25de18d8c1af8b3dfcb5adffb1a07538afa33332` contains the governed product-continuity
+and lease-bound execution implementations. This worktree adds a local confidential
+P2P placement-controller candidate; local success does not manufacture an exact-head
+review, merge, stage receipt, global-availability claim, or physical-independence
+claim.
 
 ## 1. North Star
 
@@ -46,16 +48,28 @@ one usage receipt and one witnessed lease. An actual child provider executes all
 three classes, is terminated, and can be replaced only under a newly signed offer
 and lease while retaining the immutable workload ID.
 
-The most fundamental remaining gap is **receipt-gated participant placement and
-repair over the real peer data plane**. Today the control contract, execution
-receipt, WebRTC/relay transport, Continuity Capsule, and repair logic are separately
-valid components. No one authority-free scheduler yet chooses bounded participant
-offers, sends useful encrypted chunks or work over the participant transport,
-accepts only verified execution receipts, and repairs lost placement with a new
-lease. Until that composition exists, the system proves local execution evidence
-but is not yet a self-sustaining backend-free resource network. Physical meter
-honesty, independent credentials/administrators, and confidentiality are later
-promotion gates, not facts inferred from this local proof.
+This candidate closes the next composition gap for storage: an actual runtime file,
+signed offer/lease/witness/usage/execution artifacts, provider loss, new-lease repair,
+consumer A exit, and consumer B readback cross direct `RTCDataChannel` connections.
+Only distinct-provider active storage execution receipts for the exact workload
+count. One corrupt copy is rejected and two valid copies recover the bytes.
+
+This worktree closes the confidentiality/freshness gap locally. A encrypts the real
+file as an S4 package for B; providers receive three distinct ciphertext envelopes,
+any two reconstruct the package, and only fresh exact-workload receipts from
+distinct providers/shards count. A canonical journal survives an actual process
+restart and rejects pre-crash receipt replay. After A exits, B does not inherit A's
+private lease key: B reconstructs the encrypted package and renews all placements
+under new B-owned leases.
+
+The most fundamental remaining gap is now **lineage-bound distributed controller
+handoff and repair convergence**. The journal is crash-safe but local; two legitimate
+custodians or partitioned controllers can still create redundant repair leases and
+disagree on which placement plan is current. Placement generation, repair intent,
+and proof set must become one signed lifecycle transition that follows the same
+custody and fork rules as the organism. Physical meter honesty, independent
+credentials/administrators, arbitrary Internet reachability, and same-origin signer
+isolation remain separate later gates.
 
 ### P0 — Signed bounded participant resource contract (merged)
 
@@ -111,16 +125,16 @@ consumer gates pass. PR #56's first independent review BLOCKed provider/consumer
 key reuse and announcement-only nested-object verification; both were fixed and
 independently reproduced before the expected-head merge.
 
-### P0 next — Receipt-gated participant placement and repair
+### P0 — Receipt-gated participant placement and repair (local candidate)
 
-Goal: compose the existing offer/lease, participant transport, execution receipt,
-continuity, and repair primitives into one backend-free useful-resource vertical.
+Goal: compose the existing offer/lease, direct participant transport, execution
+receipt, and repair primitives into one backend-free storage vertical.
 
 Strict pass criteria:
 
-- a consumer selects bounded offers from untrusted gossip and grants no discovery,
-  signaling, relay, domain, or UI component validation authority;
-- useful encrypted chunks or deterministic work traverse the real participant data
+- a consumer accepts bounded signed offer artifacts from an untrusted peer carrier
+  and grants no signaling, relay, domain, or UI component validation authority;
+- useful runtime-file chunks and contract artifacts traverse the real participant data
   plane, and placement becomes usable only after
   `evaluateResourceExecutionContract(...).execution_status === "proved"`;
 - termination of one provider makes its placement unavailable; repair chooses a
@@ -134,6 +148,72 @@ Strict pass criteria:
 - local multi-process and two-browser profiles pass the same scenario first.
   Distinct-account/region/credential/administrator trials and burn-in remain a
   separate S7/S8 promotion gate.
+
+Candidate result: PASS locally in Node child processes and separate Chromium
+processes. The historical regression sends plaintext, while the composed controller
+below sends only ciphertext shards. Signaling is manual same-host ICE, availability
+is a local observation, and exact-head CI/review/merge/promotion remain HOLD.
+Executable evidence and nonclaims are recorded in
+[P2P placement and repair](P2P_PLACEMENT_AND_REPAIR.md).
+
+### P0 — Confidential, continuously re-proved placement controller (local candidate PASS)
+
+Goal: make placement safe and useful beyond one point-in-time plaintext proof.
+
+Strict pass criteria:
+
+- providers receive only S4 ciphertext shards and never receive resource plaintext,
+  epoch keys, unwrap authority, or continuity private keys;
+- every usable copy has a fresh execution receipt bound to its predecessor, exact
+  lease, exact workload, unpredictable challenge, and cumulative usage;
+- exact maximum proof age passes and maximum plus one millisecond stops counting
+  until a new proof arrives;
+- a crash-safe local controller reconstructs state from canonical evidence, then
+  re-challenges before scheduling or billing;
+- timeout, delayed response, crash, partition, corrupt shard, replay, fork, revoke,
+  exhaustion, restart, heal, and repair preserve quorum without provider duplication
+  or cross-lease reuse in at least 100 seeded cycles;
+- a new provider/new offer/new lease repairs the same encrypted workload, and only
+  an authorized successor with quorum can reconstruct and decrypt exact bytes;
+- Node multiprocess, actual Chromium, built Lab, and a clean packed consumer execute
+  the same scenario contract. Physical independence and same-origin signer isolation
+  remain HOLD until separately proven.
+
+Candidate result: PASS locally. `test/confidential-placement.test.mjs` proves every
+2-of-3 combination, exact-age and max+1 behavior, duplicate provider/shard rejection,
+actual journal commit-process exit and load-process restart, directly chained
+re-proof, and 100 deterministic controller-policy cycles over cryptographically
+verified states. `verify-confidential-placement-chromium.mjs` proves a native
+98,317-byte File, S4 encryption for B, distinct shards over direct DataChannels,
+provider-signed exact workloads, origin cut, loss/repair, A exit, B-owned new leases,
+corrupt-shard rejection, and exact decrypt. See
+[Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md).
+
+### P0 next — Lineage-bound controller handoff and repair convergence
+
+Goal: make one placement plan follow the organism's exact current custody so local
+controllers cannot split scheduling, repair, or billing truth.
+
+Strict pass criteria:
+
+- a canonical placement generation binds organism ID, lineage head, confidential
+  manifest ID, target/quorum policy, prior generation, active lease IDs, and last
+  accepted proof IDs;
+- only the current custodian authority may propose the next generation, and the
+  existing sign-once/continuity acceptance rules prevent two successors for one
+  prior generation;
+- a repaired shard is counted only after its new lease and fresh proof are committed
+  into the accepted generation; unsigned local intent cannot schedule or bill;
+- two independently restarted controllers presented with the same evidence select
+  byte-identical state, while a valid divergent generation halts automatically;
+- partitioned controllers may preserve recovery quorum but may not double-count a
+  provider, emit conflicting repair authority, or silently choose a fork after heal;
+- A→B custody handoff carries no private key, A termination is real, and B can renew
+  or repair through the public protocol with Cloudflare/domain/relay disabled;
+- Node multiprocess, Chromium, built Lab, clean packed SDK, 100 seeded
+  partition/heal/restart schedules, and final ordered repository gates pass;
+- physical/admin independence, Sybil resistance, honest metering, and global outage
+  truth remain explicit HOLDs rather than inferred from convergence.
 
 The governing product rule is:
 
@@ -164,6 +244,8 @@ usable and stable.
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 | Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer, exact-head CI/review/App/native approval/merge | Merged local execution claim; physical independence **HOLD** |
+| P2P placement | Direct WebRTC storage, exact receipt gating, provider loss and new-lease repair | Node process plus actual Chromium origin-cut vertical | Local candidate; governed merge and Internet reachability **HOLD** |
+| Confidential controller | S4 2-of-3 provider shards, proof-age policy, crash-safe journal, successor-owned leases | Node process restart, 100-cycle policy corpus, actual Chromium 98,317-byte file vertical, packed SDK import | Local candidate; global convergence and physical independence **HOLD** |
 
 Stage coordination remains subordinate to this SSOT:
 

@@ -313,3 +313,31 @@ the declared fault bound is true, cumulative metering is physically honest, the
 process ran on a distinct machine or region, or Sybil resistance/economic settlement.
 The next architecture gate is provider-neutral transport/adapters and a reproducible
 distinct-account, credential, administrator, and failure-domain evidence matrix.
+
+## 13. Receipt-gated storage placement policy
+
+The local candidate composes the existing documents without introducing a new
+signed placement verdict. `evaluateStoragePlacements` counts a candidate only when:
+
+1. the signed offer derives a distinct provider identity;
+2. the exact mutual lease is active at the local observation time;
+3. the declared witness threshold converges on that lease;
+4. usage and execution receipts form one exact predecessor chain;
+5. the last execution is `storage`; and
+6. its workload ID equals the requested content commitment.
+
+Duplicate provider identity, invalid signature, wrong workload, cross-lease
+evidence, missing execution, expired/revoked/exhausted lease, or locally observed
+unavailability cannot count. Meeting the recovery quorum but not the target returns
+`repairing`; falling below quorum returns `unavailable`.
+
+The confidential composition adds shard-specific workload binding and an explicit
+local freshness window. Exact maximum age counts; maximum plus one millisecond is
+`stale-proof`. A crash-restored journal requires an existing lease to extend the
+journaled execution receipt directly before it can count again. Custody successor B
+uses new B-owned leases rather than receiving A's private key.
+
+This remains local scheduling policy, not consensus, proof of an independent
+failure domain, continuous liveness, or globally serialized billing truth. See
+[P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) and
+[Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md).

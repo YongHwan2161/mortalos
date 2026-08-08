@@ -16,12 +16,27 @@ export const RELAY_MESSAGE_FORMAT = "mortalos-relay-message/1";
 export const RELAY_CONTROL_FORMAT = "mortalos-relay-control/1";
 export const RELAY_FRAME_FORMAT = "mortalos-relay-frame/1";
 export const RELAY_CHUNK_FRAGMENT_FORMAT = "mortalos-chunk-fragment/1";
+export const RESOURCE_PLACEMENT_ARTIFACT_FORMAT =
+  "mortalos-resource-placement-artifact/1";
 export const RELAY_LIMITS = Object.freeze({
   ...PROTOCOL_PROFILE.transport
 });
 
 const TAGGED_DIGEST = /^sha256:[A-Za-z0-9_-]{43}$/;
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
+const REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
+const RESOURCE_PLACEMENT_ARTIFACT_KINDS = new Set([
+  "announcement",
+  "challenge",
+  "execution-proposal",
+  "execution-receipt",
+  "lease",
+  "lease-proposal",
+  "offer",
+  "resource-descriptors",
+  "usage",
+  "usage-proposal"
+]);
 const CHUNK_FRAGMENT_DOMAIN = new TextEncoder().encode("MORTALOS/RELAY/1/CHUNK-FRAGMENT\0");
 
 export class RelayProtocolError extends Error {
@@ -230,6 +245,23 @@ function assertControl(kind, content) {
     }
     return;
   }
+  if (kind === "resource-placement-artifact") {
+    exactKeys(
+      content,
+      ["artifact_kind", "format", "payload_base64url", "request_id"],
+      "resource placement artifact"
+    );
+    if (
+      content.format !== RESOURCE_PLACEMENT_ARTIFACT_FORMAT ||
+      !RESOURCE_PLACEMENT_ARTIFACT_KINDS.has(content.artifact_kind) ||
+      typeof content.request_id !== "string" ||
+      !REQUEST_ID.test(content.request_id)
+    ) {
+      throw new RelayProtocolError("RELAY_SCHEMA", "invalid resource placement artifact");
+    }
+    artifact(content.payload_base64url, "resource placement payload", RELAY_LIMITS.message_bytes);
+    return;
+  }
   throw new RelayProtocolError("RELAY_SCHEMA", "unsupported relay control kind");
 }
 
@@ -240,6 +272,41 @@ export function createRelayControlMessage(kind, content) {
     format: RELAY_CONTROL_FORMAT,
     kind
   };
+}
+
+export function createResourcePlacementArtifactMessage({ artifactKind, payloadBytes, requestId }) {
+  if (!(payloadBytes instanceof Uint8Array)) {
+    throw new RelayProtocolError("RELAY_SCHEMA", "resource placement payload bytes required");
+  }
+  const payload = artifact(
+    encodeBase64Url(payloadBytes),
+    "resource placement payload",
+    RELAY_LIMITS.message_bytes
+  );
+  return createRelayControlMessage("resource-placement-artifact", {
+    artifact_kind: artifactKind,
+    format: RESOURCE_PLACEMENT_ARTIFACT_FORMAT,
+    payload_base64url: encodeBase64Url(payload.bytes),
+    request_id: requestId
+  });
+}
+
+export function openResourcePlacementArtifact(control) {
+  if (!control || control.kind !== "resource-placement-artifact") {
+    throw new RelayProtocolError("RELAY_SCHEMA", "resource placement control required");
+  }
+  assertControl(control.kind, control.content);
+  const opened = artifact(
+    control.content.payload_base64url,
+    "resource placement payload",
+    RELAY_LIMITS.message_bytes
+  );
+  return Object.freeze({
+    artifact_kind: control.content.artifact_kind,
+    payload: opened.value,
+    payload_bytes: new Uint8Array(opened.bytes),
+    request_id: control.content.request_id
+  });
 }
 
 export function decodeRelayMessageBytes(bytes) {

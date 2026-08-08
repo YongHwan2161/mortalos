@@ -1898,3 +1898,87 @@ result, and reproducible verification.
   ledger with governed PR #53 and PR #56 merges while retaining public-registry,
   honest-meter, and physical/administrative-independence HOLDs. The replacement head
   must rerun every exact-head gate and receive a fresh immutable review.
+## 2026-08-08 KST — P2P receipt-gated storage placement/repair candidate
+
+- Based branch `agent/codex-protocol-kernel--p2p-placement-repair` on exact
+  `origin/main` `25de18d8c1af8b3dfcb5adffb1a07538afa33332` in a dedicated worktree.
+- Added canonical manual WebRTC signaling, ordered binary DataChannel transport,
+  bounded untrusted placement-artifact carriage, and the authority-free
+  `evaluateStoragePlacements` policy plus `@mortal-os/core/placement` subpath.
+- The policy counts only distinct-provider active storage execution receipts for one
+  exact workload. Single, duplicate, corrupt, cross-lease, stale, unproved, and
+  wrong-workload evidence does not count; local loss yields `repairing` below target.
+- Actual Node child providers store bytes and sign from their own processes. One PID
+  exits and cannot sign again; a fourth provider/new offer/new lease repairs 3→2→3
+  while preserving workload identity.
+- Actual Chromium loads all bundles, cuts origin/HTTP/relay access, sends one runtime
+  file and complete contract evidence over direct peers, exits one provider, repairs
+  through D, destroys/exits consumer A, and lets B recover exact bytes from two valid
+  of three peer readbacks while rejecting one corrupt copy.
+- Focused placement, Node process, WebRTC, Chromium, Lab build, SDK, transport, and
+  async security inventory (`21/127`) checks pass locally. Full-suite, exact-head CI,
+  independent review, merge, exact-main verification, deployment, and promotion are
+  not yet claimed.
+- Root next gap: providers currently receive plaintext and one receipt is only a
+  point-in-time possession proof. Next P0 is ciphertext shards plus recurring chained
+  challenges, proof freshness, crash-safe controller recovery, and automatic repair.
+- The first ordered `npm test` ran for `2,788.4s` and correctly BLOCKed at
+  `verify:portable`: the WebRTC capability adapter was under portable `src/` and
+  therefore violated the network-free core boundary. No gate was weakened. The
+  adapter moved to `lab/transport`, while its eight async surfaces remained in the
+  ownership inventory.
+- After the boundary correction, async inventory `21/127`, portable source scan
+  `34` modules, portable `10,000/10,000`, WebRTC `4/4`, actual P2P Node/Chromium
+  `8/8` plus runtime vertical, Lab build, and the previously unreached tail
+  verifiers all passed.
+- The final unchanged ordered `npm test` passed end to end in `4,168.7s` with
+  specification, links, every stage receipt, actual browsers, P2P placement/repair,
+  SDK/packed consumer, UX, portable parity, independent Python differentials, and
+  S3/S4 receipt verification. Exact-head CI, independent review, merge, exact-main
+  verification, deployment, and external-topology promotion remain unclaimed.
+
+## 2026-08-08 KST — Confidential continuously re-proved P2P placement controller
+
+- Added `mortalos-confidential-placement-{shard,manifest,journal}/1`. A verified S4
+  package becomes three deterministic XOR-coded ciphertext envelopes; every two
+  distinct valid shards reconstruct and reverify the exact package. Each descriptor
+  binds shard index/digest/size and its exact storage workload ID.
+- Added a freshness-aware evaluator that counts only distinct provider and shard
+  identities with exact active storage receipts. Exact max age passes; max+1,
+  future-time, duplicate, corrupt, wrong workload, unavailable transport, and invalid
+  evidence fail closed without manufacturing a global outage fact.
+- Added an immutable canonical public-evidence journal and append-only generation-pointer Lab
+  adapter. An actual commit child exits and a new load child recovers exact bytes.
+  The restored controller counts no repeated pre-crash receipt; an existing lease
+  must extend the journaled receipt directly, while a new provider/lease may enter
+  with a fresh first proof.
+- The controller policy test passes every 2-of-3 pair, corrupt/single/duplicate
+  negatives, directly chained re-proof, and 100 deterministic loss/stale/repair/
+  corrupt schedules over cryptographically verified states. The 100 cycles are not
+  misrepresented as 100 physical machines or partitions.
+- Added an actual Chromium vertical. Browser A selects and encrypts a native
+  98,317-byte file for B; three providers receive distinct S4 package shards over
+  direct DataChannels and sign exact workload receipts. HTTP/origin/relay access is
+  cut after bundle load. Provider loss degrades the target, A destroys authority and
+  exits, and B reconstructs/decrypts exact bytes, then renews all placements through
+  B-owned new leases instead of receiving A's private key. One corrupted shard is
+  rejected and another valid pair succeeds.
+- Focused result: `npm run test:p2p-placement` PASS in 198.9s: 12 Node cases plus
+  the existing plaintext transport regression and new confidential Chromium
+  vertical. SDK allowlists, clean packed install, and five-entry Lab build pass.
+- Root next gap: the crash-safe journal is still local. Placement generations and
+  repair intent must bind into Continuity lineage so multiple legitimate controllers
+  converge, forks halt, and no partition can create silent duplicate repair/billing
+  authority. Physical/admin independence and arbitrary NAT reachability remain HOLD.
+- The first complete candidate `npm test` PASS took `3,476.4s`. Replacing the
+  delete/rename current-pointer window with fsync-backed append-only generation
+  pointers and explicit same-generation fork rejection passed in `3,177.5s`.
+  A final review then bound the pointer filename, journal ID, pointer generation,
+  and restored journal generation so an old journal cannot masquerade as a newer
+  generation; the final exact-source ordered `npm test` PASS took `3,101.1s`.
+  The final run included license,
+  spec/link/profile, async security, governance and historical receipts, Participant
+  Core, durable Chromium, S4 confidentiality, both P2P Chromium verticals, transport,
+  distributed counter, fuzz, SDK/packed consumer, continuity/Capsule/relay,
+  multi-browser/Lab/UX, portable `10,000/10,000`, independent Python differentials,
+  and S3/S4 receipt verification. No gate was reduced for this candidate.

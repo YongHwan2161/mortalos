@@ -45,3 +45,16 @@ export {
   verifyResourceExecutionChallenge,
   verifyResourceExecutionReceipt
 } from "../src/resource-execution.mjs";
+export {
+  STORAGE_PLACEMENT_STATUS,
+  StoragePlacementError,
+  CONFIDENTIAL_PLACEMENT_FORMATS,
+  createConfidentialPlacementJournal,
+  createConfidentialPlacementShardSet,
+  evaluateConfidentialPlacementJournal,
+  evaluateConfidentialStoragePlacements,
+  evaluateStoragePlacements,
+  planConfidentialStorageRepair,
+  reconstructConfidentialPackage,
+  restoreConfidentialPlacementJournal
+} from "./placement.mjs";

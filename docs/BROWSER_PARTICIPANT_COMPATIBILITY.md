@@ -9,6 +9,8 @@ MortalOS exposes two deliberately different browser modes.
 | --- | --- | --- | --- |
 | Ephemeral Demo | none | no | Chromium; existing portable kernel also runs in the Node/browser differential target |
 | Durable Participant | consent-gated IndexedDB schema v2 | yes, until explicit removal or reached expiry | Chromium and Firefox candidate gates; WebKit capability-routed per runtime |
+| Direct P2P storage participant | provider-process memory in the current candidate | ephemeral provider key for bounded offer/lease/receipt | Chromium local candidate only; same-host manual ICE |
+| Confidential placement successor | non-extractable S4 custodian key in B process memory for the test vertical | B decrypts and creates new B-owned placement leases after A exits | Chromium local candidate only; not durable/XSS-resistant custody |
 
 ## Durable Participant contract
 
@@ -84,3 +86,23 @@ writer fails before its signer runs, and inconsistent `removed + key` or
 
 This verifies browser/profile isolation and protocol behavior. It does not by itself
 prove a distinct physical device or administrative failure domain.
+
+## Direct confidential P2P candidate
+
+`npm run test:p2p-placement` launches consumer A, consumer B, and four provider
+Chromium processes. After every bundle is loaded it blocks all HTTP requests. A real
+selected file and the complete resource-evidence exchange then use direct ordered
+DataChannels only. One provider exits, D repairs under a new lease, A exits, and B
+recovers two exact copies while excluding one corrupt readback.
+
+The composed confidential gate additionally makes A encrypt a native 98,317-byte
+File for B, places three distinct S4 package shards, applies an exact bounded proof
+age, rejects journal receipt replay after restart, closes A, and makes B reconstruct,
+decrypt, and renew all placement leases under B's own ephemeral signer. One corrupt
+shard rejects before package reconstruction; another valid pair recovers exact
+bytes. Neither A's consumer key nor B's custodian private key crosses browsers.
+
+This focused gate is Chromium-only. Firefox and WebKit have not passed this complete
+P2P data-plane scenario. Manual same-host ICE does not prove arbitrary NAT traversal
+or Internet reachability, and all processes still share one machine and
+administrator. The complete confidential path has not yet passed Firefox or WebKit.
