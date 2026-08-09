@@ -338,7 +338,11 @@ methods, delivery schedulers, Event/DataChannel slots, and RTCPeerConnection met
 as mutable capabilities. It captures reviewed native operations, keeps one private
 transcript map, publishes locally only after a synchronous native send succeeds, and
 returns detached immutable frames. Node and actual connected-Chromium poison corpora
-exercise those boundaries. A successful send is only local queue admission, not a
+exercise those named boundaries. Relay artifact-kind membership is a separately
+pinned transitive decoder dependency and invokes captured `Set.has`; selective
+`verdict` poison must leave send and both transcripts at zero while challenge remains
+deliverable. This does not claim that every future relay validator dependency is
+automatically primordial-safe. A successful send is only local queue admission, not a
 peer acknowledgement, durable storage proof, or placement verdict.
 
 ### 11.1 Bootstrap endpoint boundary
@@ -580,6 +584,10 @@ The revision must identify the new trust assumption, affected invariant, failure
   evaluator applies a bounded local proof age: the exact maximum counts and maximum
   plus one millisecond does not. This improves scheduling freshness but does not
   prove continuous liveness; local failed readback remains non-global observation.
+- A historical placement timestamp is not evaluation authority. Resource-contract
+  completion or effective revocation and proof freshness are both evaluated at the
+  canonical generation instant; otherwise a caller could rewind only the placement
+  timestamp and admit an expired lease into a current generation.
 - The composed path sends providers only canonical shards of an S4 encrypted
   package. Providers receive no resource plaintext, epoch key, unwrap authority, or
   custodian private key. This depends on S4 encryption; XOR shard coding itself is

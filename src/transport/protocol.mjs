@@ -10,6 +10,7 @@ import {
   parseJsonBytes
 } from "../codec.mjs";
 import { PROTOCOL_PROFILE } from "../generated/protocol-profile.mjs";
+import { setHas } from "../primordials.mjs";
 import { statePackageChunkDigest } from "../state/package.mjs";
 
 export const RELAY_MESSAGE_FORMAT = "mortalos-relay-message/1";
@@ -257,7 +258,7 @@ function assertControl(kind, content) {
     );
     if (
       content.format !== RESOURCE_PLACEMENT_ARTIFACT_FORMAT ||
-      !RESOURCE_PLACEMENT_ARTIFACT_KINDS.has(content.artifact_kind) ||
+      !setHas(RESOURCE_PLACEMENT_ARTIFACT_KINDS, content.artifact_kind) ||
       typeof content.request_id !== "string" ||
       !REQUEST_ID.test(content.request_id)
     ) {

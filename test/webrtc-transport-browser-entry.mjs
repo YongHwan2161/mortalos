@@ -1,5 +1,10 @@
+import { encodeBase64Url } from "../src/bytes.mjs";
 import { canonicalBytes } from "../src/codec.mjs";
-import { createResourcePlacementArtifactMessage } from "../src/transport/protocol.mjs";
+import {
+  createResourcePlacementArtifactMessage,
+  RELAY_CONTROL_FORMAT,
+  RESOURCE_PLACEMENT_ARTIFACT_FORMAT
+} from "../src/transport/protocol.mjs";
 import { ManualWebRtcParticipantTransport } from "../lab/transport/webrtc-peer.mjs";
 
 const assert = Object.freeze({
@@ -19,6 +24,20 @@ function artifactBytes(requestId) {
     payloadBytes: canonicalBytes({ requestId }),
     requestId
   }));
+}
+
+function rawArtifactBytes(artifactKind, requestId) {
+  const content = canonicalBytes({
+    artifact_kind: artifactKind,
+    format: RESOURCE_PLACEMENT_ARTIFACT_FORMAT,
+    payload_base64url: encodeBase64Url(canonicalBytes({ artifactKind, requestId })),
+    request_id: requestId
+  });
+  return canonicalBytes({
+    content_base64url: encodeBase64Url(content),
+    format: RELAY_CONTROL_FORMAT,
+    kind: "resource-placement-artifact"
+  });
 }
 
 function replaceValue(target, property, value) {
@@ -62,25 +81,81 @@ async function connectedPair() {
 
 export async function runWebRtcPrimordialBrowserProbe() {
   const { left, right } = await connectedPair();
+  const forbiddenBytes = rawArtifactBytes("verdict", "browser-forbidden-verdict");
   const firstBytes = artifactBytes("browser-channel-send");
   const secondBytes = artifactBytes("browser-map-transcript");
   const thirdBytes = artifactBytes("browser-set-delivery");
   let bareTransport;
   let extraTransport;
   try {
-    const dataChannelPrototype = RTCDataChannel.prototype;
-    let channelPoisonCalls = 0;
-    const firstRemotePromise = nextFrame(right, 0);
-    const restoreSend = replaceValue(dataChannelPrototype, "send", () => {
-      channelPoisonCalls += 1;
+    let forbiddenDeliveries = 0;
+    const unsubscribeForbiddenAudit = right.subscribe(() => {
+      forbiddenDeliveries += 1;
     });
-    let firstPublished;
+    let ordinaryVerdictCode;
     try {
-      firstPublished = await left.publish(firstBytes);
-    } finally {
-      restoreSend();
+      await left.publish(forbiddenBytes);
+    } catch (error) {
+      ordinaryVerdictCode = error.code;
     }
-    const firstRemote = await firstRemotePromise;
+    assert.equal(ordinaryVerdictCode, "RELAY_SCHEMA");
+    assert.equal((await left.fetchRange(0)).length, 0);
+    assert.equal((await right.fetchRange(0)).length, 0);
+    assert.equal(forbiddenDeliveries, 0);
+
+    const artifactKindSetPrototype = Set.prototype;
+    const originalSetHas = artifactKindSetPrototype.has;
+    let artifactKindPoisonCalls = 0;
+    const restoreArtifactKindHas = replaceValue(
+      artifactKindSetPrototype,
+      "has",
+      function selectiveArtifactKindPoison(value) {
+        const isArtifactKindSet = Reflect.apply(originalSetHas, this, ["announcement"]) &&
+          Reflect.apply(originalSetHas, this, ["liveness-response"]);
+        if (isArtifactKindSet && value === "verdict") {
+          artifactKindPoisonCalls += 1;
+          return true;
+        }
+        return Reflect.apply(originalSetHas, this, [value]);
+      }
+    );
+    let poisonedVerdictCode;
+    let forbiddenLocalFrames;
+    let forbiddenRemoteFrames;
+    let firstPublished;
+    let firstRemote;
+    let channelPoisonCalls = 0;
+    try {
+      try {
+        await left.publish(forbiddenBytes);
+      } catch (error) {
+        poisonedVerdictCode = error.code;
+      }
+      forbiddenLocalFrames = (await left.fetchRange(0)).length;
+      forbiddenRemoteFrames = (await right.fetchRange(0)).length;
+      assert.equal(forbiddenDeliveries, 0);
+
+      const dataChannelPrototype = RTCDataChannel.prototype;
+      const firstRemotePromise = nextFrame(right, 0);
+      const restoreSend = replaceValue(dataChannelPrototype, "send", () => {
+        channelPoisonCalls += 1;
+      });
+      try {
+        firstPublished = await left.publish(firstBytes);
+      } finally {
+        restoreSend();
+      }
+      firstRemote = await firstRemotePromise;
+    } finally {
+      restoreArtifactKindHas();
+    }
+    assert.equal(poisonedVerdictCode, "RELAY_SCHEMA");
+    assert.equal(forbiddenLocalFrames, 0);
+    assert.equal(forbiddenRemoteFrames, 0);
+    assert.equal(forbiddenDeliveries, 1);
+    assert.equal(artifactKindPoisonCalls, 0);
+    unsubscribeForbiddenAudit();
+
     assert.equal(channelPoisonCalls, 0);
     assert.equal(firstPublished.frame.message_id, firstRemote.message_id);
     assert.equal(firstRemote.sequence, 1);
@@ -327,9 +402,12 @@ export async function runWebRtcPrimordialBrowserProbe() {
     assert.equal(peerPoisonCalls, 0);
 
     return Object.freeze({
+      artifact_kind_poison_calls: artifactKindPoisonCalls,
       array_frames: arrayFrames.length,
       channel_poison_calls: channelPoisonCalls,
       constructor_poison_calls: constructorPoisonCalls,
+      forbidden_local_frames: forbiddenLocalFrames,
+      forbidden_remote_frames: forbiddenRemoteFrames,
       map_poison_calls: mapPoisonCalls,
       peer_poison_calls: peerPoisonCalls,
       remote_frames: (await right.fetchRange(0)).length,

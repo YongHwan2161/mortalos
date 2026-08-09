@@ -81,9 +81,12 @@ async function verifyWebRtcPrimordials() {
       return probe.runWebRtcPrimordialBrowserProbe();
     });
     assert.deepEqual(result, {
+      artifact_kind_poison_calls: 0,
       array_frames: 3,
       channel_poison_calls: 0,
       constructor_poison_calls: 0,
+      forbidden_local_frames: 0,
+      forbidden_remote_frames: 0,
       map_poison_calls: 0,
       peer_poison_calls: 0,
       remote_frames: 3,
@@ -551,6 +554,7 @@ try {
   console.log("- one corrupt readback was rejected and marked locally unavailable");
   console.log("- origin/HTTP/relay were denied after bundle load; no request occurred after the cut");
   console.log("- actual Chromium DataChannels retained captured transcript, scheduler, and peer capabilities under prototype poison");
+  console.log("- selective artifact-kind Set.has poison could not send or commit a verdict; a challenge still crossed both peers");
   console.log("- all browsers shared one host/admin domain; physical independence remains HOLD");
 } finally {
   await Promise.all(endpoints.map(({ browser }) => browser.close().catch(() => {})));

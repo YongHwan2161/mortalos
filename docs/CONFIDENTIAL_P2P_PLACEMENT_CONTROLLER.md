@@ -54,6 +54,13 @@ The exact maximum proof age counts. Maximum plus one millisecond returns
 `stale-proof` and stops counting. Two available shards permit recovery while three
 satisfy the placement target.
 
+Resource-contract status and proof freshness use the same canonical generation
+`evaluated_at_ms`. The placement record's `observed_at_ms` remains historical
+carrier metadata and cannot keep a lease active after completion or after a signed
+revocation becomes effective. Regressions cover observation `1500`, lease end
+`8900`, generation `9000`, plus revocation `1700` and generation `1800`; the actual
+lineage creator emits no proved generation for either stale-time input.
+
 ## Crash and custody succession
 
 The portable journal contains only canonical public evidence: manifest, policy,
@@ -79,7 +86,7 @@ controller delegation.
 
 | Gate | Command | Result |
 | --- | --- | --- |
-| Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future/replay rejection; real commit-process exit and load-process restart; directly chained re-proof |
+| Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future/replay rejection; generation-time completion and effective-revocation rejection; real commit-process exit and load-process restart; directly chained re-proof |
 | Seeded controller policy corpus | same command | 100 deterministic loss, stale, repair, and corrupt-evidence cycles over cryptographically verified fixture states; no claim of 100 physical failures |
 | Existing plaintext P2P regression | `node scripts/verify-p2p-placement-chromium.mjs` | Direct DataChannel transport, provider loss, repair, A exit, 2-of-3 readback |
 | Confidential Chromium vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual 98,317-byte native File; S4 encryption for B; three distinct ciphertext shards plus liveness challenge over WebRTC; provider loss; four observer processes and 3-of-4 certificate; A lineage commit; sign-once A→B custody handoff; A exit; successor-authorized operational signer creates new leases and successor commit; byte-identical convergence; corrupt-shard rejection; exact decryption; no custody-identity binding claim |

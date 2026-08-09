@@ -178,6 +178,10 @@ Strict pass criteria:
   and an actual connected Chromium pair must record zero poison-capability calls,
   exact local range state, and exact remote delivery after constructor/prototype/
   attached-method replacement;
+- the relay artifact-kind allowlist uses captured membership and its exact decoder
+  plus module are verifier-pinned as a transitive `publish` dependency. Selective
+  membership poison must leave forbidden `verdict` send/local/remote/subscriber
+  visibility at zero while an allowed `challenge` reaches both peers once;
 - termination of one provider makes its placement unavailable; repair chooses a
   different offer, signs a new lease, preserves the exact workload/content ID, and
   produces a new valid receipt before counting restored redundancy;
@@ -210,6 +214,9 @@ Strict pass criteria:
   lease, exact workload, unpredictable challenge, and cumulative usage;
 - exact maximum proof age passes and maximum plus one millisecond stops counting
   until a new proof arrives;
+- resource-contract status and proof age use the same canonical generation
+  `evaluated_at_ms`; unsigned historical placement observation time cannot prolong
+  a completed or effectively revoked lease;
 - a crash-safe local controller reconstructs state from canonical evidence, then
   re-challenges before scheduling or billing;
 - timeout, delayed response, crash, partition, corrupt shard, replay, fork, revoke,
@@ -222,7 +229,8 @@ Strict pass criteria:
   remain HOLD until separately proven.
 
 Source result: PASS locally. `test/confidential-placement.test.mjs` proves every
-2-of-3 combination, exact-age and max+1 behavior, duplicate provider/shard rejection,
+2-of-3 combination, exact-age and max+1 behavior, generation-time expiry and
+effective-revocation rejection, duplicate provider/shard rejection,
 actual journal commit-process exit and load-process restart, directly chained
 re-proof, and 100 deterministic controller-policy cycles over cryptographically
 verified states. `verify-confidential-placement-chromium.mjs` proves a native

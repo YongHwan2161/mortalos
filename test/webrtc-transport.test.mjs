@@ -361,6 +361,7 @@ test("WebRTC preserves ordinary ArrayBuffer and DataView publishing while owning
 test("WebRTC transcript uses captured collection, scheduler, and channel capabilities", () => {
   const childPath = fileURLToPath(new URL("./webrtc-transport-primordials-child.mjs", import.meta.url));
   for (const poisonCase of [
+    "artifact-kind-membership",
     "constructors",
     "signal-type",
     "map-get",

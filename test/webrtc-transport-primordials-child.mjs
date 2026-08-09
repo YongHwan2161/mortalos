@@ -1,12 +1,21 @@
 import assert from "node:assert/strict";
+import { encodeBase64Url } from "../src/bytes.mjs";
 import { canonicalBytes } from "../src/codec.mjs";
-import { createResourcePlacementArtifactMessage } from "../src/transport/protocol.mjs";
+import {
+  createResourcePlacementArtifactMessage,
+  RELAY_CONTROL_FORMAT,
+  RESOURCE_PLACEMENT_ARTIFACT_FORMAT
+} from "../src/transport/protocol.mjs";
 import {
   encodeWebRtcSignal,
   ManualWebRtcParticipantTransport
 } from "../lab/transport/webrtc-peer.mjs";
 
 const poisonCase = process.argv[2];
+if (typeof poisonCase !== "string" || poisonCase.length === 0) {
+  process.stderr.write("poison case argument required\n");
+  process.exit(64);
+}
 const sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
 const PromiseIntrinsic = Promise;
 
@@ -16,6 +25,20 @@ function artifactBytes(requestId) {
     payloadBytes: canonicalBytes({ requestId }),
     requestId
   }));
+}
+
+function rawArtifactBytes(artifactKind, requestId) {
+  const content = canonicalBytes({
+    artifact_kind: artifactKind,
+    format: RESOURCE_PLACEMENT_ARTIFACT_FORMAT,
+    payload_base64url: encodeBase64Url(canonicalBytes({ artifactKind, requestId })),
+    request_id: requestId
+  });
+  return canonicalBytes({
+    content_base64url: encodeBase64Url(content),
+    format: RELAY_CONTROL_FORMAT,
+    kind: "resource-placement-artifact"
+  });
 }
 
 async function openFakeTransport(endpointId = "poison-a") {
@@ -129,6 +152,42 @@ async function runSignalCase() {
     restore();
   }
   assert.equal(errorCode, "WEBRTC_SIGNAL_TYPE");
+}
+
+async function runArtifactKindMembershipCase() {
+  const opened = await openFakeTransport("artifact-kind-a");
+  const forbidden = rawArtifactBytes("verdict", "forbidden-verdict");
+  const allowed = artifactBytes("allowed-challenge");
+  const originalHas = Set.prototype.has;
+  let targetedCalls = 0;
+  const restore = replaceValue(Set.prototype, "has", function selectiveArtifactKindPoison(value) {
+    const isArtifactKindSet = Reflect.apply(originalHas, this, ["announcement"]) &&
+      Reflect.apply(originalHas, this, ["liveness-response"]);
+    if (isArtifactKindSet && value === "verdict") {
+      targetedCalls += 1;
+      return true;
+    }
+    return Reflect.apply(originalHas, this, [value]);
+  });
+  try {
+    await assert.rejects(
+      opened.transport.publish(forbidden),
+      (error) => error.code === "RELAY_SCHEMA"
+    );
+    assert.equal(opened.sendCalls, 0);
+    assert.deepEqual(await opened.transport.fetchRange(0), []);
+
+    const published = await opened.transport.publish(allowed);
+    assert.equal(published.duplicate, false);
+    assert.equal(published.frame.sequence, 1);
+    assert.equal(opened.sendCalls, 1);
+    assert.equal((await opened.transport.fetchRange(0)).length, 1);
+    assert.equal(targetedCalls, 0);
+  } finally {
+    restore();
+    opened.transport.close();
+    opened.restore();
+  }
 }
 
 async function runTransportCase() {
@@ -286,6 +345,7 @@ async function runTransportCase() {
 }
 
 if (poisonCase === "constructors") await runConstructorCase();
+else if (poisonCase === "artifact-kind-membership") await runArtifactKindMembershipCase();
 else if (poisonCase === "signal-type") await runSignalCase();
 else await runTransportCase();
 

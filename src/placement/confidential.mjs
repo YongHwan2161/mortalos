@@ -308,12 +308,25 @@ function rejected(shardIndex, reason, extra = {}) {
   });
 }
 
-function evaluatePlacement(snapshot, descriptor, unavailable, evaluatedAt, maximumAge) {
+function evaluatePlacement(
+  snapshot,
+  descriptor,
+  unavailable,
+  evaluatedAt,
+  evaluatedAtMs,
+  maximumAge
+) {
   const { record, shard_index: shardIndex } = snapshot;
   if (shardIndex !== descriptor.shard_index) return rejected(shardIndex, "shard-descriptor-mismatch");
+  // The outer record timestamp is historical carrier metadata, not authority for
+  // a current generation. Contract status and proof age must share one instant.
+  const generationBoundRecord = Object.freeze({
+    ...record,
+    observed_at_ms: evaluatedAtMs
+  });
   const basic = evaluateStoragePlacements({
     expected_workload_id: descriptor.workload_id,
-    placements: [record],
+    placements: [generationBoundRecord],
     quorum: 1,
     target_copies: 1,
     unavailable_provider_ids: []
@@ -397,7 +410,14 @@ export function evaluateConfidentialStoragePlacements(options) {
   let placements = options.placements.map((value, index) => {
     try {
       const snapshot = placementRecord(value, index);
-      return evaluatePlacement(snapshot, manifest.descriptors[snapshot.shard_index], unavailable, evaluatedAt, maximumAge);
+      return evaluatePlacement(
+        snapshot,
+        manifest.descriptors[snapshot.shard_index],
+        unavailable,
+        evaluatedAt,
+        options.evaluated_at_ms,
+        maximumAge
+      );
     } catch (error) {
       return rejected(Number.isSafeInteger(value?.shard_index) ? value.shard_index : null, error?.code ?? "invalid-evidence");
     }

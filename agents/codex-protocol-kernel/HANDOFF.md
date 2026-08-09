@@ -102,6 +102,22 @@ post-merge workflows, and deployed asset manifest.
   transcript SSOT, snapshots or native-captures DataChannel and RTCPeerConnection
   capabilities, and has isolated Node plus actual connected-Chromium poison gates.
   Fresh exact-head CI and a fourth independent review remain external facts.
+- PR #58's fourth immutable review at exact head
+  `8a3f285edf3e1056d4f78097b5cb5bc0ae065043` correctly reproduced a transitive
+  decoder escape despite the captured WebRTC-local capabilities: selectively
+  replacing `Set.prototype.has` admitted the forbidden `verdict` artifact and
+  committed it on both actual Chromium peers. The relay decoder now invokes the
+  captured Set operation. Isolated Node and connected-Chromium regressions require
+  zero verdict send/local/remote visibility while an allowed `challenge` still
+  crosses both peers once, and the security verifier pins the exact decoder import,
+  function, and module used by `publish`. This evidence is deliberately limited to
+  that named transitive dependency. The same replacement source closes review
+  `4892650018`'s confidential-placement time-split blocker: resource-contract status
+  and receipt freshness now use the same canonical generation `evaluated_at_ms`.
+  A historical placement `observed_at_ms` cannot prolong an expired or effectively
+  revoked lease; exact direct and lineage regressions cover `1500/8900/9000` expiry
+  and `1500/1700/1800` revocation. Fresh exact-head CI and another immutable review
+  remain external facts.
 - `origin/main` was freshly fetched at
   `25de18d8c1af8b3dfcb5adffb1a07538afa33332`; it equals this task base. Deployment
   credentials remain workflow-owned and never enter this source tree.

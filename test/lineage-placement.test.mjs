@@ -42,6 +42,10 @@ import {
   restoreLineagePlacementGeneration,
   verifyLineagePlacementCommit
 } from "../src/placement/lineage-controller.mjs";
+import {
+  finalizeResourceRevocation,
+  prepareResourceRevocation
+} from "../src/resource-contract.mjs";
 import { createConfidentialFixture } from "./confidential-helpers.mjs";
 
 function record(fixture, shardIndex) {
@@ -97,6 +101,29 @@ function actionPlanCandidate(committed, generation, {
   });
 }
 
+async function revokeLease({ consumer, placement, effectiveAtMs, nonceByte }) {
+  const lease = JSON.parse(new TextDecoder().decode(placement.lease));
+  const body = {
+    actor_key_id: consumer.identity.key_id,
+    effective_at_ms: effectiveAtMs,
+    reason: "consumer-request",
+    revocation_nonce: encodeBase64Url(new Uint8Array(16).fill(nonceByte)),
+    target_id: lease.lease_id,
+    target_kind: "lease"
+  };
+  const draft = prepareResourceRevocation({
+    body,
+    lease: placement.lease,
+    offer: placement.offer
+  });
+  return finalizeResourceRevocation({
+    body: draft.body,
+    lease: placement.lease,
+    offer: placement.offer,
+    signature: await consumer.sign(draft.signing_message)
+  });
+}
+
 function unsafeAuthority() {
   const { privateKey, publicKey } = generateKeyPairSync("ed25519");
   const der = publicKey.export({ type: "spki", format: "der" });
@@ -143,6 +170,40 @@ async function fixture() {
 }
 
 const fixturePromise = fixture();
+
+test("lineage generation rejects completed or effectively revoked placement evidence", async () => {
+  const storage = await fixturePromise;
+  const authority = await createContinuityAuthority();
+  const created = await createContinuity({
+    authority,
+    resourceBytes: storage.actual,
+    transitionId: "placement-generation-time-create"
+  });
+  const records = storage.initial.map(record);
+
+  assert.ok(records.every(({ observed_at_ms: observedAt }) => observedAt === "1500"));
+  assert.ok(records.every(({ lease }) =>
+    JSON.parse(new TextDecoder().decode(lease)).body.ends_at_ms === "8900"));
+  assert.throws(() => createLineagePlacementGeneration({
+    ...generationOptions(storage, created.capsule_bytes, records),
+    evaluated_at_ms: "9000",
+    max_proof_age_ms: "8000"
+  }), /E_LINEAGE_PLACEMENT_LIVENESS: uncertified-repair-intent/u);
+
+  const revocation = await revokeLease({
+    consumer: storage.consumer,
+    effectiveAtMs: "1700",
+    nonceByte: 118,
+    placement: records[0]
+  });
+  const revokedRecords = [{
+    ...records[0],
+    revocations: Object.freeze([revocation])
+  }, records[1], records[2]];
+  assert.throws(() => createLineagePlacementGeneration(
+    generationOptions(storage, created.capsule_bytes, revokedRecords)
+  ), /E_LINEAGE_PLACEMENT_LIVENESS: uncertified-repair-intent/u);
+});
 
 test("current custodian commits a repair plan, successor repairs, and stale origin cannot continue", async () => {
   const storage = await fixturePromise;

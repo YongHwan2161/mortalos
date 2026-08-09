@@ -138,6 +138,9 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
   "lab/transport/http-relay.mjs": {
     ownRelayBytes: ["local", null, null, "b07f4ad8f5d37801cac227c96c83dbcc3730a036c5fa40634467b28fca6ebbd8"]
   },
+  "lab/transport/webrtc-peer.mjs": {
+    decodeRelayMessageBytes: ["import", "../../src/transport/protocol.mjs", "decodeRelayMessageBytes", "18513ca4248da3da9959e97dfe99e9759c6b51703cade672c2c838199aa5972b"]
+  },
   "src/confidential/keys.mjs": {
     assertCustodianId: ["import", "./format.mjs", "assertCustodianId", "5c7bebc0710396477d78548ba540c03f7daaf8d7e3fb5c1246a9e7dee4e1bb13"],
     assertDigest: ["import", "./format.mjs", "assertDigest", "522ba6388e000fceb91e1603aaa482279afab3456fee0241792b0863fb13e30b"],
@@ -220,6 +223,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
+  "src/transport/protocol.mjs": "d9d2f925b5f2753a1e0e927b4a6ae3ee2a471d728a3710a9810a9ef51ef8ab0b",
   "lab/transport/webrtc-peer.mjs": "916b1926d0a0437fbb3fb053aab3ec7603500a05a529b4d865ea34d209d6868b"
 });
 
@@ -335,6 +339,10 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "35ad0b7680d8d04498ba958c31aafaa7e6cf1a3d7d6f1b2336977ea4543b04d9",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "7409b9b1176a28d5f8c847220e87eb43b35526c12f2342aae2af7b6e0314ce51",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "8903f54681ed29ce7bc6f9e40b02102cdd707cd5d5ccb4ddce50c13c861aa8f9"
+});
+const CLASSIFICATION_TRANSITIVE_DEPENDENCIES = Object.freeze({
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish":
+    Object.freeze(["decodeRelayMessageBytes"])
 });
 assert.deepEqual(
   Object.keys(CLASSIFICATION_DIGESTS).sort(),
@@ -791,6 +799,17 @@ for (const classification of registry.classifications) {
     OWNERSHIP_MODULE_DIGESTS[classification.file],
     `${classification.file}: classified module drift requires a fresh security review`
   );
+  const transitiveDependencies = CLASSIFICATION_TRANSITIVE_DEPENDENCIES[classificationKey];
+  if (transitiveDependencies) {
+    await verifiedPrimitiveCallStarts({
+      ast,
+      entry: classification,
+      functionNode,
+      names: transitiveDependencies,
+      purpose: "transitive validator",
+      source
+    });
+  }
 }
 
 const RAW_DURABLE_CAPABILITY_CONSUMERS = new Set(["lab/storage/durable-store.mjs"]);

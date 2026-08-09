@@ -2188,3 +2188,51 @@ result, and reproducible verification.
   `128` auto-discovered). A successful browser `send()` remains only local outbound
   queue admission, not peer acknowledgement, durable possession, or placement truth.
   Fresh exact-head CI and a fourth immutable review remain required.
+
+## 2026-08-10 KST — PR #58 fourth BLOCK: transitive relay allowlist containment
+
+- Immutable review `4892650018` at exact head
+  `8a3f285edf3e1056d4f78097b5cb5bc0ae065043` reproduced that the otherwise
+  contained WebRTC publisher still delegated artifact-kind classification to ambient
+  `Set.prototype.has`. Selective poisoning admitted a manually canonicalized
+  forbidden `verdict` and committed sequence 1 on both actual Chromium peers. No
+  PASS receipt, approval, merge, or deployment follows from the blocked head.
+- The source correction is deliberately narrow: `src/transport/protocol.mjs` imports
+  the module-captured `setHas` primordial and invokes it for the existing artifact-kind
+  allowlist. No relay schema, artifact set, WebRTC sequencing, or placement policy
+  changed.
+- The isolated Node regression canonicalizes raw forbidden and allowed carriers before
+  poison. Under selective membership replacement, `verdict` rejects with
+  `RELAY_SCHEMA`, performs zero sends, and leaves the local range empty; `challenge`
+  then sends once and commits sequence 1. The poison target records zero calls. The
+  parent covers 14 isolated cases, and a missing child argument now exits explicitly
+  with code 64 instead of entering a poison scenario.
+- The actual connected-Chromium A/B probe first rejects the same forbidden bytes in a
+  clean baseline and again under poison. Forbidden local range, remote range, and
+  subscriber delivery remain zero; while the poison is installed, an allowed
+  challenge reaches both peers at sequence 1. The verifier asserts
+  `artifact_kind_poison_calls: 0`, `forbidden_local_frames: 0`, and
+  `forbidden_remote_frames: 0` before continuing the origin-cut placement/repair
+  vertical.
+- `verify-security-boundaries.mjs` now pins the exact imported
+  `decodeRelayMessageBytes` function digest and full `src/transport/protocol.mjs`
+  module digest, and proves that classified `publish` directly invokes that named
+  dependency. This is evidence for the named dependency only, not a general claim
+  that future decoder dependencies are primordial-safe.
+- Current-tree focused evidence: transport/WebRTC `18/18`; async security `26/26`
+  with `22` direct and `128` auto-discovered entrypoints; actual Chromium P2P
+  placement/repair PASS in `39.8s`; specification PASS; links PASS; and
+  `git diff --check` PASS. Direct child execution passed, missing-argument exit took
+  `142ms`, and final process inspection found `PoisonChildNodeLiveCount=0` and
+  `ChromiumVerifierNodeLiveCount=0`.
+- Review `4892650018` also reported that confidential placement used historical
+  `record.observed_at_ms` for resource status while using generation time only for
+  proof age. The replacement evaluates both at the canonical generation instant.
+  With record `1500`, lease end `8900`, and generation `9000`, all three shards are
+  `resource-completed`, proof count is zero, and actual lineage creation halts. A
+  signed revocation effective `1700` similarly rejects in generation `1800`.
+- Confidential direct/lineage targeted regressions pass `2/2` in `53.0s`; the full
+  confidential suite passes `5/5` in `129.9s`. Exhaustion remains cumulative
+  receipt state and is not misreported as a time-based result. Fresh exact-head CI
+  and immutable re-review remain required before approval, merge, deployment, or
+  promotion.

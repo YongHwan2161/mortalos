@@ -828,6 +828,10 @@ unsigned carrier for canonical offer, lease, announcement, challenge, usage,
 execution, and resource-descriptor payloads. Neither format is a lifecycle event,
 fork-choice input, signed placement verdict, or validity authority.
 
+Artifact-kind allowlist membership MUST NOT dispatch through a later-mutable public
+collection method. A forbidden kind such as `verdict` MUST be rejected before any
+transport send or local/remote transcript commit even if ambient prototypes change.
+
 A receiver MUST decode and verify the nested canonical bytes through the existing
 resource and placement validators. Connection state, endpoint labels, arrival order,
 presence, UI state, and carrier metadata MUST NOT make a placement usable. Direct
@@ -855,9 +859,12 @@ lifecycle event, global placement consensus, or billing authority.
 A confidential shard counts only after the ordinary resource validators prove its
 exact active storage workload and the local evaluator proves distinct provider and
 shard identities. A proof issued in the future or older than the configured maximum
-MUST NOT count; exact maximum age MAY count. After journal restoration, an existing
-lease MUST present the direct successor of the journaled execution receipt before
-counting again. A new provider/lease MAY enter with a new valid first receipt. A
+MUST NOT count; exact maximum age MAY count. Resource-contract status and receipt
+age MUST be evaluated at the same canonical generation `evaluated_at_ms`.
+Per-placement `observed_at_ms` is historical carrier metadata and MUST NOT prolong a
+lease that is completed or effectively revoked at generation time. After journal
+restoration, an existing lease MUST present the direct successor of the journaled
+execution receipt before counting again. A new provider/lease MAY enter with a new valid first receipt. A
 successor-authorized operational signing identity MAY form new offers and leases;
 that identity is not inferred to be, or cryptographically bound to, the Continuity
 custody identity. Transfer of the prior consumer private key is forbidden.

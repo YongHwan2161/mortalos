@@ -125,9 +125,11 @@ DataChannel accepts the send. A synchronous close, backpressure, or send failure
 cannot manufacture local delivery, and an identical transient-failure retry remains
 eligible for a real send. One private transcript map is the cursor and duplicate
 SSOT; collection, iterator, scheduler, DataChannel, MessageEvent, and peer-connection
-operations are captured before exposure. Node and actual Chromium poison corpora
-replace those public constructors, prototypes, and attached methods and require zero
-poison calls plus exact remote delivery. Browser acceptance into its send queue is
+operations are captured before exposure. Relay artifact-kind membership uses the
+captured Set operation as a separate transitive boundary. Named Node and actual
+Chromium cases require selective `verdict` membership poison to produce zero send,
+local range, remote range, or subscriber visibility while an allowed
+`challenge` still reaches both peers at sequence 1. Browser acceptance into its send queue is
 still not an end-to-end acknowledgement; signed higher-layer evidence remains the
 only placement authority.
 

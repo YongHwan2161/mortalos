@@ -49,7 +49,10 @@ lineage rejection-code registry.
 - one private `Map` is the ordered transcript and duplicate SSOT. Captured
   `Map`/`Set`/`Array`/iterator/scheduler operations plus native DataChannel and
   RTCPeerConnection slots prevent later public-prototype or method replacement from
-  fabricating publication, range, replay, signaling, or close success.
+  fabricating the named publication, range, replay, signaling, or close behaviors;
+- the transitive relay artifact-kind allowlist invokes captured Set membership. A
+  selective poison cannot admit `verdict`: send/local/remote/subscriber
+  visibility stays zero, while an allowed `challenge` still crosses both peers once.
 
 `resource-placement-artifact` is an untrusted carrier for the existing documents
 and proposals. Receiving it never means “accepted” or “proved”; the core must parse
@@ -61,9 +64,9 @@ and verify the nested canonical bytes again.
 | --- | --- | --- |
 | Pure policy and negatives | `node --test test/placement.test.mjs` | 3-copy proof, 3→2 degradation, new-lease repair, single/duplicate/corrupt/cross-lease/stale/unproved/wrong-workload rejection |
 | Node process topology | `node --test test/placement-process.test.mjs` | Provider process directly stores and signs; process exit prevents later signing; replacement process/new lease repairs |
-| Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes, detached immutable frames, failure-atomic send/retry, and isolated constructor/Map/Set/Array/iterator/scheduler/channel poison cases |
-| Actual browser vertical | `node scripts/verify-p2p-placement-chromium.mjs` | Actual paired Chromium DataChannels preserve native send, peer, transcript, replay, range, and scheduler behavior under prototype poison; then the runtime file/evidence origin-cut provider-loss/repair and A-exit/B-readback vertical passes |
-| Confidential controller | `node --test test/confidential-placement.test.mjs` | S4 2-of-3 shards, exact freshness boundary, crash/restart journal, chained re-proof, 100-cycle policy corpus |
+| Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes, detached immutable frames, failure-atomic send/retry, and 14 isolated artifact-kind/constructor/Map/Set/Array/iterator/scheduler/channel poison cases; forbidden verdict send/local state remains zero and challenge send/local state is one |
+| Actual browser vertical | `node scripts/verify-p2p-placement-chromium.mjs` | Actual paired Chromium DataChannels keep forbidden verdict local/remote ranges and subscriber visibility at zero under selective Set membership poison, deliver challenge sequence 1, preserve the other named native send/peer/transcript/replay/range/scheduler behaviors, then pass the runtime-file/evidence origin-cut provider-loss/repair and A-exit/B-readback vertical |
+| Confidential controller | `node --test test/confidential-placement.test.mjs` | S4 2-of-3 shards; one generation instant for contract status and proof age; historical-time expiry and effective-revocation rejection; exact freshness boundary; crash/restart journal; chained re-proof; 100-cycle policy corpus |
 | Liveness contract | `node --test test/placement-liveness.test.mjs` | Offer-rostered 3-of-4 non-response certificate under a consumer-selected bounded window; no-clock schema; threshold/outsider/window negatives; late response, challenge fork, and response fork halt |
 | Lineage controller | `node --test test/lineage-placement.test.mjs` | Certificate-bound current-descriptor quorum-authorized generation commit; conditional late-proof conflict when fresh response/current placement evidence is supplied; derived placement action plan; A→B key non-transfer; fresh-process convergence; 1,000 partition/heal events; valid sibling fork halt |
 | Confidential browser vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual native File encrypted for B, distinct ciphertext shards and liveness challenge over peers, four observer processes and 3-of-4 local-duration certificate, provider loss, A generation commit, sign-once handoff, A exit, successor-authorized operational signer repair and successor commit, deterministic convergence, corrupt-shard rejection, exact decrypt; the signer is not custody-identity-bound |

@@ -126,9 +126,19 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   transient failure leaves no ghost record and an exact retry performs a real send.
   The carrier now keeps one private transcript map and captures collection,
   iterator, scheduler, MessageEvent, DataChannel, and RTCPeerConnection capabilities.
-  Thirteen isolated Node poison cases plus an actual connected-Chromium poison probe
-  require zero poisoned calls and exact remote delivery. Native send success remains
-  local queue admission, not an end-to-end receipt.
+  The relay decoder separately invokes captured artifact-kind Set membership, and
+  the security verifier pins that exact transitive import, function, and module.
+  Fourteen isolated Node poison cases plus an actual connected-Chromium probe require
+  a selectively poisoned forbidden `verdict` to produce zero send/local/remote
+  visibility while an allowed `challenge` crosses both peers once. This covers the
+  named capabilities rather than every future decoder dependency. Native send
+  success remains local queue admission, not an end-to-end receipt.
+- Confidential placement evaluates resource-contract status and receipt age at one
+  canonical generation instant. Per-placement `observed_at_ms` remains historical
+  carrier metadata and cannot keep a lease active after generation time. Exact
+  regressions reject leases ending at `8900` when generation time is `9000`, reject
+  a signed revocation effective at `1700` when generation time is `1800`, and prove
+  the actual lineage creator emits no proved generation for either input.
 - An actual runtime-selected file plus offer, lease, witness, challenge, usage, and
   execution evidence cross direct Chromium DataChannels after HTTP/origin denial.
   One provider process loss degrades three copies to two; D uses a new offer and

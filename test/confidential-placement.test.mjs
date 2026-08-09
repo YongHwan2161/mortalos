@@ -10,7 +10,7 @@ import {
   createStoragePlacementFixture,
   refreshStoragePlacementFixture
 } from "../lab/placement/storage-contract.mjs";
-import { equalBytes } from "../src/bytes.mjs";
+import { encodeBase64Url, equalBytes } from "../src/bytes.mjs";
 import { canonicalBytes } from "../src/codec.mjs";
 import {
   createConfidentialPlacementJournal,
@@ -21,6 +21,10 @@ import {
   reconstructConfidentialPackage,
   restoreConfidentialPlacementJournal
 } from "../src/placement/confidential.mjs";
+import {
+  finalizeResourceRevocation,
+  prepareResourceRevocation
+} from "../src/resource-contract.mjs";
 import { createConfidentialFixture } from "./confidential-helpers.mjs";
 
 function withIndex(fixture, shardIndex) {
@@ -36,6 +40,29 @@ function evaluate(created, records, overrides = {}) {
     quorum: 2,
     target_shards: 3,
     unavailable_provider_ids: overrides.unavailable_provider_ids ?? []
+  });
+}
+
+async function revokeLease({ consumer, placement, effectiveAtMs, nonceByte }) {
+  const lease = JSON.parse(new TextDecoder().decode(placement.lease));
+  const body = {
+    actor_key_id: consumer.identity.key_id,
+    effective_at_ms: effectiveAtMs,
+    reason: "consumer-request",
+    revocation_nonce: encodeBase64Url(new Uint8Array(16).fill(nonceByte)),
+    target_id: lease.lease_id,
+    target_kind: "lease"
+  };
+  const draft = prepareResourceRevocation({
+    body,
+    lease: placement.lease,
+    offer: placement.offer
+  });
+  return finalizeResourceRevocation({
+    body: draft.body,
+    lease: placement.lease,
+    offer: placement.offer,
+    signature: await consumer.sign(draft.signing_message)
   });
 }
 
@@ -143,6 +170,42 @@ test("only fresh, distinct provider and distinct shard receipts count toward 2-o
   const wrongShard = evaluate(created, [{ ...records[0], shard_index: 1 }]);
   assert.equal(wrongShard.available_shards, 0);
   assert.equal(wrongShard.placements[0].reason, "workload-mismatch");
+});
+
+test("one generation instant governs lease completion, revocation, and proof freshness", async () => {
+  const created = await createdPromise;
+  const records = created.initial.map((fixture, index) => withIndex(fixture, index));
+
+  assert.ok(records.every(({ observed_at_ms: observedAt }) => observedAt === "1500"));
+  assert.ok(records.every(({ lease }) =>
+    JSON.parse(new TextDecoder().decode(lease)).body.ends_at_ms === "8900"));
+  const afterLeaseEnd = evaluate(created, records, {
+    evaluated_at_ms: "9000",
+    max_proof_age_ms: "8000"
+  });
+  assert.equal(afterLeaseEnd.status, "unavailable");
+  assert.equal(afterLeaseEnd.available_shards, 0);
+  assert.equal(afterLeaseEnd.placements.filter(({ status }) => status === "proved").length, 0);
+  assert.ok(afterLeaseEnd.placements.every(({ reason }) => reason === "resource-completed"));
+  assert.ok(afterLeaseEnd.placements.every(({ receipt_id: receiptId }) => receiptId === null));
+
+  const revocation = await revokeLease({
+    consumer: created.consumer,
+    effectiveAtMs: "1700",
+    nonceByte: 117,
+    placement: records[0]
+  });
+  const afterRevocation = evaluate(created, [{
+    ...records[0],
+    revocations: Object.freeze([revocation])
+  }, records[1], records[2]], {
+    evaluated_at_ms: "1800"
+  });
+  assert.equal(afterRevocation.status, "repairing");
+  assert.equal(afterRevocation.available_shards, 2);
+  assert.equal(afterRevocation.placements[0].status, "rejected");
+  assert.equal(afterRevocation.placements[0].reason, "resource-revoked");
+  assert.equal(afterRevocation.placements[0].receipt_id, null);
 });
 
 test("restored controller counts no pre-crash proof until a directly chained receipt arrives", async () => {
