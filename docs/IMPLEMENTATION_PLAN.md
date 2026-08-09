@@ -170,6 +170,9 @@ Strict pass criteria:
 - useful runtime-file chunks and contract artifacts traverse the real participant data
   plane, and placement becomes usable only after
   `evaluateResourceExecutionContract(...).execution_status === "proved"`;
+- an outbound DataChannel send commits frame and dedupe state only after send success;
+  a transient send failure exposes no range/subscriber record and the exact message
+  remains retryable without a ghost duplicate;
 - termination of one provider makes its placement unavailable; repair chooses a
   different offer, signs a new lease, preserves the exact workload/content ID, and
   produces a new valid receipt before counting restored redundancy;
@@ -315,8 +318,9 @@ Strict pass criteria:
   provider, consumer, roster, policy, stale sequence, or rate overflow fails before
   observer signing;
 - a provider can sign an exact challenge-bound possession response without a fresh
-  consumer signature; certificate plus valid response is `contested` and performs
-  zero repair effects;
+  consumer signature; a signed receipt-ID pointer without self-contained possession
+  proof is never classified as authoritative `alive`; certificate plus valid response
+  is `contested` and performs zero repair effects;
 - the public action plan remains `non_capability: true`; a dedicated executor owns
   the private provider/session capability and re-verifies current Capsule/head,
   generation, commit, policy, placement, certificate, and responses immediately

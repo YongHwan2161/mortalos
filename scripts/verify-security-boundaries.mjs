@@ -220,7 +220,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
-  "lab/transport/webrtc-peer.mjs": "a1d46ac9f741aa118e17aaade92b1a076503695bece28a3163caad36ff5dea97"
+  "lab/transport/webrtc-peer.mjs": "e8b490027ba5c67e3f27587b41e9acb5f3a4daf4175b926d714cacaaed7b2690"
 });
 
 // A classification is a reviewed security decision, not a permanent textual
@@ -331,7 +331,7 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "a82811e4091254092ee550d0686ca4750a8c5d69bb71e986c5342e427acc6a5b",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "eb41f82f1a2e55e0595e3024032d155d6a6aeeffea617efe345002be7d9c30cc",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "38342173112b034874a9056b4b897ee5b18eb23a713736b2471357969f4bbb89",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "7f1d9f8d08ace76ff3fda5a3ff4482f217dce06384368a79e4f2f50042443d84",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "ff96556c62d0dc58f82c248bb8760f51ec690c21a3b395c1e6a5395dcc5dea48",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "e1d171c3f5addd4bf047061b726fd55806f68554bb1453a51e98e63cb47f9393",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "3e3b66f1f0ce1ae532ac987f49d687f358a22f4a0a97e1181c10276c70256291",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "cf19d81b01ae59f487afc547d6872ff4147817195ca5f7833ce379f3ad28cb4c"

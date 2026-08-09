@@ -189,6 +189,67 @@ test("WebRTC publish and fetch never expose the mutable internal relay-frame cur
   }
 });
 
+test("WebRTC publication commits only after send succeeds and retries remain deliverable", async () => {
+  const { channel, restore, transport } = await openFakeTransport();
+  try {
+    const send = channel.send.bind(channel);
+    let sendCalls = 0;
+    channel.send = (value) => {
+      sendCalls += 1;
+      if (sendCalls === 1) {
+        throw new DOMException("transient buffer failure", "OperationError");
+      }
+      send(value);
+    };
+    const bytes = placementArtifactBytes("send-atomicity-1");
+
+    await assert.rejects(
+      transport.publish(bytes),
+      (error) => error.name === "OperationError" && error.message === "transient buffer failure"
+    );
+    assert.equal(sendCalls, 1);
+    assert.deepEqual(await transport.fetchRange(0), []);
+
+    let ghostDeliveries = 0;
+    const unsubscribe = transport.subscribe(() => {
+      ghostDeliveries += 1;
+    });
+    await new Promise((resolve) => queueMicrotask(resolve));
+    assert.equal(ghostDeliveries, 0);
+    unsubscribe();
+
+    const retried = await transport.publish(bytes);
+    assert.equal(retried.duplicate, false);
+    assert.equal(sendCalls, 2);
+    assert.equal((await transport.fetchRange(0)).length, 1);
+
+    const duplicate = await transport.publish(bytes);
+    assert.equal(duplicate.duplicate, true);
+    assert.equal(sendCalls, 2);
+    assert.equal((await transport.fetchRange(0)).length, 1);
+
+    channel.bufferedAmount = Number.MAX_SAFE_INTEGER;
+    await assert.rejects(
+      transport.publish(placementArtifactBytes("send-backpressure-1")),
+      (error) => error.code === "WEBRTC_BACKPRESSURE"
+    );
+    assert.equal(sendCalls, 2);
+    assert.equal((await transport.fetchRange(0)).length, 1);
+
+    channel.bufferedAmount = 0;
+    channel.readyState = "closed";
+    await assert.rejects(
+      transport.publish(placementArtifactBytes("send-closed-1")),
+      (error) => error.code === "WEBRTC_NOT_OPEN"
+    );
+    assert.equal(sendCalls, 2);
+    assert.equal((await transport.fetchRange(0)).length, 1);
+    transport.close();
+  } finally {
+    restore();
+  }
+});
+
 test("WebRTC subscribers receive distinct immutable frames that cannot cross-contaminate", async () => {
   const { restore, transport } = await openFakeTransport();
   try {

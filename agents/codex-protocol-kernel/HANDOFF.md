@@ -85,6 +85,14 @@ post-merge workflows, and deployed asset manifest.
   copies, and rederives exact consecutive generation sequence from authenticated
   Capsule history. Exact-head CI and fresh independent re-review remain external
   evidence and are not inferred here.
+- PR #58's replacement review at exact head
+  `b282e0d3be74c0d8480c038199b5ebc960166e8d` confirmed all four prior closures but
+  correctly BLOCKed a new send-failure atomicity issue: local frame/dedupe state was
+  committed before `DataChannel.send()`, so a transient failure became a ghost
+  duplicate that could never reach its peer. Publication now sends first and commits
+  local state only on success; a focused regression proves zero failed-send
+  visibility, one real retry, later idempotence, and no close/backpressure ghosts.
+  Replacement exact-head CI and another fresh immutable review remain external.
 - `origin/main` was freshly fetched at
   `25de18d8c1af8b3dfcb5adffb1a07538afa33332`; it equals this task base. Deployment
   credentials remain workflow-owned and never enter this source tree.

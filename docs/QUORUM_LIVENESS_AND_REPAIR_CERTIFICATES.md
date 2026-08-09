@@ -134,13 +134,19 @@ The Chromium acceptance uses no backend clock or outage oracle:
   availability after authorization.
 - A derived action plan is forgeable data, not authority. The current Lab does not
   implement late-proof gossip or execution-time effect authorization.
+- The current provider response signs a receipt-ID pointer, not self-contained
+  possession evidence. The standalone evaluator's `alive` label is therefore not a
+  possession claim; lineage acceptance separately requires the current verified
+  execution chain.
 
 ## Next root P0
 
 The next P0 is **failure-precommitted liveness policy and effect-time repair
 execution**. A provider-signed, lease-bound policy must commit window/rate/path and
 response-proof semantics before failure; the provider must be able to submit an
-independent possession response; and a dedicated exactly-once executor must
+independent self-contained possession response without a fresh consumer signature;
+an ID-only assertion must not become authoritative `alive`; and a dedicated
+exactly-once executor must
 reconcile current evidence immediately before any lease/store effect. Delayed-live
 provider, true exit, and late-response races must produce respectively zero, one,
 and zero repair effects in Node, packed SDK, fresh processes, and origin-cut

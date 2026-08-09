@@ -323,9 +323,9 @@ export class ManualWebRtcParticipantTransport {
       fail("WEBRTC_BACKPRESSURE", "DataChannel buffered byte ceiling exceeded");
     }
     const frame = immutableRelayFrame(this.#frames.length + 1, messageBytes);
+    this.#channel.send(messageBytes);
     this.#frames.push(frame);
     this.#messageFrames.set(opened.message_id, frame);
-    this.#channel.send(messageBytes);
     return freeze({ duplicate: false, frame: detachedRelayFrame(frame) });
   }
 

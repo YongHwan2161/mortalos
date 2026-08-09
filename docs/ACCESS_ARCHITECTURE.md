@@ -120,6 +120,10 @@ Direct connection is not authority. Endpoints re-parse nested canonical bytes an
 count a placement only after exact resource-execution verification. Manual same-host
 ICE is a deterministic baseline, not arbitrary Internet/NAT proof. Replaceable
 signaling, STUN, TURN, and relay adapters may be added without entering validity.
+Outbound publication commits local range and duplicate state only after the
+DataChannel accepts the send. A synchronous close, backpressure, or send failure
+cannot manufacture local delivery, and an identical transient-failure retry remains
+eligible for a real send.
 
 ## Implemented portability evidence
 

@@ -121,7 +121,9 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   evaluator. Connection or delivery never counts without exact active storage
   execution proof for the requested workload. Internal WebRTC frames are immutable;
   publish, range fetch, and each subscriber receive detached frozen records, so a
-  caller cannot mutate stored cursor state or another observer's frame.
+  caller cannot mutate stored cursor state or another observer's frame. Outbound
+  publication commits frame/dedupe state only after `DataChannel.send()` succeeds;
+  transient failure leaves no ghost record and an exact retry performs a real send.
 - An actual runtime-selected file plus offer, lease, witness, challenge, usage, and
   execution evidence cross direct Chromium DataChannels after HTTP/origin denial.
   One provider process loss degrades three copies to two; D uses a new offer and

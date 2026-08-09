@@ -43,7 +43,9 @@ lineage rejection-code registry.
 - one ordered binary `mortalos-participant-v1` DataChannel;
 - canonical relay messages and chunk fragments as the carried byte contract;
 - bounded buffering, exact message digests, duplicate suppression, and no implicit
-  HTTP, WebSocket, STUN, TURN, or server fallback.
+  HTTP, WebSocket, STUN, TURN, or server fallback;
+- send-before-local-commit publication: a synchronous DataChannel failure creates no
+  range, subscriber, or dedupe visibility, and the same message remains retryable.
 
 `resource-placement-artifact` is an untrusted carrier for the existing documents
 and proposals. Receiving it never means “accepted” or “proved”; the core must parse
@@ -55,7 +57,7 @@ and verify the nested canonical bytes again.
 | --- | --- | --- |
 | Pure policy and negatives | `node --test test/placement.test.mjs` | 3-copy proof, 3→2 degradation, new-lease repair, single/duplicate/corrupt/cross-lease/stale/unproved/wrong-workload rejection |
 | Node process topology | `node --test test/placement-process.test.mjs` | Provider process directly stores and signs; process exit prevents later signing; replacement process/new lease repairs |
-| Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes |
+| Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes, detached immutable frames, and failure-atomic send/retry |
 | Actual browser vertical | `node scripts/verify-p2p-placement-chromium.mjs` | Runtime file and all evidence over direct peers, origin cut, provider loss/repair, A exit, B 2-of-3 readback with one corrupt copy |
 | Confidential controller | `node --test test/confidential-placement.test.mjs` | S4 2-of-3 shards, exact freshness boundary, crash/restart journal, chained re-proof, 100-cycle policy corpus |
 | Liveness contract | `node --test test/placement-liveness.test.mjs` | Offer-rostered 3-of-4 non-response certificate under a consumer-selected bounded window; no-clock schema; threshold/outsider/window negatives; late response, challenge fork, and response fork halt |

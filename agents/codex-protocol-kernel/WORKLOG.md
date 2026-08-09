@@ -2125,3 +2125,27 @@ result, and reproducible verification.
   Specification, links, governance `30/30`, and `git diff --check` pass. Replacement
   exact-head CI and fresh immutable re-review remain required before any approval,
   merge, deployment, or promotion.
+
+## 2026-08-10 KST — PR #58 replacement BLOCK and send-failure closure
+
+- Replacement head `b282e0d3be74c0d8480c038199b5ebc960166e8d` passed trusted
+  policy `31329658282` job `93285742521`, browser parity job `93285745426`,
+  focused lineage `2/2`, transport `16/16`, async security `26/26`, governance
+  `30/30`, package, profile, spec, link, audit, and diff gates. Immutable review
+  `4892277944` confirmed all four findings from review `4892040607` were closed,
+  then correctly BLOCKed a new outbound-publication atomicity defect. No PASS
+  receipt, App attestation, native approval, merge, or deployment was issued.
+- `publish()` formerly inserted its frame and message-ID dedupe entry before
+  `DataChannel.send()`. A transient synchronous send failure therefore left a ghost
+  local frame; the exact retry returned `duplicate: true` without a second network
+  send. The adapter now sends first and commits local state only after success.
+- The new regression proves: failed send => zero range/subscriber/dedupe visibility;
+  exact retry => a real second send and exactly one committed frame; later duplicate
+  => idempotent without a third send; backpressure and closed-channel rejection =>
+  no extra frame. Transport plus virtual 10,000-schedule coverage passes `17/17`,
+  and reviewed security digests were refreshed only after inspecting the source.
+- The same North Star audit reproduced two honest HOLDs recorded in the active SSOT:
+  a consumer-selected 1 ms window can yield a valid local non-response certificate,
+  and an ID-only provider response is not self-contained possession proof. They are
+  inputs to the next provider-signed liveness-policy/possession/executor P0, not
+  grounds to overstate this scheduling-only source claim.
