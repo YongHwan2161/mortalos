@@ -2096,3 +2096,32 @@ result, and reproducible verification.
 - Exact-SHA review, CI, merge, deployment, and public promotion remain external facts
   read from the PR, required checks, merge record, post-main workflows, and deployed
   manifest; this append-only source record does not self-promote its containing SHA.
+
+## 2026-08-10 KST — PR #58 first independent BLOCK and replacement closure
+
+- PR #58's first immutable review pinned head
+  `1c559843c6af8300d744629215050c3fbd4d4781` and all 61 changed files. Trusted policy
+  run `31325465476` job `93274993590`, Verify run `31325465489` browser job
+  `93274993578`, and protocol job `93274993553` all passed. Structured review
+  `4892040607` nevertheless BLOCKed the head with four material findings; no PASS
+  receipt, App attestation, native approval, merge, or deployment was issued.
+- The status header in `IMPLEMENTATION_PLAN.md` contradicted the body by naming
+  admission as immediate NEXT, and HANDOFF omitted the changed `protocol/` path.
+  Both SSOT records now state the same ordered priority and exact shared-path set.
+- A WebRTC publisher, range reader, or first subscriber could mutate a shared internal
+  frame reference and poison later cursor/subscriber state. The adapter now owns
+  binary inputs through captured intrinsic slots, rejects accessor/Proxy/SAB
+  impostors, stores immutable frames, and returns a detached frozen record for every
+  publish, duplicate, fetch, and subscriber delivery. Transport regressions pass
+  `16/16`, including the original `1 -> 777` and cross-subscriber `900` attacks.
+- A forged latest-parent successor could repeat generation `2`, recompute its public
+  ID and commit hash, and still verify. Creation now derives the next number from
+  restored canonical prior bytes; commit and verification require generation `N` to
+  have exactly `N - 1` authenticated prior placement transitions plus the latest
+  predecessor ID/head. Repeated `2`, skipped `4`, noncanonical `01`, and overflow
+  all reject. The focused signed lineage suite passes `2/2` in `783.3s`.
+- Reviewed module and entrypoint digests were refreshed only after source inspection;
+  async security passes `26/26` with `22` direct and `128` discovered surfaces.
+  Specification, links, governance `30/30`, and `git diff --check` pass. Replacement
+  exact-head CI and fresh immutable re-review remain required before any approval,
+  merge, deployment, or promotion.

@@ -589,7 +589,9 @@ The revision must identify the new trust assumption, affected invariant, failure
   `verified_placement_receipt_ids`, `non_capability: true`, and
   `requires_executor_reverification: true`; it is public, forgeable JSON rather than
   authority. The effect executor must reverify the original Capsule, generation,
-  commit, current placement evidence, and liveness evidence. A valid same-generation
+  commit, current placement evidence, and liveness evidence. Generation numbering is
+  rederived from authenticated Capsule placement-transition history; repetition,
+  decrement, skip, or overflow fails closed. A valid same-generation
   sibling fork halts with no selected head; reordered or duplicated evidence
   converges byte-identically.
 - Raw `unavailable_provider_ids` remains a lower-level diagnostic input and is

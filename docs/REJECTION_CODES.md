@@ -217,9 +217,11 @@ These are local activation errors, not v0/v1 lineage rejection codes.
 The lineage-placement controller similarly throws local scheduling errors rather
 than validator rejection codes: `E_LINEAGE_PLACEMENT_RUNTIME` for realm-integrity
 drift, `E_LINEAGE_PLACEMENT_FORMAT` for malformed, accessor/Proxy/sparse-array, or
-non-canonical documents, `E_LINEAGE_PLACEMENT_LIMIT` for bounded-input violations,
-`E_LINEAGE_PLACEMENT_GENERATION` for an invalid evidence summary, ID, or prior
-binding, `E_LINEAGE_PLACEMENT_STALE` when a generation no longer names the current
+non-canonical documents, `E_LINEAGE_PLACEMENT_LIMIT` for bounded-input violations
+including `generation-sequence-overflow`,
+`E_LINEAGE_PLACEMENT_GENERATION` for an invalid evidence summary, ID, prior binding,
+or repeated/decremented/skipped successor number (`generation-sequence`),
+`E_LINEAGE_PLACEMENT_STALE` when a generation no longer names the current
 Continuity parent, and `E_LINEAGE_PLACEMENT_COMMIT` when the named generation or
 prior transition is absent or mismatched in the verified Capsule. A valid sibling
 set is not thrown away; convergence returns the explicit fail-closed state

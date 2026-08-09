@@ -14,11 +14,10 @@ post-merge workflows, and deployed asset manifest.
 - Branch: `agent/codex-protocol-kernel--p2p-placement-repair`
 - Base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
 - Worktree: `work/mortalos-worktrees/codex-protocol-kernel--p2p-placement-repair`
-- Shared paths declared for this task: `src/transport/`, `src/placement/`,
-  `src/confidential/`, `src/index.mjs`, `sdk/`, `cli/`, `lab/`, `test/`,
-  `scripts/`, `security/`, `.github/workflows/verify.yml`,
-  `.github/workflows/deploy-lab.yml`, `package.json`, `wrangler.jsonc`,
-  `README.md`, `CONTRIBUTING.md`, and `docs/`.
+- Shared paths declared for this task: `.github/workflows/`,
+  `agents/codex-protocol-kernel/`, `docs/`, `lab/`, `protocol/`, `scripts/`,
+  `sdk/`, `security/`, `src/`, `test/`, `CONTRIBUTING.md`, `README.md`, and
+  `package.json`.
 - User-directed scope expands this agent role to implement real browser P2P
   transport plus the storage-first placement/repair vertical. The implementation
   must reuse existing offer, lease, challenge, usage, execution-receipt, and
@@ -76,6 +75,16 @@ post-merge workflows, and deployed asset manifest.
   drift that could miscount duplicate observers. The core now binds the full
   consumer identity, requires the latest placement predecessor, fails closed on
   realm drift, and directly inventories the async commit ownership boundary.
+- PR #58's first immutable review at exact head
+  `1c559843c6af8300d744629215050c3fbd4d4781` correctly BLOCKed four additional
+  issues despite green policy and Verify checks: the implementation-plan NEXT header
+  contradicted its A-then-B body, this HANDOFF omitted `protocol/`, WebRTC returned
+  aliases of mutable internal frames, and commit/verification accepted repeated
+  generation numbering under a current predecessor. The replacement source aligns
+  both SSOT records, owns immutable internal frames and returns detached frozen
+  copies, and rederives exact consecutive generation sequence from authenticated
+  Capsule history. Exact-head CI and fresh independent re-review remain external
+  evidence and are not inferred here.
 - `origin/main` was freshly fetched at
   `25de18d8c1af8b3dfcb5adffb1a07538afa33332`; it equals this task base. Deployment
   credentials remain workflow-owned and never enter this source tree.

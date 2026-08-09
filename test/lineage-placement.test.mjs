@@ -16,6 +16,8 @@ import {
   createPlacementLivenessResponseFixture
 } from "../lab/placement/liveness-contract.mjs";
 import { encodeBase64Url, equalBytes } from "../src/bytes.mjs";
+import { canonicalBytes } from "../src/codec.mjs";
+import { domainHash } from "../src/confidential/format.mjs";
 import { derivePeerId } from "../src/crypto.mjs";
 import {
   continueContinuity,
@@ -67,6 +69,18 @@ function candidate(committed, generation) {
     capsule_bytes: committed.capsule_bytes,
     commit_bytes: committed.commit_bytes,
     generation_bytes: generation.bytes
+  });
+}
+
+function forgeGenerationNumber(generation, number) {
+  const { generation_id: ignored, ...basis } = generation.value;
+  const forgedBasis = { ...basis, generation: number };
+  return canonicalBytes({
+    ...forgedBasis,
+    generation_id: domainHash(
+      "MortalOS lineage placement generation v1",
+      canonicalBytes(forgedBasis)
+    )
   });
 }
 
@@ -335,6 +349,63 @@ test("current custodian commits a repair plan, successor repairs, and stale orig
     capsule_bytes: handed.capsule_bytes,
     generation_bytes: generation2.bytes
   });
+  const generation3 = createLineagePlacementGeneration(generationOptions(
+    storage,
+    committed2.capsule_bytes,
+    repairedRecords,
+    {},
+    { commit_bytes: committed2.commit_bytes, generation_bytes: generation2.bytes }
+  ));
+  assert.equal(generation3.generation, "3");
+  const repeatedGenerationBytes = forgeGenerationNumber(generation3, "2");
+  const repeatedGeneration = restoreLineagePlacementGeneration(repeatedGenerationBytes);
+  assert.equal(repeatedGeneration.prior_generation_id, generation2.generation_id);
+  await assert.rejects(() => commitLineagePlacementGeneration({
+    authority: authorityB,
+    capsule_bytes: committed2.capsule_bytes,
+    generation_bytes: repeatedGenerationBytes
+  }), /E_LINEAGE_PLACEMENT_GENERATION: generation-sequence/u);
+  await assert.rejects(() => commitLineagePlacementGeneration({
+    authority: authorityB,
+    capsule_bytes: committed2.capsule_bytes,
+    generation_bytes: forgeGenerationNumber(generation3, "4")
+  }), /E_LINEAGE_PLACEMENT_GENERATION: generation-sequence/u);
+  assert.throws(
+    () => restoreLineagePlacementGeneration(forgeGenerationNumber(generation3, "01")),
+    /E_LINEAGE_PLACEMENT_FORMAT: generation/u
+  );
+  assert.throws(
+    () => restoreLineagePlacementGeneration(forgeGenerationNumber(generation3, "9007199254740992")),
+    /E_LINEAGE_PLACEMENT_LIMIT: generation/u
+  );
+  const repeatedTransitionId = `placement-${repeatedGeneration.generation_id.slice("sha256:".length)}`;
+  const forgedContinuation = await continueContinuity({
+    authority: authorityB,
+    capsuleBytes: committed2.capsule_bytes,
+    expectedHeadHash: repeatedGeneration.lineage_parent_hash,
+    transitionId: repeatedTransitionId
+  });
+  const forgedCommitBasis = {
+    format: "mortalos-lineage-placement-commit/1",
+    generation: repeatedGeneration.generation,
+    generation_id: repeatedGeneration.generation_id,
+    lineage_head_hash: forgedContinuation.head_hash,
+    organism_id: repeatedGeneration.organism_id,
+    parent_head_hash: repeatedGeneration.lineage_parent_hash,
+    transition_id: repeatedTransitionId
+  };
+  const forgedCommitBytes = canonicalBytes({
+    ...forgedCommitBasis,
+    commit_id: domainHash(
+      "MortalOS lineage placement commit v1",
+      canonicalBytes(forgedCommitBasis)
+    )
+  });
+  assert.throws(() => verifyLineagePlacementCommit({
+    capsule_bytes: forgedContinuation.capsule_bytes,
+    commit_bytes: forgedCommitBytes,
+    generation_bytes: repeatedGenerationBytes
+  }), /E_LINEAGE_PLACEMENT_COMMIT: generation-sequence/u);
   const actionPlan2 = deriveCommittedPlacementActionPlan(
     actionPlanCandidate(committed2, generation2)
   );

@@ -438,7 +438,8 @@ function assertLatestPlacementPredecessor({
   beforeIndex = Number.MAX_SAFE_INTEGER
 }) {
   const priorTransitions = placementTransitions(capsuleBytes, beforeIndex);
-  if (generation === "1") {
+  const generationNumber = decimal(generation, "generation", 1);
+  if (generationNumber === 1) {
     if (priorTransitions.length !== 0) {
       fail("E_LINEAGE_PLACEMENT_GENERATION", "generation-history-reset");
     }
@@ -450,6 +451,13 @@ function assertLatestPlacementPredecessor({
     latest.transition_id !== transitionId(priorGenerationId) ||
     latest.head_hash !== priorCommitHeadHash
   ) fail("E_LINEAGE_PLACEMENT_STALE", "stale-prior-generation");
+  const expectedGeneration = priorTransitions.length + 1;
+  if (!Number.isSafeInteger(expectedGeneration)) {
+    fail("E_LINEAGE_PLACEMENT_LIMIT", "generation-sequence-overflow");
+  }
+  if (generationNumber !== expectedGeneration) {
+    fail("E_LINEAGE_PLACEMENT_GENERATION", "generation-sequence");
+  }
 }
 
 function assertCurrentPlacementCommit(capsuleBytes, generation, commit) {
@@ -633,7 +641,11 @@ export function createLineagePlacementGeneration(options) {
     if (prior.organism_id !== continuity.organism_id || prior.value.manifest_id !== evaluation.manifest_id) {
       fail("E_LINEAGE_PLACEMENT_GENERATION", "prior-lineage-or-manifest");
     }
-    generation = decimal(prior.generation, "prior-generation", 1) + 1;
+    const priorGeneration = decimal(prior.generation, "prior-generation", 1);
+    if (priorGeneration === Number.MAX_SAFE_INTEGER) {
+      fail("E_LINEAGE_PLACEMENT_LIMIT", "generation-sequence-overflow");
+    }
+    generation = priorGeneration + 1;
     priorCommitHeadHash = priorCommit.lineage_head_hash;
     priorGenerationId = prior.generation_id;
     assertLatestPlacementPredecessor({

@@ -885,8 +885,13 @@ quorum-authorized sign-once transition is the only normal generation-commit
 authority; no controller service,
 domain, relay, UI, or transport state participates in validity.
 
-Multiple verified candidates MUST converge from generation 1 by exact generation
-and prior-commit links. A history reset, incomplete chain, same-generation sibling,
+Multiple verified candidates MUST converge from generation 1 by exact consecutive
+generation and prior-commit links. Generation `N` is valid only when the signed
+Capsule history before its commit contains exactly `N - 1` placement transitions and
+the latest transition matches the named predecessor ID and head. Creation computes
+`N` from the restored canonical prior-generation bytes; commit and verification
+rederive it from authenticated Capsule history. A repeated, decremented, skipped, or
+overflowing number, history reset, incomplete chain, same-generation sibling,
 broken link, or different organism MUST halt with no selected winner. This
 serializes authority. See
 [Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md).

@@ -17,6 +17,34 @@ const ENDPOINT_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
 const SIGNAL_TYPES = new Set(["answer", "offer"]);
 const OPEN_TIMEOUT_MS = 15_000;
 const ICE_TIMEOUT_MS = 10_000;
+const arrayBufferByteLength = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype,
+  "byteLength"
+).get;
+const arrayBufferIsView = ArrayBuffer.isView;
+const dataViewByteLength = Object.getOwnPropertyDescriptor(
+  DataView.prototype,
+  "byteLength"
+).get;
+const dataViewByteOffset = Object.getOwnPropertyDescriptor(
+  DataView.prototype,
+  "byteOffset"
+).get;
+const dataViewBuffer = Object.getOwnPropertyDescriptor(DataView.prototype, "buffer").get;
+const freeze = Object.freeze;
+const reflectApply = Reflect.apply;
+const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
+const typedArrayByteLength = Object.getOwnPropertyDescriptor(
+  typedArrayPrototype,
+  "byteLength"
+).get;
+const typedArrayByteOffset = Object.getOwnPropertyDescriptor(
+  typedArrayPrototype,
+  "byteOffset"
+).get;
+const typedArrayBuffer = Object.getOwnPropertyDescriptor(typedArrayPrototype, "buffer").get;
+const typedArraySet = typedArrayPrototype.set;
+const Uint8ArrayIntrinsic = Uint8Array;
 
 export class WebRtcTransportError extends Error {
   constructor(code, message) {
@@ -131,12 +159,59 @@ function localSignal(connection, endpoint, type) {
   return encodeWebRtcSignal({ endpoint_id: endpoint, sdp: description.sdp, type });
 }
 
-function binaryBytes(value) {
-  if (value instanceof ArrayBuffer) return new Uint8Array(value);
-  if (ArrayBuffer.isView(value)) {
-    return new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength));
+function ownedBinaryBytes(value) {
+  let buffer;
+  let byteLength;
+  let byteOffset = 0;
+  try {
+    byteLength = reflectApply(arrayBufferByteLength, value, []);
+    buffer = value;
+  } catch {
+    if (!arrayBufferIsView(value)) {
+      fail("WEBRTC_FRAME_TYPE", "DataChannel accepts binary canonical frames only");
+    }
+    try {
+      buffer = reflectApply(typedArrayBuffer, value, []);
+      byteLength = reflectApply(typedArrayByteLength, value, []);
+      byteOffset = reflectApply(typedArrayByteOffset, value, []);
+    } catch {
+      try {
+        buffer = reflectApply(dataViewBuffer, value, []);
+        byteLength = reflectApply(dataViewByteLength, value, []);
+        byteOffset = reflectApply(dataViewByteOffset, value, []);
+      } catch {
+        fail("WEBRTC_FRAME_TYPE", "DataChannel accepts binary canonical frames only");
+      }
+    }
+    try {
+      reflectApply(arrayBufferByteLength, buffer, []);
+    } catch {
+      fail("WEBRTC_FRAME_TYPE", "shared or invalid binary storage is not accepted");
+    }
   }
-  fail("WEBRTC_FRAME_TYPE", "DataChannel accepts binary canonical frames only");
+  const owned = new Uint8ArrayIntrinsic(byteLength);
+  const source = new Uint8ArrayIntrinsic(buffer, byteOffset, byteLength);
+  reflectApply(typedArraySet, owned, [source, 0]);
+  return owned;
+}
+
+function immutableRelayFrame(sequence, messageBytes) {
+  const frame = createRelayFrame(sequence, messageBytes);
+  return freeze({
+    format: frame.format,
+    message_base64url: frame.message_base64url,
+    message_id: frame.message_id,
+    sequence: frame.sequence
+  });
+}
+
+function detachedRelayFrame(frame) {
+  return freeze({
+    format: frame.format,
+    message_base64url: frame.message_base64url,
+    message_id: frame.message_id,
+    sequence: frame.sequence
+  });
 }
 
 export class ManualWebRtcParticipantTransport {
@@ -239,19 +314,19 @@ export class ManualWebRtcParticipantTransport {
     if (this.#closed || this.#channel?.readyState !== "open") {
       fail("WEBRTC_NOT_OPEN", "DataChannel is not open");
     }
-    const messageBytes = binaryBytes(messageSource);
+    const messageBytes = ownedBinaryBytes(messageSource);
     const opened = decodeRelayMessageBytes(messageBytes);
     const duplicate = this.#messageFrames.get(opened.message_id);
-    if (duplicate) return Object.freeze({ duplicate: true, frame: duplicate });
-    if (this.#channel.bufferedAmount + messageBytes.byteLength > WEBRTC_LIMITS.buffered_bytes) {
+    if (duplicate) return freeze({ duplicate: true, frame: detachedRelayFrame(duplicate) });
+    const messageByteLength = reflectApply(typedArrayByteLength, messageBytes, []);
+    if (this.#channel.bufferedAmount + messageByteLength > WEBRTC_LIMITS.buffered_bytes) {
       fail("WEBRTC_BACKPRESSURE", "DataChannel buffered byte ceiling exceeded");
     }
-    const owned = new Uint8Array(messageBytes);
-    const frame = createRelayFrame(this.#frames.length + 1, owned);
+    const frame = immutableRelayFrame(this.#frames.length + 1, messageBytes);
     this.#frames.push(frame);
     this.#messageFrames.set(opened.message_id, frame);
-    this.#channel.send(owned);
-    return Object.freeze({ duplicate: false, frame });
+    this.#channel.send(messageBytes);
+    return freeze({ duplicate: false, frame: detachedRelayFrame(frame) });
   }
 
   async fetchRange(after = 0, limit = RELAY_LIMITS.range_limit) {
@@ -259,7 +334,10 @@ export class ManualWebRtcParticipantTransport {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > RELAY_LIMITS.range_limit) {
       fail("WEBRTC_RANGE", "range limit is invalid");
     }
-    return this.#frames.filter((frame) => frame.sequence > after).slice(0, limit);
+    return this.#frames
+      .filter((frame) => frame.sequence > after)
+      .slice(0, limit)
+      .map(detachedRelayFrame);
   }
 
   subscribe(handler, { startAfter = 0 } = {}) {
@@ -309,10 +387,10 @@ export class ManualWebRtcParticipantTransport {
     });
     channel.addEventListener("message", (event) => {
       try {
-        const messageBytes = binaryBytes(event.data);
+        const messageBytes = ownedBinaryBytes(event.data);
         const opened = decodeRelayMessageBytes(messageBytes);
         if (this.#messageFrames.has(opened.message_id)) return;
-        const frame = createRelayFrame(this.#frames.length + 1, new Uint8Array(messageBytes));
+        const frame = immutableRelayFrame(this.#frames.length + 1, messageBytes);
         this.#frames.push(frame);
         this.#messageFrames.set(opened.message_id, frame);
         for (const subscription of this.#handlers) {
@@ -325,8 +403,9 @@ export class ManualWebRtcParticipantTransport {
   }
 
   #deliver(subscription, frame) {
+    const detachedFrame = detachedRelayFrame(frame);
     queueMicrotask(() => {
-      Promise.resolve(subscription.handler(frame)).catch((error) => this.#markClosed(error));
+      Promise.resolve(subscription.handler(detachedFrame)).catch((error) => this.#markClosed(error));
     });
   }
 

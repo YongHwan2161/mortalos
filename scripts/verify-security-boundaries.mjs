@@ -214,13 +214,13 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/confidential/recovery.mjs": "30d7453b1af1107c26d17f779600f6b8828d8d07759c2198f89f665f49c36feb",
   "src/continuity.mjs": "defc12d9cd7d6aec2ecb0e9ca875a99375703d94e9210ecb41bbbea435dd3f76",
   "src/distributed/quorum-counter-store.mjs": "5aa2d7c0257c6e4ba4ef5502dadbc485a8fd0e95ce56fc98da30a6ff84265869",
-  "src/placement/lineage-controller.mjs": "c3e9deefde2cd818d94a3730f8e61092627dba847abc17b0f659a3e3e4f1dd52",
+  "src/placement/lineage-controller.mjs": "53a21f4af49ea18ed4017875a5770800666d6410d324b9741fed12b105fcfe5b",
   "src/primordials.mjs": "75784b17c238638772df8377ecff2e7fa1d64f25b0321a47b258079679b3ca78",
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
-  "lab/transport/webrtc-peer.mjs": "2f559490d7064e2b481d4f15926ef4bf91aa27bb4790fa4238caf6b79ebc95c5"
+  "lab/transport/webrtc-peer.mjs": "a1d46ac9f741aa118e17aaade92b1a076503695bece28a3163caad36ff5dea97"
 });
 
 // A classification is a reviewed security decision, not a permanent textual
@@ -331,8 +331,8 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "a82811e4091254092ee550d0686ca4750a8c5d69bb71e986c5342e427acc6a5b",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "eb41f82f1a2e55e0595e3024032d155d6a6aeeffea617efe345002be7d9c30cc",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "38342173112b034874a9056b4b897ee5b18eb23a713736b2471357969f4bbb89",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "ce44765c27b40ad06e30d0f0037f934a67a5e59615288ca9cffafb9e047f4a90",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "fca42c61f86556f7c784b3b014b406308cb6275cda053f86e4731f4b9c78f80f",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "7f1d9f8d08ace76ff3fda5a3ff4482f217dce06384368a79e4f2f50042443d84",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "e1d171c3f5addd4bf047061b726fd55806f68554bb1453a51e98e63cb47f9393",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "3e3b66f1f0ce1ae532ac987f49d687f358a22f4a0a97e1181c10276c70256291",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "cf19d81b01ae59f487afc547d6872ff4147817195ca5f7833ce379f3ad28cb4c"
 });

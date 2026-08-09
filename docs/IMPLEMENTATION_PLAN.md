@@ -1,6 +1,6 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — P2P LINEAGE/LIVENESS SOURCE PASS; NEXT: LINEAGE-GOVERNED ADMISSION**
+Status: **ACTIVE IMPLEMENTATION SSOT — P2P LINEAGE/LIVENESS SOURCE PASS; NEXT: FAILURE-PRECOMMITTED LIVENESS POLICY AND EFFECT-TIME EXECUTOR; THEN: LINEAGE-GOVERNED ADMISSION**
 
 Last synchronized: **2026-08-10 KST**
 
@@ -234,6 +234,9 @@ Strict pass criteria:
 - a canonical placement generation binds organism ID, lineage head, confidential
   manifest ID, target/quorum policy, prior generation, active lease IDs, and last
   accepted proof IDs;
+- generation `N` requires exactly `N - 1` authenticated prior placement transitions
+  and the latest predecessor ID/head; repeated, decremented, skipped, noncanonical,
+  or overflowing successor numbers fail in creation, commit, and verification;
 - only the current Continuity descriptor's required quorum may authorize the next
   generation commit, and the existing sign-once/continuity acceptance rules prevent
   two successors for one prior generation;

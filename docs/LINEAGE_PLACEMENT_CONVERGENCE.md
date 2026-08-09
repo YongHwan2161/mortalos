@@ -48,9 +48,13 @@ commit fails as `superseded-generation-plan` and cannot derive a current plan.
 
 `mortalos-lineage-placement-convergence/1` deterministically deduplicates and orders
 verified candidates. A correctly linked chain selects its highest generation.
-The candidate set must begin at generation 1, and a Capsule that already contains a
-placement commit cannot reset to generation 1. Different valid commits at one
-generation, an incomplete or broken prior link, or different organisms return
+Generation `N` requires exactly `N - 1` authenticated placement transitions before
+its commit plus an exact latest predecessor ID/head match. Creation derives `N` from
+the restored canonical prior-generation bytes; commit and verification rederive it
+from signed Capsule history. The candidate set must begin at generation 1, and a
+Capsule that already contains a placement commit cannot reset to generation 1.
+Repeated, decremented, skipped, or overflowing numbering, different valid commits at
+one generation, an incomplete or broken prior link, or different organisms return
 `halted`; the algorithm never invents a winner.
 
 ## A-to-B vertical
@@ -78,7 +82,7 @@ generation, an incomplete or broken prior link, or different organisms return
 | Gate | Contract |
 | --- | --- |
 | `node --test test/lineage-placement.test.mjs` | Actual signed storage fixtures; exact offer-witness-roster binding; consumer-selected bounded window; conditional late-proof conflict with supplied fresh response/current placement evidence; A→B key non-transfer; committed derived placement action plan; two fresh processes reproduce identical bytes; 1,000 partition/heal events; stale A rejects |
-| adversarial case in the same file | An unsafe signer creates two independently valid same-parent generations; both verify and convergence halts as `generation-fork` |
+| adversarial cases in the same file | Repeated/skipped/noncanonical/overflowing generation numbers reject in commit or verification; an unsafe signer creates two independently valid same-parent generations, both verify, and convergence halts as `generation-fork` |
 | `node scripts/verify-confidential-placement-chromium.mjs` | Native File, WebRTC ciphertext shards and liveness challenge, four observer browser processes, actual 5,000 ms local window, 3-of-4 certificate, A commit, sign-once A→B handoff, real A close, B repair/commit, byte-identical convergence, corrupt-shard rejection, zero post-cut requests |
 | `npm run verify:security-boundaries` | Async commit owns caller bytes and resolves authority before its first suspension |
 | `npm run test:sdk` and `npm run verify:sdk-package` | Public placement subpath verifies/converges without exporting signing authority |
