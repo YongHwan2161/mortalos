@@ -173,6 +173,11 @@ Strict pass criteria:
 - an outbound DataChannel send commits frame and dedupe state only after send success;
   a transient send failure exposes no range/subscriber record and the exact message
   remains retryable without a ghost duplicate;
+- the direct carrier uses one private ordered transcript map and captured
+  collection/iterator/scheduler/DataChannel/peer capabilities; isolated Node cases
+  and an actual connected Chromium pair must record zero poison-capability calls,
+  exact local range state, and exact remote delivery after constructor/prototype/
+  attached-method replacement;
 - termination of one provider makes its placement unavailable; repair chooses a
   different offer, signs a new lease, preserves the exact workload/content ID, and
   produces a new valid receipt before counting restored redundancy;

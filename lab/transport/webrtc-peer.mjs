@@ -4,6 +4,30 @@ import {
   decodeRelayMessageBytes,
   RELAY_LIMITS
 } from "../../src/transport/protocol.mjs";
+import {
+  arrayPush,
+  arraySlice,
+  arraySort,
+  createMap,
+  createSet,
+  createTextDecoder,
+  createTextEncoder,
+  isArray,
+  mapGet,
+  mapHas,
+  mapSet,
+  mapSize,
+  mapValues,
+  numberIsSafeInteger,
+  objectKeys,
+  regexpTest,
+  setAdd,
+  setValues,
+  snapshotDataMethod,
+  stringStartsWith,
+  textDecoderDecode,
+  textEncoderEncode
+} from "../../src/primordials.mjs";
 
 export const WEBRTC_SIGNAL_FORMAT = "mortalos-webrtc-signal/1";
 export const WEBRTC_LIMITS = Object.freeze({
@@ -14,9 +38,64 @@ export const WEBRTC_LIMITS = Object.freeze({
 });
 
 const ENDPOINT_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
-const SIGNAL_TYPES = new Set(["answer", "offer"]);
 const OPEN_TIMEOUT_MS = 15_000;
 const ICE_TIMEOUT_MS = 10_000;
+const PromiseIntrinsic = Promise;
+const clearTimeoutIntrinsic = globalThis.clearTimeout;
+const queueMicrotaskIntrinsic = globalThis.queueMicrotask;
+const setTimeoutIntrinsic = globalThis.setTimeout;
+const promiseResolveIntrinsic = Promise.resolve;
+const promiseThenIntrinsic = Promise.prototype.then;
+const setDeleteIntrinsic = Set.prototype.delete;
+const eventTargetPrototype = globalThis.EventTarget?.prototype ?? null;
+const eventTargetAddIntrinsic = eventTargetPrototype?.addEventListener ?? null;
+const eventTargetRemoveIntrinsic = eventTargetPrototype?.removeEventListener ?? null;
+const rtcPeerConnectionIntrinsic = globalThis.RTCPeerConnection ?? null;
+const rtcPeerConnectionPrototype = rtcPeerConnectionIntrinsic?.prototype ?? null;
+const rtcPeerConnectionCloseIntrinsic = rtcPeerConnectionPrototype?.close ?? null;
+const rtcPeerConnectionCreateAnswerIntrinsic = rtcPeerConnectionPrototype?.createAnswer ?? null;
+const rtcPeerConnectionCreateDataChannelIntrinsic = rtcPeerConnectionPrototype?.createDataChannel ?? null;
+const rtcPeerConnectionCreateOfferIntrinsic = rtcPeerConnectionPrototype?.createOffer ?? null;
+const rtcPeerConnectionSetLocalDescriptionIntrinsic =
+  rtcPeerConnectionPrototype?.setLocalDescription ?? null;
+const rtcPeerConnectionSetRemoteDescriptionIntrinsic =
+  rtcPeerConnectionPrototype?.setRemoteDescription ?? null;
+const rtcPeerConnectionConnectionStateGetter = rtcPeerConnectionPrototype
+  ? Object.getOwnPropertyDescriptor(rtcPeerConnectionPrototype, "connectionState")?.get ?? null
+  : null;
+const rtcPeerConnectionIceGatheringStateGetter = rtcPeerConnectionPrototype
+  ? Object.getOwnPropertyDescriptor(rtcPeerConnectionPrototype, "iceGatheringState")?.get ?? null
+  : null;
+const rtcPeerConnectionLocalDescriptionGetter = rtcPeerConnectionPrototype
+  ? Object.getOwnPropertyDescriptor(rtcPeerConnectionPrototype, "localDescription")?.get ?? null
+  : null;
+const rtcPeerConnectionRemoteDescriptionGetter = rtcPeerConnectionPrototype
+  ? Object.getOwnPropertyDescriptor(rtcPeerConnectionPrototype, "remoteDescription")?.get ?? null
+  : null;
+const rtcDataChannelPrototype = globalThis.RTCDataChannel?.prototype ?? null;
+const rtcDataChannelSendIntrinsic = rtcDataChannelPrototype?.send ?? null;
+const rtcDataChannelCloseIntrinsic = rtcDataChannelPrototype?.close ?? null;
+const rtcDataChannelBufferedAmountGetter = rtcDataChannelPrototype
+  ? Object.getOwnPropertyDescriptor(rtcDataChannelPrototype, "bufferedAmount")?.get ?? null
+  : null;
+const rtcDataChannelLabelGetter = rtcDataChannelPrototype
+  ? Object.getOwnPropertyDescriptor(rtcDataChannelPrototype, "label")?.get ?? null
+  : null;
+const rtcDataChannelOrderedGetter = rtcDataChannelPrototype
+  ? Object.getOwnPropertyDescriptor(rtcDataChannelPrototype, "ordered")?.get ?? null
+  : null;
+const rtcDataChannelReadyStateGetter = rtcDataChannelPrototype
+  ? Object.getOwnPropertyDescriptor(rtcDataChannelPrototype, "readyState")?.get ?? null
+  : null;
+const rtcDataChannelBinaryTypeSetter = rtcDataChannelPrototype
+  ? Object.getOwnPropertyDescriptor(rtcDataChannelPrototype, "binaryType")?.set ?? null
+  : null;
+const messageEventDataGetter = globalThis.MessageEvent?.prototype
+  ? Object.getOwnPropertyDescriptor(globalThis.MessageEvent.prototype, "data")?.get ?? null
+  : null;
+const rtcDataChannelEventChannelGetter = globalThis.RTCDataChannelEvent?.prototype
+  ? Object.getOwnPropertyDescriptor(globalThis.RTCDataChannelEvent.prototype, "channel")?.get ?? null
+  : null;
 const arrayBufferByteLength = Object.getOwnPropertyDescriptor(
   ArrayBuffer.prototype,
   "byteLength"
@@ -46,6 +125,72 @@ const typedArrayBuffer = Object.getOwnPropertyDescriptor(typedArrayPrototype, "b
 const typedArraySet = typedArrayPrototype.set;
 const Uint8ArrayIntrinsic = Uint8Array;
 
+function resolvePromise(value) {
+  return reflectApply(promiseResolveIntrinsic, PromiseIntrinsic, [value]);
+}
+
+function observePromise(promise, onFulfilled, onRejected) {
+  return reflectApply(promiseThenIntrinsic, promise, [onFulfilled, onRejected]);
+}
+
+function addEventListener(target, type, listener, options) {
+  if (eventTargetAddIntrinsic) {
+    return reflectApply(eventTargetAddIntrinsic, target, [type, listener, options]);
+  }
+  return target.addEventListener(type, listener, options);
+}
+
+function removeEventListener(target, type, listener) {
+  if (eventTargetRemoveIntrinsic) {
+    return reflectApply(eventTargetRemoveIntrinsic, target, [type, listener]);
+  }
+  return target.removeEventListener(type, listener);
+}
+
+function channelSlot(channel, getter, property) {
+  return getter ? reflectApply(getter, channel, []) : channel[property];
+}
+
+function peerSlot(connection, getter, property) {
+  return getter ? reflectApply(getter, connection, []) : connection[property];
+}
+
+function eventSlot(event, getter, property) {
+  return getter ? reflectApply(getter, event, []) : event[property];
+}
+
+function snapshotBoundMethod(
+  target,
+  intrinsic,
+  property,
+  label,
+  errorCode = "WEBRTC_CONNECTION"
+) {
+  if (typeof intrinsic === "function") {
+    return (...argumentsList) => reflectApply(intrinsic, target, argumentsList);
+  }
+  try {
+    return snapshotDataMethod(target, property, label);
+  } catch {
+    fail(errorCode, `${label}.${property} capability is unavailable`);
+  }
+}
+
+function closeDetachedChannel(channel) {
+  if (!channel) return;
+  try {
+    snapshotBoundMethod(
+      channel,
+      rtcDataChannelCloseIntrinsic,
+      "close",
+      "RTCDataChannel",
+      "WEBRTC_CHANNEL_CONTRACT"
+    )();
+  } catch {
+    // Rejecting an unattached hostile channel is already fail-closed.
+  }
+}
+
 export class WebRtcTransportError extends Error {
   constructor(code, message) {
     super(message);
@@ -58,18 +203,29 @@ function fail(code, message) {
 }
 
 function exactKeys(value, expected, label) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== "object" || isArray(value)) {
     fail("WEBRTC_SIGNAL_SCHEMA", `${label} must be an object`);
   }
-  const actual = Object.keys(value).sort();
-  const wanted = [...expected].sort();
-  if (actual.length !== wanted.length || actual.some((key, index) => key !== wanted[index])) {
+  const actual = objectKeys(value);
+  const wanted = arraySlice(expected, 0, expected.length);
+  arraySort(actual);
+  arraySort(wanted);
+  if (actual.length !== wanted.length) {
     fail("WEBRTC_SIGNAL_SCHEMA", `${label} has unknown or missing fields`);
+  }
+  for (let index = 0; index < actual.length; index += 1) {
+    if (actual[index] !== wanted[index]) {
+      fail("WEBRTC_SIGNAL_SCHEMA", `${label} has unknown or missing fields`);
+    }
   }
 }
 
 function endpointId(value, label = "endpoint ID") {
-  if (typeof value !== "string" || value.length > WEBRTC_LIMITS.endpoint_chars || !ENDPOINT_ID.test(value)) {
+  if (
+    typeof value !== "string" ||
+    value.length > WEBRTC_LIMITS.endpoint_chars ||
+    !regexpTest(ENDPOINT_ID, value)
+  ) {
     fail("WEBRTC_ENDPOINT", `${label} is invalid`);
   }
   return value;
@@ -77,12 +233,14 @@ function endpointId(value, label = "endpoint ID") {
 
 export function encodeWebRtcSignal({ endpoint_id, sdp, type }) {
   const ownedEndpoint = endpointId(endpoint_id);
-  if (!SIGNAL_TYPES.has(type)) fail("WEBRTC_SIGNAL_TYPE", "offer or answer signal required");
+  if (type !== "answer" && type !== "offer") {
+    fail("WEBRTC_SIGNAL_TYPE", "offer or answer signal required");
+  }
   if (
     typeof sdp !== "string" ||
     sdp.length < 1 ||
     sdp.length > WEBRTC_LIMITS.sdp_chars ||
-    !sdp.startsWith("v=0\r\n")
+    !stringStartsWith(sdp, "v=0\r\n")
   ) fail("WEBRTC_SIGNAL_SDP", "bounded SDP description required");
   const bytes = canonicalBytes({
     endpoint_id: ownedEndpoint,
@@ -93,12 +251,12 @@ export function encodeWebRtcSignal({ endpoint_id, sdp, type }) {
   if (bytes.byteLength > WEBRTC_LIMITS.signal_bytes) {
     fail("WEBRTC_SIGNAL_LIMIT", "manual signal exceeds byte ceiling");
   }
-  return new TextDecoder().decode(bytes);
+  return textDecoderDecode(createTextDecoder(), bytes);
 }
 
 export function decodeWebRtcSignal(source, expectedType = null) {
   if (typeof source !== "string") fail("WEBRTC_SIGNAL_SCHEMA", "manual signal must be text");
-  const bytes = new TextEncoder().encode(source);
+  const bytes = textEncoderEncode(createTextEncoder(), source);
   if (bytes.byteLength < 1 || bytes.byteLength > WEBRTC_LIMITS.signal_bytes) {
     fail("WEBRTC_SIGNAL_LIMIT", "manual signal exceeds byte ceiling");
   }
@@ -116,7 +274,7 @@ export function decodeWebRtcSignal(source, expectedType = null) {
   if (expectedType !== null && value.type !== expectedType) {
     fail("WEBRTC_SIGNAL_TYPE", `expected ${expectedType} signal`);
   }
-  return Object.freeze({
+  return freeze({
     endpoint_id: value.endpoint_id,
     format: WEBRTC_SIGNAL_FORMAT,
     sdp: value.sdp,
@@ -125,34 +283,45 @@ export function decodeWebRtcSignal(source, expectedType = null) {
 }
 
 function peerConnectionConstructor() {
-  if (typeof globalThis.RTCPeerConnection !== "function") {
+  const PeerConnection = rtcPeerConnectionIntrinsic ?? globalThis.RTCPeerConnection;
+  if (typeof PeerConnection !== "function") {
     fail("WEBRTC_UNAVAILABLE", "RTCPeerConnection is unavailable in this runtime");
   }
-  return globalThis.RTCPeerConnection;
+  return PeerConnection;
 }
 
 function waitForIceGathering(connection) {
-  if (connection.iceGatheringState === "complete") return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
+  if (
+    peerSlot(connection, rtcPeerConnectionIceGatheringStateGetter, "iceGatheringState") ===
+      "complete"
+  ) return resolvePromise();
+  return new PromiseIntrinsic((resolve, reject) => {
+    const timer = reflectApply(setTimeoutIntrinsic, globalThis, [() => {
       cleanup();
       reject(new WebRtcTransportError("WEBRTC_ICE_TIMEOUT", "ICE gathering timed out"));
-    }, ICE_TIMEOUT_MS);
+    }, ICE_TIMEOUT_MS]);
     const changed = () => {
-      if (connection.iceGatheringState !== "complete") return;
+      if (
+        peerSlot(connection, rtcPeerConnectionIceGatheringStateGetter, "iceGatheringState") !==
+          "complete"
+      ) return;
       cleanup();
       resolve();
     };
     const cleanup = () => {
-      clearTimeout(timer);
-      connection.removeEventListener("icegatheringstatechange", changed);
+      reflectApply(clearTimeoutIntrinsic, globalThis, [timer]);
+      removeEventListener(connection, "icegatheringstatechange", changed);
     };
-    connection.addEventListener("icegatheringstatechange", changed);
+    addEventListener(connection, "icegatheringstatechange", changed);
   });
 }
 
 function localSignal(connection, endpoint, type) {
-  const description = connection.localDescription;
+  const description = peerSlot(
+    connection,
+    rtcPeerConnectionLocalDescriptionGetter,
+    "localDescription"
+  );
   if (!description || description.type !== type || typeof description.sdp !== "string") {
     fail("WEBRTC_LOCAL_DESCRIPTION", `local ${type} description is unavailable`);
   }
@@ -216,13 +385,16 @@ function detachedRelayFrame(frame) {
 
 export class ManualWebRtcParticipantTransport {
   #channel = null;
+  #channelClose = null;
+  #channelSend = null;
   #closed = false;
   #connection;
+  #connectionClose;
+  #connectionSetRemoteDescription;
   #endpointId;
   #error = null;
-  #frames = [];
-  #handlers = new Set();
-  #messageFrames = new Map();
+  #frames = createMap();
+  #handlers = createSet();
   #openPromise;
   #openReject;
   #openResolve;
@@ -231,14 +403,36 @@ export class ManualWebRtcParticipantTransport {
   constructor(endpoint, connection) {
     this.#endpointId = endpointId(endpoint);
     this.#connection = connection;
-    this.#openPromise = new Promise((resolve, reject) => {
+    this.#connectionClose = snapshotBoundMethod(
+      connection,
+      rtcPeerConnectionCloseIntrinsic,
+      "close",
+      "RTCPeerConnection"
+    );
+    try {
+      this.#connectionSetRemoteDescription = snapshotBoundMethod(
+        connection,
+        rtcPeerConnectionSetRemoteDescriptionIntrinsic,
+        "setRemoteDescription",
+        "RTCPeerConnection"
+      );
+    } catch (error) {
+      if (rtcPeerConnectionSetRemoteDescriptionIntrinsic) throw error;
+      this.#connectionSetRemoteDescription = null;
+    }
+    this.#openPromise = new PromiseIntrinsic((resolve, reject) => {
       this.#openResolve = resolve;
       this.#openReject = reject;
     });
-    void this.#openPromise.catch(() => {});
-    connection.addEventListener("connectionstatechange", () => {
-      if (["failed", "closed"].includes(connection.connectionState)) {
-        this.#markClosed(new WebRtcTransportError("WEBRTC_CONNECTION_CLOSED", connection.connectionState));
+    void observePromise(this.#openPromise, undefined, () => {});
+    addEventListener(connection, "connectionstatechange", () => {
+      const connectionState = peerSlot(
+        connection,
+        rtcPeerConnectionConnectionStateGetter,
+        "connectionState"
+      );
+      if (connectionState === "failed" || connectionState === "closed") {
+        this.#markClosed(new WebRtcTransportError("WEBRTC_CONNECTION_CLOSED", connectionState));
       }
     });
   }
@@ -246,15 +440,33 @@ export class ManualWebRtcParticipantTransport {
   static async createOffer({ endpointId: endpoint }) {
     const PeerConnection = peerConnectionConstructor();
     const connection = new PeerConnection({ iceServers: [] });
+    const createDataChannel = snapshotBoundMethod(
+      connection,
+      rtcPeerConnectionCreateDataChannelIntrinsic,
+      "createDataChannel",
+      "RTCPeerConnection"
+    );
+    const createOffer = snapshotBoundMethod(
+      connection,
+      rtcPeerConnectionCreateOfferIntrinsic,
+      "createOffer",
+      "RTCPeerConnection"
+    );
+    const setLocalDescription = snapshotBoundMethod(
+      connection,
+      rtcPeerConnectionSetLocalDescriptionIntrinsic,
+      "setLocalDescription",
+      "RTCPeerConnection"
+    );
     const transport = new ManualWebRtcParticipantTransport(endpoint, connection);
-    const channel = connection.createDataChannel("mortalos-participant-v1", {
+    const channel = createDataChannel("mortalos-participant-v1", {
       negotiated: false,
       ordered: true
     });
     transport.#attachChannel(channel);
-    await connection.setLocalDescription(await connection.createOffer());
+    await setLocalDescription(await createOffer());
     await waitForIceGathering(connection);
-    return Object.freeze({ signal: localSignal(connection, transport.#endpointId, "offer"), transport });
+    return freeze({ signal: localSignal(connection, transport.#endpointId, "offer"), transport });
   }
 
   static async acceptOffer({ endpointId: endpoint, offer }) {
@@ -263,13 +475,38 @@ export class ManualWebRtcParticipantTransport {
     if (opened.endpoint_id === ownedEndpoint) fail("WEBRTC_ENDPOINT", "remote endpoint must be distinct");
     const PeerConnection = peerConnectionConstructor();
     const connection = new PeerConnection({ iceServers: [] });
+    const createAnswer = snapshotBoundMethod(
+      connection,
+      rtcPeerConnectionCreateAnswerIntrinsic,
+      "createAnswer",
+      "RTCPeerConnection"
+    );
+    const setLocalDescription = snapshotBoundMethod(
+      connection,
+      rtcPeerConnectionSetLocalDescriptionIntrinsic,
+      "setLocalDescription",
+      "RTCPeerConnection"
+    );
+    const setRemoteDescription = snapshotBoundMethod(
+      connection,
+      rtcPeerConnectionSetRemoteDescriptionIntrinsic,
+      "setRemoteDescription",
+      "RTCPeerConnection"
+    );
     const transport = new ManualWebRtcParticipantTransport(ownedEndpoint, connection);
     transport.#remoteEndpointId = opened.endpoint_id;
-    connection.addEventListener("datachannel", (event) => transport.#attachChannel(event.channel), { once: true });
-    await connection.setRemoteDescription({ sdp: opened.sdp, type: "offer" });
-    await connection.setLocalDescription(await connection.createAnswer());
+    addEventListener(
+      connection,
+      "datachannel",
+      (event) => transport.#attachChannel(
+        eventSlot(event, rtcDataChannelEventChannelGetter, "channel")
+      ),
+      { once: true }
+    );
+    await setRemoteDescription({ sdp: opened.sdp, type: "offer" });
+    await setLocalDescription(await createAnswer());
     await waitForIceGathering(connection);
-    return Object.freeze({ signal: localSignal(connection, transport.#endpointId, "answer"), transport });
+    return freeze({ signal: localSignal(connection, transport.#endpointId, "answer"), transport });
   }
 
   get endpointId() { return this.#endpointId; }
@@ -277,143 +514,221 @@ export class ManualWebRtcParticipantTransport {
   get state() {
     if (this.#error) return "failed";
     if (this.#closed) return "closed";
-    return this.#channel?.readyState ?? "connecting";
+    return this.#channel
+      ? channelSlot(this.#channel, rtcDataChannelReadyStateGetter, "readyState")
+      : "connecting";
   }
 
   async complete(answer) {
-    if (this.#connection.remoteDescription) fail("WEBRTC_SIGNAL_STATE", "remote description already set");
+    if (
+      peerSlot(
+        this.#connection,
+        rtcPeerConnectionRemoteDescriptionGetter,
+        "remoteDescription"
+      )
+    ) fail("WEBRTC_SIGNAL_STATE", "remote description already set");
     const opened = decodeWebRtcSignal(answer, "answer");
     if (opened.endpoint_id === this.#endpointId) fail("WEBRTC_ENDPOINT", "remote endpoint must be distinct");
     this.#remoteEndpointId = opened.endpoint_id;
-    await this.#connection.setRemoteDescription({ sdp: opened.sdp, type: "answer" });
+    if (!this.#connectionSetRemoteDescription) {
+      fail("WEBRTC_CONNECTION", "RTCPeerConnection.setRemoteDescription capability is unavailable");
+    }
+    await this.#connectionSetRemoteDescription({ sdp: opened.sdp, type: "answer" });
   }
 
   async ready({ timeoutMs = OPEN_TIMEOUT_MS } = {}) {
-    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) {
+    if (!numberIsSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) {
       fail("WEBRTC_TIMEOUT", "ready timeout is invalid");
     }
-    if (this.#channel?.readyState === "open") return this;
+    if (
+      this.#channel &&
+      channelSlot(this.#channel, rtcDataChannelReadyStateGetter, "readyState") === "open"
+    ) return this;
     let timer;
     try {
-      await Promise.race([
-        this.#openPromise,
-        new Promise((_, reject) => {
-          timer = setTimeout(
-            () => reject(new WebRtcTransportError("WEBRTC_OPEN_TIMEOUT", "DataChannel open timed out")),
-            timeoutMs
-          );
-        })
-      ]);
+      await new PromiseIntrinsic((resolve, reject) => {
+        timer = reflectApply(setTimeoutIntrinsic, globalThis, [
+          () => reject(new WebRtcTransportError("WEBRTC_OPEN_TIMEOUT", "DataChannel open timed out")),
+          timeoutMs
+        ]);
+        observePromise(this.#openPromise, resolve, reject);
+      });
       return this;
     } finally {
-      clearTimeout(timer);
+      reflectApply(clearTimeoutIntrinsic, globalThis, [timer]);
     }
   }
 
   async publish(messageSource) {
-    if (this.#closed || this.#channel?.readyState !== "open") {
+    if (
+      this.#closed ||
+      !this.#channel ||
+      channelSlot(this.#channel, rtcDataChannelReadyStateGetter, "readyState") !== "open"
+    ) {
       fail("WEBRTC_NOT_OPEN", "DataChannel is not open");
     }
     const messageBytes = ownedBinaryBytes(messageSource);
     const opened = decodeRelayMessageBytes(messageBytes);
-    const duplicate = this.#messageFrames.get(opened.message_id);
+    const duplicate = mapGet(this.#frames, opened.message_id);
     if (duplicate) return freeze({ duplicate: true, frame: detachedRelayFrame(duplicate) });
     const messageByteLength = reflectApply(typedArrayByteLength, messageBytes, []);
-    if (this.#channel.bufferedAmount + messageByteLength > WEBRTC_LIMITS.buffered_bytes) {
+    const bufferedAmount = channelSlot(
+      this.#channel,
+      rtcDataChannelBufferedAmountGetter,
+      "bufferedAmount"
+    );
+    if (bufferedAmount + messageByteLength > WEBRTC_LIMITS.buffered_bytes) {
       fail("WEBRTC_BACKPRESSURE", "DataChannel buffered byte ceiling exceeded");
     }
-    const frame = immutableRelayFrame(this.#frames.length + 1, messageBytes);
-    this.#channel.send(messageBytes);
-    this.#frames.push(frame);
-    this.#messageFrames.set(opened.message_id, frame);
+    const frame = immutableRelayFrame(mapSize(this.#frames) + 1, messageBytes);
+    this.#channelSend(messageBytes);
+    mapSet(this.#frames, opened.message_id, frame);
     return freeze({ duplicate: false, frame: detachedRelayFrame(frame) });
   }
 
   async fetchRange(after = 0, limit = RELAY_LIMITS.range_limit) {
-    if (!Number.isSafeInteger(after) || after < 0) fail("WEBRTC_RANGE", "range cursor is invalid");
-    if (!Number.isSafeInteger(limit) || limit < 1 || limit > RELAY_LIMITS.range_limit) {
+    if (!numberIsSafeInteger(after) || after < 0) fail("WEBRTC_RANGE", "range cursor is invalid");
+    if (!numberIsSafeInteger(limit) || limit < 1 || limit > RELAY_LIMITS.range_limit) {
       fail("WEBRTC_RANGE", "range limit is invalid");
     }
-    return this.#frames
-      .filter((frame) => frame.sequence > after)
-      .slice(0, limit)
-      .map(detachedRelayFrame);
+    const frames = mapValues(this.#frames);
+    const selected = [];
+    for (let index = 0; index < frames.length && selected.length < limit; index += 1) {
+      const frame = frames[index];
+      if (frame.sequence > after) arrayPush(selected, detachedRelayFrame(frame));
+    }
+    return selected;
   }
 
   subscribe(handler, { startAfter = 0 } = {}) {
     if (typeof handler !== "function") fail("WEBRTC_SUBSCRIBER", "subscriber function required");
-    if (!Number.isSafeInteger(startAfter) || startAfter < 0) fail("WEBRTC_RANGE", "start cursor is invalid");
-    const subscription = Object.freeze({ handler, startAfter });
-    this.#handlers.add(subscription);
-    for (const frame of this.#frames) if (frame.sequence > startAfter) this.#deliver(subscription, frame);
-    return () => this.#handlers.delete(subscription);
+    if (!numberIsSafeInteger(startAfter) || startAfter < 0) fail("WEBRTC_RANGE", "start cursor is invalid");
+    const subscription = freeze({ handler, startAfter });
+    setAdd(this.#handlers, subscription);
+    const frames = mapValues(this.#frames);
+    for (let index = 0; index < frames.length; index += 1) {
+      const frame = frames[index];
+      if (frame.sequence > startAfter) this.#deliver(subscription, frame);
+    }
+    return () => reflectApply(setDeleteIntrinsic, this.#handlers, [subscription]);
   }
 
   async touchPresence() {
-    return Object.freeze({ endpoint_id: this.#endpointId, transport: "webrtc-direct" });
+    return freeze({ endpoint_id: this.#endpointId, transport: "webrtc-direct" });
   }
 
   async presence() {
     const endpoints = [this.#endpointId];
-    if (this.#remoteEndpointId && this.#channel?.readyState === "open") endpoints.push(this.#remoteEndpointId);
-    return endpoints.sort();
+    if (
+      this.#remoteEndpointId &&
+      this.#channel &&
+      channelSlot(this.#channel, rtcDataChannelReadyStateGetter, "readyState") === "open"
+    ) arrayPush(endpoints, this.#remoteEndpointId);
+    return arraySort(endpoints);
   }
 
   close() {
     if (this.#closed) return;
     this.#closed = true;
-    this.#channel?.close();
-    this.#connection.close();
+    if (this.#channel && this.#channelClose) {
+      this.#channelClose();
+    }
+    this.#connectionClose();
     this.#openReject?.(new WebRtcTransportError("WEBRTC_CONNECTION_CLOSED", "transport closed"));
   }
 
   #attachChannel(channel) {
     if (this.#channel) {
-      channel.close();
+      closeDetachedChannel(channel);
       this.#markClosed(new WebRtcTransportError("WEBRTC_CHANNEL_DUPLICATE", "duplicate DataChannel rejected"));
       return;
     }
-    if (channel.label !== "mortalos-participant-v1" || channel.ordered !== true) {
-      channel.close();
+    if (
+      channelSlot(channel, rtcDataChannelLabelGetter, "label") !== "mortalos-participant-v1" ||
+      channelSlot(channel, rtcDataChannelOrderedGetter, "ordered") !== true
+    ) {
+      closeDetachedChannel(channel);
       this.#markClosed(new WebRtcTransportError("WEBRTC_CHANNEL_CONTRACT", "unexpected DataChannel contract"));
       return;
     }
+    const channelSend = snapshotBoundMethod(
+      channel,
+      rtcDataChannelSendIntrinsic,
+      "send",
+      "RTCDataChannel",
+      "WEBRTC_CHANNEL_CONTRACT"
+    );
+    const channelClose = snapshotBoundMethod(
+      channel,
+      rtcDataChannelCloseIntrinsic,
+      "close",
+      "RTCDataChannel",
+      "WEBRTC_CHANNEL_CONTRACT"
+    );
     this.#channel = channel;
-    channel.binaryType = "arraybuffer";
-    channel.addEventListener("open", () => this.#openResolve?.(this));
-    channel.addEventListener("close", () => { this.#closed = true; });
-    channel.addEventListener("error", () => {
+    this.#channelClose = channelClose;
+    this.#channelSend = channelSend;
+    if (rtcDataChannelBinaryTypeSetter) {
+      reflectApply(rtcDataChannelBinaryTypeSetter, channel, ["arraybuffer"]);
+    } else {
+      channel.binaryType = "arraybuffer";
+    }
+    addEventListener(channel, "open", () => this.#openResolve?.(this));
+    addEventListener(channel, "close", () => { this.#closed = true; });
+    addEventListener(channel, "error", () => {
       this.#markClosed(new WebRtcTransportError("WEBRTC_CHANNEL_ERROR", "DataChannel failed"));
     });
-    channel.addEventListener("message", (event) => {
+    addEventListener(channel, "message", (event) => {
       try {
-        const messageBytes = ownedBinaryBytes(event.data);
+        const messageBytes = ownedBinaryBytes(eventSlot(event, messageEventDataGetter, "data"));
         const opened = decodeRelayMessageBytes(messageBytes);
-        if (this.#messageFrames.has(opened.message_id)) return;
-        const frame = immutableRelayFrame(this.#frames.length + 1, messageBytes);
-        this.#frames.push(frame);
-        this.#messageFrames.set(opened.message_id, frame);
-        for (const subscription of this.#handlers) {
+        if (mapHas(this.#frames, opened.message_id)) return;
+        const frame = immutableRelayFrame(mapSize(this.#frames) + 1, messageBytes);
+        mapSet(this.#frames, opened.message_id, frame);
+        const subscriptions = setValues(this.#handlers);
+        for (let index = 0; index < subscriptions.length; index += 1) {
+          const subscription = subscriptions[index];
           if (frame.sequence > subscription.startAfter) this.#deliver(subscription, frame);
         }
       } catch (error) {
-        this.#markClosed(error instanceof Error ? error : new Error(String(error)));
+        this.#markClosed(
+          error instanceof Error
+            ? error
+            : new WebRtcTransportError("WEBRTC_CHANNEL_ERROR", "untrusted inbound frame failed")
+        );
       }
     });
   }
 
   #deliver(subscription, frame) {
     const detachedFrame = detachedRelayFrame(frame);
-    queueMicrotask(() => {
-      Promise.resolve(subscription.handler(detachedFrame)).catch((error) => this.#markClosed(error));
-    });
+    reflectApply(queueMicrotaskIntrinsic, globalThis, [() => {
+      let result;
+      try {
+        result = subscription.handler(detachedFrame);
+      } catch (error) {
+        this.#markClosed(error);
+        return;
+      }
+      observePromise(resolvePromise(result), undefined, (error) => this.#markClosed(error));
+    }]);
   }
 
   #markClosed(error) {
     if (!this.#error) this.#error = error;
     this.#closed = true;
-    this.#channel?.close();
-    if (this.#connection.connectionState !== "closed") this.#connection.close();
+    if (this.#channel && this.#channelClose) {
+      this.#channelClose();
+    }
+    if (
+      peerSlot(
+        this.#connection,
+        rtcPeerConnectionConnectionStateGetter,
+        "connectionState"
+      ) !== "closed"
+    ) {
+      this.#connectionClose();
+    }
     this.#openReject?.(error);
   }
 }

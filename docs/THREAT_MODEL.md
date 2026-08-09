@@ -333,6 +333,13 @@ with replaceable bootstrap infrastructure**, not zero
 infrastructure. The public Lab's default journey still uses the HTTP relay and the
 confidential P2P vertical remains an automated acceptance harness; neither fact
 establishes an open participant resource network or independent physical providers.
+The direct adapter treats public JavaScript constructors, collection/iterator
+methods, delivery schedulers, Event/DataChannel slots, and RTCPeerConnection methods
+as mutable capabilities. It captures reviewed native operations, keeps one private
+transcript map, publishes locally only after a synchronous native send succeeds, and
+returns detached immutable frames. Node and actual connected-Chromium poison corpora
+exercise those boundaries. A successful send is only local queue admission, not a
+peer acknowledgement, durable storage proof, or placement verdict.
 
 ### 11.1 Bootstrap endpoint boundary
 

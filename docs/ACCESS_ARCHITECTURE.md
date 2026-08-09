@@ -123,7 +123,13 @@ signaling, STUN, TURN, and relay adapters may be added without entering validity
 Outbound publication commits local range and duplicate state only after the
 DataChannel accepts the send. A synchronous close, backpressure, or send failure
 cannot manufacture local delivery, and an identical transient-failure retry remains
-eligible for a real send.
+eligible for a real send. One private transcript map is the cursor and duplicate
+SSOT; collection, iterator, scheduler, DataChannel, MessageEvent, and peer-connection
+operations are captured before exposure. Node and actual Chromium poison corpora
+replace those public constructors, prototypes, and attached methods and require zero
+poison calls plus exact remote delivery. Browser acceptance into its send queue is
+still not an end-to-end acknowledgement; signed higher-layer evidence remains the
+only placement authority.
 
 ## Implemented portability evidence
 

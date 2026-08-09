@@ -46,6 +46,10 @@ lineage rejection-code registry.
   HTTP, WebSocket, STUN, TURN, or server fallback;
 - send-before-local-commit publication: a synchronous DataChannel failure creates no
   range, subscriber, or dedupe visibility, and the same message remains retryable.
+- one private `Map` is the ordered transcript and duplicate SSOT. Captured
+  `Map`/`Set`/`Array`/iterator/scheduler operations plus native DataChannel and
+  RTCPeerConnection slots prevent later public-prototype or method replacement from
+  fabricating publication, range, replay, signaling, or close success.
 
 `resource-placement-artifact` is an untrusted carrier for the existing documents
 and proposals. Receiving it never means “accepted” or “proved”; the core must parse
@@ -57,8 +61,8 @@ and verify the nested canonical bytes again.
 | --- | --- | --- |
 | Pure policy and negatives | `node --test test/placement.test.mjs` | 3-copy proof, 3→2 degradation, new-lease repair, single/duplicate/corrupt/cross-lease/stale/unproved/wrong-workload rejection |
 | Node process topology | `node --test test/placement-process.test.mjs` | Provider process directly stores and signs; process exit prevents later signing; replacement process/new lease repairs |
-| Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes, detached immutable frames, and failure-atomic send/retry |
-| Actual browser vertical | `node scripts/verify-p2p-placement-chromium.mjs` | Runtime file and all evidence over direct peers, origin cut, provider loss/repair, A exit, B 2-of-3 readback with one corrupt copy |
+| Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes, detached immutable frames, failure-atomic send/retry, and isolated constructor/Map/Set/Array/iterator/scheduler/channel poison cases |
+| Actual browser vertical | `node scripts/verify-p2p-placement-chromium.mjs` | Actual paired Chromium DataChannels preserve native send, peer, transcript, replay, range, and scheduler behavior under prototype poison; then the runtime file/evidence origin-cut provider-loss/repair and A-exit/B-readback vertical passes |
 | Confidential controller | `node --test test/confidential-placement.test.mjs` | S4 2-of-3 shards, exact freshness boundary, crash/restart journal, chained re-proof, 100-cycle policy corpus |
 | Liveness contract | `node --test test/placement-liveness.test.mjs` | Offer-rostered 3-of-4 non-response certificate under a consumer-selected bounded window; no-clock schema; threshold/outsider/window negatives; late response, challenge fork, and response fork halt |
 | Lineage controller | `node --test test/lineage-placement.test.mjs` | Certificate-bound current-descriptor quorum-authorized generation commit; conditional late-proof conflict when fresh response/current placement evidence is supplied; derived placement action plan; A→B key non-transfer; fresh-process convergence; 1,000 partition/heal events; valid sibling fork halt |
@@ -70,6 +74,10 @@ and verify the nested canonical bytes again.
 ## Explicit nonclaims
 
 - Manual same-host ICE is not proof of arbitrary Internet or NAT reachability.
+- A synchronous native `RTCDataChannel.send()` success means the browser accepted
+  bytes into its outbound queue. It is not a peer acknowledgement or durable
+  end-to-end delivery receipt; higher layers still require canonical receipts and
+  replay/reconciliation.
 - Browser and Node processes on one PC are not independent hardware, account,
   credential, administrator, region, or failure domains.
 - A fresh receipt proves possession at its challenge time. The bounded local age

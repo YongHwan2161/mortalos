@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { canonicalBytes } from "../src/codec.mjs";
 import {
   createResourcePlacementArtifactMessage,
@@ -17,7 +19,7 @@ import {
 
 const sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
 
-async function openFakeTransport(endpointId = "A-direct") {
+async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = {}) {
   let channel;
   class FakeChannel extends EventTarget {
     constructor() {
@@ -28,7 +30,10 @@ async function openFakeTransport(endpointId = "A-direct") {
       this.readyState = "open";
     }
     close() { this.readyState = "closed"; }
-    send(value) { this.sent = new Uint8Array(value); }
+    send(value) {
+      if (sendImpl) return sendImpl.call(this, value);
+      this.sent = new Uint8Array(value);
+    }
   }
   class FakePeer extends EventTarget {
     constructor() {
@@ -190,17 +195,17 @@ test("WebRTC publish and fetch never expose the mutable internal relay-frame cur
 });
 
 test("WebRTC publication commits only after send succeeds and retries remain deliverable", async () => {
-  const { channel, restore, transport } = await openFakeTransport();
-  try {
-    const send = channel.send.bind(channel);
-    let sendCalls = 0;
-    channel.send = (value) => {
+  let sendCalls = 0;
+  const { channel, restore, transport } = await openFakeTransport("A-direct", {
+    sendImpl(value) {
       sendCalls += 1;
       if (sendCalls === 1) {
         throw new DOMException("transient buffer failure", "OperationError");
       }
-      send(value);
-    };
+      this.sent = new Uint8Array(value);
+    }
+  });
+  try {
     const bytes = placementArtifactBytes("send-atomicity-1");
 
     await assert.rejects(
@@ -350,5 +355,32 @@ test("WebRTC preserves ordinary ArrayBuffer and DataView publishing while owning
     transport.close();
   } finally {
     restore();
+  }
+});
+
+test("WebRTC transcript uses captured collection, scheduler, and channel capabilities", () => {
+  const childPath = fileURLToPath(new URL("./webrtc-transport-primordials-child.mjs", import.meta.url));
+  for (const poisonCase of [
+    "constructors",
+    "signal-type",
+    "map-get",
+    "map-set",
+    "map-size",
+    "map-values",
+    "set-add",
+    "set-values",
+    "array-push",
+    "array-filter",
+    "array-iterator",
+    "scheduler",
+    "channel-send"
+  ]) {
+    const result = spawnSync(process.execPath, [childPath, poisonCase], {
+      encoding: "utf8",
+      timeout: 30_000,
+      windowsHide: true
+    });
+    assert.equal(result.status, 0, `${poisonCase}: ${result.stderr}\n${result.stdout}`);
+    assert.deepEqual(JSON.parse(result.stdout), { case: poisonCase, pass: true });
   }
 });

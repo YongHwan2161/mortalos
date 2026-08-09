@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
+import { build } from "esbuild";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import {
   canonicalBytes,
@@ -37,16 +39,62 @@ import { startLabServer } from "./serve-lab.mjs";
 
 const temporaryRoot = await mkdtemp(resolve(tmpdir(), "mortalos-p2p-placement-"));
 const labDirectory = resolve(temporaryRoot, "lab");
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const resourcePath = resolve(temporaryRoot, "runtime-selected-resource.bin");
 const resource = randomBytes(98_317);
 await writeFile(resourcePath, resource);
 await buildLab({ outdir: labDirectory });
+await build({
+  absWorkingDir: repositoryRoot,
+  bundle: true,
+  entryPoints: ["test/webrtc-transport-browser-entry.mjs"],
+  format: "esm",
+  legalComments: "none",
+  logLevel: "silent",
+  minify: true,
+  outfile: resolve(labDirectory, "webrtc-primordials.js"),
+  platform: "browser",
+  sourcemap: false,
+  target: ["chrome120"]
+});
 const server = await startLabServer({ directory: labDirectory });
 const launchOptions = { headless: true };
 if (process.env.MORTALOS_CHROMIUM_EXECUTABLE) {
   launchOptions.executablePath = process.env.MORTALOS_CHROMIUM_EXECUTABLE;
 }
 const endpoints = [];
+
+async function verifyWebRtcPrimordials() {
+  const browser = await chromium.launch(launchOptions);
+  try {
+    const page = await browser.newPage();
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (["error", "warning"].includes(message.type())) {
+        errors.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    await page.goto(server.url, { waitUntil: "domcontentloaded" });
+    const result = await page.evaluate(async () => {
+      const probe = await import("/webrtc-primordials.js");
+      return probe.runWebRtcPrimordialBrowserProbe();
+    });
+    assert.deepEqual(result, {
+      array_frames: 3,
+      channel_poison_calls: 0,
+      constructor_poison_calls: 0,
+      map_poison_calls: 0,
+      peer_poison_calls: 0,
+      remote_frames: 3,
+      scheduler_poison_calls: 0,
+      set_poison_calls: 0
+    });
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
+  }
+}
 
 function nonce(seed) {
   return encodeBase64Url(new Uint8Array(16).fill(seed & 0xff));
@@ -428,6 +476,7 @@ async function retrieve(provider, index) {
 }
 
 try {
+  await verifyWebRtcPrimordials();
   consumerA = await openEndpoint("consumer-a", "consumer");
   consumerB = await openEndpoint("consumer-b", "consumer");
   consumerA.witnesses = [];
@@ -501,6 +550,7 @@ try {
   console.log("- after consumer A exited, consumer B recovered exact bytes from 2 valid of 3 peer copies");
   console.log("- one corrupt readback was rejected and marked locally unavailable");
   console.log("- origin/HTTP/relay were denied after bundle load; no request occurred after the cut");
+  console.log("- actual Chromium DataChannels retained captured transcript, scheduler, and peer capabilities under prototype poison");
   console.log("- all browsers shared one host/admin domain; physical independence remains HOLD");
 } finally {
   await Promise.all(endpoints.map(({ browser }) => browser.close().catch(() => {})));

@@ -220,7 +220,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
-  "lab/transport/webrtc-peer.mjs": "e8b490027ba5c67e3f27587b41e9acb5f3a4daf4175b926d714cacaaed7b2690"
+  "lab/transport/webrtc-peer.mjs": "916b1926d0a0437fbb3fb053aab3ec7603500a05a529b4d865ea34d209d6868b"
 });
 
 // A classification is a reviewed security decision, not a permanent textual
@@ -327,14 +327,14 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async readChunk": "94fe133d82c2e1c8dccf35daa5c4c31315b7c9003c3dfb2c8968ae34444cd1bb",
   "src/continuity.mjs:export async function createContinuityAuthority": "4e27da7380ce0fe1ede42a239dc7fc38ba2404f548e86b886de662a2a5528b75",
   "src/continuity.mjs:export async function handoffContinuity": "547901d2b13e6634d9b6419496be097bbde4fc25998acd6c5d033e924fbd62dd",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async createOffer": "178765fd0b45ffcf66eaffec60f03ceaacc4cb98507257e7c2ab70a5bea35028",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "a82811e4091254092ee550d0686ca4750a8c5d69bb71e986c5342e427acc6a5b",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "eb41f82f1a2e55e0595e3024032d155d6a6aeeffea617efe345002be7d9c30cc",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "38342173112b034874a9056b4b897ee5b18eb23a713736b2471357969f4bbb89",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "ff96556c62d0dc58f82c248bb8760f51ec690c21a3b395c1e6a5395dcc5dea48",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "e1d171c3f5addd4bf047061b726fd55806f68554bb1453a51e98e63cb47f9393",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "3e3b66f1f0ce1ae532ac987f49d687f358a22f4a0a97e1181c10276c70256291",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "cf19d81b01ae59f487afc547d6872ff4147817195ca5f7833ce379f3ad28cb4c"
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async createOffer": "9ec5d2cdbcb4759cce808bc5f2096cf66693189b50cd66a119ff5194eab4d2aa",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "312dca19733fd7464d95ccb0ffc5e1909229d2849eff5f319faa34b9bce46626",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "bad59957d4f2e1e69468d3bb90116d9cfcee18497e5128e2f28438d32aae3769",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "4a565da4551683d9003ec8277731e397cedc3653b4aac5e410f78fbb94ecea4e",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "1c29d3ff7eb6fe86bb5627c31aa7f31a72511fbb56f8dbc6e410ec87007b079b",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "35ad0b7680d8d04498ba958c31aafaa7e6cf1a3d7d6f1b2336977ea4543b04d9",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "7409b9b1176a28d5f8c847220e87eb43b35526c12f2342aae2af7b6e0314ce51",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "8903f54681ed29ce7bc6f9e40b02102cdd707cd5d5ccb4ddce50c13c861aa8f9"
 });
 assert.deepEqual(
   Object.keys(CLASSIFICATION_DIGESTS).sort(),

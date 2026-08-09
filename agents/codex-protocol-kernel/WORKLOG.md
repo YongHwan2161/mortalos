@@ -2149,3 +2149,42 @@ result, and reproducible verification.
   and an ID-only provider response is not self-contained possession proof. They are
   inputs to the next provider-signed liveness-policy/possession/executor P0, not
   grounds to overstate this scheduling-only source claim.
+
+## 2026-08-10 KST — PR #58 third BLOCK and transitive WebRTC capability containment
+
+- Exact head `dcdd02d0c88015fc867381cb97b07215a8d7e429` passed trusted policy
+  `31330801325/1` job `93288610889` and exact-head Verify `31330802529/1`
+  (`protocol` job `93288613346`, `browser-parity` job `93288613359`). Immutable
+  review `4892393270` confirmed the five prior findings were closed and then
+  correctly BLOCKed one remaining trust-boundary defect. No PASS receipt, App
+  attestation, native approval, merge, or deployment was issued.
+- The private WebRTC transcript still invoked ambient mutable `Map`, `Set`, `Array`,
+  iterator, scheduler, and attached-channel methods. Independent reproductions could
+  fabricate a first-send duplicate, suppress duplicate detection, fabricate range
+  sequence `777`, drop replay/live delivery, accept bogus signaling, or record local
+  publication after a replaced no-op `send` while the existing security digest gate
+  stayed green.
+- The replacement source uses one private ordered `Map` for frame order and message-ID
+  dedupe, invokes captured collection/iterator/scheduler operations, snapshots
+  fallback data-method capabilities without invoking accessors, and native-captures
+  DataChannel, MessageEvent, RTCDataChannelEvent, and RTCPeerConnection constructors,
+  methods, and live-slot getters. Publication performs the captured real send first
+  and makes one local transcript commit only after synchronous success.
+- Thirteen isolated child-process poison cases separate the adapter boundary from
+  the transitive codec parser and cover pre/post-construction Map/Set, individual
+  mutation and iterator methods, Array range construction, scheduler promises,
+  signaling type, and attached `send`. `test/webrtc-transport.test.mjs` passes
+  `10/10`. A test-only browser bundle connects an actual Chromium A/B DataChannel
+  pair, replaces native channel/peer methods and collection prototypes, records zero
+  poison calls, and still delivers exactly three remote frames.
+- The actual Chromium P2P vertical then passed in `55.3s`: runtime file and signed
+  evidence crossed direct peers, one provider loss repaired through a new lease, A
+  exited, and B recovered two valid copies while rejecting one corruption with zero
+  origin/relay requests after cut. The confidential vertical passed in `152.1s` with
+  the native 98,317-byte file, S4 2-of-3 shards, 3-of-4 no-clock observations,
+  lineage handoff, A exit, exact B recovery, and corrupt-shard rejection.
+- Reviewed module/function hashes were updated only after the containment and browser
+  evidence were inspected; the async security gate passes `26/26` (`22` direct,
+  `128` auto-discovered). A successful browser `send()` remains only local outbound
+  queue admission, not peer acknowledgement, durable possession, or placement truth.
+  Fresh exact-head CI and a fourth immutable review remain required.

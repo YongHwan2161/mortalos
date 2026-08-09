@@ -124,6 +124,11 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   caller cannot mutate stored cursor state or another observer's frame. Outbound
   publication commits frame/dedupe state only after `DataChannel.send()` succeeds;
   transient failure leaves no ghost record and an exact retry performs a real send.
+  The carrier now keeps one private transcript map and captures collection,
+  iterator, scheduler, MessageEvent, DataChannel, and RTCPeerConnection capabilities.
+  Thirteen isolated Node poison cases plus an actual connected-Chromium poison probe
+  require zero poisoned calls and exact remote delivery. Native send success remains
+  local queue admission, not an end-to-end receipt.
 - An actual runtime-selected file plus offer, lease, witness, challenge, usage, and
   execution evidence cross direct Chromium DataChannels after HTTP/origin denial.
   One provider process loss degrades three copies to two; D uses a new offer and

@@ -93,6 +93,15 @@ post-merge workflows, and deployed asset manifest.
   local state only on success; a focused regression proves zero failed-send
   visibility, one real retry, later idempotence, and no close/backpressure ghosts.
   Replacement exact-head CI and another fresh immutable review remain external.
+- PR #58's third immutable review at exact head
+  `dcdd02d0c88015fc867381cb97b07215a8d7e429` confirmed every earlier closure and
+  exact-head policy/Verify success, then correctly BLOCKed the remaining mutable
+  capability boundary: private transcript, duplicate, range, replay, scheduling,
+  signaling, and attached-send behavior still called ambient `Map`/`Set`/`Array`/
+  iterator/scheduler/channel operations. The source now uses one captured private
+  transcript SSOT, snapshots or native-captures DataChannel and RTCPeerConnection
+  capabilities, and has isolated Node plus actual connected-Chromium poison gates.
+  Fresh exact-head CI and a fourth independent review remain external facts.
 - `origin/main` was freshly fetched at
   `25de18d8c1af8b3dfcb5adffb1a07538afa33332`; it equals this task base. Deployment
   credentials remain workflow-owned and never enter this source tree.
