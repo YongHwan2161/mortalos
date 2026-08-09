@@ -796,15 +796,16 @@ results. They do not change Pulse validity, select a lineage head, or contribute
 the mortality classifier. In particular, missing chunks cannot become empty state
 and cannot establish protocol death.
 
-## 16. Candidate protocol profile, relay fragments, and Capsules
+## 16. Protocol profile, relay fragments, and Capsules
 
-`protocol/profile.v1.json` is the current candidate source for S3/S4 and transport
+`protocol/profile.v1.json` is the normative generated-profile source for this
+implementation's S3/S4 and transport
 ceilings. Generated constants must exactly match it. A 65,536-byte state chunk does
 not fit directly inside the 65,536-byte relay-message ceiling after encoding, so the
 real data plane carries it as bounded 32,768-byte domain-digested fragments and
 reassembles only after exact fragment, chunk, and resource-root verification.
 
-`mortalos-continuity-capsule/1` is a candidate portable container for canonical
+`mortalos-continuity-capsule/1` is the source implementation's portable container for canonical
 lineage records and one exact state package. A Capsule is not an accepted lineage
 record, private-key container, fork-choice vote, or mortality observation. It must
 be verified through the same lineage/state validators before any local activation.
@@ -833,7 +834,7 @@ presence, UI state, and carrier metadata MUST NOT make a placement usable. Direc
 WebRTC and relay delivery of identical bytes MUST produce the same core result.
 
 The current manual transport uses one ordered binary DataChannel and no configured
-ICE server or fallback. This is a deterministic candidate baseline, not a normative
+ICE server or fallback. This is a deterministic source baseline, not a normative
 ban on replaceable signaling, STUN, TURN, or relay adapters and not proof of
 arbitrary Internet reachability.
 
@@ -857,5 +858,71 @@ shard identities. A proof issued in the future or older than the configured maxi
 MUST NOT count; exact maximum age MAY count. After journal restoration, an existing
 lease MUST present the direct successor of the journaled execution receipt before
 counting again. A new provider/lease MAY enter with a new valid first receipt. A
-custody successor MUST use successor-owned lease authority; transfer of the prior
-consumer private key is forbidden.
+successor-authorized operational signing identity MAY form new offers and leases;
+that identity is not inferred to be, or cryptographically bound to, the Continuity
+custody identity. Transfer of the prior consumer private key is forbidden.
+
+### Lineage-bound placement generation extension
+
+`mortalos-lineage-placement-generation/1` canonically binds the organism, exact
+lineage parent, confidential manifest, target/quorum/freshness policy, complete
+public placement evidence, derived proved receipts and repair intents, and the prior
+generation/commit. A verifier MUST rerun nested resource and placement validation;
+the embedded summary is never trusted by itself.
+
+`mortalos-lineage-placement-commit/1` identifies the accepted Continuity
+`state-transition` whose transition ID contains the exact generation hash. A placement
+action plan MUST NOT be derived until the generation, commit, complete Capsule
+lineage, and prior transition binding verify. `deriveCommittedPlacementActionPlan`
+returns `mortalos-lineage-placement-action-plan/1` with
+`planned_repair_actions`, `verified_placement_receipt_ids`,
+`non_capability: true`, and `requires_executor_reverification: true`. The result is
+deterministic, public, forgeable JSON: it is not a capability or an authority token.
+An executor MUST reverify the original
+Capsule, generation, commit, current placement evidence, and applicable liveness
+evidence before performing effects. The current Continuity descriptor's
+quorum-authorized sign-once transition is the only normal generation-commit
+authority; no controller service,
+domain, relay, UI, or transport state participates in validity.
+
+Multiple verified candidates MUST converge from generation 1 by exact generation
+and prior-commit links. A history reset, incomplete chain, same-generation sibling,
+broken link, or different organism MUST halt with no selected winner. This
+serializes authority. See
+[Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md).
+
+### Quorum-observed liveness extension
+
+Lineage generations MUST NOT accept a caller-supplied unavailable-provider list.
+A placement may be treated as unavailable for redundant continuity scheduling only
+by a verified
+`mortalos-placement-failure-certificate/1`. Its embedded consumer-signed challenge
+MUST bind the exact Continuity parent, confidential manifest, lease, workload,
+provider, shard, last execution receipt, next sequence, nonce, bounded response
+window, and observer policy. That policy MUST equal the Byzantine witness policy in
+the provider-signed offer after `witnesses`/`observers` field normalization.
+The lease consumer selects the response window inside the generated profile bound;
+the offer signature does not pre-agree that duration or establish a liveness SLA.
+
+Each `mortalos-placement-liveness-observation/1` MUST be signed by one distinct
+rostered observer and bind `no-response` plus the exact local response-window
+duration. A certificate MUST contain a canonical threshold satisfying the offer's
+`n/f/q` bounds. It MUST contain no absolute deadline or global-clock assertion.
+Observer signatures authenticate local-duration claims; they do not prove honest
+timers or independent failure domains.
+The certificate MUST NOT be interpreted as provider death, breach, lease
+termination, penalty, settlement, or invalidation of an already verified receipt.
+
+A `mortalos-placement-liveness-response/1` binds the same challenge to a provider-
+signed execution receipt ID. Before it can affect repair eligibility, the named
+receipt MUST be present in a fully verified current offer/lease/usage/execution
+chain. A valid response and failure certificate for the same predecessor tuple,
+different valid challenges for that tuple, or multiple response receipt IDs for one
+challenge MUST halt with no repair winner. The committed repair intent MUST carry
+the challenge and certificate IDs. The core API conditionally rejects a late-proof
+conflict when a caller supplies newly observed responses with corresponding current
+placement evidence. The current Lab/browser harness supplies empty late-response
+and current-placement arrays and does not yet implement a network gossip plus
+execution-time reconciliation loop. A production executor MUST add that loop rather
+than cache a derived plan indefinitely. See
+[Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).

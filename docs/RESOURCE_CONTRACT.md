@@ -311,13 +311,16 @@ local multi-process topology under the offer's declared witness-fault assumption
 It does **not** prove witness/provider identities are independently administered,
 the declared fault bound is true, cumulative metering is physically honest, the
 process ran on a distinct machine or region, or Sybil resistance/economic settlement.
-The next architecture gate is provider-neutral transport/adapters and a reproducible
-distinct-account, credential, administrator, and failure-domain evidence matrix.
+The next architecture gate is a provider-signed lease-bound liveness policy,
+independent possession response, and effect-time exactly-once repair executor.
+Lineage-governed admission/failure-domain accounting with explicit trust roots
+follows. Provider-neutral transport exists in the source, but self-asserted topology
+labels do not establish independent domains.
 
 ## 13. Receipt-gated storage placement policy
 
-The local candidate composes the existing documents without introducing a new
-signed placement verdict. `evaluateStoragePlacements` counts a candidate only when:
+This source revision composes the existing documents without introducing a new
+signed placement verdict. `evaluateStoragePlacements` counts a placement only when:
 
 1. the signed offer derives a distinct provider identity;
 2. the exact mutual lease is active at the local observation time;
@@ -334,10 +337,29 @@ unavailability cannot count. Meeting the recovery quorum but not the target retu
 The confidential composition adds shard-specific workload binding and an explicit
 local freshness window. Exact maximum age counts; maximum plus one millisecond is
 `stale-proof`. A crash-restored journal requires an existing lease to extend the
-journaled execution receipt directly before it can count again. Custody successor B
-uses new B-owned leases rather than receiving A's private key.
+journaled execution receipt directly before it can count again. A separately
+generated successor-authorized operational signer creates new leases rather than
+receiving A's private key. The operational signer is not inferred to be, or
+cryptographically bound to, B's Continuity custody identity.
 
-This remains local scheduling policy, not consensus, proof of an independent
-failure domain, continuous liveness, or globally serialized billing truth. See
+The lineage-placement source derives a deterministic placement action plan
+from a fully reverified placement generation only after the current Continuity
+descriptor commits it. `deriveCommittedPlacementActionPlan` returns
+`mortalos-lineage-placement-action-plan/1` with `planned_repair_actions`,
+`verified_placement_receipt_ids`, `non_capability: true`, and
+`requires_executor_reverification: true`. The output is public, forgeable JSON, not
+authority; an executor must reverify the
+original Capsule, generation, commit, and current placement/liveness evidence before
+effects. Raw unavailable-provider input is rejected at this layer. One
+provider counts as failed only when the provider-signed offer's witness policy signs
+a predecessor/sequence-bound non-response certificate. A late provider response
+must name an actual verified dual-signed execution receipt. The core conditionally
+halts on conflict when a caller supplies that response and current placement
+evidence; the current Lab/browser harness supplies empty late-response/current-
+placement arrays and has no network gossip plus execution-time reconciliation loop.
+This proves threshold key assertions, not honest
+timers, Sybil resistance, honest metering, consensus, or independent failure domains. See
 [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) and
-[Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md).
+[Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md),
+[Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md), and
+[Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).

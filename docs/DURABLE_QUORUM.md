@@ -1,16 +1,19 @@
 # MortalOS crash-safe durable quorum
 
-Status: **S2 CLAIM REOPENED; hardened implementation promotion is bound to a new exact S2 receipt,
-independent review, merge, and post-merge evidence**
+Status: **HARDENED SOURCE MERGED; REVISED S2 STAGE CLAIM REOPENED PENDING A NEW
+EXACT-SHA S2 RECEIPT; SAME-ORIGIN/XSS SIGN-ONCE REMAINS HOLD**
 
-The current candidate co-locates the durable endpoint implementation and its
+The hardened source merged through PR #51. It co-locates the durable endpoint
+implementation and its
 WeakMap-registered raw store capability in one ES module closure. No production
 export can read or write a raw durable document. The endpoint owns the full signing
 invocation before its first await and redacts the private `CryptoKey` from both
 endpoint and store diagnostics. Public documents are built from a key-free graph,
 public raw writes fail closed, signing uses captured native WebCrypto operations,
-and the optional test boundary receives only a phase string. The historical S2
-receipt does not cover these edits and cannot promote the new source.
+and the optional test boundary receives only a phase string. Historical S2 receipts
+do not cover the revised hardened stage claim. A rolling source document cannot
+self-promote its containing revision; use exact-SHA receipts, review, CI, merge, and
+deployment records for that external promotion decision.
 
 This is public-API and conforming-concurrency hardening, not a same-origin/XSS
 custody boundary. Any script running with the application's origin can open the

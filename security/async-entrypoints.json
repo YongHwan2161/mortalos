@@ -21,6 +21,7 @@
     "src/confidential/recovery.mjs",
     "src/continuity.mjs",
     "src/distributed/quorum-counter-store.mjs",
+    "src/placement/lineage-controller.mjs",
     "src/state/recovery.mjs",
     "src/transport/corpus.mjs",
     "src/transport/chunk-data-plane.mjs",
@@ -196,6 +197,14 @@
       "post_await_forbidden": ["options"],
       "test_file": "test/continuity.test.mjs",
       "test_marker": "single copy, stale lineage, wrong authority, and divergent valid capsules fail closed"
+    },
+    {
+      "file": "src/placement/lineage-controller.mjs",
+      "entrypoint": "export async function commitLineagePlacementGeneration",
+      "ownership_primitives": ["snapshotLineagePlacementCommitInvocation"],
+      "post_await_forbidden": ["options"],
+      "test_file": "test/lineage-placement.test.mjs",
+      "test_marker": "commit owns lineage invocation before the first await"
     }
   ],
   "classifications": [

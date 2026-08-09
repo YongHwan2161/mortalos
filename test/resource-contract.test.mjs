@@ -325,6 +325,19 @@ test("provider offer, mutual lease, chained usage, and unilateral revocation for
 test("finite decimal, duration, allocation, usage, and envelope ceilings fail closed", () => {
   const provider = actor();
   const consumer = actor();
+  assert.doesNotThrow(
+    () => prepareResourceOffer(offerBody(provider, {
+      witness_policy: witnessPolicy(
+        new Array(RESOURCE_CONTRACT_LIMITS.witnesses_per_offer_max)
+          .fill(null)
+          .map(() => actor()),
+        {
+          max_faulty: 0,
+          threshold: RESOURCE_CONTRACT_LIMITS.witnesses_per_offer_max
+        }
+      )
+    }))
+  );
   assert.doesNotThrow(() => prepareResourceOffer(offerBody(provider, {
     expires_at_ms: (RESOURCE_CONTRACT_LIMITS.lease_duration_ms_max + 1000n).toString()
   })));

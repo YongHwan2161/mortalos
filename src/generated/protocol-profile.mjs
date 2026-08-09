@@ -19,6 +19,15 @@ const profile = {
     signed_copy_quorum: 2
   },
   format: "mortalos-protocol-profile/1",
+  placement_liveness: {
+    certificates_per_evaluation: 16,
+    document_bytes: 262144,
+    nonce_bytes: 16,
+    observations_per_certificate: 16,
+    response_window_ms_max: "3600000",
+    responses_per_evaluation: 16,
+    witnesses_per_policy: 16
+  },
   provider: {
     object_bytes: 8388608,
     objects_per_room: 512

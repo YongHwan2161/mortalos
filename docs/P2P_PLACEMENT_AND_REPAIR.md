@@ -1,8 +1,8 @@
 # P2P storage placement and repair
 
-Status: **LOCAL CANDIDATE PASS — CONFIDENTIAL CONTROLLER COMPOSED; GOVERNED MERGE AND PHYSICAL TOPOLOGY HOLD**
+Status: **SOURCE + LOCAL EVIDENCE PASS — EXACT-SHA PROMOTION EXTERNAL; PHYSICAL TOPOLOGY HOLD**
 
-Last synchronized: **2026-08-09 KST**
+Last synchronized: **2026-08-10 KST**
 
 ## Contract
 
@@ -22,8 +22,9 @@ Aggregate states are:
 - `repairing`: verified available copies meet recovery quorum but not the target;
 - `unavailable`: verified available copies are below recovery quorum.
 
-These states are local scheduling policy, not global consensus and not a new signed
-receipt family.
+These lower-level states remain local scheduling policy. The lineage controller may
+derive its unavailable set only from the separate signed liveness certificate
+contract; raw local state is never lineage repair authority.
 
 Malformed evaluator requests fail before any copy can count: `E_PLACEMENT_FORMAT`
 for a wrong exact shape, `E_PLACEMENT_LIMIT` for a bounded-list overflow,
@@ -57,10 +58,12 @@ and verify the nested canonical bytes again.
 | Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes |
 | Actual browser vertical | `node scripts/verify-p2p-placement-chromium.mjs` | Runtime file and all evidence over direct peers, origin cut, provider loss/repair, A exit, B 2-of-3 readback with one corrupt copy |
 | Confidential controller | `node --test test/confidential-placement.test.mjs` | S4 2-of-3 shards, exact freshness boundary, crash/restart journal, chained re-proof, 100-cycle policy corpus |
-| Confidential browser vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual native File encrypted for B, distinct ciphertext shards over peers, provider loss, A exit, B-owned new leases, corrupt-shard rejection, exact decrypt |
-| Combined gate | `npm run test:p2p-placement` | All of the above |
+| Liveness contract | `node --test test/placement-liveness.test.mjs` | Offer-rostered 3-of-4 non-response certificate under a consumer-selected bounded window; no-clock schema; threshold/outsider/window negatives; late response, challenge fork, and response fork halt |
+| Lineage controller | `node --test test/lineage-placement.test.mjs` | Certificate-bound current-descriptor quorum-authorized generation commit; conditional late-proof conflict when fresh response/current placement evidence is supplied; derived placement action plan; A→B key non-transfer; fresh-process convergence; 1,000 partition/heal events; valid sibling fork halt |
+| Confidential browser vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual native File encrypted for B, distinct ciphertext shards and liveness challenge over peers, four observer processes and 3-of-4 local-duration certificate, provider loss, A generation commit, sign-once handoff, A exit, successor-authorized operational signer repair and successor commit, deterministic convergence, corrupt-shard rejection, exact decrypt; the signer is not custody-identity-bound |
+| Combined gate | `npm run test:p2p-placement` | The pre-review baseline passed its then-current 17 Node cases and both Chromium verticals; exact-SHA CI is the current-revision authority |
 | Package boundary | `node scripts/verify-sdk-package.mjs` | Clean packed import of `@mortal-os/core/placement` |
-| Complete repository regression | `npm test` | Final exact-source ordered candidate suite PASS in 3,101.1 seconds after append-only generation-pointer hardening and pointer-to-journal generation binding, including both P2P Chromium verticals and every existing stage verifier |
+| Complete repository regression | `npm test` | A pre-review source baseline completed in 4,263.6 seconds; exact-SHA CI is the current-revision authority |
 
 ## Explicit nonclaims
 
@@ -69,11 +72,30 @@ and verify the nested canonical bytes again.
   credential, administrator, region, or failure domains.
 - A fresh receipt proves possession at its challenge time. The bounded local age
   policy excludes old evidence but is not continuous monitoring or global truth.
-- `unavailable_provider_ids` is a local observation input, not signed global truth.
+- `unavailable_provider_ids` is a lower-level diagnostic input, not signed truth;
+  the lineage API rejects it and derives repair only from a committed threshold
+  certificate. See [Quorum liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).
+- Threshold keys are not evidence of independent owners or failure domains.
 - The historical regression vertical still transfers plaintext; the composed
   confidential vertical sends providers only S4 package shards. See
   [Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md).
 - The ephemeral Lab signer proves process-local signing and redaction, not
   same-origin XSS resistance or hardware-backed custody.
-- No candidate result is merged, deployed, or promoted until exact-head and
-  exact-main governance gates pass.
+- `deriveCommittedPlacementActionPlan` returns
+  `mortalos-lineage-placement-action-plan/1` with `planned_repair_actions`,
+  `verified_placement_receipt_ids`, `non_capability: true`, and
+  `requires_executor_reverification: true`. It is deterministic public, forgeable
+  JSON, not authority. An effect executor must reverify the original Capsule,
+  generation, commit, and current placement/liveness evidence.
+- The core conditionally detects late-proof conflicts only when the caller supplies
+  fresh response and current placement evidence. The current Lab/browser harness
+  supplies empty late-response/current-placement arrays and has no network gossip
+  plus execution-time reconciliation loop.
+- Rolling source documentation does not self-promote its containing revision.
+  Exact-head and exact-main review, CI, merge, deployment, and promotion facts live
+  in immutable external records bound to a commit SHA.
+
+The next root P0 is failure-precommitted liveness policy plus independent provider
+response and effect-time exactly-once repair reconciliation. Lineage-governed
+admission/failure-domain accounting with explicit trust roots follows; self-asserted
+topology labels must not count as independent domains.

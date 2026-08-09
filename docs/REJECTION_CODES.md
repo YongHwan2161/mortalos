@@ -214,6 +214,39 @@ realm intrinsics. Raw `recoverContinuityCapsuleQuorum` is compatibility integrit
 counting; only `recoverContinuityCopyQuorum` proves distinct signed logical identities.
 These are local activation errors, not v0/v1 lineage rejection codes.
 
+The lineage-placement controller similarly throws local scheduling errors rather
+than validator rejection codes: `E_LINEAGE_PLACEMENT_RUNTIME` for realm-integrity
+drift, `E_LINEAGE_PLACEMENT_FORMAT` for malformed, accessor/Proxy/sparse-array, or
+non-canonical documents, `E_LINEAGE_PLACEMENT_LIMIT` for bounded-input violations,
+`E_LINEAGE_PLACEMENT_GENERATION` for an invalid evidence summary, ID, or prior
+binding, `E_LINEAGE_PLACEMENT_STALE` when a generation no longer names the current
+Continuity parent, and `E_LINEAGE_PLACEMENT_COMMIT` when the named generation or
+prior transition is absent or mismatched in the verified Capsule. A valid sibling
+set is not thrown away; convergence returns the explicit fail-closed state
+`halted / generation-fork` with no selected commit. A candidate chain that omits
+generation 1 returns `halted / incomplete-chain`; a Capsule with an existing
+placement commit cannot reset to generation 1.
+
+The liveness layer uses local verifier errors: `E_PLACEMENT_LIVENESS_RUNTIME` and
+`E_PLACEMENT_LIVENESS_PROFILE` for realm-integrity or generated-ceiling drift;
+`E_PLACEMENT_LIVENESS_FORMAT` and `E_PLACEMENT_LIVENESS_LIMIT` for non-canonical,
+accessor/Proxy/sparse-array, or oversized evidence;
+`E_PLACEMENT_LIVENESS_IDENTITY`, `E_PLACEMENT_LIVENESS_SIGNATURE`, and
+`E_PLACEMENT_LIVENESS_BINDING` for invalid roles, signatures, or predecessor data;
+`E_PLACEMENT_LIVENESS_POLICY`, `E_PLACEMENT_LIVENESS_WINDOW`, and
+`E_PLACEMENT_LIVENESS_QUORUM` for an unsafe roster, mismatched duration, or
+under-threshold certificate; and `E_PLACEMENT_LIVENESS_EQUIVOCATION` for observer
+double-sign evidence. The lineage composition maps any invalid, offer-roster-mismatched,
+lease-consumer-mismatched, stale, forked, or late-proof-conflicting liveness input to
+`E_LINEAGE_PLACEMENT_LIVENESS` and derives no repair plan. Auditable details include
+`uncertified-repair-intent`, `offer-witness-roster-binding`,
+`lease-consumer-binding`, and `late-proof-conflict`; a stale supplied placement
+predecessor fails as `stale-prior-generation`, while a historically valid but
+superseded commit cannot derive a current plan and fails as
+`superseded-generation-plan`. A successful derived plan
+is public, forgeable JSON rather than a bearer capability; effect execution requires
+fresh verification of the original committed and current evidence.
+
 - Malformed JSON with forged signatures returns `E_PARSE_INVALID_JSON` before any cryptographic result.
 - An invalid-UTF-8 envelope with an oversized payload returns envelope `E_PARSE_INVALID_UTF8`; payload acquisition cannot overtake envelope parsing.
 - If a schema engine reports several faults, unknown fields take precedence, then wrong top-level kind, then the lexicographically first normalized JSON-Pointer/keyword pair by unsigned UTF-16 code units; engine error enumeration order is ignored.

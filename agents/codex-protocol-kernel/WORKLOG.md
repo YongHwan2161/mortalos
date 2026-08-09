@@ -1982,3 +1982,117 @@ result, and reproducible verification.
   distributed counter, fuzz, SDK/packed consumer, continuity/Capsule/relay,
   multi-browser/Lab/UX, portable `10,000/10,000`, independent Python differentials,
   and S3/S4 receipt verification. No gate was reduced for this candidate.
+
+## 2026-08-09 KST — Lineage-bound placement handoff and convergence
+
+- Added `mortalos-lineage-placement-{generation,commit,authorization,convergence}/1`.
+  A generation carries complete canonical placement evidence and re-derives its
+  proof/repair summary instead of trusting controller output.
+- A generation becomes authoritative only through a current-custodian Continuity
+  state transition whose sign-once tuple binds one exact parent. The derived
+  authorization names committed repair actions and billable proof IDs; unsigned
+  plans do not grant either authority.
+- Node A commits a two-proof degraded generation, performs the existing sign-once
+  custody handoff to B without key transfer, is destroyed, and B commits a linked
+  three-proof repaired generation under B-owned leases. Two fresh verifier processes
+  reproduce byte-identical convergence output.
+- The adversarial fixture intentionally bypasses sign-once with an unsafe raw signer
+  and produces two separately valid same-parent generation commits. Both verify,
+  but convergence returns `generation-fork` and selects neither.
+- The actual Chromium vertical now creates controller authority from the selected
+  98,317-byte File, commits loss under A, hands control to B, closes A, repairs over
+  direct WebRTC, and commits under B. Reordered/duplicated evidence converges exactly
+  with origin and relay still cut; no private material appears in results.
+- Focused PASS: the hardened `npm run test:p2p-placement` completed in 372.6s with 14 Node
+  cases and both actual Chromium verticals; async security inventory, SDK surface,
+  clean packed-package import, and five-entry Lab build also pass.
+  Final ordered `npm test` then passed on the hardened source in 3,129.8s, including every existing browser,
+  protocol, SDK, continuity, Lab, portable, differential, and stage-receipt gate.
+  Exact commit, independent review, merge, deployment, and promotion remain open.
+- Root next gap: the commit proves who authorized a generation, not whether a local
+  timeout is globally true. Next P0 is quorum-observed, predecessor-linked liveness
+  and failure certificates without a global clock. Physical/admin independence,
+  honest metering, Sybil resistance, arbitrary NAT reachability, and XSS-resistant
+  signing remain HOLD.
+
+## 2026-08-09 KST — Quorum-observed liveness and repair certificates
+
+- Added canonical, domain-separated liveness challenge, observer no-response,
+  provider response, and threshold failure-certificate documents. Challenge order
+  is the exact prior execution receipt plus next sequence; the schema contains a
+  bounded local duration but no deadline, UTC time, clock server, or global clock.
+- Closed a policy-selection flaw found during implementation: the consumer cannot
+  create a favorable observer roster after failure. The roster and `n/f/q` must
+  equal the provider-signed offer witness policy already accepted by the lease.
+- Removed raw unavailable-provider input from lineage generation. Only verified
+  failed cases derive the lower-level unavailable set, and committed repair intent
+  carries the exact challenge and certificate IDs.
+- Added execution-time reconciliation. A late provider response counts only when a
+  supplied current placement proves the referenced dual-signed execution receipt;
+  response versus certificate, two challenges for one predecessor tuple, or two
+  receipt responses for one challenge halt with no repair winner.
+- Node liveness/transport focused gates pass. The lineage gate covers malicious
+  unagreed observers, committed certificate IDs, late-proof halt, two fresh verifier
+  processes, and 1,000 partition/heal inputs in four bounded batches. The exact
+  final lineage rerun remains part of the final ordered verification below.
+- Actual Chromium PASS: the challenge crossed direct WebRTC to provider 0 and four
+  observer browser processes, provider 0 exited, three observers signed after the
+  actual 5,000 ms local window, A committed the certified repair and handed control
+  to B without key transfer, A exited, and B committed repaired continuity. Origin,
+  HTTP, and relay request counts remained unchanged after cut.
+- Root insight: quorum signatures close controller-local outage fabrication but not
+  Sybil control. The next P0 is lineage-committed membership plus measured
+  failure-domain diversity so one operator cannot manufacture both provider and
+  observer populations. Same-PC/admin/network, honest timers, honest metering,
+  arbitrary NAT, and physical independence remain HOLD.
+- Final ordered repository regression PASS: `npm test` completed in `4,263.6s`.
+  The liveness-hardened placement gate passed 17 Node cases plus both actual
+  Chromium verticals; portable rejected `10,000/10,000` serialized adversarial
+  cases; state/state-package/R1 differentials, Lab/UX, SDK/continuity/Capsule,
+  relay/quorum, and the final S3/S4 receipt gates all passed. The command root and
+  descendants were absent at the post-run readback.
+
+## 2026-08-10 KST — Pre-publication security reconciliation and claim boundary
+
+- Independent adversarial review reproduced three release blockers and one derived-
+  plan gap: a rogue liveness consumer could differ from the verified lease consumer;
+  a stale prior generation could rewind placement numbering after a newer commit;
+  poisoned collection primordials could count one repeated observer as a quorum; and
+  an older committed generation could derive a plan against a later Capsule head.
+- The core now binds the full lease/challenge consumer identity, requires the unique
+  latest committed placement predecessor in creation, commit, and verification,
+  rejects superseded generation plans, and uses captured realm/own-data snapshots for
+  hostile accessor, Proxy, sparse-array, `Set`, `Map`, `Object`, and `Array` inputs.
+  The public plan remains forgeable `non_capability` data and grants no execution
+  authority.
+- `commitLineagePlacementGeneration` is now a direct async security-registry entry.
+  Its authority resolution and canonical input-byte ownership occur before the first
+  suspension. Generated-profile checks also require the resource-offer and liveness
+  witness ceilings to match and the certificate observation ceiling to represent the
+  full accepted roster; exact 16 witnesses pass and 17 reject.
+- Focused current-source PASS: lineage `2/2` in `740.9s`; liveness `5/5`;
+  resource/profile `15/15`; async security `26/26` with `22` direct and `128`
+  discovered entrypoints; SDK `5/5`; clean packed-package flow; specification,
+  links, generated profile, and `git diff --check`. A separate read-only security
+  rerun independently passed lineage `2/2` in `736.4s` and found no material release
+  block.
+- Claims are deliberately narrower than the implementation's signed transcript. The
+  response window is consumer-selected, not provider-agreed; a failure certificate
+  is not provider death, breach, lease termination, penalty, or settlement evidence;
+  and the current Chromium Lab does not execute repair through an effect-time,
+  current-evidence-gated executor.
+- Root next P0 is therefore a provider-signed, lease-bound liveness policy plus an
+  independent provider possession response and exactly-once repair executor. Only
+  after that semantic and effect boundary is fixed should lineage-governed membership
+  epochs assign trust-rooted failure-domain weights. Independent topology, absolute
+  Sybil resistance, honest metering, arbitrary NAT reachability, and same-origin
+  signer isolation remain HOLD.
+- After the implementation and preceding documentation reconciliation, the complete
+  ordered `npm test` passed without a skipped gate in `3,664.8s`. It included both
+  actual Chromium placement verticals, portable `10,000/10,000`, independent
+  state/state-package/R1 differentials, and the final S3/S4 receipt verifiers. This
+  evidence line was appended after that run; exact-head CI remains the authority for
+  the final committed documentation revision.
+- Exact-SHA review, CI, merge, deployment, and public promotion remain external facts
+  read from the PR, required checks, merge record, post-main workflows, and deployed
+  manifest; this append-only source record does not self-promote its containing SHA.

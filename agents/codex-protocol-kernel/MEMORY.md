@@ -1,10 +1,14 @@
 # Durable memory
 
-Last reconciled: 2026-08-09 KST
+Last reconciled: 2026-08-10 KST
 
-Branch: `agent/codex-protocol-kernel--p2p-placement-repair`
+Source branch context: `agent/codex-protocol-kernel--p2p-placement-repair` (historical
+when this revision is read from `main`)
 
-Base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
+Historical integration base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
+
+Exact-SHA review, CI, merge, deployment, and promotion status is external to this
+rolling source memory; consult immutable GitHub and deployed-manifest records.
 
 ## Network-visible sign-once resource contract
 
@@ -109,9 +113,9 @@ Base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
   Verify `30754511404` plus Deploy `30754511395`. Package-registry publication and
   physical or administrative provider independence remain unclaimed.
 
-## P2P placement/repair local candidate
+## P2P placement/repair source evidence
 
-- The candidate adds a manual WebRTC browser-platform transport outside portable
+- This source revision adds a manual WebRTC browser-platform transport outside portable
   `src/`, an untrusted
   canonical placement-artifact carrier, and an authority-free storage placement
   evaluator. Connection or delivery never counts without exact active storage
@@ -123,7 +127,7 @@ Base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
 - Consumer A destroys authority and exits. Consumer B reads three peers, rejects one
   corrupt readback by workload commitment, and recovers exact bytes from two.
   Equivalent actual Node provider-process loss/repair and clean package import pass.
-- This is local candidate evidence only. Plaintext transfer, one-shot receipt
+- This is local source evidence only. Plaintext transfer, one-shot receipt
   freshness, manual same-host ICE, same-origin signing, same-PC administration, and
   external topology remain HOLD.
 - The first ordered full run correctly BLOCKed the WebRTC adapter when it lived
@@ -133,18 +137,59 @@ Base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
 
 ## Current priority
 
-1. Bind placement generation, proof set, repair intent, and active leases into the
-   current Continuity lineage so controller handoff has one fork-detecting SSOT.
-2. Make partitioned/restarted controllers converge byte-identically after heal and
-   prevent duplicate repair or billing authority without a fixed backend.
-3. Expose that lineage-bound controller through focused SDK/CLI commands while
-   retaining authority-free verification and private-key non-transfer.
-4. Add replaceable discovery/signaling/STUN/TURN adapters, then prove origin and
-   selected bootstrap loss without making them validity authorities.
-5. Prove distinct failure/credential/administrator domains and isolate signing
-   before promoting physical-independence or XSS-resistant custody claims.
+1. Commit a provider-signed, lease-bound liveness policy before failure. It must
+   bind the observer-policy digest, response window, challenge rate/outstanding
+   ceiling, independent provider response path, and validity sequence range.
+2. Add a dedicated exactly-once repair executor that treats the public action plan
+   as non-capability data, reconciles current signed evidence immediately before an
+   effect, and calls provider/session authority zero times for stale, superseded,
+   forged, or contested plans.
+3. Then commit observer/provider membership epochs with explicit trust roots and
+   failure-domain weights into Continuity and derive challenge rosters from them.
+   Multiple or rotated keys under one operator root retain aggregate weight one;
+   self-asserted labels do not prove independence or absolute Sybil resistance.
+4. Run real distinct-device/network/account/credential/administrator trials while
+   keeping discovery/signaling/STUN/TURN replaceable and non-authoritative. Retain
+   honest-meter, arbitrary-NAT, physical-independence, and XSS-resistant custody
+   HOLDs until their own exact evidence gates pass.
 
-## Confidential P2P placement controller local candidate
+## Quorum-observed liveness source evidence
+
+- `mortalos-placement-liveness-{challenge,observation,response}/1` and
+  `mortalos-placement-failure-certificate/1` bind exact lineage, manifest, lease,
+  workload, shard, prior execution receipt, next sequence, nonce, bounded local
+  duration, and observer policy without an absolute deadline or global clock.
+- The observer roster must equal the provider-signed offer witness policy. Exact
+  3-of-4 signed no-response evidence is required; raw `unavailable_provider_ids`
+  is rejected by lineage generation.
+- The lease consumer selects the bounded response window; the provider has not
+  pre-agreed that window. This transcript is not death, breach, lease-termination,
+  penalty, or settlement evidence.
+- Generation repair intent carries challenge/certificate IDs. The core conditionally
+  checks late responses against actual current receipt chains and halts on
+  certificate/proof conflict when callers provide those observations. The current
+  Lab/browser harness supplies empty late-response/current-placement arrays and does
+  not gossip or revalidate asynchronous late responses at effect execution.
+  Challenge and response forks also halt.
+- `deriveCommittedPlacementActionPlan` returns
+  `mortalos-lineage-placement-action-plan/1` with `planned_repair_actions`,
+  `verified_placement_receipt_ids`, `non_capability: true`, and
+  `requires_executor_reverification: true`. This forgeable derived record is not an
+  authority token; executors must reverify the original Capsule, generation, commit,
+  and current placement/liveness evidence before effects. The Lab wrapper is
+  `derivePlacementActionPlan`.
+- The verified lease consumer must equal the signed challenge consumer. A rogue
+  consumer using the exact valid observer roster is rejected.
+- Actual Chromium sends the exact challenge over direct WebRTC to the failed
+  provider and four separate observer browser processes, waits 5,000 ms locally,
+  commits 3-of-4 evidence, exits A, and continues repair under B. These processes
+  still share one PC/admin/network and are not physical-independence evidence.
+- A pre-review final ordered `npm test` baseline completed in `4,263.6s`, including
+  its then-current 17 placement/liveness/lineage/transport Node cases, both
+  actual Chromium placement verticals, packed SDK/continuity/Capsule, Lab/UX,
+  portable `10,000/10,000`, independent differentials, and stage receipts.
+
+## Confidential P2P placement controller source evidence
 
 - `src/placement/confidential.mjs` encodes a verified S4 package into three
   deterministic 2-of-3 ciphertext envelopes and binds each shard to its own exact
@@ -158,11 +203,20 @@ Base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
   verified states. This is not 100 physical failure domains.
 - The actual Chromium vertical encrypts a native 98,317-byte File for B, stores only
   distinct ciphertext shards over direct DataChannels, cuts origin/relay requests,
-  loses a provider, exits A, and makes B renew all placements under B-owned keys.
+  loses a provider, exits A, and makes B issue renewed placements under new
+  successor-authorized operational keys. Those keys are not inferred to be, or
+  cryptographically bound to, B's Continuity custody identity.
   B rejects one corrupt shard and decrypts exact bytes from another valid pair.
-- `npm run test:p2p-placement` passes 12 Node tests plus both Chromium verticals.
-  Same-PC administration, manual ICE, local outage observation, lineage-wide
-  controller serialization, exact-head governance, and physical independence HOLD.
+- A pre-review `npm run test:p2p-placement` baseline passed its then-current 17 Node
+  cases plus both actual Chromium verticals. The newer
+  lineage layer commits generation/proof/repair state through current
+  custody, derives a reverified action plan only from a verified commit, converges reordered
+  evidence byte-identically, and halts an independently valid sibling fork. Same-PC
+  administration, manual ICE, Sybil-resistant outage truth, exact-head governance,
+  and physical independence HOLD.
+- The earlier lineage-only source passed its then-current final ordered `npm test`
+  in 3,129.8s. Governance and deployment of any later revision are exact-SHA
+  external facts and are never inferred from this memory.
 
 ## Stable decisions
 

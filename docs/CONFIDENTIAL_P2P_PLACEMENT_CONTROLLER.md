@@ -1,12 +1,12 @@
 # Confidential P2P placement controller
 
-Status: **LOCAL EXACT-SOURCE PASS — GOVERNED MERGE AND PHYSICAL PROMOTION HOLD**
+Status: **SOURCE + LOCAL EVIDENCE PASS — EXACT-SHA PROMOTION EXTERNAL; PHYSICAL PROMOTION HOLD**
 
-Last synchronized: **2026-08-09 KST**
+Last synchronized: **2026-08-10 KST**
 
 ## Purpose
 
-This vertical closes two weaknesses of the first storage placement candidate:
+This source vertical closes two weaknesses of the first storage placement revision:
 providers saw the resource plaintext, and a historically valid possession receipt
 could be mistaken for current availability.
 
@@ -46,7 +46,9 @@ following are true:
 4. usage and execution receipts verify for the exact shard workload;
 5. the proof time is not in the future and its age is at most the configured bound;
 6. neither provider identity nor shard index is duplicated; and
-7. the provider is not locally observed unavailable.
+7. when a lineage generation marks the provider unavailable, the exact placement
+   is named by a threshold certificate from the offer's fixed witness roster rather than a raw
+   controller timeout.
 
 The exact maximum proof age counts. Maximum plus one millisecond returns
 `stale-proof` and stops counting. Two available shards permit recovery while three
@@ -65,11 +67,13 @@ next counted proof must directly reference the journaled receipt and increment t
 challenge sequence. A genuinely new provider and lease may enter with its first
 valid receipt.
 
-A stronger custody rule applies after endpoint A exits: A's private consumer key is
-not transferred to B merely to extend A's leases. B reconstructs the encrypted
-package from quorum, decrypts with B's non-extractable custodian key, and renews
-placement under B's own consumer identity through new offers, leases, and receipts.
-This makes key non-transfer and controller continuity compatible.
+A stronger operational rule applies after endpoint A exits: A's private consumer
+key is not transferred merely to extend A's leases. B reconstructs the encrypted
+package from quorum and decrypts with B's non-extractable custodian key. A separately
+generated successor-authorized operational signer forms the new offers, leases, and
+receipts. The source does not infer or cryptographically bind that operational signer
+to B's Continuity custody identity. This proves key non-transfer, not identity-bound
+controller delegation.
 
 ## Executable evidence
 
@@ -78,17 +82,29 @@ This makes key non-transfer and controller continuity compatible.
 | Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future/replay rejection; real commit-process exit and load-process restart; directly chained re-proof |
 | Seeded controller policy corpus | same command | 100 deterministic loss, stale, repair, and corrupt-evidence cycles over cryptographically verified fixture states; no claim of 100 physical failures |
 | Existing plaintext P2P regression | `node scripts/verify-p2p-placement-chromium.mjs` | Direct DataChannel transport, provider loss, repair, A exit, 2-of-3 readback |
-| Confidential Chromium vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual 98,317-byte native File; S4 encryption for B; three distinct ciphertext shards over WebRTC; provider signatures; origin cut; journal replay rejection; provider loss; A exit; B new leases; corrupt-shard rejection; exact decryption |
-| Combined placement gate | `npm run test:p2p-placement` | 12 Node tests plus both actual Chromium verticals PASS |
+| Confidential Chromium vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual 98,317-byte native File; S4 encryption for B; three distinct ciphertext shards plus liveness challenge over WebRTC; provider loss; four observer processes and 3-of-4 certificate; A lineage commit; sign-once A→B custody handoff; A exit; successor-authorized operational signer creates new leases and successor commit; byte-identical convergence; corrupt-shard rejection; exact decryption; no custody-identity binding claim |
+| Lineage controller | `node --test test/lineage-placement.test.mjs` | Offer-rostered certificate-gated derived placement action plan; consumer-selected bounded window; conditional late-proof conflict when fresh response/current placement evidence is supplied; fresh-process deterministic replay; 1,000 partition/heal evidence events; stale A rejection; independently valid same-parent generation fork halts |
+| Combined placement gate | `npm run test:p2p-placement` | The pre-review baseline passed its then-current 17 Node cases and both Chromium verticals; exact-SHA CI is the current-revision authority |
 | Public package boundary | `node scripts/verify-sdk-package.mjs` | Clean packed consumer imports the authority-free placement surface |
-| Complete repository regression | `npm test` | Entire ordered suite PASS in 3,101.1 seconds after append-only generation-pointer hardening and pointer-to-journal generation binding, including durable browsers, S4, P2P, SDK, Lab UX, portable 10,000/10,000, independent differentials, and S3/S4 receipts |
+| Complete repository regression | `npm test` | A pre-review source baseline completed in 4,263.6 seconds; exact-SHA CI is the current-revision authority |
 
 ## Explicit nonclaims
 
-- The local controller is not globally serialized across multiple simultaneous
-  custodians. Concurrent legitimate controllers can still issue redundant repair
-  leases until placement state is bound to lifecycle lineage.
-- Local `unavailable_provider_ids` input is not a signed global death or outage fact.
+- Placement generation commits are serialized through current-custodian Continuity
+  commits, and lineage repair-plan derivation requires a threshold certificate under
+  the provider-signed offer policy. `deriveCommittedPlacementActionPlan` returns a
+  `mortalos-lineage-placement-action-plan/1` record whose
+  `planned_repair_actions` and `verified_placement_receipt_ids` are explicitly marked
+  `non_capability: true` and `requires_executor_reverification: true`. It is
+  forgeable public JSON, not authority. An executor must reverify the
+  original Capsule, generation, commit, current placement, and liveness evidence
+  before effects.
+- The core conditionally rejects a late-proof conflict only when supplied the fresh
+  response and its verified current placement chain. The current Lab/browser harness
+  supplies empty late-response/current-placement arrays and has no network gossip
+  plus execution-time reconciliation loop.
+- Local `unavailable_provider_ids` remains a diagnostic evaluator input only; the
+  lineage generation surface rejects it.
 - Browser processes share this PC, administrator, network, and credential domain.
 - Manual same-host ICE does not prove arbitrary NAT traversal or Internet discovery.
 - Ephemeral same-origin signing is not an XSS-resistant signer boundary.
@@ -99,9 +115,10 @@ This makes key non-transfer and controller continuity compatible.
 
 ## Next root priority
 
-The next P0 is **lineage-bound distributed controller handoff and repair
-convergence**. Placement policy state must become a signed part of the current
-continuity transition so that exactly one successor plan is current, partitions
-fail closed, and healed peers converge without duplicate repair or billing. Only
-after that should the project optimize discovery/NAT adapters or claim independent
-provider topology.
+The lineage and liveness layers are now implemented locally; see
+[Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md) and
+[Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).
+The next P0 is a provider-signed lease-bound liveness policy, independent possession
+response, and effect-time exactly-once repair executor. Lineage-governed admission
+and failure-domain accounting with explicit trust roots follows. Key-count quorum
+and self-asserted topology labels must not be promoted as independent topology.

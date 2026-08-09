@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-09 KST**
+Last synchronized: **2026-08-10 KST**
 
 ## Read first
 
@@ -8,13 +8,19 @@ Last synchronized: **2026-08-09 KST**
   evidence layers, priority order, and strict completion gates.
 - [Current claim matrix](CLAIM_MATRIX.md) — what is implemented, verified,
   promoted, and explicitly unclaimed.
-- [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) — current local
-  candidate contract, executable gates, and nonclaims.
+- [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) — source
+  contract, executable local gates, and nonclaims.
 - [Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md)
-  — ciphertext shards, proof freshness, crash recovery, custody succession, and the
-  next controller-convergence gap.
+  — ciphertext shards, proof freshness, crash recovery, and custody succession.
+- [Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md) — current-
+  descriptor generation commit, derived placement action plan, deterministic
+  convergence, and fork halt.
+- [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md)
+  — offer-rostered observations, consumer-selected bounded window, global-clock-free evidence, committed
+  repair-plan derivation, conditional late-proof conflict, and the next
+  membership-truth gap.
 
-These three files answer “where are we now?” Completed contest-era evidence and UX
+These current files answer “where are we now?” Completed contest-era evidence and UX
 plans remain isolated under `docs/archive/` because historical baseline receipts bind
 them; they are not current instructions. GitHub issues are coordination metadata and
 cannot promote a claim.
@@ -50,14 +56,29 @@ discovery, signaling, Cloudflare, and GPT decide none of those results.
 
 ## Current boundary
 
-Main base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` contains the governed
-continuity and local resource-execution verticals. This candidate adds direct WebRTC
+Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
+continuity and local resource-execution verticals. This revision adds direct WebRTC
 transport, receipt-gated placement/repair, S4 ciphertext-only 2-of-3 provider
-shards, bounded proof freshness, crash-safe public-evidence journals, and B-owned
-new-lease continuation after A exits. Focused Node/Chromium and packed-package gates
-pass locally; exact-head CI, independent review, merge, exact-main verification,
-publication, and physical independence remain HOLD.
+shards, bounded proof freshness, crash-safe public-evidence journals, and
+successor-authorized new-lease continuation after A exits. The operational signer is
+not inferred to be B's Continuity custody identity. This revision also binds
+placement generations to Continuity, gates derived placement action plans on a
+current-descriptor commit, and halts sibling
+forks. Focused Node/Chromium, fresh-process, security, packed-package, and final
+ordered `npm test` (4,263.6s on the pre-review liveness-hardened source) gates
+passed locally. Governance and deployment are exact-SHA external facts read from
+the PR, required checks, merge record, post-merge workflows, and deployed manifest;
+this document does not self-promote its containing revision. Physical independence
+remains HOLD.
 
-The next P0 is lineage-bound distributed controller handoff and repair convergence.
-Manual same-host ICE, local outage observation, and one-PC administration remain
-explicit boundaries.
+This worktree additionally removes raw unavailability from lineage generation:
+offer-rostered 3-of-4 observer certificates bind exact predecessor/sequence and
+local duration without a global clock. The core conditionally halts a derived plan
+when supplied a late verified proof and current placement evidence; the current Lab
+does not gossip or reconcile that evidence at effect execution. Derived plans are
+forgeable data, so executors must reverify the original signed and committed inputs.
+The next P0 is failure-precommitted liveness policy plus independent provider
+response and effect-time exactly-once repair reconciliation. Lineage-governed
+admission/failure-domain accounting with explicit trust roots follows. Absolute
+Sybil resistance cannot be inferred from self-created keys; manual same-host ICE and
+one-PC administration remain explicit boundaries.

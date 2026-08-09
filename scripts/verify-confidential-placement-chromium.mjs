@@ -14,6 +14,10 @@ import {
 import {
   createStoragePlacementFixture
 } from "../lab/placement/storage-contract.mjs";
+import {
+  createPlacementFailureCertificateFromChallengeFixture,
+  createPlacementLivenessChallengeFixture
+} from "../lab/placement/liveness-contract.mjs";
 import { buildLab } from "./build-lab.mjs";
 import { startLabServer } from "./serve-lab.mjs";
 
@@ -168,8 +172,49 @@ async function retrieve(controller, provider, purpose) {
   return recovered.resource_base64url;
 }
 
+async function deliverArtifact(sender, receiver, kind, bytes, purpose) {
+  await connect(sender, receiver, purpose);
+  const request = `${purpose}-${connectionSequence}`;
+  const received = receiver.page.evaluate(({ artifactKind, requestId }) =>
+    globalThis.__MORTALOS_P2P_PLACEMENT__.waitArtifact(artifactKind, requestId), {
+    artifactKind: kind,
+    requestId: request
+  });
+  await sender.page.evaluate(({ artifactKind, requestId, value }) =>
+    globalThis.__MORTALOS_P2P_PLACEMENT__.publishArtifact(artifactKind, requestId, value), {
+    artifactKind: kind,
+    requestId: request,
+    value: encodeBase64Url(bytes)
+  });
+  const opened = await received;
+  await closeConnection(sender, receiver);
+  assert.equal(opened.payload_base64url, encodeBase64Url(bytes));
+}
+
 function record(fixture, shardIndex) {
   return Object.freeze({ ...fixture.placement, shard_index: shardIndex });
+}
+
+function browserRecord(fixture, shardIndex) {
+  const value = record(fixture, shardIndex);
+  return Object.freeze({
+    consumption_announcements_base64url: value.consumption_announcements.map(encodeBase64Url),
+    execution_receipts_base64url: value.execution_receipts.map(encodeBase64Url),
+    lease_base64url: encodeBase64Url(value.lease),
+    observed_at_ms: value.observed_at_ms,
+    offer_base64url: encodeBase64Url(value.offer),
+    revocations_base64url: value.revocations.map(encodeBase64Url),
+    shard_index: value.shard_index,
+    usage_receipts_base64url: value.usage_receipts.map(encodeBase64Url)
+  });
+}
+
+function controllerCandidate(committed, generation) {
+  return Object.freeze({
+    capsule_base64url: committed.capsule_base64url,
+    commit_base64url: committed.commit_base64url,
+    generation_base64url: generation.generation_base64url
+  });
 }
 
 function evaluate(manifestBase64Url, records, unavailable = [], evaluatedAt = "1800") {
@@ -208,6 +253,11 @@ try {
     const file = document.querySelector("#confidential-file").files[0];
     return globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createPackageFromFile(file, [descriptor]);
   }, bCustodian.descriptor);
+  const controllerCreated = await consumerA.page.evaluate(() => {
+    const file = document.querySelector("#confidential-file").files[0];
+    return globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createControllerFromFile(file);
+  });
+  assert.equal(controllerCreated.private_material_exposed, false);
   const shardSet = await consumerA.page.evaluate((packageValue) =>
     globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createShardSet(packageValue),
   confidential.package_base64url);
@@ -215,7 +265,12 @@ try {
   assert.ok(shardSet.shards.every(({ bytes_base64url: value }) =>
     !Buffer.from(value, "base64url").includes(marker)));
 
-  const aWitnesses = await witnesses(consumerA);
+  const providerWitnesses = (providerIndex) => [
+    signer(consumerB),
+    ...providers
+      .filter((ignored, index) => index !== providerIndex)
+      .map((endpoint) => signer(endpoint))
+  ];
   const initial = [];
   for (let index = 0; index < 3; index += 1) {
     const bytes = Buffer.from(shardSet.shards[index].bytes_base64url, "base64url");
@@ -224,7 +279,7 @@ try {
       provider: providerAdapter(consumerA, providers[index]),
       resourceBytes: bytes,
       seed: 20 + index * 4,
-      witnesses: aWitnesses
+      witnesses: providerWitnesses(index)
     });
     assert.equal(fixture.expected_workload_id, shardSet.shards[index].workload_id);
     initial.push(fixture);
@@ -254,7 +309,41 @@ try {
   assert.ok(replayed.placements.every(({ reason }) => reason === "restart-reproof-required"));
 
   const lostProviderId = providers[0].identity.key_id;
+  const livenessObservers = providerWitnesses(0);
+  const livenessChallenge = await createPlacementLivenessChallengeFixture({
+    consumer: signer(consumerA),
+    lineage_parent_hash: controllerCreated.head_hash,
+    manifest_id: shardSet.manifest_id,
+    observers: livenessObservers,
+    placement: initial[0],
+    response_window_ms: "5000",
+    shard_index: 0
+  });
+  await deliverArtifact(
+    consumerA,
+    providers[0],
+    "liveness-challenge",
+    livenessChallenge.bytes,
+    "failed-provider-liveness-challenge"
+  );
+  for (const endpoint of [consumerB, providers[1], providers[2], providers[3]]) {
+    await deliverArtifact(
+      consumerA,
+      endpoint,
+      "liveness-challenge",
+      livenessChallenge.bytes,
+      `observer-liveness-challenge-${endpoint.label}`
+    );
+  }
   await providers[0].browser.close();
+  await Promise.all([consumerB, providers[1], providers[2], providers[3]].map(({ page }) =>
+    page.evaluate((milliseconds) => new Promise((resolveDelay) =>
+      setTimeout(resolveDelay, milliseconds)), 5000)));
+  const failure = await createPlacementFailureCertificateFromChallengeFixture({
+    challenge_bytes: livenessChallenge.bytes,
+    observers: livenessObservers,
+    waited_window_ms: "5000"
+  });
   const degraded = evaluate(
     shardSet.manifest_base64url,
     initial.map((fixture, index) => record(fixture, index)),
@@ -262,6 +351,43 @@ try {
   );
   assert.equal(degraded.status, "repairing");
   assert.deepEqual(planConfidentialStorageRepair(degraded).actions.map(({ shard_index: index }) => index), [0]);
+
+  const generation1 = await consumerA.page.evaluate((options) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createPlacementGeneration(options), {
+    capsule_base64url: controllerCreated.capsule_base64url,
+    evaluated_at_ms: "1800",
+    failure_certificates_base64url: [encodeBase64Url(failure.certificate_bytes)],
+    liveness_responses_base64url: [],
+    manifest_base64url: shardSet.manifest_base64url,
+    max_proof_age_ms: "500",
+    placements: initial.map((fixture, index) => browserRecord(fixture, index)),
+    prior_commit_base64url: null,
+    prior_generation_base64url: null,
+    quorum: 2,
+    target_shards: 3
+  });
+  assert.equal(generation1.status, "repairing");
+  assert.deepEqual(generation1.repair_shard_indexes, [0]);
+  const committed1 = await consumerA.page.evaluate(({ capsule, generation }) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.commitPlacementGeneration(capsule, generation), {
+    capsule: controllerCreated.capsule_base64url,
+    generation: generation1.generation_base64url
+  });
+  await consumerB.page.evaluate(() =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createController());
+  const controllerRequest = await consumerB.page.evaluate((capsule) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.requestControllerHandoff(capsule),
+  committed1.capsule_base64url);
+  const controllerProposal = await consumerA.page.evaluate(({ capsule, request }) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.proposeControllerHandoff(capsule, request), {
+    capsule: committed1.capsule_base64url,
+    request: controllerRequest
+  });
+  const controllerHanded = await consumerB.page.evaluate(({ capsule, proposal }) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.acceptControllerHandoff(capsule, proposal), {
+    capsule: committed1.capsule_base64url,
+    proposal: controllerProposal
+  });
 
   const recoveredOne = await retrieve(consumerB, providers[1], "successor-read-1");
   const recoveredTwo = await retrieve(consumerB, providers[2], "successor-read-2");
@@ -315,6 +441,49 @@ try {
     "1801"
   ).status, "unavailable");
 
+  const generation2 = await consumerB.page.evaluate((options) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createPlacementGeneration(options), {
+    capsule_base64url: controllerHanded.capsule_base64url,
+    evaluated_at_ms: "1800",
+    failure_certificates_base64url: [],
+    liveness_responses_base64url: [],
+    manifest_base64url: successorSet.manifest_base64url,
+    max_proof_age_ms: "500",
+    placements: successor.map((fixture, index) => browserRecord(fixture, index)),
+    prior_commit_base64url: committed1.commit_base64url,
+    prior_generation_base64url: generation1.generation_base64url,
+    quorum: 2,
+    target_shards: 3
+  });
+  assert.equal(generation2.generation, "2");
+  assert.equal(generation2.status, "proved");
+  const committed2 = await consumerB.page.evaluate(({ capsule, generation }) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.commitPlacementGeneration(capsule, generation), {
+    capsule: controllerHanded.capsule_base64url,
+    generation: generation2.generation_base64url
+  });
+  const actionPlan2 = await consumerB.page.evaluate((value) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.derivePlacementActionPlan(value),
+  controllerCandidate(committed2, generation2));
+  assert.equal(actionPlan2.non_capability, true);
+  assert.equal(actionPlan2.requires_executor_reverification, true);
+  assert.equal(actionPlan2.planned_repair_actions.length, 0);
+  assert.equal(actionPlan2.verified_placement_receipt_ids.length, 3);
+  const convergenceForward = await consumerB.page.evaluate((values) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.convergePlacement(values), [
+    controllerCandidate(committed1, generation1),
+    controllerCandidate(committed2, generation2)
+  ]);
+  const convergenceReverse = await consumerB.page.evaluate((values) =>
+    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.convergePlacement(values), [
+    controllerCandidate(committed2, generation2),
+    controllerCandidate(committed1, generation1),
+    controllerCandidate(committed2, generation2)
+  ]);
+  assert.equal(convergenceForward.value.status, "converged");
+  assert.equal(convergenceForward.value.selected_commit_id, committed2.commit_id);
+  assert.equal(convergenceForward.bytes_base64url, convergenceReverse.bytes_base64url);
+
   await providers[1].page.evaluate(() =>
     globalThis.__MORTALOS_P2P_PLACEMENT__.corruptStoredResource(100));
   const corruptOne = await retrieve(consumerB, providers[1], "corrupt-read-1");
@@ -348,14 +517,20 @@ try {
     ...providers.slice(1).map(({ page }) => page.evaluate(() =>
       globalThis.__MORTALOS_P2P_PLACEMENT__.snapshot()))
   ]);
-  assert.doesNotMatch(JSON.stringify({ continued, publicSnapshots }), /private[_-]?key|CryptoKey/u);
+  assert.doesNotMatch(
+    JSON.stringify({ actionPlan2, committed1, committed2, continued, publicSnapshots }),
+    /private[_-]?key|CryptoKey/u
+  );
 
   console.log("MortalOS confidential receipt-gated P2P placement controller: PASS");
   console.log("- browser A encrypted an actual 98,317-byte File for browser B and split only the S4 package into 2-of-3 shards");
   console.log("- three browser providers stored distinct shards over direct WebRTC DataChannels and signed exact workload receipts");
   console.log("- exact freshness boundary passed; one millisecond beyond the bound failed closed");
   console.log("- a restored journal rejected replayed pre-crash receipts until new evidence or new successor leases existed");
-  console.log("- provider loss produced a deterministic repair plan; browser B renewed all leases under its own non-transferred key");
+  console.log("- local provider-process termination plus a quorum certificate qualified a deterministic repair scheduling plan; browser B renewed all leases under its own non-transferred key");
+  console.log("- one failed provider and four separate browser observers received the same challenge over WebRTC; 3-of-4 signed the bounded local no-response window without a global clock");
+  console.log("- A committed the degraded generation before the Lab performed replacement placement; this Lab does not yet execute repair through an effect-time, current-evidence-gated action-plan executor");
+  console.log("- independently ordered generation evidence converged byte-identically without private-key transfer");
   console.log("- after browser A exited, B reconstructed and decrypted exact bytes from 2-of-3; one corrupted shard was rejected");
   console.log("- origin/HTTP/relay requests stayed at zero after the network cut; physical/admin independence remains HOLD");
 } finally {

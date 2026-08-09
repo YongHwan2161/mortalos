@@ -41,5 +41,15 @@ or recovery valid. Placement changes must retain the signed resource-contract ch
 and add corrupt, stale, future-time, wrong-workload, duplicate-provider,
 duplicate-shard, provider-loss, journal-replay, custody-successor, and repair
 coverage. Provider data must remain S4 ciphertext-only in the confidential path;
-placement succession creates successor-owned leases and never transfers a private
-consumer or custodian key.
+placement succession uses a separately generated successor-authorized operational
+signer and never transfers a private consumer or custodian key. Do not infer a
+cryptographic binding between that signer and the Continuity custody identity.
+
+`deriveCommittedPlacementActionPlan` (Lab adapter:
+`derivePlacementActionPlan`) returns
+`mortalos-lineage-placement-action-plan/1` with `planned_repair_actions`,
+`verified_placement_receipt_ids`, `non_capability: true`, and
+`requires_executor_reverification: true`. It is forgeable derived JSON, not a bearer
+capability. Any effect executor must reverify the original Capsule, generation,
+commit, and current placement/liveness evidence. The current Lab's empty late-proof
+arrays are not a gossip or execution-time reconciliation implementation.

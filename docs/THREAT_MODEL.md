@@ -1,14 +1,17 @@
 # MortalOS v0/v1 Threat Model
 
-Current candidate note (2026-08-02): S2/S4 claim authority is reopened. A branded
+Current source note (2026-08-10): the hardened S2/S4 source merged through PR #51,
+while the revised S2/S4 stage claims remain reopened pending new exact-SHA receipts.
+A branded
 outer authority is insufficient when the store or method behind it is mutable.
 Security-sensitive async entrypoints must capture complete transitive invocation
 data and module-private capabilities before the first await, and authority-changing
 commits require exact readback. The AST-based suspension audit rejects
 marker-shaped comments/strings, same-expression comma and conditional escapes,
 template interpolation, repeating-loop reads, deferred closures, and ordinary
-borrowed-identifier reads after suspension. Historical receipts do not cover this
-source.
+borrowed-identifier reads after suspension. Historical receipts do not cover the
+revised claims. This rolling document cannot promote its containing revision;
+immutable receipt, review, CI, merge, and deployment records carry that decision.
 
 Status: **Normative for v0 and the Minimum Viable Life claim**  
 Protocol: `mortalos/0`, state extension `mortalos/1`
@@ -324,7 +327,12 @@ MortalOS may use infrastructure for peer discovery and NAT traversal. That infra
 - must not bypass current quorum; and
 - must not be required to reconstruct accepted state after peers connect, except as a non-authoritative cache.
 
-If later phases implement this architecture, the correct public claim will be **peer-to-peer execution and state authority with replaceable bootstrap infrastructure**, not zero infrastructure. The current portable kernel and its CLI/browser verification adapters have no participant-to-participant network transport.
+The source revision includes manual WebRTC participant transport plus receipt-gated
+encrypted placement and repair. The correct claim is **peer-to-peer execution and state authority
+with replaceable bootstrap infrastructure**, not zero
+infrastructure. The public Lab's default journey still uses the HTTP relay and the
+confidential P2P vertical remains an automated acceptance harness; neither fact
+establishes an open participant resource network or independent physical providers.
 
 ### 11.1 Bootstrap endpoint boundary
 
@@ -357,9 +365,13 @@ GPT-5.6 must not:
 
 ## 13. Privacy and resource limitations
 
-MortalOS v0 provides integrity and lineage semantics, not confidentiality. Public keys, membership changes, pulse metadata, and public state roots may be observable.
+MortalOS v0 provides integrity and lineage semantics, not confidentiality. Public keys, membership changes, pulse metadata, and public state roots may be observable. The later S4 extension encrypts bounded state packages, but that does not retroactively make v0 metadata confidential or promote the revised S4 stage claim.
 
-Resource contribution must be explicit and revocable in later participant-runtime phases. v0 does not include background execution, hidden mining, incentives, or unrestricted arbitrary code.
+Resource contribution is explicit, bounded, signed, metered, and revocable in the
+later resource-contract and P2P placement source extensions. Those extensions are
+outside the v0 validity/death claim and do not establish independent providers or
+honest metering. v0 itself does not include background execution, hidden mining,
+incentives, or unrestricted arbitrary code.
 
 ## 14. Security claims matrix
 
@@ -383,9 +395,9 @@ Resource contribution must be explicit and revocable in later participant-runtim
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |
 | Byzantine quorum cannot fork | Not guaranteed | Future work. |
 | Sybil-resistant openness | Not implemented | Future work. |
-| Confidential prompts/state | Not implemented | Future work. |
+| Confidential bounded state packages | Implemented as the S4 source extension; revised stage claim reopened | Providers see ciphertext shards, not plaintext or keys; same-origin/XSS-resistant custody and independent-provider promotion remain HOLD. |
 | Zero infrastructure | Not claimed | Bootstrap/relay may exist. |
-| GPT cannot bypass validity | Required architecture property | Runtime integration and adversarial tests are planned for H4/P9. |
+| GPT cannot bypass validity | Required architecture property | The optional GPT/presentation path is non-authoritative and cost-gated; protocol validators do not consume its verdicts. |
 
 ## 15. v1 state-specific boundaries
 
@@ -504,15 +516,16 @@ epoch-key wrapping through WebCrypto.
 - Rotation activation is atomic old-or-new; any mixed membership/key/package state
   fails closed while the prior complete epoch remains readable.
 
-The candidate has focused relay/store capture evidence, standard and cross-runtime
+The hardened source revision has focused relay/store capture evidence, standard and cross-runtime
 vectors, one-million-record IV uniqueness, actual IndexedDB/Web Locks endpoint
 contention, browser-process restart recovery, persistent loss/equivocation
 rotation, mutable-store attack rejection, successor-substitution rejection,
 recipient-substitution rejection, failover-local authority rejection,
 removed-member denial, authority-only rotation, and
-every-write-boundary old-or-new fault evidence. These do not become a promoted
-confidentiality claim until the exact receipt, full suite, independent
-implementation review, merge, and exact-main deployment all pass.
+every-write-boundary old-or-new fault evidence. That source merged through PR #51,
+but the revised S4 stage claim remains reopened until a new exact-SHA receipt covers
+it. Rolling source text cannot substitute for immutable review, CI, merge,
+deployment, and receipt records.
 
 ## 19. Threat-model change control
 
@@ -541,7 +554,7 @@ The revision must identify the new trust assumption, affected invariant, failure
   not separate hosts, providers, administrators, or credential domains.
 - A Continuity Capsule contains public lineage plus encrypted resource state and no
   signing authority. A 2-of-3 Capsule quorum is content availability, not key quorum.
-- Chromium and Firefox have actual-engine candidate evidence. WebKit is selected by
+- Chromium and Firefox have actual-engine source-revision evidence. WebKit is selected by
   measured capability, not engine name or key generation: native non-extractable
   Ed25519 must sign and verify through the canonical 65,536-byte message ceiling
   before the full custody suite runs. `NotSupportedError` or `OperationError` permits
@@ -549,7 +562,7 @@ The revision must identify the new trust assumption, affected invariant, failure
 - Any valid divergent Capsule or lineage is equivocation evidence and halts automatic
   activation; MortalOS does not select a winner.
 
-## 21. Confidential P2P placement candidate boundary
+## 21. Confidential P2P placement source boundary
 
 - WebRTC connection success, manual signaling text, a provider label, or receipt
   delivery is not placement proof. Only the exact active lease and storage execution
@@ -566,12 +579,41 @@ The revision must identify the new trust assumption, affected invariant, failure
   availability coding and is not plaintext secret sharing.
 - A restored controller does not count the same prior receipt again. An existing
   lease must extend the journaled receipt directly; after custody moves from A to B,
-  B uses new B-owned leases rather than receiving A's private consumer key.
-- The journal is local. Concurrent legitimate controllers or lineage forks can
-  still create redundant repair leases. Until placement generations are signed into
-  lifecycle lineage, this is not a globally serialized scheduler or billing truth.
+  a separately generated successor-authorized operational signer creates new leases
+  rather than receiving A's private consumer key. This operational identity is not
+  inferred to be, or cryptographically bound to, B's Continuity custody identity.
+- Canonical placement generations are committed through the current Continuity
+  descriptor's quorum-authorized sign-once transition. A verified commit qualifies derivation of a
+  deterministic placement action plan. `deriveCommittedPlacementActionPlan` returns
+  `mortalos-lineage-placement-action-plan/1` with `planned_repair_actions`,
+  `verified_placement_receipt_ids`, `non_capability: true`, and
+  `requires_executor_reverification: true`; it is public, forgeable JSON rather than
+  authority. The effect executor must reverify the original Capsule, generation,
+  commit, current placement evidence, and liveness evidence. A valid same-generation
+  sibling fork halts with no selected head; reordered or duplicated evidence
+  converges byte-identically.
+- Raw `unavailable_provider_ids` remains a lower-level diagnostic input and is
+  rejected by lineage generation. Provider failure at that layer requires a
+  predecessor/sequence-bound challenge and a threshold of role-disjoint observations
+  under the provider-signed offer witness policy. No global clock or deadline is
+  trusted. The core conditionally halts a derived plan for a valid late receipt
+  response, challenge fork, or response fork when the caller supplies the response
+  and corresponding verified current placement evidence. The current Lab/browser
+  harness supplies empty late-response/current-placement arrays and has no network
+  gossip plus execution-time reconciliation loop; that production control remains
+  unimplemented.
+- This prevents one controller key from declaring failure, but does not prove honest
+  observer timers or independent actors. One administrator may control multiple
+  valid observer keys; Sybil resistance and physical failure-domain diversity remain
+  HOLD.
 - Manual `iceServers: []` same-host success does not prove NAT traversal, Internet
   reachability, or origin-free discovery. Signaling, STUN, TURN, and relays may be
   replaceable availability capabilities but never validity authorities.
 - Separate browser and Node processes on this PC share hardware, network,
   administrator, and credential domains. Physical S7/S8 claims remain HOLD.
+
+The next root P0 is failure-precommitted liveness policy plus independent provider
+response and effect-time exactly-once repair reconciliation. Lineage-governed
+admission/failure-domain accounting with explicit trust roots follows. Self-asserted
+topology labels must not count as independent domains; admission and diversity
+claims require evidence rooted outside the admitted actor.

@@ -53,6 +53,22 @@ test("resource placement artifacts are bounded untrusted carriers, not verdicts"
   assert.equal(artifact.artifact_kind, "challenge");
   assert.equal(artifact.request_id, "placement-1");
   assert.equal(JSON.stringify(artifact.payload), JSON.stringify({ evidence: "transported", proved: false }));
+  for (const artifactKind of [
+    "failure-certificate",
+    "liveness-challenge",
+    "liveness-observation",
+    "liveness-response"
+  ]) {
+    const liveness = createResourcePlacementArtifactMessage({
+      artifactKind,
+      payloadBytes,
+      requestId: `placement-${artifactKind}`
+    });
+    const openedLiveness = openResourcePlacementArtifact(
+      decodeRelayMessageBytes(canonicalBytes(liveness)).control
+    );
+    assert.equal(openedLiveness.artifact_kind, artifactKind);
+  }
   assert.throws(
     () => createRelayControlMessage("resource-placement-artifact", {
       artifact_kind: "verdict",

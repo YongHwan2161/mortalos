@@ -1,8 +1,8 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **PORTABLE CORE PROMOTED; CONFIDENTIAL P2P CONTROLLER LOCAL CANDIDATE**
+Status: **PORTABLE CORE PROMOTED; P2P SOURCE + LOCAL EVIDENCE PASS; EXACT-SHA PROMOTION EXTERNAL**
 
-Last synchronized: **2026-08-09 KST**
+Last synchronized: **2026-08-10 KST**
 
 ## Decision
 
@@ -92,7 +92,7 @@ The Worker, browser transport, and local acceptance server import one policy: tw
 active endpoints consume at most 204 scheduled operations/minute, or 252 with the
 explicit 48-operation interaction burst, below the 300/min room ceiling. A real
 two-profile Chromium gate also measures a 12-second active window; the remediated
-candidate recorded 39 operations and no local `429`.
+source-revision run recorded 39 operations and no local `429`.
 Presence-only and connect-only rooms also schedule expiry alarms. They remain a
 delivery optimization only.
 
@@ -110,9 +110,9 @@ validation or erase already held evidence.
 
 ## Direct peer boundary
 
-The local candidate adds canonical manual WebRTC signaling and one ordered binary
+This source revision adds canonical manual WebRTC signaling and one ordered binary
 DataChannel with `iceServers: []`. It carries the same bounded relay messages, chunk
-fragments, and untrusted placement-artifact wrappers. After the candidate bundle is
+fragments, and untrusted placement-artifact wrappers. After the source bundle is
 loaded, the Chromium vertical denies origin and relay requests before transferring
 the runtime file or resource-contract evidence.
 
@@ -139,14 +139,16 @@ signaling, STUN, TURN, and relay adapters may be added without entering validity
   closes the browser process, and passes `100/100` B handoff recoveries plus
   `100/100` cold pair recovery/transition/D-repair/next-transition trials for each
   lost A, B, and C. This is same-host profile evidence, not S7 failure-domain proof.
-- The P2P candidate transfers one actual file and complete signed placement evidence
+- The P2P source vertical transfers one actual file and complete signed placement evidence
   to three provider Chromium processes after the HTTP cut, terminates one provider,
   repairs through D under a new lease, terminates consumer A, and lets B recover two
   exact of three readbacks with one corrupt copy rejected.
 - The confidential composition encrypts another actual native File for B, transfers
   only three distinct S4 package shards to providers, excludes max-age + 1 receipts,
   restores a public-evidence journal fail-closed, terminates A, and lets B renew
-  placement with B-owned leases before exact 2-of-3 decrypt. Pages, origin, relay,
+  placement with a separately generated successor-authorized operational signer
+  before exact 2-of-3 decrypt. That signer is not inferred to be, or
+  cryptographically bound to, B's Continuity custody identity. Pages, origin, relay,
   and domain remain absent from the validity path.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
@@ -165,6 +167,21 @@ Chromium for the exact reviewed head.
   return `dead_under_v0_assumptions`, and only with explicit irreversibility and
   completeness assertions.
 - The deterministic state canary is not a general arbitrary-code agent genome.
+- `deriveCommittedPlacementActionPlan` (Lab:
+  `derivePlacementActionPlan`) returns
+  `mortalos-lineage-placement-action-plan/1` with
+  `planned_repair_actions`, `verified_placement_receipt_ids`,
+  `non_capability: true`, and `requires_executor_reverification: true`. It is public,
+  forgeable JSON, not authority. An effect executor must reverify the original
+  Capsule, generation, commit, and current placement/liveness evidence.
+- The core can reject a late-proof conflict when supplied fresh response and current
+  placement evidence. The Lab/browser harness currently supplies empty late-response
+  arrays and does not implement a network gossip plus execution-time reconciliation
+  loop.
+- Operational lease signers are separately authorized test identities; no source
+  rule cryptographically binds them to a successor's Continuity custody identity.
+- Provider/observer keys and labels do not prove independent devices, accounts,
+  regions, networks, credentials, or administrators without explicit trust roots.
 
 ## Release consequence
 
@@ -172,11 +189,12 @@ The governed total gate order remains:
 
 `R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → Durable Object relay → two-browser succession → three-endpoint 2-of-3 repair`
 
-The local candidate extends that source foundation through:
+This source revision extends that foundation through:
 
-`portable kernel → S4 ciphertext shards → signed bounded lease → direct peer transfer → fresh receipt-gated placement → crash recovery → successor-owned repair → peer recovery`
+`portable kernel → S4 ciphertext shards → signed bounded lease → direct peer transfer → fresh receipt-gated placement → crash recovery → successor-authorized operational repair → peer recovery`
 
-The publication sequence remains:
+The publication sequence remains a gate contract, not a statement that the
+containing revision has passed it:
 
 `immutable independent review → expected-head merge → post-merge Verify → exact-main deploy → public EN/KO multi-browser readback`
 
@@ -184,3 +202,8 @@ Reopen this architecture decision if any endpoint accepts evidence rejected by a
 conforming endpoint, requires a browser-only signed value, treats relay/GPT/UI output
 as authority, silently persists an ephemeral key, or converts disconnect into an
 unconditional death fact.
+
+The next root P0 is failure-precommitted liveness policy plus independent provider
+response and effect-time repair reconciliation. Lineage-governed admission and
+failure-domain accounting with explicit trust roots follows; self-asserted metadata
+must not manufacture quorum diversity.

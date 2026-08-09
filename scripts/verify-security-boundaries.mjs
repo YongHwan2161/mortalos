@@ -39,6 +39,7 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "src/confidential/recovery.mjs",
   "src/continuity.mjs",
   "src/distributed/quorum-counter-store.mjs",
+  "src/placement/lineage-controller.mjs",
   "src/state/recovery.mjs",
   "src/transport/corpus.mjs",
   "src/transport/chunk-data-plane.mjs",
@@ -63,6 +64,7 @@ const REQUIRED_ENTRYPOINTS = Object.freeze([
   "src/confidential/recovery.mjs:export async function rotateConfidentialState",
   "src/continuity.mjs:export async function continueContinuity",
   "src/continuity.mjs:export async function createContinuity",
+  "src/placement/lineage-controller.mjs:export async function commitLineagePlacementGeneration",
   "src/state/recovery.mjs:export async function recoverStatePackage",
   "src/transport/chunk-data-plane.mjs:export async function publishStateChunk",
   "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks"
@@ -101,6 +103,7 @@ const DEEP_OWNERSHIP_PRIMITIVES = new Set([
   "snapshotAuthority",
   "snapshotContinuityContinueInvocation",
   "snapshotContinuityCreateInvocation",
+  "snapshotLineagePlacementCommitInvocation",
   "snapshotDataMethod",
   "snapshotNamedOwnDataValues",
   "snapshotObservedCounterAuthorityEquivocation",
@@ -174,6 +177,9 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
     snapshotContinuityCreateInvocation: ["local", null, null, "4d63780c80c014e7815db639b1b4e13f14d0aefe9917a50f6395673358927f7c"],
     snapshotNamedOwnDataValues: ["import", "./primordials.mjs", "snapshotNamedOwnDataValues", "aab42c8f9795139df8c6073da9fd33656fb5858fc7e18fe466bc416b64c9f74d"]
   },
+  "src/placement/lineage-controller.mjs": {
+    snapshotLineagePlacementCommitInvocation: ["local", null, null, "57122aceff4cf285b7d5cc0f2e9f3e9b7b6e1573281d3a4317cfa26e41add2af"]
+  },
   "src/state/recovery.mjs": {
     snapshotRecoveryInvocation: ["local", null, null, "f2bcec674dea7d59d65de8fafc0eea7de0bb0b57b8d2383afde0551bed427bfe"],
     verifyStatePackage: ["import", "./package.mjs", "verifyStatePackage", "0afe9e042d0173a57791681e879dc73b9f3341fffb834019df8656980ab36b10"]
@@ -208,6 +214,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/confidential/recovery.mjs": "30d7453b1af1107c26d17f779600f6b8828d8d07759c2198f89f665f49c36feb",
   "src/continuity.mjs": "defc12d9cd7d6aec2ecb0e9ca875a99375703d94e9210ecb41bbbea435dd3f76",
   "src/distributed/quorum-counter-store.mjs": "5aa2d7c0257c6e4ba4ef5502dadbc485a8fd0e95ce56fc98da30a6ff84265869",
+  "src/placement/lineage-controller.mjs": "c3e9deefde2cd818d94a3730f8e61092627dba847abc17b0f659a3e3e4f1dd52",
   "src/primordials.mjs": "75784b17c238638772df8377ecff2e7fa1d64f25b0321a47b258079679b3ca78",
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
@@ -360,7 +367,8 @@ const OWNERSHIP_PRELUDE_DIGESTS = Object.freeze({
   "src/transport/chunk-data-plane.mjs:export async function publishStateChunk": "834a7fee1833a22ae4d55a1e1d024ce8b46493a62c0047483ee50abb350b4e84",
   "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks": "c101407df7bd62263823c2c91d7edeef82336c6247db778eabfe68ab8be5452d",
   "src/continuity.mjs:export async function createContinuity": "7c3f5c2d75b2928e355d032b27062c1baf56cadc73aa5e87f3610863a9fa38a1",
-  "src/continuity.mjs:export async function continueContinuity": "5ffded5a3705401e8e2aff9cf0f6cd0c633827ca4097119356fb84b7ea38a715"
+  "src/continuity.mjs:export async function continueContinuity": "5ffded5a3705401e8e2aff9cf0f6cd0c633827ca4097119356fb84b7ea38a715",
+  "src/placement/lineage-controller.mjs:export async function commitLineagePlacementGeneration": "a7dc924670d449ec0ee7faf79e9c2d22851c7e771b8f10c1d987505c6ef720f5"
 });
 assert.deepEqual(
   Object.keys(OWNERSHIP_PRELUDE_DIGESTS).sort(),

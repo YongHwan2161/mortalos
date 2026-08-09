@@ -1,16 +1,20 @@
 # MortalOS R3 state availability and recovery
 
-Current candidate note (2026-08-01): `protocol/profile.v1.json` now generates the
+Current source note (2026-08-10): `protocol/profile.v1.json` generates the
 state/transport/provider/confidential ceilings. A 64 KiB state chunk is carried as
 two bounded 32 KiB relay fragments, each domain-digested and reassembled only after
 exact message/chunk/root verification. Final activation uses expected-prior CAS,
-exact readback, and idempotent acceptance of the same already-active candidate. The
+exact readback, and idempotent acceptance of the same already-active transition. The
 publisher owns the transport capability, outer chunk list, each nested byte array,
 and a single-chunk invocation before its first transport await; recovery accepts
 only a module-branded destination capability.
 
-Status: **S3 CANDIDATE — receipt, independent review, promotion, and exact-main
-deployment required**
+Status: **S3 PROTOCOL AND HISTORICAL EXACT-COMMIT CLAIM PROMOTED;
+GENERATED-PROFILE/RELAY HARDENING MERGED; PHYSICAL PROVIDER INDEPENDENCE UNCLAIMED**
+
+This rolling source document describes the contract in the containing revision; it
+does not self-promote that revision. Exact receipt, review, merge, CI, and deployment
+facts must be read from immutable records bound to an exact commit SHA.
 
 This document is the normative S3 protocol ADR. It defines how bounded resource
 bytes are committed by a `mortalos/1` state transition and recovered without making
