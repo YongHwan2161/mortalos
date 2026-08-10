@@ -59,7 +59,10 @@ count. One corrupt copy is rejected and two valid copies recover the bytes.
 This revision closes the confidentiality/freshness gap locally. A encrypts the real
 file as an S4 package for B; providers receive three distinct ciphertext envelopes,
 any two reconstruct the package, and only fresh exact-workload receipts from
-distinct providers/shards count. A canonical journal survives an actual process
+distinct providers/shards count. Journal creation requires a module-private verified
+evaluation and a complete three-shard receipt barrier; the durable adapter rederives
+it from raw signed placement evidence and refuses raw, empty, partial, cloned, or
+self-hashed incomplete journals. The canonical journal survives an actual process
 restart and rejects pre-crash receipt replay. After A exits, B does not inherit A's
 private lease key: B reconstructs the encrypted package and renews all placements
 under separately generated successor-authorized operational keys. Those keys are not
@@ -73,7 +76,9 @@ Only that verified commit qualifies derivation of a placement action plan. The r
 plan is public, forgeable JSON rather than an authority capability; an effect
 executor must reverify its original signed/committed inputs and current evidence.
 Reordered evidence converges byte-identically; two independently valid same-parent
-generations halt.
+generations halt. Every authenticated latest placement tip visible in the supplied
+Capsules must appear in the candidate chain, so a historical g2 cannot win when a
+supplied Capsule already authenticates g3.
 
 This revision closes the raw-local-unavailability gap. The provider-signed offer
 fixes the witness roster while the verified lease consumer signs one exact
@@ -260,7 +265,9 @@ Strict pass criteria:
   into the accepted generation; unsigned or derived local intent cannot itself
   schedule or bill, and an executor revalidates the original evidence before effects;
 - two independently restarted controllers presented with the same evidence select
-  byte-identical state, while a valid divergent generation halts automatically;
+  byte-identical state; every supplied authenticated latest placement tip must be
+  represented by the candidate chain; a missing tail or middle halts as
+  `incomplete-chain`, while a valid divergent generation halts automatically;
 - partitioned controllers may preserve recovery quorum but may not double-count a
   provider, emit conflicting repair plans, or silently choose a fork after heal;
 - A→B custody handoff carries no private key, A termination is real, and B can renew

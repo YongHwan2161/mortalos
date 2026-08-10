@@ -14,6 +14,30 @@ import {
 } from "../resource-execution.mjs";
 import { verifyResourceOffer } from "../resource-contract.mjs";
 import {
+  arraySlice,
+  arraySort,
+  arrayValueAt,
+  copyOwnDataArray,
+  createArray,
+  createMap,
+  createSet,
+  createUint8Array,
+  createWeakMap,
+  defineArrayIndex,
+  freeze,
+  mapGet,
+  mapSet,
+  objectHasOwn,
+  ownDataRecordEntry,
+  ownKeys,
+  realmIntrinsicsIntact,
+  setAdd,
+  setHas,
+  snapshotOwnDataRecord,
+  weakMapGet,
+  weakMapSet
+} from "../primordials.mjs";
+import {
   STORAGE_PLACEMENT_STATUS,
   StoragePlacementError,
   evaluateStoragePlacements
@@ -32,6 +56,8 @@ const DOMAINS = Object.freeze({
   shard: "MortalOS confidential placement shard v1"
 });
 const DIGEST = /^sha256:[A-Za-z0-9_-]{43}$/u;
+const PEER_ID = /^peer:[A-Za-z0-9_-]{43}$/u;
+const RESOURCE_EXECUTION_RECEIPT_ID = /^resource-execution:[A-Za-z0-9_-]{43}$/u;
 const WORKLOAD_ID = /^resource-workload:[A-Za-z0-9_-]{43}$/u;
 const MAX_DOCUMENT_BYTES = 16 * 1024 * 1024;
 const RECORD_KEYS = Object.freeze([
@@ -44,9 +70,123 @@ const RECORD_KEYS = Object.freeze([
   "shard_index",
   "usage_receipts"
 ]);
+const EVALUATION_KEYS = Object.freeze([
+  "evaluated_at_ms",
+  "manifest_bytes",
+  "max_proof_age_ms",
+  "placements",
+  "quorum",
+  "target_shards",
+  "unavailable_provider_ids"
+]);
+const JOURNAL_CREATE_KEYS = Object.freeze([
+  "evaluation",
+  "generation",
+  "manifest_bytes",
+  "max_proof_age_ms",
+  "quorum",
+  "target_shards"
+]);
+const evaluationRecords = createWeakMap();
+
+function registerEvaluation(result, { manifestId, maximumAge, quorum, targetShards }) {
+  const receiptBarriers = createArray();
+  let barrierCount = 0;
+  for (let index = 0; index < result.placements.length; index += 1) {
+    const placement = result.placements[index];
+    if (
+      placement.status !== "proved" &&
+      placement.status !== "stale" &&
+      placement.status !== "unavailable"
+    ) continue;
+    defineArrayIndex(receiptBarriers, barrierCount, freeze({
+      challenge_sequence: placement.challenge_sequence,
+      provider_id: placement.provider_id,
+      receipt_id: placement.receipt_id,
+      shard_index: placement.shard_index
+    }));
+    barrierCount += 1;
+  }
+  if (barrierCount > 3) {
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "evaluation contains ambiguous receipt barriers");
+  }
+  if (quorum !== 2 || targetShards !== 3 || barrierCount !== 3) return result;
+  arraySort(receiptBarriers, (left, right) => left.shard_index - right.shard_index);
+  for (let index = 0; index < receiptBarriers.length; index += 1) {
+    if (receiptBarriers[index].shard_index !== index) {
+      fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "evaluation receipt barriers are incomplete");
+    }
+    for (let prior = 0; prior < index; prior += 1) {
+      if (receiptBarriers[prior].provider_id === receiptBarriers[index].provider_id) {
+        fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "evaluation receipt providers are ambiguous");
+      }
+    }
+  }
+  weakMapSet(evaluationRecords, result, freeze({
+    manifest_id: manifestId,
+    max_proof_age_ms: maximumAge,
+    proofs: freeze(receiptBarriers),
+    quorum,
+    target_shards: targetShards
+  }));
+  return result;
+}
 
 function fail(code, message) {
   throw new StoragePlacementError(code, message);
+}
+
+function requireIntactRealm() {
+  if (!realmIntrinsicsIntact()) {
+    fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", "realm intrinsic drift is not allowed");
+  }
+}
+
+function snapshotExactDataRecord(value, expectedKeys, label) {
+  let descriptors;
+  try {
+    descriptors = snapshotOwnDataRecord(value, label);
+  } catch {
+    fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `${label} must contain only own data properties`);
+  }
+  requireIntactRealm();
+  const keys = ownKeys(descriptors);
+  if (keys.length !== expectedKeys.length) {
+    fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `${label} has unknown or missing fields`);
+  }
+  for (let index = 0; index < expectedKeys.length; index += 1) {
+    if (!objectHasOwn(descriptors, expectedKeys[index])) {
+      fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `${label} has unknown or missing fields`);
+    }
+  }
+  return descriptors;
+}
+
+function dataValue(descriptors, property) {
+  return ownDataRecordEntry(descriptors, property).value;
+}
+
+function ownedDataArray(value, label, maximum) {
+  let owned;
+  try {
+    owned = copyOwnDataArray(value, label);
+  } catch {
+    fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `${label} must be a dense own-data array`);
+  }
+  requireIntactRealm();
+  if (owned.length > maximum) {
+    fail("E_CONFIDENTIAL_PLACEMENT_LIMIT", `${label} exceeds its bounded length`);
+  }
+  return owned;
+}
+
+function ownedDocumentArray(value, label, maximum) {
+  const sources = ownedDataArray(value, label, maximum);
+  const documents = createArray(sources.length);
+  for (let index = 0; index < sources.length; index += 1) {
+    defineArrayIndex(documents, index, ownedBytes(sources[index], `${label}/${index}`));
+  }
+  return freeze(documents);
 }
 
 function exactKeys(value, expected, label) {
@@ -65,7 +205,7 @@ function ownedBytes(value, label, maximum = MAX_DOCUMENT_BYTES) {
   if (length === null || length < 1 || length > maximum) {
     fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `${label} must be bounded bytes`);
   }
-  return new Uint8Array(value);
+  return createUint8Array(value);
 }
 
 function parseCanonical(bytes, label, maximum = MAX_DOCUMENT_BYTES) {
@@ -280,15 +420,42 @@ export function reconstructConfidentialPackage({ manifest_bytes: manifestBytes, 
 }
 
 function placementRecord(value, index) {
-  exactKeys(value, RECORD_KEYS, `placement ${index}`);
-  if (!Number.isSafeInteger(value.shard_index) || value.shard_index < 0 || value.shard_index > 2) {
+  const descriptors = snapshotExactDataRecord(value, RECORD_KEYS, `placement ${index}`);
+  const shardIndex = dataValue(descriptors, "shard_index");
+  const observedAt = dataValue(descriptors, "observed_at_ms");
+  if (!Number.isSafeInteger(shardIndex) || shardIndex < 0 || shardIndex > 2) {
     fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `placement ${index} shard index is invalid`);
   }
-  return Object.freeze({
-    shard_index: value.shard_index,
-    record: Object.freeze(Object.fromEntries(RECORD_KEYS
-      .filter((key) => key !== "shard_index")
-      .map((key) => [key, value[key]])))
+  if (typeof observedAt !== "string" || !/^(?:0|[1-9][0-9]*)$/u.test(observedAt)) {
+    fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `placement ${index} observed_at_ms is invalid`);
+  }
+  return freeze({
+    shard_index: shardIndex,
+    record: freeze({
+      consumption_announcements: ownedDocumentArray(
+        dataValue(descriptors, "consumption_announcements"),
+        `placement ${index} consumption announcements`,
+        64
+      ),
+      execution_receipts: ownedDocumentArray(
+        dataValue(descriptors, "execution_receipts"),
+        `placement ${index} execution receipts`,
+        4_096
+      ),
+      lease: ownedBytes(dataValue(descriptors, "lease"), `placement ${index} lease`),
+      observed_at_ms: observedAt,
+      offer: ownedBytes(dataValue(descriptors, "offer"), `placement ${index} offer`),
+      revocations: ownedDocumentArray(
+        dataValue(descriptors, "revocations"),
+        `placement ${index} revocations`,
+        32
+      ),
+      usage_receipts: ownedDocumentArray(
+        dataValue(descriptors, "usage_receipts"),
+        `placement ${index} usage receipts`,
+        4_096
+      )
+    })
   });
 }
 
@@ -320,17 +487,19 @@ function evaluatePlacement(
   if (shardIndex !== descriptor.shard_index) return rejected(shardIndex, "shard-descriptor-mismatch");
   // The outer record timestamp is historical carrier metadata, not authority for
   // a current generation. Contract status and proof age must share one instant.
-  const generationBoundRecord = Object.freeze({
+  const generationBoundRecord = freeze({
     ...record,
     observed_at_ms: evaluatedAtMs
   });
-  const basic = evaluateStoragePlacements({
+  const basicEvaluation = evaluateStoragePlacements({
     expected_workload_id: descriptor.workload_id,
     placements: [generationBoundRecord],
     quorum: 1,
     target_copies: 1,
     unavailable_provider_ids: []
-  }).placements[0];
+  });
+  requireIntactRealm();
+  const basic = basicEvaluation.placements[0];
   if (basic.status !== "proved") {
     return rejected(shardIndex, basic.reason, {
       lease_id: basic.lease_id,
@@ -339,13 +508,18 @@ function evaluatePlacement(
     });
   }
   const offer = verifyResourceOffer(record.offer);
+  requireIntactRealm();
+  const receiptCount = record.execution_receipts.length;
   const last = verifyResourceExecutionReceipt({
     offer: record.offer,
     lease: record.lease,
-    previous_execution_receipts: record.execution_receipts.slice(0, -1),
+    previous_execution_receipts: arraySlice(record.execution_receipts, 0, receiptCount - 1),
     usage_receipts: record.usage_receipts,
-    receipt: record.execution_receipts.at(-1)
+    receipt: receiptCount < 1
+      ? undefined
+      : arrayValueAt(record.execution_receipts, receiptCount - 1)
   });
+  requireIntactRealm();
   const issuedAt = decimal(last.challenge.body.issued_at_ms, "challenge issued_at_ms");
   const age = evaluatedAt - issuedAt;
   const common = {
@@ -359,113 +533,229 @@ function evaluatePlacement(
     workload_id: last.body.workload_id
   };
   if (age < 0) return rejected(shardIndex, "future-proof", common);
-  if (age > maximumAge) return Object.freeze({ ...common, reason: "stale-proof", status: "stale" });
-  if (unavailable.has(common.provider_id)) {
-    return Object.freeze({ ...common, reason: "transport-unavailable", status: "unavailable" });
+  if (age > maximumAge) return freeze({ ...common, reason: "stale-proof", status: "stale" });
+  if (setHas(unavailable, common.provider_id)) {
+    return freeze({ ...common, reason: "transport-unavailable", status: "unavailable" });
   }
-  return Object.freeze({ ...common, reason: null, status: "proved" });
+  return freeze({ ...common, reason: null, status: "proved" });
 }
 
 function summarizePlacements({ manifest, placements, quorum, targetShards }) {
-  const available = placements.filter(({ status }) => status === "proved");
-  const availableIndexes = new Set(available.map(({ shard_index: index }) => index));
-  const status = available.length >= targetShards
+  let availableCount = 0;
+  const availableIndexes = createSet();
+  for (let index = 0; index < placements.length; index += 1) {
+    if (placements[index].status !== "proved") continue;
+    availableCount += 1;
+    setAdd(availableIndexes, placements[index].shard_index);
+  }
+  const repairShardIndexes = createArray();
+  let repairCount = 0;
+  for (let index = 0; index < manifest.descriptors.length; index += 1) {
+    const shardIndex = manifest.descriptors[index].shard_index;
+    if (setHas(availableIndexes, shardIndex)) continue;
+    defineArrayIndex(repairShardIndexes, repairCount, shardIndex);
+    repairCount += 1;
+  }
+  const status = availableCount >= targetShards
     ? STORAGE_PLACEMENT_STATUS.proved
-    : available.length >= quorum
+    : availableCount >= quorum
       ? STORAGE_PLACEMENT_STATUS.repairing
       : STORAGE_PLACEMENT_STATUS.unavailable;
-  return Object.freeze({
-    available_shards: available.length,
+  return freeze({
+    available_shards: availableCount,
     manifest_id: manifest.manifest_id,
-    placements: Object.freeze(placements),
+    placements: freeze(placements),
     quorum,
-    repair_shard_indexes: Object.freeze(manifest.descriptors
-      .map(({ shard_index: index }) => index)
-      .filter((index) => !availableIndexes.has(index))),
+    repair_shard_indexes: freeze(repairShardIndexes),
     status,
     target_shards: targetShards
   });
 }
 
 export function evaluateConfidentialStoragePlacements(options) {
-  exactKeys(
+  requireIntactRealm();
+  const optionDescriptors = snapshotExactDataRecord(
     options,
-    ["evaluated_at_ms", "manifest_bytes", "max_proof_age_ms", "placements", "quorum", "target_shards", "unavailable_provider_ids"],
+    EVALUATION_KEYS,
     "confidential placement evaluation options"
   );
-  const manifest = verifyManifest(options.manifest_bytes);
-  const evaluatedAt = decimal(options.evaluated_at_ms, "evaluated_at_ms");
-  const maximumAge = decimal(options.max_proof_age_ms, "max_proof_age_ms", { minimum: 1 });
+  const manifestBytes = dataValue(optionDescriptors, "manifest_bytes");
+  const evaluatedAtText = dataValue(optionDescriptors, "evaluated_at_ms");
+  const maximumAgeText = dataValue(optionDescriptors, "max_proof_age_ms");
+  const placementSources = ownedDataArray(
+    dataValue(optionDescriptors, "placements"),
+    "confidential placement records",
+    16
+  );
+  const quorum = dataValue(optionDescriptors, "quorum");
+  const targetShards = dataValue(optionDescriptors, "target_shards");
+  const unavailableProviderIds = ownedDataArray(
+    dataValue(optionDescriptors, "unavailable_provider_ids"),
+    "unavailable provider IDs",
+    64
+  );
+  requireIntactRealm();
+  const manifest = verifyManifest(manifestBytes);
+  requireIntactRealm();
+  const evaluatedAt = decimal(evaluatedAtText, "evaluated_at_ms");
+  const maximumAge = decimal(maximumAgeText, "max_proof_age_ms", { minimum: 1 });
   if (
-    !Number.isSafeInteger(options.quorum) || options.quorum < 2 ||
-    !Number.isSafeInteger(options.target_shards) || options.target_shards < options.quorum || options.target_shards > 3
+    !Number.isSafeInteger(quorum) || quorum < 2 ||
+    !Number.isSafeInteger(targetShards) || targetShards < quorum || targetShards > 3
   ) fail("E_CONFIDENTIAL_PLACEMENT_POLICY", "2-of-3 compatible quorum and target required");
-  if (!Array.isArray(options.placements) || options.placements.length > 16) {
-    fail("E_CONFIDENTIAL_PLACEMENT_LIMIT", "at most sixteen placements are allowed");
+  for (let index = 0; index < unavailableProviderIds.length; index += 1) {
+    if (typeof unavailableProviderIds[index] !== "string") {
+      fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", "unavailable provider IDs must be strings");
+    }
   }
-  if (!Array.isArray(options.unavailable_provider_ids) || options.unavailable_provider_ids.some((id) => typeof id !== "string")) {
-    fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", "unavailable provider IDs must be strings");
+  const unavailable = createSet();
+  for (let index = 0; index < unavailableProviderIds.length; index += 1) {
+    setAdd(unavailable, unavailableProviderIds[index]);
   }
-  const unavailable = new Set(options.unavailable_provider_ids);
-  let placements = options.placements.map((value, index) => {
+  let placements = createArray(placementSources.length);
+  for (let index = 0; index < placementSources.length; index += 1) {
+    let evaluated;
     try {
-      const snapshot = placementRecord(value, index);
-      return evaluatePlacement(
+      const snapshot = placementRecord(placementSources[index], index);
+      evaluated = evaluatePlacement(
         snapshot,
         manifest.descriptors[snapshot.shard_index],
         unavailable,
         evaluatedAt,
-        options.evaluated_at_ms,
+        evaluatedAtText,
         maximumAge
       );
-    } catch (error) {
-      return rejected(Number.isSafeInteger(value?.shard_index) ? value.shard_index : null, error?.code ?? "invalid-evidence");
+    } catch {
+      requireIntactRealm();
+      evaluated = rejected(null, "invalid-evidence");
     }
-  });
-  const providerCounts = new Map();
-  const shardCounts = new Map();
-  for (const placement of placements) {
-    if (["proved", "unavailable", "stale"].includes(placement.status)) {
-      providerCounts.set(placement.provider_id, (providerCounts.get(placement.provider_id) ?? 0) + 1);
-      shardCounts.set(placement.shard_index, (shardCounts.get(placement.shard_index) ?? 0) + 1);
+    defineArrayIndex(placements, index, evaluated);
+  }
+  const providerCounts = createMap();
+  const shardCounts = createMap();
+  for (let index = 0; index < placements.length; index += 1) {
+    const placement = placements[index];
+    if (
+      placement.status === "proved" ||
+      placement.status === "unavailable" ||
+      placement.status === "stale"
+    ) {
+      mapSet(
+        providerCounts,
+        placement.provider_id,
+        (mapGet(providerCounts, placement.provider_id) ?? 0) + 1
+      );
+      mapSet(
+        shardCounts,
+        placement.shard_index,
+        (mapGet(shardCounts, placement.shard_index) ?? 0) + 1
+      );
     }
   }
-  placements = placements.map((placement) => {
-    if (placement.provider_id && (providerCounts.get(placement.provider_id) ?? 0) > 1) {
-      return Object.freeze({ ...placement, reason: "duplicate-provider", status: "rejected" });
+  const deduplicated = createArray(placements.length);
+  for (let index = 0; index < placements.length; index += 1) {
+    const placement = placements[index];
+    if (placement.provider_id && (mapGet(providerCounts, placement.provider_id) ?? 0) > 1) {
+      defineArrayIndex(
+        deduplicated,
+        index,
+        freeze({ ...placement, reason: "duplicate-provider", status: "rejected" })
+      );
+      continue;
     }
-    if (placement.shard_index !== null && (shardCounts.get(placement.shard_index) ?? 0) > 1) {
-      return Object.freeze({ ...placement, reason: "duplicate-shard", status: "rejected" });
+    if (
+      placement.shard_index !== null &&
+      (mapGet(shardCounts, placement.shard_index) ?? 0) > 1
+    ) {
+      defineArrayIndex(
+        deduplicated,
+        index,
+        freeze({ ...placement, reason: "duplicate-shard", status: "rejected" })
+      );
+      continue;
     }
-    return placement;
+    defineArrayIndex(deduplicated, index, placement);
+  }
+  placements = deduplicated;
+  requireIntactRealm();
+  const result = summarizePlacements({
+    manifest,
+    placements,
+    quorum,
+    targetShards
   });
-  return summarizePlacements({ manifest, placements, quorum: options.quorum, targetShards: options.target_shards });
+  requireIntactRealm();
+  return registerEvaluation(
+    result,
+    {
+      manifestId: manifest.manifest_id,
+      maximumAge: maximumAgeText,
+      quorum,
+      targetShards
+    }
+  );
 }
 
-export function createConfidentialPlacementJournal({
-  evaluation,
-  generation,
-  manifest_bytes: manifestBytes,
-  max_proof_age_ms: maximumAge,
-  quorum,
-  target_shards: targetShards
-}) {
+export function createConfidentialPlacementJournal(options) {
+  requireIntactRealm();
+  const optionDescriptors = snapshotExactDataRecord(
+    options,
+    JOURNAL_CREATE_KEYS,
+    "confidential placement journal options"
+  );
+  const evaluation = dataValue(optionDescriptors, "evaluation");
+  const generation = dataValue(optionDescriptors, "generation");
+  const manifestBytes = dataValue(optionDescriptors, "manifest_bytes");
+  const maximumAge = dataValue(optionDescriptors, "max_proof_age_ms");
+  const quorum = dataValue(optionDescriptors, "quorum");
+  const targetShards = dataValue(optionDescriptors, "target_shards");
+  requireIntactRealm();
   const manifest = verifyManifest(manifestBytes);
+  requireIntactRealm();
   const parsedGeneration = decimal(generation, "generation");
   decimal(maximumAge, "max_proof_age_ms", { minimum: 1 });
+  const record = weakMapGet(evaluationRecords, evaluation);
   if (
-    !evaluation || evaluation.manifest_id !== manifest.manifest_id ||
-    evaluation.quorum !== quorum || evaluation.target_shards !== targetShards
-  ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "evaluation is not bound to journal policy");
-  const proofs = evaluation.placements
-    .filter(({ status }) => status === "proved")
-    .map(({ challenge_sequence, provider_id, receipt_id, shard_index }) => ({
-      challenge_sequence,
-      provider_id,
-      receipt_id,
-      shard_index
-    }))
-    .sort((left, right) => left.shard_index - right.shard_index);
+    !record || record.manifest_id !== manifest.manifest_id ||
+    record.max_proof_age_ms !== maximumAge ||
+    record.quorum !== quorum || record.target_shards !== targetShards
+  ) fail(
+    "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
+    "verified evaluation and exact journal policy binding required"
+  );
+  if (
+    record.quorum !== 2 || record.target_shards !== 3 || record.proofs.length !== 3
+  ) fail(
+    "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
+    "journal v1 requires a complete three-shard receipt barrier"
+  );
+  for (let index = 0; index < record.proofs.length; index += 1) {
+    const proof = record.proofs[index];
+    if (proof.shard_index !== index) {
+      fail(
+        "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
+        "journal v1 requires one receipt barrier for each shard"
+      );
+    }
+    for (let prior = 0; prior < index; prior += 1) {
+      if (record.proofs[prior].provider_id === proof.provider_id) {
+        fail(
+          "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
+          "journal v1 requires distinct receipt-barrier providers"
+        );
+      }
+    }
+  }
+  const proofs = createArray(record.proofs.length);
+  for (let index = 0; index < record.proofs.length; index += 1) {
+    const proof = record.proofs[index];
+    defineArrayIndex(proofs, index, {
+      challenge_sequence: proof.challenge_sequence,
+      provider_id: proof.provider_id,
+      receipt_id: proof.receipt_id,
+      shard_index: proof.shard_index
+    });
+  }
   const basis = {
     format: CONFIDENTIAL_PLACEMENT_FORMATS.journal,
     generation: String(parsedGeneration),
@@ -476,15 +766,18 @@ export function createConfidentialPlacementJournal({
     quorum,
     target_shards: targetShards
   };
-  const journal = Object.freeze({
+  const journal = freeze({
     ...basis,
     journal_id: domainHash(DOMAINS.journal, canonicalBytes(basis))
   });
-  return Object.freeze({ bytes: canonicalBytes(journal), journal, journal_id: journal.journal_id });
+  requireIntactRealm();
+  return freeze({ bytes: canonicalBytes(journal), journal, journal_id: journal.journal_id });
 }
 
 export function restoreConfidentialPlacementJournal(journalBytes) {
+  requireIntactRealm();
   const parsed = parseCanonical(journalBytes, "placement journal", 2 * 1024 * 1024);
+  requireIntactRealm();
   exactKeys(
     parsed.value,
     ["format", "generation", "journal_id", "manifest_base64url", "manifest_id", "max_proof_age_ms", "proofs", "quorum", "target_shards"],
@@ -496,25 +789,34 @@ export function restoreConfidentialPlacementJournal(journalBytes) {
   }
   decimal(value.generation, "generation");
   decimal(value.max_proof_age_ms, "max_proof_age_ms", { minimum: 1 });
-  if (!Number.isSafeInteger(value.quorum) || !Number.isSafeInteger(value.target_shards)) {
+  if (value.quorum !== 2 || value.target_shards !== 3) {
     fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal policy is invalid");
   }
   const manifestBytes = decodeBase64Url(value.manifest_base64url);
   if (!manifestBytes) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal manifest is invalid");
   const manifest = verifyManifest(manifestBytes);
-  if (manifest.manifest_id !== value.manifest_id || !Array.isArray(value.proofs) || value.proofs.length > 3) {
+  if (manifest.manifest_id !== value.manifest_id || !Array.isArray(value.proofs) || value.proofs.length !== 3) {
     fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal manifest or proofs are invalid");
   }
   const proofs = value.proofs.map((proof, index) => {
     exactKeys(proof, ["challenge_sequence", "provider_id", "receipt_id", "shard_index"], `journal proof ${index}`);
     if (
-      typeof proof.provider_id !== "string" || typeof proof.receipt_id !== "string" ||
+      !PEER_ID.test(proof.provider_id) ||
+      !RESOURCE_EXECUTION_RECEIPT_ID.test(proof.receipt_id) ||
       typeof proof.challenge_sequence !== "string" ||
-      !Number.isSafeInteger(proof.shard_index) || proof.shard_index < 0 || proof.shard_index > 2
+      proof.shard_index !== index
     ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", `journal proof ${index} is invalid`);
     decimal(proof.challenge_sequence, `journal proof ${index} sequence`);
     return Object.freeze({ ...proof });
   });
+  for (let index = 0; index < proofs.length; index += 1) {
+    for (let prior = 0; prior < index; prior += 1) {
+      if (
+        proofs[prior].provider_id === proofs[index].provider_id ||
+        proofs[prior].receipt_id === proofs[index].receipt_id
+      ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal receipt barriers must be distinct");
+    }
+  }
   const basis = {
     format: value.format,
     generation: value.generation,
@@ -546,6 +848,7 @@ export function evaluateConfidentialPlacementJournal({
   placements,
   unavailable_provider_ids: unavailableProviderIds
 }) {
+  requireIntactRealm();
   const journal = restoreConfidentialPlacementJournal(journalBytes);
   const evaluated = evaluateConfidentialStoragePlacements({
     evaluated_at_ms: evaluatedAt,
@@ -556,21 +859,34 @@ export function evaluateConfidentialPlacementJournal({
     target_shards: journal.target_shards,
     unavailable_provider_ids: unavailableProviderIds
   });
-  const previous = new Map(journal.proofs.map((proof) => [`${proof.shard_index}:${proof.provider_id}`, proof]));
-  const checked = evaluated.placements.map((placement) => {
-    if (placement.status !== "proved") return placement;
-    const prior = previous.get(`${placement.shard_index}:${placement.provider_id}`);
-    if (!prior) return placement;
-    const expectedSequence = String(Number(prior.challenge_sequence) + 1);
-    if (
-      placement.previous_execution_receipt_id !== prior.receipt_id ||
-      placement.challenge_sequence !== expectedSequence
-    ) {
-      return Object.freeze({ ...placement, reason: "restart-reproof-required", status: "rejected" });
+  requireIntactRealm();
+  const previous = createMap();
+  for (let index = 0; index < journal.proofs.length; index += 1) {
+    const proof = journal.proofs[index];
+    mapSet(previous, `${proof.shard_index}:${proof.provider_id}`, proof);
+  }
+  const checked = createArray(evaluated.placements.length);
+  for (let index = 0; index < evaluated.placements.length; index += 1) {
+    let placement = evaluated.placements[index];
+    if (placement.status === "proved") {
+      const prior = mapGet(previous, `${placement.shard_index}:${placement.provider_id}`);
+      if (prior) {
+        const expectedSequence = String(Number(prior.challenge_sequence) + 1);
+        if (
+          placement.previous_execution_receipt_id !== prior.receipt_id ||
+          placement.challenge_sequence !== expectedSequence
+        ) {
+          placement = freeze({
+            ...placement,
+            reason: "restart-reproof-required",
+            status: "rejected"
+          });
+        }
+      }
     }
-    return placement;
-  });
-  return Object.freeze({
+    defineArrayIndex(checked, index, placement);
+  }
+  return freeze({
     ...summarizePlacements({
       manifest: journal.manifest,
       placements: checked,

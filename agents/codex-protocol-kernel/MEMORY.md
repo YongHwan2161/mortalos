@@ -220,6 +220,21 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
 - Placement counts only fresh distinct-provider/distinct-shard receipts. Exact max
   age passes and max+1 fails. A restored canonical journal refuses the same
   pre-crash receipt and requires a direct chained successor or a new provider/lease.
+- A journal-shaped object and its self-hash are not producer evidence. Journal v1
+  accepts only a module-private branded evaluator result with exact `2-of-3` policy
+  and a complete three-shard/distinct-provider receipt barrier. Brand issuance uses
+  owned inert snapshots, captured collection operations, and post-acquisition plus
+  post-validator realm checks; caller array methods, Proxy-array method overrides,
+  accessors, and selective collection poisoning cannot mint the brand. Stale and unavailable
+  receipt-bearing placements remain barriers. The durable commit process re-evaluates
+  raw signed placement evidence and refuses raw journal bytes, empty/partial evidence,
+  clones, accessors, Proxies, and self-hashed incomplete documents. The unsigned
+  local journal does not claim hostile-disk tamper resistance.
+- Restart load checks the realm at entry and after filesystem reads, copies the
+  directory listing as dense own data, and uses contained pointer parsing plus one
+  order-independent maximum-generation/fork scan. A selective self-restoring array
+  method cannot hide the newest existing pointer; it is rejected without invocation.
+  Only a fork at the current maximum generation halts, independent of listing order.
 - The Node gate uses separate commit and load processes for the journal and runs
   100 deterministic loss/stale/repair/corrupt policy cycles over cryptographically
   verified states. This is not 100 physical failure domains.
@@ -233,7 +248,10 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   cases plus both actual Chromium verticals. The newer
   lineage layer commits generation/proof/repair state through current
   custody, derives a reverified action plan only from a verified commit, converges reordered
-  evidence byte-identically, and halts an independently valid sibling fork. Same-PC
+  evidence byte-identically, requires the authenticated latest placement tip of every
+  supplied verified Capsule to appear in the candidate chain, and halts an omitted
+  tail or independently valid sibling fork. This is supplied-view currentness, not
+  knowledge of a completely hidden newer Capsule. Same-PC
   administration, manual ICE, Sybil-resistant outage truth, exact-head governance,
   and physical independence HOLD.
 - The earlier lineage-only source passed its then-current final ordered `npm test`

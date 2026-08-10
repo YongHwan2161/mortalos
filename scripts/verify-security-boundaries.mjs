@@ -217,14 +217,23 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/confidential/recovery.mjs": "30d7453b1af1107c26d17f779600f6b8828d8d07759c2198f89f665f49c36feb",
   "src/continuity.mjs": "defc12d9cd7d6aec2ecb0e9ca875a99375703d94e9210ecb41bbbea435dd3f76",
   "src/distributed/quorum-counter-store.mjs": "5aa2d7c0257c6e4ba4ef5502dadbc485a8fd0e95ce56fc98da30a6ff84265869",
-  "src/placement/lineage-controller.mjs": "53a21f4af49ea18ed4017875a5770800666d6410d324b9741fed12b105fcfe5b",
-  "src/primordials.mjs": "75784b17c238638772df8377ecff2e7fa1d64f25b0321a47b258079679b3ca78",
+  "src/placement/lineage-controller.mjs": "55cd515797b6d5430c95e307cb66ca096b489ce937781a4325eb26460d7ba9fc",
+  "src/primordials.mjs": "a7a8c85573463956197926749e0bd41622470e1e640d4f3928e954ebd1c01630",
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
   "src/transport/protocol.mjs": "d9d2f925b5f2753a1e0e927b4a6ae3ee2a471d728a3710a9810a9ef51ef8ab0b",
   "lab/transport/webrtc-peer.mjs": "916b1926d0a0437fbb3fb053aab3ec7603500a05a529b4d865ea34d209d6868b"
+});
+
+// These synchronous producer/commit boundaries mint or persist replay-policy
+// evidence. Pin their complete reviewed implementations so a later edit cannot
+// silently weaken the module-private evaluation brand or reintroduce a raw-journal
+// durable commit path while the async-only inventory remains green.
+const SYNC_TRUST_BOUNDARY_MODULE_DIGESTS = Object.freeze({
+  "lab/placement/confidential-controller.mjs": "907a0b1c766836f94ffdf32393d64e1b08a99fc48407f1503e6a34ab07283d1c",
+  "src/placement/confidential.mjs": "77a35151f49153ba582cfc7f56ca51ba5e72432af5796f32481571eaec0d3feb"
 });
 
 // A classification is a reviewed security decision, not a permanent textual
@@ -912,6 +921,15 @@ for (const entry of registry.entries) {
     testSource,
     new RegExp(entry.test_marker.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"),
     `${entry.file}: missing linked hostile-mutation regression`
+  );
+}
+
+for (const [file, expectedDigest] of Object.entries(SYNC_TRUST_BOUNDARY_MODULE_DIGESTS)) {
+  const source = await readFile(new URL(file, root), "utf8");
+  assert.equal(
+    sha256(source),
+    expectedDigest,
+    `${file}: synchronous trust boundary drift requires a fresh security review`
   );
 }
 

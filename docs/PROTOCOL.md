@@ -853,8 +853,27 @@ not replace S4 encryption and does not grant decryption authority.
 
 `mortalos-confidential-placement-journal/1` is unsigned local policy evidence. It
 binds one manifest, generation, proof-age policy, recovery/target thresholds, and
-the last counted provider/shard/receipt tuples. It MUST NOT be interpreted as a
-lifecycle event, global placement consensus, or billing authority.
+the last observed provider/shard/receipt barrier tuples. V1 MUST contain exactly one
+ordered barrier for each shard `0`, `1`, and `2`, under three distinct provider and
+receipt identities. A conforming creator MUST accept only an evaluator-produced
+module-private result. Before issuing that brand, the evaluator MUST acquire every
+recognized record, dense array, and byte view into owned inert data without invoking
+caller methods or recognized getters, use contained collection operations, and fail
+closed if the runtime changes during acquisition or nested artifact validation. A
+selective array-method, Proxy-array, accessor, or collection override MUST NOT be
+able to fabricate the proof basis. A durable adapter MUST re-evaluate raw signed placement
+evidence and derive the journal inside the commit boundary rather than persist
+caller-supplied self-hashed journal bytes. Empty, partial, cloned, accessor-backed,
+Proxy-backed, or manually self-hashed incomplete input MUST NOT advance the durable
+pointer. Restoration MUST independently recheck the complete v1 barrier invariant.
+The durable loader MUST treat filesystem enumeration and pointer selection as part of
+the same trust boundary: it MUST snapshot the listing, contain pointer parsing and
+maximum-generation/fork selection, and fail closed on runtime drift before or after
+filesystem acquisition. An override that hides a newer existing pointer MUST NOT make
+an older generation current, and listing order MUST NOT change the current-fork
+verdict.
+The journal MUST NOT be interpreted as a lifecycle event, global placement consensus,
+billing authority, signature, or hostile-disk tamper proof.
 
 A confidential shard counts only after the ordinary resource validators prove its
 exact active storage workload and the local evaluator proves distinct provider and
@@ -864,7 +883,9 @@ age MUST be evaluated at the same canonical generation `evaluated_at_ms`.
 Per-placement `observed_at_ms` is historical carrier metadata and MUST NOT prolong a
 lease that is completed or effectively revoked at generation time. After journal
 restoration, an existing lease MUST present the direct successor of the journaled
-execution receipt before counting again. A new provider/lease MAY enter with a new valid first receipt. A
+execution receipt before counting again. `stale` and `unavailable` receipt-bearing
+placements remain barriers so omission cannot make their old receipt fresh again.
+A new provider/lease MAY enter with a new valid first receipt. A
 successor-authorized operational signing identity MAY form new offers and leases;
 that identity is not inferred to be, or cryptographically bound to, the Continuity
 custody identity. Transfer of the prior consumer private key is forbidden.

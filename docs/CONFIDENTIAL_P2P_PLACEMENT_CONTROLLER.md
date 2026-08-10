@@ -64,15 +64,41 @@ lineage creator emits no proved generation for either stale-time input.
 ## Crash and custody succession
 
 The portable journal contains only canonical public evidence: manifest, policy,
-generation, provider/shard identity, challenge sequence, and last receipt ID. The
-Node Lab adapter persists immutable journal and append-only generation-pointer
-files. A crash before the pointer leaves an ignored orphan; two different pointers
-for the same highest generation halt as a fork instead of choosing a winner.
+generation, provider/shard identity, challenge sequence, and last receipt ID. A v1
+journal is valid only when it contains exactly one receipt barrier for each of the
+three shards under three distinct providers. Barriers include the last verified
+receipt even when its current evaluation is `stale` or `unavailable`; otherwise a
+caller could omit that record and replay it after restart.
+
+`createConfidentialPlacementJournal` accepts only a module-private result produced
+by `evaluateConfidentialStoragePlacements`, not an evaluation-shaped plain object,
+clone, accessor, or Proxy. That brand is issued only after the evaluator copies its
+recognized option/placement records, dense arrays, and byte views into owned inert
+data, uses captured array and collection operations, and rechecks the runtime after
+hostile acquisition and after nested signed-artifact validators. It never invokes a
+caller array method or recognized getter. Selective `Array.prototype.map`, a
+Proxy-array method override, `Map.get`, or `Set.has` therefore cannot fabricate a
+proved evaluation and obtain the private brand. The Node Lab commit boundary does not accept caller-made
+`journal_bytes`; it re-evaluates the raw signed placement records and derives the
+journal in the commit process. Empty or partial evidence cannot advance v1 because
+v1 has no authenticated prior-barrier carry-forward mechanism. Restoration again
+requires the complete ordered barrier set. The adapter then persists the immutable
+journal and append-only generation-pointer files. A crash before the pointer leaves
+an ignored orphan; two different pointers for the same highest generation halt as a
+fork instead of choosing a winner. Restart loading checks runtime integrity at entry
+and after each filesystem acquisition, copies the directory listing into dense owned
+data, and uses captured pointer parsing plus an order-independent bounded scan for the
+maximum generation. A selective self-restoring prototype override therefore cannot
+hide the newest pointer and make an older journal current. A historical fork below a
+unique later generation remains historical rather than becoming a listing-order
+dependent false halt.
 
 After restart, an old receipt is not silently reused. For an existing lease, the
 next counted proof must directly reference the journaled receipt and increment the
 challenge sequence. A genuinely new provider and lease may enter with its first
-valid receipt.
+valid receipt. The journal remains unsigned local crash-policy evidence: file mode,
+directory custody, and the conforming commit adapter are trust assumptions. It does
+not claim hostile-disk tamper resistance or global placement truth.
 
 A stronger operational rule applies after endpoint A exits: A's private consumer
 key is not transferred merely to extend A's leases. B reconstructs the encrypted
@@ -86,7 +112,7 @@ controller delegation.
 
 | Gate | Command | Result |
 | --- | --- | --- |
-| Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future/replay rejection; generation-time completion and effective-revocation rejection; real commit-process exit and load-process restart; directly chained re-proof |
+| Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future/replay rejection; generation-time completion and effective-revocation rejection; owned-inert evaluator acquisition, selective array/Proxy/collection poison containment, private brand/WeakMap-prototype containment, zero/partial/self-hashed incomplete journal rejection, durable in-process re-derivation, self-restoring stale-pointer concealment rejection, order-independent current-fork selection, real commit-process exit/load-process restart, and directly chained re-proof |
 | Seeded controller policy corpus | same command | 100 deterministic loss, stale, repair, and corrupt-evidence cycles over cryptographically verified fixture states; no claim of 100 physical failures |
 | Existing plaintext P2P regression | `node scripts/verify-p2p-placement-chromium.mjs` | Direct DataChannel transport, provider loss, repair, A exit, 2-of-3 readback |
 | Confidential Chromium vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual 98,317-byte native File; S4 encryption for B; three distinct ciphertext shards plus liveness challenge over WebRTC; provider loss; four observer processes and 3-of-4 certificate; A lineage commit; sign-once A→B custody handoff; A exit; successor-authorized operational signer creates new leases and successor commit; byte-identical convergence; corrupt-shard rejection; exact decryption; no custody-identity binding claim |

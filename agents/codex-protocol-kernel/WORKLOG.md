@@ -2236,3 +2236,57 @@ result, and reproducible verification.
   receipt state and is not misreported as a time-based result. Fresh exact-head CI
   and immutable re-review remain required before approval, merge, deployment, or
   promotion.
+
+## 2026-08-10 KST — PR #58 fifth BLOCK: journal provenance and Capsule-tip completeness
+
+- Immutable review `4892815258` at exact head
+  `775d4dbfdb48985c31018a78bf7a80459ad4d8ed` confirmed all earlier BLOCK closures
+  and exact-head policy/Verify success, then correctly BLOCKed two deeper faults. A
+  caller-shaped evaluation and publicly self-hashed journal could omit every
+  pre-crash replay barrier; separately, convergence could select historical
+  generation 2 even when a supplied verified Capsule authenticated generation 3.
+  No PASS receipt, App attestation, approval, merge, or deployment followed.
+- Journal creation now accepts only a module-private evaluator result bound to the
+  exact manifest, policy, max age, and complete ordered distinct-provider `3/3`
+  receipt barrier. The producer first copies recognized records, dense arrays, and
+  bytes into owned inert data, uses captured collection/WeakMap operations, and
+  checks the runtime after hostile acquisition and nested signed-artifact validation.
+  Selective `Array.prototype.map`, Proxy-array method, accessor, Map, and Set attacks
+  invoke no caller method and cannot mint the brand. Incomplete evaluations are not
+  branded.
+- The durable commit API no longer accepts raw `journal_bytes`; it re-evaluates raw
+  signed placement evidence and derives/restores the canonical journal inside the
+  write boundary. V1 restore requires exactly one ordered barrier for each shard,
+  three distinct providers and receipts, exact `2-of-3` policy, and its canonical
+  self-hash. Empty, partial, cloned, accessor-backed, Proxy-backed, or self-hashed
+  incomplete documents cannot advance a pointer. A syntactically complete forged
+  unsigned local journal and hostile local-disk replacement remain explicit
+  nonclaims.
+- A pre-commit adversarial review then found that restart loading used ambient array
+  methods before its realm check. A self-restoring override hid generation 2 and made
+  an existing generation 1 current without changing disk. The loader now checks the
+  realm at entry and after filesystem reads, copies directory entries as dense own
+  data, uses captured pointer parsing, and selects the maximum generation plus fork
+  state in one bounded order-independent pass. The exact attack is rejected with
+  zero poison calls; a current-max fork halts while a unique later generation
+  supersedes a historical fork under both listing permutations.
+- Convergence retains every supplied Capsule's authenticated latest placement
+  transition count, ID, and head. Every such tip must be represented by a verified
+  candidate, the selected generation must equal the maximum supplied authenticated
+  count, and numeric gaps halt as `incomplete-chain`. Valid historical prefixes and
+  non-placement tails remain valid; sibling candidates halt as `generation-fork`;
+  duplicates and permutations remain byte-identical. A completely hidden newer
+  Capsule remains unknowable and is not claimed.
+- Exact frozen-source local evidence: confidential placement `7/7` in `133.9s`;
+  lineage placement `3/3` in `1,332.7s`; placement/liveness/WebRTC `19/19`;
+  profile/resource/execution `22/22`; transport `8/8`; SDK `5/5` plus clean packed
+  consumer; governance `30/30`; security boundary `26/26` with `22` direct and `128`
+  discovered surfaces; actual Chromium P2P placement/repair PASS in `40.8s`; actual
+  Chromium confidential A-to-B vertical PASS in `103.6s`; portable verifier PASS in
+  `452.4s` with `10,000/10,000` adversarial cases rejected; Lab `23/23`, UX, build,
+  license, specification, links, ruleset, audit-zero, and diff checks PASS. The sync
+  verifier pins exact frozen modules only after review.
+- These are source and local runtime facts, not promotion. Fresh exact-head policy,
+  Verify, immutable independent review, App attestation, separately credentialed
+  native approval, expected-head merge, exact-main Verify/Deploy, and public artifact
+  readback remain external gates.

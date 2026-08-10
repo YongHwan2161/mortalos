@@ -131,6 +131,31 @@ post-merge workflows, and deployed asset manifest.
   policy plus independent possession response and effect-time exactly-once executor.
   Lineage-governed admission/failure-domain accounting follows; provider-fair SLA
   and absolute Sybil resistance remain unclaimed.
+- PR #58's fifth immutable review at exact head
+  `775d4dbfdb48985c31018a78bf7a80459ad4d8ed` confirmed every prior closure and
+  exact-head policy/Verify success, then correctly BLOCKed two deeper provenance
+  errors in review `4892815258`: an evaluation-shaped object or raw self-hashed
+  journal could omit every replay barrier, and convergence could select historical
+  generation 2 even when a supplied verified Capsule already authenticated
+  generation 3. The replacement source acquires recognized records, dense arrays,
+  and byte views as owned inert data, uses captured array/collection/WeakMap
+  operations, rechecks the runtime after hostile acquisition and nested validation,
+  and only then brands the evaluator result. Selective `Array.prototype.map`,
+  Proxy-array method, accessor, and collection poisoning cannot fabricate that
+  provenance. It requires a complete distinct-provider `3/3` receipt barrier
+  including stale/unavailable evidence, rederives the journal inside
+  durable commit, and rejects raw/empty/partial/self-hashed incomplete documents at
+  restore/load. A subsequent independent pre-commit attack showed that ambient
+  `Array.prototype.map` could self-restore while hiding the newest existing pointer
+  from the loader. The replacement loader checks realm integrity at entry and after
+  filesystem reads, snapshots the directory listing, uses captured parsing and a
+  bounded order-independent latest-generation/fork scan, rejects the poison without
+  invoking it, and still ignores a superseded historical fork when a unique later
+  generation exists. Convergence retains every supplied Capsule's authenticated latest
+  placement tip and halts an unrepresented tail as `incomplete-chain`, while valid
+  historical prefixes and deterministic input ordering remain supported. A hidden
+  newer Capsule and hostile local-disk replacement remain explicit nonclaims. Fresh
+  exact-head CI and immutable re-review are external facts and are not inferred here.
 
 ### HISTORICAL CONTEXT — Receipt-gated participant placement and repair
 

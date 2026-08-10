@@ -59,12 +59,14 @@ discovery, signaling, Cloudflare, and GPT decide none of those results.
 Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
 continuity and local resource-execution verticals. This revision adds direct WebRTC
 transport, receipt-gated placement/repair, S4 ciphertext-only 2-of-3 provider
-shards, bounded proof freshness, crash-safe public-evidence journals, and
+shards, bounded proof freshness, evaluator-branded complete-barrier crash journals
+rederived inside the durable commit boundary, and
 successor-authorized new-lease continuation after A exits. The operational signer is
 not inferred to be B's Continuity custody identity. This revision also binds
 placement generations to Continuity, gates derived placement action plans on a
-current-descriptor commit, and halts sibling
-forks. Focused Node/Chromium, fresh-process, security, packed-package, and final
+current-descriptor commit, requires every supplied authenticated Capsule tip to be
+represented by the convergence chain, and halts incomplete or sibling forks.
+Focused Node/Chromium, fresh-process, security, packed-package, and final
 ordered `npm test` (4,263.6s on the pre-review liveness-hardened source) gates
 passed locally. Governance and deployment are exact-SHA external facts read from
 the PR, required checks, merge record, post-merge workflows, and deployed manifest;

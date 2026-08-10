@@ -430,6 +430,23 @@ function placementTransitions(capsuleBytes, beforeIndex = Number.MAX_SAFE_INTEGE
     }));
 }
 
+function latestAuthenticatedPlacementTransition(capsuleBytes) {
+  const transitions = placementTransitions(capsuleBytes);
+  const latest = transitions[transitions.length - 1];
+  if (!latest) {
+    fail("E_LINEAGE_PLACEMENT_COMMIT", "lineage-transition-missing-or-ambiguous");
+  }
+  return Object.freeze({
+    count: transitions.length,
+    head_hash: latest.head_hash,
+    transition_id: latest.transition_id
+  });
+}
+
+function placementTransitionKey(transitionIdValue, headHash) {
+  return `${transitionIdValue}\u0000${headHash}`;
+}
+
 function assertLatestPlacementPredecessor({
   capsuleBytes,
   generation,
@@ -949,7 +966,8 @@ export function convergeLineagePlacementCommits(options) {
   const verified = [...uniqueInputs.values()].map((candidate) => {
     const generation = restoreLineagePlacementGeneration(candidate.generation_bytes);
     const commit = verifyLineagePlacementCommit(candidate);
-    return Object.freeze({ commit, generation });
+    const capsuleTip = latestAuthenticatedPlacementTransition(candidate.capsule_bytes);
+    return Object.freeze({ capsuleTip, commit, generation });
   });
   const organisms = new Set(verified.map(({ generation }) => generation.organism_id));
   let reason = null;
@@ -971,11 +989,28 @@ export function convergeLineagePlacementCommits(options) {
   for (let index = 1; index < unique.length && reason === null; index += 1) {
     const previous = unique[index - 1];
     const current = unique[index];
-    if (
-      Number(current.generation.generation) !== Number(previous.generation.generation) + 1 ||
+    if (Number(current.generation.generation) !== Number(previous.generation.generation) + 1) {
+      reason = "incomplete-chain";
+    } else if (
       current.generation.prior_generation_id !== previous.generation.generation_id ||
       current.generation.prior_commit_head_hash !== previous.commit.lineage_head_hash
-    ) reason = "lineage-fork";
+    ) {
+      reason = "lineage-fork";
+    }
+  }
+  if (reason === null) {
+    const representedTransitions = new Set(verified.map(({ commit, generation }) =>
+      placementTransitionKey(transitionId(generation.generation_id), commit.lineage_head_hash)));
+    const maximumObservedGeneration = Math.max(
+      ...verified.map(({ capsuleTip }) => capsuleTip.count)
+    );
+    const selectedGeneration = Number(unique[unique.length - 1].generation.generation);
+    const hasUnrepresentedTip = verified.some(({ capsuleTip }) => !representedTransitions.has(
+      placementTransitionKey(capsuleTip.transition_id, capsuleTip.head_hash)
+    ));
+    if (selectedGeneration !== maximumObservedGeneration || hasUnrepresentedTip) {
+      reason = "incomplete-chain";
+    }
   }
   const selected = reason === null ? unique.at(-1) : null;
   const basis = {

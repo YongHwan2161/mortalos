@@ -53,6 +53,12 @@ its commit plus an exact latest predecessor ID/head match. Creation derives `N` 
 the restored canonical prior-generation bytes; commit and verification rederive it
 from signed Capsule history. The candidate set must begin at generation 1, and a
 Capsule that already contains a placement commit cannot reset to generation 1.
+Every supplied verified Capsule also contributes its authenticated latest placement
+transition tip. That exact transition ID/head must be represented by the supplied
+candidate chain. Historical prefix candidates remain valid, but presenting a
+Capsule that already authenticates generation 3 while supplying only generation 1
+and 2 candidates returns `halted / incomplete-chain`; convergence cannot select the
+historical generation 2 as current.
 Repeated, decremented, skipped, or overflowing numbering, different valid commits at
 one generation, an incomplete or broken prior link, or different organisms return
 `halted`; the algorithm never invents a winner.
@@ -82,7 +88,7 @@ one generation, an incomplete or broken prior link, or different organisms retur
 | Gate | Contract |
 | --- | --- |
 | `node --test test/lineage-placement.test.mjs` | Actual signed storage fixtures; exact offer-witness-roster binding; consumer-selected bounded window; conditional late-proof conflict with supplied fresh response/current placement evidence; A→B key non-transfer; committed derived placement action plan; two fresh processes reproduce identical bytes; 1,000 partition/heal events; stale A rejects |
-| adversarial cases in the same file | Repeated/skipped/noncanonical/overflowing generation numbers reject in commit or verification; an unsafe signer creates two independently valid same-parent generations, both verify, and convergence halts as `generation-fork` |
+| adversarial cases in the same file | Repeated/skipped/noncanonical/overflowing generation numbers reject in commit or verification; a supplied Capsule tip omitted from the candidate chain halts as `incomplete-chain`; historical prefixes, ordering, and duplicates remain deterministic; an unsafe signer creates two independently valid same-parent generations, both verify, and convergence halts as `generation-fork` |
 | `node scripts/verify-confidential-placement-chromium.mjs` | Native File, WebRTC ciphertext shards and liveness challenge, four observer browser processes, actual 5,000 ms local window, 3-of-4 certificate, A commit, sign-once A→B handoff, real A close, B repair/commit, byte-identical convergence, corrupt-shard rejection, zero post-cut requests |
 | `npm run verify:security-boundaries` | Async commit owns caller bytes and resolves authority before its first suspension |
 | `npm run test:sdk` and `npm run verify:sdk-package` | Public placement subpath verifies/converges without exporting signing authority |
@@ -97,6 +103,8 @@ one generation, an incomplete or broken prior link, or different organisms retur
 - The provider did not pre-agree the response window. A certificate is not breach,
   lease-termination, penalty, or settlement evidence.
 - Fork halt is safety, not liveness or automatic Byzantine consensus.
+- Currentness is relative to the supplied authenticated Capsules. If a caller hides a
+  newer Capsule entirely, convergence cannot infer unseen global state.
 - Manual same-host ICE is not arbitrary NAT reachability or decentralized discovery.
 - One-PC browser/process isolation is not distinct hardware, account, region,
   credential, administrator, or failure-domain evidence.

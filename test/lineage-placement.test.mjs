@@ -68,9 +68,9 @@ function generationOptions(fixture, capsuleBytes, placements, evidence = {}, pri
   };
 }
 
-function candidate(committed, generation) {
+function candidate(committed, generation, capsuleBytes = committed.capsule_bytes) {
   return Object.freeze({
-    capsule_bytes: committed.capsule_bytes,
+    capsule_bytes: capsuleBytes,
     commit_bytes: committed.commit_bytes,
     generation_bytes: generation.bytes
   });
@@ -663,4 +663,132 @@ test("same-parent divergent valid generation commits halt instead of being auto-
   assert.equal(forked.value.selected_commit_id, null);
   assert.equal(forked.value.selected_generation_id, null);
   assert.throws(() => restoreLineagePlacementGeneration(new Uint8Array(left.bytes).fill(0)), /FORMAT/u);
+  assert.throws(() => convergeLineagePlacementCommits({
+    candidates: [candidate(leftCommit, left, rightCommit.capsule_bytes)]
+  }), /E_LINEAGE_PLACEMENT_COMMIT/u);
+
+  const generation2 = createLineagePlacementGeneration(generationOptions(
+    storage,
+    leftCommit.capsule_bytes,
+    records,
+    {},
+    { commit_bytes: leftCommit.commit_bytes, generation_bytes: left.bytes }
+  ));
+  const committed2 = await commitLineagePlacementGeneration({
+    authority,
+    capsule_bytes: leftCommit.capsule_bytes,
+    generation_bytes: generation2.bytes
+  });
+  const generation3 = createLineagePlacementGeneration(generationOptions(
+    storage,
+    committed2.capsule_bytes,
+    records,
+    {},
+    { commit_bytes: committed2.commit_bytes, generation_bytes: generation2.bytes }
+  ));
+  const committed3 = await commitLineagePlacementGeneration({
+    authority,
+    capsule_bytes: committed2.capsule_bytes,
+    generation_bytes: generation3.bytes
+  });
+  const generation3Sibling = createLineagePlacementGeneration({
+    ...generationOptions(
+      storage,
+      committed2.capsule_bytes,
+      records,
+      {},
+      { commit_bytes: committed2.commit_bytes, generation_bytes: generation2.bytes }
+    ),
+    evaluated_at_ms: "1799"
+  });
+  const committed3Sibling = await commitLineagePlacementGeneration({
+    authority,
+    capsule_bytes: committed2.capsule_bytes,
+    generation_bytes: generation3Sibling.bytes
+  });
+  const prefixAt2 = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(leftCommit, left, committed2.capsule_bytes),
+      candidate(committed2, generation2)
+    ]
+  });
+  assert.equal(prefixAt2.value.status, "converged");
+  assert.equal(prefixAt2.value.selected_generation_id, generation2.generation_id);
+
+  const missingLatest = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(leftCommit, left, committed3.capsule_bytes),
+      candidate(committed2, generation2, committed3.capsule_bytes)
+    ]
+  });
+  const missingLatestReordered = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(committed2, generation2, committed3.capsule_bytes),
+      candidate(leftCommit, left, committed3.capsule_bytes),
+      candidate(leftCommit, left, committed3.capsule_bytes)
+    ]
+  });
+  assert.equal(missingLatest.value.status, "halted");
+  assert.equal(missingLatest.value.reason, "incomplete-chain");
+  assert.equal(missingLatest.value.selected_commit_id, null);
+  assert.equal(equalBytes(missingLatest.bytes, missingLatestReordered.bytes), true);
+
+  const complete = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(committed2, generation2, committed3.capsule_bytes),
+      candidate(committed3, generation3),
+      candidate(leftCommit, left, committed3.capsule_bytes)
+    ]
+  });
+  const completeReordered = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(committed3, generation3),
+      candidate(leftCommit, left, committed3.capsule_bytes),
+      candidate(committed2, generation2, committed3.capsule_bytes),
+      candidate(committed3, generation3)
+    ]
+  });
+  assert.equal(complete.value.status, "converged");
+  assert.equal(complete.value.selected_generation_id, generation3.generation_id);
+  assert.equal(equalBytes(complete.bytes, completeReordered.bytes), true);
+
+  const missingMiddle = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(leftCommit, left, committed3.capsule_bytes),
+      candidate(committed3, generation3)
+    ]
+  });
+  assert.equal(missingMiddle.value.status, "halted");
+  assert.equal(missingMiddle.value.reason, "incomplete-chain");
+
+  const unrepresentedSiblingTip = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(leftCommit, left, committed3Sibling.capsule_bytes),
+      candidate(committed2, generation2, committed3.capsule_bytes),
+      candidate(committed3, generation3)
+    ]
+  });
+  assert.equal(unrepresentedSiblingTip.value.status, "halted");
+  assert.equal(unrepresentedSiblingTip.value.reason, "incomplete-chain");
+  const representedSiblingFork = convergeLineagePlacementCommits({
+    candidates: [
+      candidate(leftCommit, left),
+      candidate(committed2, generation2),
+      candidate(committed3, generation3),
+      candidate(committed3Sibling, generation3Sibling)
+    ]
+  });
+  assert.equal(representedSiblingFork.value.status, "halted");
+  assert.equal(representedSiblingFork.value.reason, "generation-fork");
+
+  const nonPlacementTail = await continueContinuity({
+    authority,
+    capsuleBytes: leftCommit.capsule_bytes,
+    transitionId: "lineage-non-placement-tail"
+  });
+  const historicalWithNonPlacementTail = convergeLineagePlacementCommits({
+    candidates: [candidate(leftCommit, left, nonPlacementTail.capsule_bytes)]
+  });
+  assert.equal(historicalWithNonPlacementTail.value.status, "converged");
+  assert.equal(historicalWithNonPlacementTail.value.selected_generation_id, left.generation_id);
 });

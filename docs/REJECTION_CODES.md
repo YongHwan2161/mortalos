@@ -226,8 +226,25 @@ Continuity parent, and `E_LINEAGE_PLACEMENT_COMMIT` when the named generation or
 prior transition is absent or mismatched in the verified Capsule. A valid sibling
 set is not thrown away; convergence returns the explicit fail-closed state
 `halted / generation-fork` with no selected commit. A candidate chain that omits
-generation 1 returns `halted / incomplete-chain`; a Capsule with an existing
-placement commit cannot reset to generation 1.
+generation 1, skips an intermediate generation, or fails to represent the latest
+authenticated placement transition visible in any supplied verified Capsule returns
+`halted / incomplete-chain`; a Capsule with an existing placement commit cannot
+reset to generation 1. Historical prefix candidates remain valid when the complete
+chain represents every supplied Capsule tip.
+
+The confidential placement journal uses `E_CONFIDENTIAL_PLACEMENT_JOURNAL` when a
+caller supplies an unbranded evaluation, mismatched policy, empty/partial receipt
+barrier, non-v1 `2-of-3` policy, repeated provider/receipt identity, unordered shard
+barrier, or self-hashed incomplete document. The Lab durable commit boundary accepts
+raw signed placement inputs only and rejects a `journal_bytes`-shaped invocation
+before writing a journal or pointer. Evaluator acquisition and nested validation use
+owned inert snapshots plus contained operations; executable recognized fields,
+sparse arrays, caller method overrides, or runtime drift fail closed as
+`E_CONFIDENTIAL_PLACEMENT_FORMAT` and never produce the private journal brand.
+Durable load reports an intact-realm failure before invoking a poisoned listing
+method; malformed pointers use `E_CONFIDENTIAL_PLACEMENT_POINTER`, and two different
+journal IDs at the maximum observed generation use
+`E_CONFIDENTIAL_PLACEMENT_POINTER_FORK` independent of directory order.
 
 The liveness layer uses local verifier errors: `E_PLACEMENT_LIVENESS_RUNTIME` and
 `E_PLACEMENT_LIVENESS_PROFILE` for realm-integrity or generated-ceiling drift;

@@ -597,6 +597,21 @@ The revision must identify the new trust assumption, affected invariant, failure
   a separately generated successor-authorized operational signer creates new leases
   rather than receiving A's private consumer key. This operational identity is not
   inferred to be, or cryptographically bound to, B's Continuity custody identity.
+- A journal-shaped object or its self-hash is not producer evidence. The conforming
+  creator accepts only a module-private evaluator result. The producer copies
+  recognized records, dense arrays, and byte views into owned inert data, uses
+  captured collection operations, and rechecks the runtime after hostile acquisition
+  and nested validators before issuing the brand. It does not invoke caller array
+  methods or recognized getters, so selective array-method, Proxy-array, accessor,
+  Map, or Set poisoning fails closed rather than producing proved barriers. The durable commit
+  adapter rederives a complete three-shard barrier from raw verified placement
+  evidence. Empty, partial, cloned, accessor-backed, Proxy-backed, or manually
+  self-hashed incomplete journals cannot advance the pointer. Stale or unavailable
+  receipt-bearing placements remain barriers. Restart enumeration and pointer
+  selection are also contained and checked before/after filesystem reads; a
+  self-restoring prototype override cannot conceal the newest existing generation,
+  and current-fork selection is independent of listing order. Hostile replacement of an otherwise
+  complete unsigned journal on local disk is outside this source claim.
 - Canonical placement generations are committed through the current Continuity
   descriptor's quorum-authorized sign-once transition. A verified commit qualifies derivation of a
   deterministic placement action plan. `deriveCommittedPlacementActionPlan` returns
@@ -608,7 +623,11 @@ The revision must identify the new trust assumption, affected invariant, failure
   rederived from authenticated Capsule placement-transition history; repetition,
   decrement, skip, or overflow fails closed. A valid same-generation
   sibling fork halts with no selected head; reordered or duplicated evidence
-  converges byte-identically.
+  converges byte-identically. Convergence also retains the authenticated latest
+  placement tip from every supplied verified Capsule; a chain that ends before any
+  supplied tip halts as `incomplete-chain` instead of selecting a historical winner.
+  A completely hidden newer Capsule remains unknowable and is not a global-currentness
+  claim.
 - Raw `unavailable_provider_ids` remains a lower-level diagnostic input and is
   rejected by lineage generation. Provider failure at that layer requires a
   predecessor/sequence-bound challenge and a threshold of role-disjoint observations
