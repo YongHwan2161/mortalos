@@ -5,6 +5,8 @@ not active locks.
 
 ## Active intent
 
+Status: **FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL**
+
 ### RELEASE INTENT — branch-active, main-historical
 
 On a task branch this declaration is active. On `main` it is historical; exact-SHA
@@ -30,14 +32,43 @@ post-merge workflows, and deployed asset manifest.
   channels with origin/relay cut after bootstrap, Lab parity, packed-consumer
   operation, corrupt/single/stale/fork/cross-lease/revoked/exhausted/duplicate-
   provider rejection, and explicit physical-independence HOLD.
-- Focused journal/controller, policy, Node process, transport, Chromium origin-cut,
-  SDK, clean package, Lab build, portable `10,000/10,000`, and async security-
-  inventory gates pass on the current journal-v2 source. Its final ordered `npm test`
-  passed without a skipped gate in `4,304.1s` (`71m 44s`). The first full run
-  correctly BLOCKed a WebRTC adapter under portable `src/`; moving it to the Lab
-  browser-platform layer preserved actual browser behavior and restored the
-  network-free portable boundary. This source document does not infer exact-head
-  governance, deployment, or promotion status.
+- Exact head `e0148aa2...` completed the pre-stateful-corpus ordered `npm test` in
+  `4,304.1s` (`71m 44s`), but review `4893915817` BLOCKed that head. A later
+  `7,065.8s` (`117m 45.8s`) uninterrupted full-suite PASS closed the former
+  stateful-100 source only. Both results predate the exact generated-ceiling tests
+  now in the working source and therefore do not promote it.
+- The current Node exact-ceiling test passed 128 sequential signed transitions and
+  381 genuine provider replacements in `2,841,685.4279ms` test-body time
+  (`2,842,481.1467ms` runner; `2,842,596ms` shell). Generation 129 contains exactly
+  384 provider/lease/chain high-waters (`128/128/128` by shard) and 387 distinct
+  execution receipts. A signed, proved generation-130 `3/3` candidate then fails
+  commit at the 385th total/129th shard-0 chain without changing the exact ceiling
+  bytes. The test tree was fully absent at `2026-08-11 00:05:11.662+09:00`.
+- The current mixed-runtime Chromium/Lab exact-ceiling test passed 127 cycles from
+  generation 2 to generation 129 in `2,549,195ms` dynamic time (`2,666,619ms`
+  total), with the same 384 high-waters (`128/128/128`), 384 provider/lease/chain
+  identities, and 387 receipts. Actual browser-held non-extractable keys signed the
+  storage evidence and a valid generation-130 `3/3` candidate; its plus-one commit
+  failed without changing bytes. Serialized reload rejected the oldest receipt
+  replay, private material remained unexposed, and the network cut observed no
+  requests. The first focused attempt failed after `84,073ms` on a test-only
+  `chain_id` aggregation assertion; the corrected aggregation passed. The browser
+  tree was fully absent at `2026-08-11 00:54:04.267+09:00`.
+- The former `2,700,000ms` Chromium guard had only 5.59% focused headroom, so the
+  current test-only guard is `3,300,000ms`. Workflow ceilings remain 240 minutes and
+  no gate was removed or skipped.
+- A fresh uninterrupted `npm test` over the unchanged current runtime/test/workflow
+  source bytes started at
+  `2026-08-11 01:06:58.716+09:00`, ended at `03:21:35.542+09:00`, and exited `0`
+  after `8,076,826ms` (`8,076.826s`; `134m 36.826s`). It completed the Node exact-
+  ceiling path, the mixed-runtime Chromium exact-ceiling path, every later ordered
+  gate, and final `verify:s4`. Only evidence docs changed afterward; the current
+  documentation tree separately passes spec, link, and diff checks. This is not a
+  whole-current-tree full-suite claim. PID `23824` was absent at
+  `03:24:59.475+09:00`; a fresh probe at `03:26:01.147+09:00` also found that root
+  absent and zero other matching MortalOS test workloads after excluding the probe
+  itself. Exact-head CI, fresh independent review, merge, deployment, and promotion
+  remain separate external gates.
 - The confidential controller is implemented locally: S4 package 2-of-3 shards,
   shard/provider/workload identity binding, exact proof-age boundary, crash-safe
   journal-v2 reproof contexts bound to the exact prior head and epoch, cumulative
@@ -178,10 +209,50 @@ post-merge workflows, and deployed asset manifest.
   fork. Caps are profile-generated: 2 MiB document,
   4,096 head transitions, 128 high-waters per shard, 384 total, 32-byte epoch nonce,
   and 16-byte derived reproof nonce; no pruning is an authorization path.
-- Primary focused gates are `test/confidential-journal-v2.test.mjs` and
-  `test/confidential-controller-v2.test.mjs`, supplemented by
-  `test/confidential-placement.test.mjs` and the actual Chromium confidential
-  vertical. The v2 artifacts remain unsigned local crash-policy evidence. A
+- Primary focused gates are the journal-v2 exact-ceiling Node test, the durable
+  controller-v2/CAS test, and the mixed-runtime Chromium/Lab vertical. The four-case
+  placement-policy corpus is supplementary evidence. Independent review `4893915817`
+  blocked exact head `e0148aa2...`
+  because its frozen PR body still described the pre-v2 scope and because the then-
+  named 100-cycle policy test only re-counted four cached evaluations while review
+  `4893187627` required at least 100 stateful provider replacements in Node and
+  actual Chromium/Lab. This source replaces that cached claim with 128 sequential
+  signed prior-head-bound transitions and 381 genuine replacements in the Node
+  portable-kernel gate, plus a separate 127-cycle mixed-runtime path from generation
+  2 to the same generation-129 generated ceiling. In the latter, actual Chromium/Lab provider pages
+  hold non-extractable keys and create storage results/signatures while the portable
+  journal controller is orchestrated in Node; independently in-browser journal-kernel
+  parity remains unclaimed. Every step rejects displaced receipts, creates one fresh
+  provider/offer/lease chain, advances two exact receipt predecessors, and commits a
+  new `3/3` journal. Both focused paths reach 384 cumulative chains, exactly 128 per
+  shard, then prove a signed `3/3` generation-130 candidate before its one-new-chain
+  commit fails closed and leaves generation-129 bytes unchanged. The focused Node
+  and mixed-runtime Chromium/Lab gates pass locally. The historical `7,065.8s` full
+  suite predates these ceiling tests; the current runtime/test/workflow source passes
+  the uninterrupted full suite in `8,076.826s`, and later evidence-doc changes pass
+  their separate spec/link/diff gates. External exact-head governance remains pending.
+- Two earlier uninterrupted full-suite attempts on the stateful-100 source are
+  retained as failure evidence, not PASS. The first reached the relay gate after
+  `6,167s` and exposed a
+  minute-boundary race in the historical test harness; the production relay remained
+  unchanged, and the repaired runtime passed 20 consecutive runs plus complete
+  `test:relay`. The second stopped after `6,122.7s` inside the mixed-runtime Chromium
+  segment when its `1,800,000ms` internal deadline expired after 75/100 progress.
+  The focused segment had consumed `1,776,198ms`, leaving only `23,802ms` (`1.32%`)
+  headroom. Its bounded deadline was then `2,700,000ms`; the sequential 100 steps and
+  every final invariant remain unchanged. The third `7,065.8s` run completed within
+  that guard and superseded the two historical local HOLDs for that older source
+  without erasing them. It is pre-ceiling evidence and does not transfer to the
+  current source.
+- The exact-ceiling Chromium path later passed in `2,549,195ms` dynamic time
+  (`2,666,619ms` total); the deadline-wrapped dynamic segment consumed 94.41% of the
+  `2,700,000ms` guard. The test-only guard is therefore now bounded at
+  `3,300,000ms`; its 127 cycles and every final assertion remain unchanged.
+- The protocol and deploy workflow maximum is 240 minutes so the new cryptographic
+  stateful corpus can finish on shared runners. No test, browser vertical, audit,
+  coverage check, or deployment verification is skipped or weakened; the tradeoff
+  is a larger bounded runner cost and longer delayed-failure window.
+- The v2 artifacts remain unsigned local crash-policy evidence. A
   conforming same-filesystem hard-link winner does not prove hostile-disk integrity,
   receipt history hidden from every supplied head, cross-host consensus, or global
   currentness. Crash-left pending files are ignored, but bounded cleanup and sudden-

@@ -16,7 +16,8 @@ import {
   restoreConfidentialPlacementJournal
 } from "../src/placement/confidential.mjs";
 import {
-  createStoragePlacementFixture
+  createStoragePlacementFixture,
+  refreshStoragePlacementFixture
 } from "../lab/placement/storage-contract.mjs";
 import {
   createPlacementFailureCertificateFromChallengeFixture,
@@ -128,10 +129,17 @@ async function witnesses(endpoint) {
   return created;
 }
 
-function providerAdapter(controller, provider, { reuseStored = false } = {}) {
+function providerAdapter(controller, provider, {
+  identity = provider.identity,
+  reuseStored = false,
+  signerName = "primary"
+} = {}) {
+  assert.match(signerName, /^[a-z][a-z0-9-]{0,31}$/u);
+  assert.match(identity?.key_id ?? "", /^peer:[A-Za-z0-9_-]{43}$/u);
+  assert.match(identity?.public_key ?? "", /^ed25519:[A-Za-z0-9_-]{43}$/u);
   return Object.freeze({
-    identity: provider.identity,
-    sign: (bytes) => pageSign(provider, "primary", bytes),
+    identity: Object.freeze({ ...identity }),
+    sign: (bytes) => pageSign(provider, signerName, bytes),
     async store(bytes) {
       if (reuseStored) {
         const snapshot = await provider.page.evaluate(() =>
@@ -249,6 +257,32 @@ function evaluateReproof(context, records, priorJournal = null, evaluatedAt = "1
     reproof_context_bytes: context.bytes,
     unavailable_provider_ids: []
   });
+}
+
+function addDistinctReceiptIds(evaluation, receiptIds) {
+  for (const placement of evaluation.placements) {
+    assert.equal(placement.status, "proved");
+    assert.match(placement.receipt_id, /^resource-execution:[A-Za-z0-9_-]{43}$/u);
+    assert.equal(receiptIds.has(placement.receipt_id), false);
+    receiptIds.add(placement.receipt_id);
+  }
+}
+
+async function withinDeadline(label, milliseconds, operation) {
+  let timeout;
+  try {
+    return await Promise.race([
+      operation(),
+      new Promise((resolvePromise, rejectPromise) => {
+        timeout = setTimeout(() => rejectPromise(
+          new Error(`${label} exceeded its ${milliseconds}ms deadline`)
+        ), milliseconds);
+        timeout.unref?.();
+      })
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 let consumerA;
@@ -519,6 +553,395 @@ try {
     restoredJournal2.journal_id
   );
 
+  const dynamicReplacementDeadlineMs = 3_300_000;
+  const dynamicReplacementStartedAt = Date.now();
+  const dynamicReplacement = await withinDeadline(
+    "127-cycle signed provider-history ceiling",
+    dynamicReplacementDeadlineMs,
+    async () => {
+      let activeFixtures = successor;
+      let activeProviderStates = successorProviders.map((endpoint) => Object.freeze({
+        endpoint,
+        identity: endpoint.identity,
+        signerName: "primary"
+      }));
+      let priorJournal = journal2;
+      let prior = restoredJournal2;
+      const contextIds = new Set([context1.context_id, context2.context_id]);
+      const journalIds = new Set([journal1.journal_id, journal2.journal_id]);
+      const providerIds = new Set([
+        ...initial.map(({ provider_id: id }) => id),
+        ...successor.map(({ provider_id: id }) => id)
+      ]);
+      const leaseIds = new Set();
+      const chainIds = new Set();
+      const receiptIds = new Set();
+      for (const evaluation of [initialEvaluation, continued]) {
+        addDistinctReceiptIds(evaluation, receiptIds);
+      }
+      for (const highWater of restoredJournal2.receipt_high_waters) {
+        assert.equal(leaseIds.has(highWater.lease_id), false);
+        assert.equal(chainIds.has(highWater.chain_id), false);
+        leaseIds.add(highWater.lease_id);
+        chainIds.add(highWater.chain_id);
+      }
+      assert.equal(providerIds.size, 6);
+      assert.deepEqual(
+        new Set(restoredJournal2.receipt_high_waters.map(({ provider_id: id }) => id)),
+        providerIds
+      );
+      assert.equal(leaseIds.size, 6);
+      assert.equal(chainIds.size, 6);
+      assert.equal(receiptIds.size, 6);
+      const shardBytes = successorSet.shards.map(({ bytes_base64url: value }) =>
+        Buffer.from(value, "base64url"));
+      const manifestBytes = decodeBase64Url(successorSet.manifest_base64url);
+
+      for (let cycle = 0; cycle < 127; cycle += 1) {
+        assert.ok(successorProviders.every(({ page }) => !page.isClosed()));
+        const cycleNumber = cycle + 1;
+        const generation = String(Number(prior.generation) + 1);
+        const context = cycle === 0
+          ? context3
+          : createConfidentialPlacementReproofContext({
+            epoch_nonce: null,
+            generation,
+            manifest_bytes: manifestBytes,
+            max_proof_age_ms: "500",
+            prior_journal_bytes: priorJournal.bytes,
+            quorum: 2,
+            rotate_epoch: false,
+            target_shards: 3
+          });
+        assert.equal(context.generation, generation);
+        assert.equal(context.context.prior_journal_id, prior.journal_id);
+        assert.equal(context.epoch_id, restoredJournal2.epoch_id);
+        assert.equal(contextIds.has(context.context_id), false);
+        contextIds.add(context.context_id);
+
+        const rejectedCurrent = evaluateConfidentialPlacementJournal({
+          evaluated_at_ms: "1800",
+          journal_bytes: priorJournal.bytes,
+          placements: activeFixtures.map((fixture, index) => record(fixture, index)),
+          reproof_context_bytes: context.bytes,
+          unavailable_provider_ids: []
+        });
+        assert.equal(rejectedCurrent.generation, generation);
+        assert.equal(rejectedCurrent.available_shards, 0);
+        assert.ok(rejectedCurrent.placements.every(({ reason, status }) =>
+          status === "rejected" && (
+            reason === "reproof-context-mismatch" || reason === "restart-reproof-required"
+          )));
+        assert.equal(rejectedCurrent.journal_id, prior.journal_id);
+
+        const replacementShards = cycleNumber === 1
+          ? [0]
+          : (cycleNumber === 127 ? [1, 2] : [0, 1, 2]);
+        const replacementIdentities = new Map();
+        const nextProviderStates = [...activeProviderStates];
+        for (const replacementShard of replacementShards) {
+          const replacementEndpoint = successorProviders[replacementShard];
+          const signerName = `cycle-${String(cycleNumber).padStart(3, "0")}-shard-${replacementShard}`;
+          const replacementIdentity = await replacementEndpoint.page.evaluate((name) =>
+            globalThis.__MORTALOS_P2P_PLACEMENT__.createSigner(name), signerName);
+          assert.equal(providerIds.has(replacementIdentity.key_id), false);
+          providerIds.add(replacementIdentity.key_id);
+          replacementIdentities.set(replacementShard, replacementIdentity);
+          nextProviderStates[replacementShard] = Object.freeze({
+            endpoint: replacementEndpoint,
+            identity: replacementIdentity,
+            signerName
+          });
+        }
+
+        const nextFixtures = await Promise.all([0, 1, 2].map(async (shardIndex) => {
+          const state = nextProviderStates[shardIndex];
+          const adaptedProvider = providerAdapter(consumerB, state.endpoint, {
+            identity: state.identity,
+            reuseStored: true,
+            signerName: state.signerName
+          });
+          if (replacementIdentities.has(shardIndex)) {
+            return createStoragePlacementFixture({
+              challengeNonceFactory: reproofNonce(context, shardIndex),
+              consumer: signer(consumerB),
+              provider: adaptedProvider,
+              resourceBytes: shardBytes[shardIndex],
+              seed: 30_000 + cycle * 16 + shardIndex * 4,
+              witnesses: bWitnesses
+            });
+          }
+          return refreshStoragePlacementFixture({
+            challengeNonceFactory: reproofNonce(context, shardIndex),
+            consumer: signer(consumerB),
+            fixture: activeFixtures[shardIndex],
+            issuedAtMs: 1600 + activeFixtures[shardIndex].placement.execution_receipts.length * 10 +
+              shardIndex,
+            provider: adaptedProvider,
+            resourceBytes: shardBytes[shardIndex],
+            seed: 60_000 + cycle * 16 + shardIndex * 4
+          });
+        }));
+        const nextRecords = nextFixtures.map((fixture, index) => record(fixture, index));
+        const nextEvaluation = evaluateReproof(context, nextRecords, priorJournal);
+        assert.equal(nextEvaluation.status, "proved");
+        assert.equal(nextEvaluation.available_shards, 3);
+        assert.equal(nextEvaluation.context_id, context.context_id);
+        assert.equal(nextEvaluation.generation, generation);
+        assert.equal(nextEvaluation.prior_journal_id, prior.journal_id);
+        assert.equal(nextEvaluation.epoch_id, restoredJournal2.epoch_id);
+        assert.equal(new Set(nextEvaluation.placements.map(({ provider_id: id }) => id)).size, 3);
+        addDistinctReceiptIds(nextEvaluation, receiptIds);
+
+        for (let shardIndex = 0; shardIndex < 3; shardIndex += 1) {
+          const proof = nextEvaluation.placements[shardIndex];
+          const previousProof = prior.active_proofs[shardIndex];
+          if (replacementIdentities.has(shardIndex)) {
+            assert.equal(proof.provider_id, replacementIdentities.get(shardIndex).key_id);
+            assert.equal(proof.challenge_sequence, "0");
+            assert.equal(proof.previous_execution_receipt_id, null);
+            assert.equal(leaseIds.has(proof.lease_id), false);
+          } else {
+            assert.equal(proof.provider_id, previousProof.provider_id);
+            assert.equal(proof.lease_id, previousProof.lease_id);
+            assert.equal(proof.challenge_sequence, String(Number(previousProof.challenge_sequence) + 1));
+            assert.equal(proof.previous_execution_receipt_id, previousProof.receipt_id);
+          }
+        }
+
+        const nextJournal = createConfidentialPlacementJournal({
+          evaluation: nextEvaluation,
+          prior_journal_bytes: priorJournal.bytes,
+          reproof_context_bytes: context.bytes
+        });
+        const committed = nextJournal.journal;
+        assert.equal(committed.generation, generation);
+        assert.equal(committed.prior_journal_id, prior.journal_id);
+        assert.equal(committed.epoch_id, restoredJournal2.epoch_id);
+        assert.equal(committed.reproof_context_id, context.context_id);
+        for (let shardIndex = 0; shardIndex < 3; shardIndex += 1) {
+          const committedProof = committed.active_proofs[shardIndex];
+          const evaluatedProof = nextEvaluation.placements[shardIndex];
+          const previousProof = prior.active_proofs[shardIndex];
+          assert.equal(committedProof.receipt_id, evaluatedProof.receipt_id);
+          assert.equal(committedProof.lease_id, evaluatedProof.lease_id);
+          if (replacementIdentities.has(shardIndex)) {
+            assert.equal(committedProof.provider_id, replacementIdentities.get(shardIndex).key_id);
+            assert.equal(chainIds.has(committedProof.chain_id), false);
+            assert.equal(leaseIds.has(committedProof.lease_id), false);
+            chainIds.add(committedProof.chain_id);
+            leaseIds.add(committedProof.lease_id);
+          } else {
+            assert.equal(committedProof.provider_id, previousProof.provider_id);
+            assert.equal(committedProof.chain_id, previousProof.chain_id);
+            assert.equal(committedProof.lease_id, previousProof.lease_id);
+          }
+        }
+        assert.equal(
+          committed.receipt_high_waters.length,
+          prior.receipt_high_waters.length + replacementShards.length
+        );
+        assert.equal(new Set(committed.receipt_high_waters.map(({ chain_id: id }) => id)).size,
+          committed.receipt_high_waters.length);
+        assert.equal(new Set(committed.receipt_high_waters.map(({ receipt_id: id }) => id)).size,
+          committed.receipt_high_waters.length);
+        assert.ok(nextJournal.bytes.byteLength < 2 * 1024 * 1024);
+        assert.equal(journalIds.has(nextJournal.journal_id), false);
+        journalIds.add(nextJournal.journal_id);
+
+        activeFixtures = nextFixtures;
+        activeProviderStates = nextProviderStates;
+        priorJournal = nextJournal;
+        prior = committed;
+        if (cycleNumber === 1 || cycleNumber % 25 === 0 || cycleNumber === 127) {
+          console.log(`- signed provider-history progress: ${cycleNumber}/127 cycles`);
+        }
+      }
+
+      const finalJournal = restoreConfidentialPlacementJournal(priorJournal.bytes);
+      assert.equal(finalJournal.generation, "129");
+      assert.equal(finalJournal.receipt_high_waters.length, 384);
+      const highWatersByShard = [0, 1, 2].map((shardIndex) =>
+        finalJournal.receipt_high_waters.filter((entry) => entry.shard_index === shardIndex).length);
+      assert.deepEqual(highWatersByShard, [128, 128, 128]);
+      assert.equal(new Set(finalJournal.receipt_high_waters.map(({ chain_id: id }) => id)).size, 384);
+      assert.equal(new Set(finalJournal.receipt_high_waters.map(({ lease_id: id }) => id)).size, 384);
+      assert.equal(new Set(finalJournal.receipt_high_waters.map(({ provider_id: id }) => id)).size, 384);
+      assert.equal(new Set(finalJournal.receipt_high_waters.map(({ receipt_id: id }) => id)).size, 384);
+      assert.ok(finalJournal.receipt_high_waters.every(({ receipt_id: id }) => receiptIds.has(id)));
+      assert.deepEqual(
+        new Set(finalJournal.receipt_high_waters.map(({ chain_id: id }) => id)),
+        chainIds
+      );
+      assert.deepEqual(
+        new Set(finalJournal.receipt_high_waters.map(({ lease_id: id }) => id)),
+        leaseIds
+      );
+      assert.deepEqual(
+        new Set(finalJournal.receipt_high_waters.map(({ provider_id: id }) => id)),
+        providerIds
+      );
+      assert.equal(contextIds.size, 129);
+      assert.equal(journalIds.size, 129);
+      assert.equal(providerIds.size, 384);
+      assert.equal(leaseIds.size, 384);
+      assert.equal(chainIds.size, 384);
+      assert.equal(receiptIds.size, 387);
+      assert.ok(priorJournal.bytes.byteLength < 2 * 1024 * 1024);
+
+      const context130 = createConfidentialPlacementReproofContext({
+        epoch_nonce: null,
+        generation: "130",
+        manifest_bytes: manifestBytes,
+        max_proof_age_ms: "500",
+        prior_journal_bytes: priorJournal.bytes,
+        quorum: 2,
+        rotate_epoch: false,
+        target_shards: 3
+      });
+      assert.equal(context130.context.prior_journal_id, finalJournal.journal_id);
+      assert.equal(context130.epoch_id, restoredJournal2.epoch_id);
+      assert.equal(contextIds.has(context130.context_id), false);
+
+      const rejectedCurrentAtCeiling = evaluateConfidentialPlacementJournal({
+        evaluated_at_ms: "1800",
+        journal_bytes: priorJournal.bytes,
+        placements: activeFixtures.map((fixture, index) => record(fixture, index)),
+        reproof_context_bytes: context130.bytes,
+        unavailable_provider_ids: []
+      });
+      assert.equal(rejectedCurrentAtCeiling.available_shards, 0);
+      assert.ok(rejectedCurrentAtCeiling.placements.every(({ reason, status }) =>
+        status === "rejected" && (
+          reason === "reproof-context-mismatch" || reason === "restart-reproof-required"
+        )));
+
+      const exactCeilingBytes = new Uint8Array(priorJournal.bytes);
+      const exactCeilingJournalId = finalJournal.journal_id;
+      const limitSignerName = "ceiling-plus-one-shard-0";
+      const limitIdentity = await successorProviders[0].page.evaluate((name) =>
+        globalThis.__MORTALOS_P2P_PLACEMENT__.createSigner(name), limitSignerName);
+      assert.equal(providerIds.has(limitIdentity.key_id), false);
+      const limitProviderStates = [...activeProviderStates];
+      limitProviderStates[0] = Object.freeze({
+        endpoint: successorProviders[0],
+        identity: limitIdentity,
+        signerName: limitSignerName
+      });
+      const limitFixtures = await Promise.all([0, 1, 2].map(async (shardIndex) => {
+        const state = limitProviderStates[shardIndex];
+        const adaptedProvider = providerAdapter(consumerB, state.endpoint, {
+          identity: state.identity,
+          reuseStored: true,
+          signerName: state.signerName
+        });
+        if (shardIndex === 0) {
+          return createStoragePlacementFixture({
+            challengeNonceFactory: reproofNonce(context130, shardIndex),
+            consumer: signer(consumerB),
+            provider: adaptedProvider,
+            resourceBytes: shardBytes[shardIndex],
+            seed: 90_000,
+            witnesses: bWitnesses
+          });
+        }
+        return refreshStoragePlacementFixture({
+          challengeNonceFactory: reproofNonce(context130, shardIndex),
+          consumer: signer(consumerB),
+          fixture: activeFixtures[shardIndex],
+          issuedAtMs: 1600 + activeFixtures[shardIndex].placement.execution_receipts.length * 10 +
+            shardIndex,
+          provider: adaptedProvider,
+          resourceBytes: shardBytes[shardIndex],
+          seed: 90_000 + shardIndex * 4
+        });
+      }));
+      const limitEvaluation = evaluateReproof(
+        context130,
+        limitFixtures.map((fixture, index) => record(fixture, index)),
+        priorJournal
+      );
+      assert.equal(limitEvaluation.status, "proved");
+      assert.equal(limitEvaluation.available_shards, 3);
+      assert.equal(limitEvaluation.context_id, context130.context_id);
+      assert.equal(limitEvaluation.generation, "130");
+      assert.equal(limitEvaluation.prior_journal_id, exactCeilingJournalId);
+      assert.equal(limitEvaluation.epoch_id, restoredJournal2.epoch_id);
+      const limitReceiptIds = new Set(limitEvaluation.placements.map(({ receipt_id: id }) => id));
+      assert.equal(limitReceiptIds.size, 3);
+      assert.ok([...limitReceiptIds].every((id) => !receiptIds.has(id)));
+      const limitReplacement = limitEvaluation.placements[0];
+      assert.equal(limitReplacement.provider_id, limitIdentity.key_id);
+      assert.equal(limitReplacement.challenge_sequence, "0");
+      assert.equal(limitReplacement.previous_execution_receipt_id, null);
+      assert.equal(leaseIds.has(limitReplacement.lease_id), false);
+      for (const shardIndex of [1, 2]) {
+        const proof = limitEvaluation.placements[shardIndex];
+        const previousProof = finalJournal.active_proofs[shardIndex];
+        assert.equal(proof.provider_id, previousProof.provider_id);
+        assert.equal(proof.lease_id, previousProof.lease_id);
+        assert.equal(proof.challenge_sequence, String(Number(previousProof.challenge_sequence) + 1));
+        assert.equal(proof.previous_execution_receipt_id, previousProof.receipt_id);
+      }
+      assert.equal(finalJournal.receipt_high_waters.length + 1, 385);
+      assert.equal(highWatersByShard[0] + 1, 129);
+      assert.throws(() => createConfidentialPlacementJournal({
+        evaluation: limitEvaluation,
+        prior_journal_bytes: priorJournal.bytes,
+        reproof_context_bytes: context130.bytes
+      }), (error) => {
+        assert.equal(error.code, "E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT");
+        assert.match(error.message, /history is full/u);
+        return true;
+      });
+      assert.equal(priorJournal.journal_id, exactCeilingJournalId);
+      assert.deepEqual(new Uint8Array(priorJournal.bytes), exactCeilingBytes);
+
+      const reloadedCeiling = restoreConfidentialPlacementJournal(exactCeilingBytes);
+      assert.equal(reloadedCeiling.journal_id, exactCeilingJournalId);
+      assert.equal(reloadedCeiling.generation, "129");
+      assert.equal(reloadedCeiling.receipt_high_waters.length, 384);
+      const oldestAbcReplayAfterReload = evaluateConfidentialPlacementJournal({
+        evaluated_at_ms: "1800",
+        journal_bytes: exactCeilingBytes,
+        placements: initialRecords,
+        reproof_context_bytes: context130.bytes,
+        unavailable_provider_ids: []
+      });
+      assert.equal(oldestAbcReplayAfterReload.available_shards, 0);
+      assert.ok(oldestAbcReplayAfterReload.placements.every(({ reason, status }) =>
+        status === "rejected" && (
+          reason === "reproof-context-mismatch" || reason === "restart-reproof-required"
+        )));
+
+      const providerSnapshots = await Promise.all(successorProviders.map(({ page }) =>
+        page.evaluate(() => globalThis.__MORTALOS_P2P_PLACEMENT__.snapshot())));
+      assert.deepEqual(providerSnapshots.map(({ signer_count: count }) => count), [128, 127, 127]);
+      assert.ok(providerSnapshots.every(({ private_material_exposed: exposed }) => exposed === false));
+      return Object.freeze({
+        cycles: 127,
+        candidate_available_shards: limitEvaluation.available_shards,
+        candidate_high_waters_by_shard_if_committed: [129, 128, 128],
+        candidate_high_waters_if_committed: 385,
+        distinct_context_ids: contextIds.size,
+        distinct_chain_ids: chainIds.size,
+        distinct_journal_ids: journalIds.size,
+        distinct_lease_ids: leaseIds.size,
+        distinct_provider_ids: providerIds.size,
+        distinct_receipt_ids: receiptIds.size,
+        final_generation: finalJournal.generation,
+        final_journal_bytes: exactCeilingBytes.byteLength,
+        high_waters: finalJournal.receipt_high_waters.length,
+        high_waters_by_shard: highWatersByShard,
+        journal_unchanged_after_limit: priorJournal.journal_id === exactCeilingJournalId,
+        oldest_abc_available_shards: oldestAbcReplayAfterReload.available_shards,
+        private_material_exposed: false
+      });
+    }
+  );
+  const dynamicReplacementElapsedMs = Date.now() - dynamicReplacementStartedAt;
+  assert.ok(dynamicReplacementElapsedMs <= dynamicReplacementDeadlineMs);
+
   const generation2 = await consumerB.page.evaluate((options) =>
     globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createPlacementGeneration(options), {
     capsule_base64url: controllerHanded.capsule_base64url,
@@ -596,7 +1019,14 @@ try {
       globalThis.__MORTALOS_P2P_PLACEMENT__.snapshot()))
   ]);
   assert.doesNotMatch(
-    JSON.stringify({ actionPlan2, committed1, committed2, continued, publicSnapshots }),
+    JSON.stringify({
+      actionPlan2,
+      committed1,
+      committed2,
+      continued,
+      dynamicReplacement,
+      publicSnapshots
+    }),
     /private[_-]?key|CryptoKey/u
   );
 
@@ -605,7 +1035,10 @@ try {
   console.log("- three browser providers stored distinct shards over direct WebRTC DataChannels and signed exact workload receipts");
   console.log("- exact freshness boundary passed; one millisecond beyond the bound failed closed");
   console.log("- journal v2 bound every storage challenge to its exact prior head; cumulative A/B/C and D/E/F high-waters survived provider replacement");
-  console.log("- exact old A/B/C replay produced zero proved shards against the D/E/F head and could not create or advance a successor journal");
+  console.log(`- 127 sequential live-browser cycles reached generation ${dynamicReplacement.final_generation} at the exact 384-chain history ceiling (${dynamicReplacement.high_waters_by_shard.join("/")} by shard) with ${dynamicReplacement.distinct_receipt_ids} distinct committed receipts in ${dynamicReplacementElapsedMs}ms`);
+  console.log("- cycle 1 replaced shard 0, cycles 2-126 replaced all three shards, and cycle 127 replaced shards 1 and 2; every non-replaced chain advanced by its exact direct successor");
+  console.log("- a browser-signed 3-of-3 generation-130 candidate proved, but its 385th total/129th shard-0 chain failed closed without changing the exact ceiling journal");
+  console.log("- every next-context current/displaced view and the exact old A/B/C replay after serialized-state reload produced zero proved shards");
   console.log("- local provider-process termination plus a quorum certificate qualified a deterministic repair scheduling plan; browser B renewed all leases under its own non-transferred key");
   console.log("- one failed provider and four separate browser observers received the same challenge over WebRTC; 3-of-4 signed the bounded local no-response window without a global clock");
   console.log("- A committed the degraded generation before the Lab performed replacement placement; this Lab does not yet execute repair through an effect-time, current-evidence-gated action-plan executor");

@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-10 KST**
+Last synchronized: **2026-08-11 KST**
 
 ## Read first
 
@@ -74,9 +74,23 @@ identity. It also binds
 placement generations to Continuity, gates derived placement action plans on a
 current-descriptor commit, requires every supplied authenticated Capsule tip to be
 represented by the convergence chain, and halts incomplete or sibling forks.
-Focused Node/Chromium, fresh-process, security, packed-package, and final
-ordered `npm test` (4,263.6s on the pre-review liveness-hardened source) gates
-passed locally. Governance and deployment are exact-SHA external facts read from
+The current focused exact-ceiling gates pass locally. Node performs 128 signed
+transitions with 381 genuine replacements to generation 129 and exactly 384
+provider/lease/chain high-waters (`128/128/128` by shard). Mixed-runtime Chromium/Lab
+performs 127 cycles from generation 2 to the same ceiling with actual browser-held
+non-extractable keys. Both prove a signed generation-130 `3/3` candidate, then reject
+its plus-one chain without changing the ceiling journal. The focused runtimes are
+`2,841,685.4279ms` Node test-body time and `2,666,619ms` total Chromium time; the
+Chromium guard is `3,300,000ms`. The historical `7,065.8s` full-suite PASS predates
+this exact-ceiling source and does not transfer. The unchanged current runtime/test/
+workflow source bytes ran uninterrupted `npm test`, exited `0` after `8,076,826ms`
+(`8,076.826s`; `134m 36.826s`), and completed every ordered gate through final
+`verify:s4`. Only evidence docs changed afterward and separately pass spec/link/diff;
+this is not a whole-current-tree full-suite claim. Three persistent Chromium pages hold non-extractable provider keys and
+produce storage results/signatures while Node orchestrates the portable journal;
+neither independent in-browser journal-kernel parity nor independent failure domains
+are claimed.
+Governance and deployment are exact-SHA external facts read from
 the PR, required checks, merge record, post-merge workflows, and deployed manifest;
 this document does not self-promote its containing revision. Physical independence
 remains HOLD.

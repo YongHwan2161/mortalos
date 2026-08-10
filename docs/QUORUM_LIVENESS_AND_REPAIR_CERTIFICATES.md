@@ -1,8 +1,8 @@
 # Quorum-observed liveness and repair certificates
 
-Status: **SOURCE + LOCAL EVIDENCE PASS — EXACT-SHA PROMOTION EXTERNAL; INDEPENDENT FAILURE-DOMAIN PROMOTION HOLD**
+Status: **SOURCE + FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; INDEPENDENT FAILURE-DOMAIN PROMOTION HOLD**
 
-Last synchronized: **2026-08-10 KST**
+Last synchronized: **2026-08-11 KST**
 
 ## Purpose
 
@@ -115,7 +115,7 @@ The Chromium acceptance uses no backend clock or outage oracle:
 | `node --test test/webrtc-transport.test.mjs` | Challenge, observation, response, and certificate are bounded untrusted WebRTC artifact kinds; selective artifact-kind `Set.has` poison still rejects `verdict` before send/local commit and transports a challenge once |
 | `node scripts/verify-confidential-placement-chromium.mjs` | Native 98,317-byte file, direct challenge delivery, four separate observer browser processes, actual local duration, 3-of-4 certificate, committed repair, A exit, B continuation, exact 2-of-3 recovery, zero post-cut origin/relay requests |
 | `npm run test:sdk` and `node scripts/verify-sdk-package.mjs` | Authority-free public drafts, finalizers, verifiers, evaluator, and clean packed import; no signing key or network authority exported |
-| `npm test` | A pre-review source baseline completed the then-current ordered suite in 4,263.6s; exact-SHA CI is the current-revision authority |
+| `npm test` | Unchanged current runtime/test/workflow source PASS in `8,076.826s` through final `verify:s4`; only evidence docs changed afterward and separately pass spec/link/diff, so this is not a whole-current-tree full-suite claim; historical 4,263.6/4,304.1-second and 7,065.8-second baselines do not transfer; exact-SHA CI remains the publication authority |
 
 ## Explicit nonclaims
 

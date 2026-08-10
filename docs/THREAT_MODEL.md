@@ -626,6 +626,15 @@ The revision must identify the new trust assumption, affected invariant, failure
   ignored; bounded garbage collection for repeated pending-file accumulation remains HOLD.
   The local adapter assumes trusted Node bootstrap/built-in bindings and does not
   sandbox arbitrary code already running with the same process and directory authority.
+- The exact-ceiling Chromium corpus creates fresh non-extractable logical provider
+  signers, offers, leases, and storage results inside three persistent provider pages
+  and recomputes possession evidence from already stored exact shard bytes. It runs
+  127 cycles from generation 2 to generation 129 with 384 distinct provider/lease/
+  chain high-waters, then proves a browser-signed generation-130 `3/3` candidate
+  whose plus-one commit is rejected without changing the ceiling bytes. The portable
+  journal controller remains Node-orchestrated. The corpus does not prove independent
+  in-browser journal-kernel parity, new browser/process deaths or network transfers,
+  independent possession domains, machines, accounts, or administrators.
 - Canonical placement generations are committed through the current Continuity
   descriptor's quorum-authorized sign-once transition. A verified commit qualifies derivation of a
   deterministic placement action plan. `deriveCommittedPlacementActionPlan` returns

@@ -1,8 +1,8 @@
 # P2P storage placement and repair
 
-Status: **SOURCE + LOCAL EVIDENCE PASS — EXACT-SHA PROMOTION EXTERNAL; PHYSICAL TOPOLOGY HOLD**
+Status: **FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; PHYSICAL TOPOLOGY HOLD**
 
-Last synchronized: **2026-08-10 KST**
+Last synchronized: **2026-08-11 KST**
 
 ## Contract
 
@@ -66,13 +66,13 @@ and verify the nested canonical bytes again.
 | Node process topology | `node --test test/placement-process.test.mjs` | Provider process directly stores and signs; process exit prevents later signing; replacement process/new lease repairs |
 | Transport contract | `node --test test/webrtc-transport.test.mjs` | Canonical signaling, artifact bounds, no Node fallback, owned publish bytes, detached immutable frames, failure-atomic send/retry, and 14 isolated artifact-kind/constructor/Map/Set/Array/iterator/scheduler/channel poison cases; forbidden verdict send/local state remains zero and challenge send/local state is one |
 | Actual browser vertical | `node scripts/verify-p2p-placement-chromium.mjs` | Actual paired Chromium DataChannels keep forbidden verdict local/remote ranges and subscriber visibility at zero under selective Set membership poison, deliver challenge sequence 1, preserve the other named native send/peer/transcript/replay/range/scheduler behaviors, then pass the runtime-file/evidence origin-cut provider-loss/repair and A-exit/B-readback vertical |
-| Confidential controller | `node --test test/confidential-placement.test.mjs` | S4 2-of-3 shards; one generation instant for contract status and proof age; historical-time expiry and effective-revocation rejection; exact freshness boundary; crash/restart journal; chained re-proof; 100-cycle policy corpus |
+| Confidential controller | `node --test test/confidential-placement.test.mjs test/confidential-journal-v2.test.mjs` | S4 2-of-3 shards; one generation instant for contract status and proof age; historical-time expiry and effective-revocation rejection; exact freshness boundary; crash/restart journal; chained re-proof; four bounded policy cases; and an exact-ceiling path with 128 signed transitions, 381 genuine provider replacements, generation 129, 384 provider/lease/chain high-waters (`128/128/128`), 387 receipts, plus a proved signed generation-130 `3/3` candidate whose one-new-chain commit fails closed without changing bytes |
 | Liveness contract | `node --test test/placement-liveness.test.mjs` | Offer-rostered 3-of-4 non-response certificate under a consumer-selected bounded window; no-clock schema; threshold/outsider/window negatives; late response, challenge fork, and response fork halt |
 | Lineage controller | `node --test test/lineage-placement.test.mjs` | Certificate-bound current-descriptor quorum-authorized generation commit; conditional late-proof conflict when fresh response/current placement evidence is supplied; derived placement action plan; A→B key non-transfer; fresh-process convergence; 1,000 partition/heal events; valid sibling fork halt |
-| Confidential browser vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual native File encrypted for B, distinct ciphertext shards and liveness challenge over peers, four observer processes and 3-of-4 local-duration certificate, provider loss, A generation commit, sign-once handoff, A exit, successor-authorized operational signer repair and successor commit, deterministic convergence, corrupt-shard rejection, exact decrypt; the signer is not custody-identity-bound |
-| Combined gate | `npm run test:p2p-placement` | The pre-review baseline passed its then-current 17 Node cases and both Chromium verticals; exact-SHA CI is the current-revision authority |
+| Confidential browser vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual native File encrypted for B, distinct ciphertext shards and liveness challenge over peers, four observer processes and 3-of-4 local-duration certificate, provider loss, A generation commit, sign-once handoff, A exit, successor-authorized operational signer repair and successor commit, then 127 cycles from generation 2 to the exact generation-129/384-chain ceiling with actual browser-held non-extractable provider keys, browser storage results/signatures, current-context receipts, and exact successor chains. A browser-signed generation-130 `3/3` candidate proves before plus-one rejection; exact bytes remain unchanged and oldest replay rejects after reload. The portable journal controller remains Node-orchestrated; this is not independently in-browser journal-kernel parity. Deterministic convergence, corrupt-shard rejection, exact decrypt; the signer is not custody-identity-bound |
+| Combined gate | `npm run test:p2p-placement` | The containing revision must pass the current Node suite and both current Chromium verticals; historical 17-case results predate the stateful corpus and do not transfer; exact-SHA CI is the publication authority |
 | Package boundary | `node scripts/verify-sdk-package.mjs` | Clean packed import of `@mortal-os/core/placement` |
-| Complete repository regression | `npm test` | A pre-review source baseline completed in 4,263.6 seconds; exact-SHA CI is the current-revision authority |
+| Complete repository regression | `npm test` | Unchanged current runtime/test/workflow source PASS in `8,076.826s` through final `verify:s4`; only evidence docs changed afterward and separately pass spec/link/diff, so this is not a whole-current-tree full-suite claim; historical 4,263.6/4,304.1-second and 7,065.8-second baselines do not transfer; exact-SHA CI remains the publication authority |
 
 ## Explicit nonclaims
 

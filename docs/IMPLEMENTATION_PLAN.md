@@ -1,8 +1,8 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — P2P LINEAGE/LIVENESS SOURCE PASS; NEXT: FAILURE-PRECOMMITTED LIVENESS POLICY AND EFFECT-TIME EXECUTOR; THEN: LINEAGE-GOVERNED ADMISSION**
+Status: **ACTIVE IMPLEMENTATION SSOT — FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; NEXT: FAILURE-PRECOMMITTED LIVENESS POLICY AND EFFECT-TIME EXECUTOR; THEN: LINEAGE-GOVERNED ADMISSION**
 
-Last synchronized: **2026-08-10 KST**
+Last synchronized: **2026-08-11 KST**
 
 This is the sole current direction, stage ledger, and ordered implementation plan.
 Historical receipts remain valid only for their named commits. Historical
@@ -254,20 +254,37 @@ Strict pass criteria:
   ignored; bounded reclamation and sudden-power-loss durability remain HOLD;
 - timeout, delayed response, crash, partition, corrupt shard, replay, fork, revoke,
   exhaustion, restart, heal, and repair preserve quorum without provider duplication
-  or cross-lease reuse in at least 100 seeded cycles;
+  or cross-lease reuse in four bounded policy cases. Separately, 128 sequential
+  signed prior-head-bound transitions in the Node portable-kernel gate perform 381
+  genuine provider replacements, reject displaced receipts, advance every retained
+  chain by exact predecessor, and reach the generated 384-chain ceiling without
+  pruning history.
+  A separate mixed-runtime Chromium/Lab gate obtains the provider keys, storage
+  results, and signatures from actual browser pages for 127 cycles from generation 2
+  to the identical generation-129 ceiling while the portable journal controller is
+  orchestrated in Node. Both paths prove a separately signed generation-130 `3/3`
+  candidate before its 385th total/129th shard-0 chain fails commit and the
+  generation-129 bytes remain unchanged; in-browser journal-kernel parity remains
+  unclaimed;
 - a new provider/new offer/new lease repairs the same encrypted workload, and only
   an authorized successor with quorum can reconstruct and decrypt exact bytes;
-- Node multiprocess, actual Chromium, built Lab, and a clean packed consumer execute
-  the same scenario contract. Physical independence and same-origin signer isolation
-  remain HOLD until separately proven.
+- The baseline confidentiality/repair contract is covered by Node multiprocess,
+  actual Chromium, built Lab, and the clean packed consumer. The exact-ceiling
+  history-growth corpus itself is limited to the Node portable-kernel and mixed-
+  runtime Chromium/Lab gates named above. Physical independence and same-origin
+  signer isolation remain HOLD until separately proven.
 
-Source result: implemented in the current source; exact final verification remains
-the containing revision's gate. `test/confidential-placement.test.mjs` proves every
-2-of-3 combination, exact-age and max+1 behavior, generation-time expiry and
-effective-revocation rejection, duplicate provider/shard rejection, and 100
-deterministic controller-policy cycles. `test/confidential-journal-v2.test.mjs`
-proves cumulative A/B/C→D/E/F high-waters, old/unseen receipt rejection, exact known-
-chain successors, epoch rotation, v1 fresh-reproof migration, generated caps, and
+Source result: implemented with focused exact-ceiling and current runtime/test/
+workflow full-suite PASS; current evidence docs separately pass spec/link/diff.
+`test/confidential-placement.test.mjs`
+proves every 2-of-3 combination, exact-age and max+1 behavior, generation-time expiry
+and effective-revocation rejection, duplicate provider/shard rejection, and four
+bounded controller-policy cases. `test/confidential-journal-v2.test.mjs` proves 128
+evolving signed transitions and 381 genuine replacements to generation 129 with
+384 provider/lease/chain high-waters (`128/128/128` by shard) and 387 distinct
+execution receipts, in addition to cumulative A/B/C→D/E/F high-waters, old/unseen
+receipt rejection, exact known-chain successors, epoch
+rotation, v1 fresh-reproof migration, generated caps, and
 tamper/hostile-input failure. `test/confidential-controller-v2.test.mjs` uses fresh
 processes to prove predecessor-bound intent/successor hard-link CAS, one concurrent
 winner, stale-writer rejection, restart traversal, and v1 migration HOLD until a
@@ -278,7 +295,25 @@ replay rejection, origin cut, loss/repair, A exit, new leases under a separately
 generated successor-authorized operational signer, corrupt-shard rejection, and
 exact decrypt. No custody-identity binding is claimed. Journal/context/transition
 documents are unsigned local evidence; hostile-disk integrity, completely hidden
-history, and cross-host/global consensus remain unproved. See
+history, and cross-host/global consensus remain unproved. The Chromium path retains
+non-extractable provider keys/storage/signatures in three persistent pages while
+Node orchestrates the portable journal controller. That path performs 127 cycles
+from generation 2 to the same ceiling, reloads and rejects the oldest replay, keeps
+private material unexposed, and observes zero post-cut requests. Both paths prove a
+valid generation-130 `3/3` candidate, then fail closed on its plus-one chain without
+changing the ceiling journal. Node passed in `2,841,685.4279ms` test-body time
+(`2,842,481.1467ms` runner; `2,842,596ms` shell); Chromium passed in `2,549,195ms`
+dynamic time (`2,666,619ms` total). Its guard is now `3,300,000ms`; workflows remain
+240 minutes. The historical `7,065.8s` full-suite PASS is pre-ceiling and does not
+transfer. The unchanged current runtime/test/workflow source bytes ran uninterrupted
+`npm test` starting at
+`2026-08-11 01:06:58.716+09:00`, ended at `03:21:35.542+09:00`, exited `0`, and
+completed every ordered gate through final `verify:s4` in `8,076,826ms`
+(`8,076.826s`; `134m 36.826s`). Only evidence docs changed afterward and separately
+pass spec/link/diff; this is not a whole-current-tree full-suite claim. Independently
+in-browser journal-kernel parity and independent physical failure domains remain
+unclaimed. Exact-head CI, review,
+approval, merge, deployment, and public readback remain external. See
 [Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md).
 
 ### P0 — Lineage-bound controller handoff and repair convergence (source + local evidence PASS)
@@ -350,9 +385,12 @@ rejects a consumer-invented observer roster, raw unavailable-provider input,
 certificate/late-proof conflict when the response and its current placement chain
 are supplied, challenge fork, response fork, and sibling generation fork. The
 current Lab/browser flow does not yet ingest asynchronous late proofs at execution.
-A pre-review source baseline completed its then-current ordered `npm test` in
-4,263.6s, including 17 placement/liveness/lineage/transport Node cases and both
-actual Chromium placement verticals. Exact-SHA CI is the current-revision authority.
+Historical 17-case and 4,263.6/4,304.1-second baselines and the later `7,065.8s`
+stateful-100 result all predate the current exact-ceiling source and do not transfer.
+The current focused exact-ceiling gates and the `8,076.826s` uninterrupted current
+runtime/test/workflow full suite pass through final `verify:s4`; later evidence-doc
+changes separately pass spec/link/diff. This is not a whole-current-tree full-suite
+claim. Exact-SHA CI is still the publication authority.
 See
 [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).
 

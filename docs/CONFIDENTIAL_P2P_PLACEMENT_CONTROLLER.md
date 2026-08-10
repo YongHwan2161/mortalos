@@ -1,8 +1,8 @@
 # Confidential P2P placement controller
 
-Status: **SOURCE + LOCAL EVIDENCE PASS — EXACT-SHA PROMOTION EXTERNAL; PHYSICAL PROMOTION HOLD**
+Status: **FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; PHYSICAL PROMOTION HOLD**
 
-Last synchronized: **2026-08-10 KST**
+Last synchronized: **2026-08-11 KST**
 
 ## Purpose
 
@@ -133,13 +133,13 @@ controller delegation.
 | Gate | Command | Result |
 | --- | --- | --- |
 | Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs test/confidential-journal-v2.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future rejection; generation-time completion and effective-revocation rejection; owned-inert evaluator and reproof-context acquisition; A/B/C→D/E/F→old A/B/C replay rejection; unseen historical receipt rejection; direct successor and new-lease acceptance only under the current context; v1 migration reproof; exact history cap/+1 failure; and journal/context tamper rejection |
-| Seeded controller policy corpus | same command | 100 deterministic loss, stale, repair, and corrupt-evidence cycles over cryptographically verified fixture states; no claim of 100 physical failures |
+| Stateful replacement and policy corpus | same command | Four bounded loss/stale/repair/corrupt policy cases plus an exact-ceiling path: 128 sequential signed prior-head-bound transitions, 381 genuine replacements, generation 129, 384 distinct provider/lease/chain high-waters (`128/128/128`), and 387 distinct receipts. A separately signed generation-130 `3/3` candidate proves before its 385th total/129th shard-0 chain fails commit without changing the ceiling bytes; no claim of independent physical failures |
 | Existing plaintext P2P regression | `node scripts/verify-p2p-placement-chromium.mjs` | Direct DataChannel transport, provider loss, repair, A exit, 2-of-3 readback |
-| Confidential Chromium vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual 98,317-byte native File; S4 encryption for B; three distinct ciphertext shards plus liveness challenge over WebRTC; provider loss; four observer processes and 3-of-4 certificate; A lineage commit; sign-once A→B custody handoff; A exit; successor-authorized operational signer creates new leases and successor commit; byte-identical convergence; corrupt-shard rejection; exact decryption; no custody-identity binding claim |
+| Confidential Chromium vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual 98,317-byte native File; S4 encryption for B; three distinct ciphertext shards plus liveness challenge over WebRTC; provider loss; four observer processes and 3-of-4 certificate; A lineage commit; sign-once A→B custody handoff; A exit; successor-authorized operational signer creates new leases and successor commit. Then 127 mixed-runtime cycles from generation 2 use actual browser-held non-extractable provider keys, browser storage results/signatures, prior-head-bound contexts, and exact receipt successors to reach generation 129 with 384 distinct provider/lease/chain high-waters (`128/128/128`) and 387 receipts. A browser-signed generation-130 `3/3` candidate proves before plus-one commit rejection; bytes remain unchanged, serialized reload rejects the oldest replay, private material remains unexposed, and post-cut requests stay zero. The portable context/evaluation/journal controller is Node-orchestrated, so this is not independently in-browser journal-kernel parity; byte-identical convergence; corrupt-shard rejection; exact decryption; no custody-identity binding claim |
 | Lineage controller | `node --test test/lineage-placement.test.mjs` | Offer-rostered certificate-gated derived placement action plan; consumer-selected bounded window; conditional late-proof conflict when fresh response/current placement evidence is supplied; fresh-process deterministic replay; 1,000 partition/heal evidence events; stale A rejection; independently valid same-parent generation fork halts |
-| Combined placement gate | `npm run test:p2p-placement` | The pre-review baseline passed its then-current 17 Node cases and both Chromium verticals; exact-SHA CI is the current-revision authority |
+| Combined placement gate | `npm run test:p2p-placement` | The containing revision must pass the current Node suite and both current Chromium verticals; historical 17-case results predate the stateful corpus and do not transfer; exact-SHA CI is the publication authority |
 | Public package boundary | `node scripts/verify-sdk-package.mjs` | Clean packed consumer imports the authority-free placement surface |
-| Complete repository regression | `npm test` | A pre-review source baseline completed in 4,263.6 seconds; exact-SHA CI is the current-revision authority |
+| Complete repository regression | `npm test` | Unchanged current runtime/test/workflow source PASS in `8,076.826s` through final `verify:s4`; only evidence docs changed afterward and separately pass spec/link/diff, so this is not a whole-current-tree full-suite claim; historical 4,263.6/4,304.1-second and 7,065.8-second baselines do not transfer; exact-SHA CI remains the publication authority |
 
 ## Explicit nonclaims
 
@@ -161,8 +161,12 @@ controller delegation.
 - Browser processes share this PC, administrator, network, and credential domain.
 - Manual same-host ICE does not prove arbitrary NAT traversal or Internet discovery.
 - Ephemeral same-origin signing is not an XSS-resistant signer boundary.
-- The 100-cycle corpus is deterministic policy coverage over valid cryptographic
-  states, not 100 independent machines or real network partitions.
+- The Node exact-ceiling corpus executes the portable kernel directly. The separate
+  mixed-runtime gate obtains each provider storage result and signature from an actual
+  Chromium/Lab page while the Node verifier orchestrates the portable journal kernel.
+  It does not prove independently in-browser journal-kernel parity. Both remain a
+  same-PC deterministic topology, not independent machines, administrators,
+  networks, or real partitions.
 - Cloudflare Pages may publish the static Lab artifact, but it is not storage,
   scheduling, custody, discovery, or validation authority.
 

@@ -246,16 +246,31 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
 - Profile-generated caps are 2 MiB per journal, 4,096 linked head transitions, 128
   high-waters per shard, 384 total, a 32-byte epoch nonce, and a 16-byte derived
   reproof nonce. Overflow fails closed without silent pruning.
-- `test/confidential-journal-v2.test.mjs` covers cumulative A/B/C-to-D/E/F history,
-  old/unseen replay, exact known-chain successors, epoch rotation, v1 fresh-reproof
-  migration, caps, and hostile inputs. `test/confidential-controller-v2.test.mjs`
+- `test/confidential-journal-v2.test.mjs` covers the exact generated history ceiling:
+  128 sequential signed prior-head-bound transitions with 381 genuine provider
+  replacements reach generation 129, 384 provider/lease/chain high-waters
+  (`128/128/128` by shard), and 387 distinct execution receipts. A proved signed
+  generation-130 `3/3` candidate then fails commit at the 385th total/129th shard-0
+  chain without changing the generation-129 bytes. It also covers cumulative
+  A/B/C-to-D/E/F history, old/unseen
+  replay, exact known-chain successors, epoch rotation, v1 fresh-reproof migration,
+  caps, and hostile inputs. A separate mixed-runtime Chromium/Lab vertical obtains
+  the provider storage results and signatures for 127 cycles from generation 2 to
+  the identical generation-129/384-chain ceiling from actual non-extractable browser
+  provider keys while the portable journal controller is orchestrated in Node. It
+  also proves browser-signed plus-one rejection, serialized oldest-replay rejection,
+  private-material non-exposure, and zero post-cut requests; this is not in-browser
+  journal-kernel parity.
+  `test/confidential-controller-v2.test.mjs`
   covers fresh-process intent/successor CAS, concurrent one-winner behavior, stale
-  writers, restart traversal, and migration HOLD. The older policy corpus and actual
-  Chromium confidential vertical remain supplementary gates.
+  writers, restart traversal, and migration HOLD. The older four-case policy corpus
+  is supplementary; the mixed-runtime Chromium vertical is the required cross-
+  runtime exact-ceiling gate.
 - Journal, context, and transition documents are unsigned local crash-policy
   evidence. They do not prove hostile-disk integrity, discover completely hidden
   valid receipt history, establish cross-host/global consensus or global currentness,
-  or turn 100 deterministic cycles into 100 physical failure domains.
+  or turn genuine same-PC cryptographic transitions into independent physical
+  failure domains.
 - The actual Chromium vertical encrypts a native 98,317-byte File for B, stores only
   distinct ciphertext shards over direct DataChannels, cuts origin/relay requests,
   loses a provider, exits A, and makes B issue renewed placements under new
@@ -275,12 +290,45 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
 - The earlier lineage-only source passed its then-current final ordered `npm test`
   in 3,129.8s. Governance and deployment of any later revision are exact-SHA
   external facts and are never inferred from this memory.
-- The current journal-v2 source passed a fresh uninterrupted ordered `npm test` in
-  `4,304.1s` (`71m 44s`), including cumulative anti-replay, durable-controller
-  concurrency/migration/4,096-boundary regressions, lineage, both actual Chromium
-  placement verticals, portable `10,000/10,000`, UX, and historical receipts. The
-  evidence-only HANDOFF/MEMORY/WORKLOG update followed that runtime run; exact-head
-  CI remains authoritative for the final commit.
+- Exact head `e0148aa2...` passed the pre-stateful-corpus full suite in `4,304.1s`
+  (`71m 44s`) and then received BLOCK review `4893915817`; that result does not
+  transfer. Later stateful-100 focused and full-suite results are historical evidence
+  for their older source and do not transfer to the exact-ceiling source.
+- Two later current-source full-suite attempts remain historical non-promotable
+  failure evidence: the first failed at the relay test's wall-clock bucket race after
+  `6,167s`, and the second failed after `6,122.7s` when the mixed-runtime Chromium
+  gate exhausted its former `1,800,000ms` internal deadline. After the test-only relay
+  repair and a bounded increase to `2,700,000ms`, a third fresh uninterrupted
+  `npm test` exited `0` in `7,065.8s` (`117m 45.8s`). It completed both stateful
+  100-transition paths, relay, and all later ordered gates; the root test tree was
+  absent at `2026-08-10 22:54:53.946+09:00` (`RootTreeLiveCount=0`). Only the
+  evidence documents changed afterward. The exact-ceiling test additions now
+  postdate that run, so it is historical pre-ceiling PASS rather than evidence for
+  the current source.
+- Current focused exact-ceiling evidence passes. Node completed its 128 signed
+  transitions in `2,841,685.4279ms` test-body time (`2,842,481.1467ms` runner;
+  `2,842,596ms` shell), with `RootTreeLiveCount=0` at
+  `2026-08-11 00:05:11.662+09:00`. Chromium completed 127 cycles in `2,549,195ms`
+  dynamic time (`2,666,619ms` total), with no live browser tree at
+  `2026-08-11 00:54:04.267+09:00`. The first Chromium attempt failed after
+  `84,073ms` on a test-only `chain_id` aggregation assertion and the corrected
+  aggregation then passed. Because the deadline-wrapped dynamic segment used 94.41%
+  of the former
+  `2,700,000ms` cap, the internal guard is now `3,300,000ms`; workflows remain 240
+  minutes.
+- The uninterrupted `npm test` over the unchanged current runtime/test/workflow
+  source bytes started at
+  `2026-08-11 01:06:58.716+09:00`, ended at `03:21:35.542+09:00`, exited `0`, and
+  completed every ordered stage through final `verify:s4` in `8,076,826ms`
+  (`8,076.826s`; `134m 36.826s`). It includes both current exact-ceiling paths and
+  every later gate. PID `23824` was absent at `03:24:59.475+09:00`; a fresh probe at
+  `03:26:01.147+09:00` confirmed that root absent and zero other matching MortalOS
+  test workloads after excluding the probe itself. Only evidence docs changed after
+  the run; the current documentation tree separately passes spec, link, and diff
+  checks. Current status is focused exact-ceiling plus current runtime/test/workflow
+  full-suite PASS and current-docs spec/link/diff PASS. This is not a whole-current-
+  tree full-suite claim. Exact-SHA CI, immutable review, approval, merge, deployment,
+  and public readback remain external gates.
 - The next P0 order remains provider-agreed lease-bound liveness policy and an
   effect-time exactly-once repair executor first; lineage-governed admission and
   failure-domain accounting follow.

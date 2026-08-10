@@ -227,6 +227,328 @@ test("journal v2 keeps A/B/C barriers after D/E/F replacement and rejects old or
   assert.equal(restoreConfidentialPlacementJournal(journal3.bytes).receipt_high_waters.length, 9);
 });
 
+test("128 signed provider-replacement cycles reach the generated 384-chain ceiling and fail closed at plus one", {
+  timeout: 3_600_000
+}, async () => {
+  const created = await scenarioPromise;
+  const replacementProviders = await Promise.all(Array.from(
+    { length: 381 },
+    () => createPlacementSigner()
+  ));
+  const epochId = created.journal1.journal.epoch_id;
+  const contextIds = new Set([created.context1.context_id]);
+  const journalIds = new Set([created.journal1.journal_id]);
+  const providerIds = new Set();
+  const leaseIds = new Set();
+  const executionReceiptIds = new Set();
+  let currentFixtures = [...created.abc];
+  let currentProviders = [...created.providerSets[0]];
+  let currentJournal = created.journal1;
+  let displacedFixture = null;
+  let oldestReplay = null;
+  let replacementCursor = 0;
+  const replacementCounts = [0, 0, 0];
+
+  const recordActiveReceipts = (journal) => {
+    for (const proof of journal.active_proofs) {
+      assert.equal(executionReceiptIds.has(proof.receipt_id), false);
+      executionReceiptIds.add(proof.receipt_id);
+    }
+  };
+
+  const genesis = currentJournal.journal;
+  assert.equal(genesis.receipt_high_waters.length, 3);
+  assert.deepEqual(
+    genesis.receipt_high_waters.map(({ shard_index: shardIndex }) => shardIndex),
+    [0, 1, 2]
+  );
+  recordActiveReceipts(genesis);
+  for (const proof of genesis.active_proofs) {
+    assert.equal(providerIds.has(proof.provider_id), false);
+    assert.equal(leaseIds.has(proof.lease_id), false);
+    providerIds.add(proof.provider_id);
+    leaseIds.add(proof.lease_id);
+  }
+
+  for (let cycle = 1; cycle <= 128; cycle += 1) {
+    const prior = currentJournal.journal;
+    const issuedAtMs = 1498;
+    const evaluatedAt = String(issuedAtMs + 2);
+    const context = createConfidentialPlacementReproofContext({
+      epoch_nonce: null,
+      generation: String(cycle + 1),
+      manifest_bytes: created.shardSet.manifest_bytes,
+      max_proof_age_ms: "500",
+      prior_journal_bytes: currentJournal.bytes,
+      quorum: 2,
+      rotate_epoch: false,
+      target_shards: 3
+    });
+    assert.equal(context.generation, String(cycle + 1));
+    assert.equal(context.context.prior_journal_id, prior.journal_id);
+    assert.equal(context.epoch_id, epochId);
+    assert.equal(contextIds.has(context.context_id), false);
+    contextIds.add(context.context_id);
+
+    const currentReplay = evaluateContext({
+      context,
+      evaluatedAt,
+      fixtures: currentFixtures,
+      priorJournal: currentJournal
+    });
+    assert.equal(currentReplay.available_shards, 0);
+    assert.ok(currentReplay.placements.every(({ reason }) => reason === "reproof-context-mismatch"));
+    if (cycle === 128) {
+      oldestReplay = evaluateContext({
+        context,
+        evaluatedAt,
+        fixtures: created.abc,
+        priorJournal: currentJournal
+      });
+      assert.equal(oldestReplay.available_shards, 0);
+      assert.ok(oldestReplay.placements.every(({ status }) => status === "rejected"));
+    }
+
+    const replaceShard = cycle === 1
+      ? [true, false, false]
+      : cycle === 128
+        ? [false, true, true]
+        : [true, true, true];
+    const nextShards = await Promise.all(Array.from({ length: 3 }, async (_, shardIndex) => {
+      if (replaceShard[shardIndex]) {
+        if (cycle === 2 && shardIndex === 0) displacedFixture = currentFixtures[shardIndex];
+        const provider = replacementProviders[replacementCursor];
+        replacementCursor += 1;
+        replacementCounts[shardIndex] += 1;
+        const fixture = await createStoragePlacementFixture({
+          challengeNonceFactory: reproofNonce(context.bytes, shardIndex),
+          consumer: created.consumer,
+          provider,
+          resourceBytes: created.shardSet.shards[shardIndex].bytes,
+          seed: 10_000 + replacementCursor * 8 + shardIndex,
+          witnesses: created.witnesses
+        });
+        return { fixture, provider };
+      }
+      const provider = currentProviders[shardIndex];
+      const fixture = await refreshStoragePlacementFixture({
+        challengeNonceFactory: reproofNonce(context.bytes, shardIndex),
+        consumer: created.consumer,
+        fixture: currentFixtures[shardIndex],
+        issuedAtMs,
+        provider,
+        resourceBytes: created.shardSet.shards[shardIndex].bytes,
+        seed: 20_000 + cycle * 8 + shardIndex
+      });
+      return { fixture, provider };
+    }));
+    const nextFixtures = nextShards.map(({ fixture }) => fixture);
+    const nextProviders = nextShards.map(({ provider }) => provider);
+
+    const evaluation = evaluateContext({
+      context,
+      evaluatedAt,
+      fixtures: nextFixtures,
+      priorJournal: currentJournal
+    });
+    assert.equal(evaluation.status, "proved");
+    assert.equal(evaluation.available_shards, 3);
+    for (let shardIndex = 0; shardIndex < 3; shardIndex += 1) {
+      const previous = prior.active_proofs[shardIndex];
+      const next = evaluation.placements[shardIndex];
+      if (replaceShard[shardIndex]) {
+        assert.equal(next.challenge_sequence, "0");
+        assert.equal(next.previous_execution_receipt_id, null);
+        assert.notEqual(next.provider_id, previous.provider_id);
+        assert.notEqual(next.lease_id, previous.lease_id);
+        assert.equal(providerIds.has(next.provider_id), false);
+        assert.equal(leaseIds.has(next.lease_id), false);
+        providerIds.add(next.provider_id);
+        leaseIds.add(next.lease_id);
+      } else {
+        assert.equal(next.challenge_sequence, String(BigInt(previous.challenge_sequence) + 1n));
+        assert.equal(next.previous_execution_receipt_id, previous.receipt_id);
+        assert.equal(next.provider_id, previous.provider_id);
+        assert.equal(next.lease_id, previous.lease_id);
+      }
+    }
+
+    const nextJournal = commitContext({
+      context,
+      evaluation,
+      priorJournal: currentJournal
+    });
+    const restored = nextJournal.journal;
+    assert.equal(restored.generation, String(cycle + 1));
+    assert.equal(restored.prior_journal_id, prior.journal_id);
+    assert.equal(restored.epoch_id, epochId);
+    assert.equal(
+      restored.receipt_high_waters.length,
+      prior.receipt_high_waters.length + replaceShard.filter(Boolean).length
+    );
+    assert.equal(journalIds.has(restored.journal_id), false);
+    journalIds.add(restored.journal_id);
+    recordActiveReceipts(restored);
+
+    currentFixtures = nextFixtures;
+    currentProviders = nextProviders;
+    currentJournal = nextJournal;
+  }
+
+  assert.equal(replacementCursor, 381);
+  assert.deepEqual(replacementCounts, [127, 127, 127]);
+  assert.ok(displacedFixture);
+
+  const finalJournal = restoreConfidentialPlacementJournal(currentJournal.bytes);
+  const shardHistoryCounts = [0, 0, 0];
+  const chainIds = new Set();
+  const highWaterReceiptIds = new Set();
+  for (const highWater of finalJournal.receipt_high_waters) {
+    shardHistoryCounts[highWater.shard_index] += 1;
+    chainIds.add(highWater.chain_id);
+    highWaterReceiptIds.add(highWater.receipt_id);
+  }
+  assert.equal(finalJournal.generation, "129");
+  assert.equal(finalJournal.epoch_id, epochId);
+  assert.equal(finalJournal.receipt_high_waters.length, 384);
+  assert.equal(contextIds.size, 129);
+  assert.equal(journalIds.size, 129);
+  assert.equal(providerIds.size, 384);
+  assert.equal(leaseIds.size, 384);
+  assert.equal(chainIds.size, 384);
+  assert.equal(highWaterReceiptIds.size, 384);
+  assert.equal(executionReceiptIds.size, 387);
+  assert.deepEqual(shardHistoryCounts, [128, 128, 128]);
+  assert.equal(
+    finalJournal.receipt_high_waters.length,
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_total_max
+  );
+  assert.ok(shardHistoryCounts.every((count) =>
+    count === CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_per_shard_max));
+  assert.ok(finalJournal.receipt_high_waters.every(({ receipt_id: receiptId }) =>
+    executionReceiptIds.has(receiptId)));
+  assert.equal(oldestReplay.status, "unavailable");
+  assert.equal(oldestReplay.available_shards, 0);
+
+  const overflowContext = createConfidentialPlacementReproofContext({
+    epoch_nonce: null,
+    generation: "130",
+    manifest_bytes: created.shardSet.manifest_bytes,
+    max_proof_age_ms: "500",
+    prior_journal_bytes: currentJournal.bytes,
+    quorum: 2,
+    rotate_epoch: false,
+    target_shards: 3
+  });
+  assert.equal(overflowContext.context.prior_journal_id, currentJournal.journal_id);
+  assert.equal(overflowContext.epoch_id, epochId);
+  assert.equal(contextIds.has(overflowContext.context_id), false);
+
+  const currentReplay = evaluateContext({
+    context: overflowContext,
+    evaluatedAt: "1500",
+    fixtures: currentFixtures,
+    priorJournal: currentJournal
+  });
+  assert.equal(currentReplay.available_shards, 0);
+  assert.ok(currentReplay.placements.every(({ reason }) => reason === "reproof-context-mismatch"));
+
+  const overflowProvider = await createPlacementSigner();
+  const overflowShards = await Promise.all(Array.from({ length: 3 }, async (_, shardIndex) => {
+    if (shardIndex === 0) {
+      return {
+        fixture: await createStoragePlacementFixture({
+          challengeNonceFactory: reproofNonce(overflowContext.bytes, shardIndex),
+          consumer: created.consumer,
+          provider: overflowProvider,
+          resourceBytes: created.shardSet.shards[shardIndex].bytes,
+          seed: 50_000,
+          witnesses: created.witnesses
+        }),
+        provider: overflowProvider
+      };
+    }
+    const provider = currentProviders[shardIndex];
+    return {
+      fixture: await refreshStoragePlacementFixture({
+        challengeNonceFactory: reproofNonce(overflowContext.bytes, shardIndex),
+        consumer: created.consumer,
+        fixture: currentFixtures[shardIndex],
+        issuedAtMs: 1498,
+        provider,
+        resourceBytes: created.shardSet.shards[shardIndex].bytes,
+        seed: 60_000 + shardIndex
+      }),
+      provider
+    };
+  }));
+  const overflowFixtures = overflowShards.map(({ fixture }) => fixture);
+  const overflowEvaluation = evaluateContext({
+    context: overflowContext,
+    evaluatedAt: "1500",
+    fixtures: overflowFixtures,
+    priorJournal: currentJournal
+  });
+  assert.equal(overflowEvaluation.status, "proved");
+  assert.equal(overflowEvaluation.available_shards, 3);
+  assert.equal(
+    finalJournal.receipt_high_waters.length + 1,
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_total_max + 1
+  );
+  assert.equal(
+    shardHistoryCounts[0] + 1,
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_per_shard_max + 1
+  );
+  for (let shardIndex = 0; shardIndex < 3; shardIndex += 1) {
+    const prior = finalJournal.active_proofs[shardIndex];
+    const next = overflowEvaluation.placements[shardIndex];
+    assert.equal(executionReceiptIds.has(next.receipt_id), false);
+    if (shardIndex === 0) {
+      assert.equal(next.challenge_sequence, "0");
+      assert.equal(next.previous_execution_receipt_id, null);
+      assert.equal(providerIds.has(next.provider_id), false);
+      assert.equal(leaseIds.has(next.lease_id), false);
+    } else {
+      assert.equal(next.challenge_sequence, String(BigInt(prior.challenge_sequence) + 1n));
+      assert.equal(next.previous_execution_receipt_id, prior.receipt_id);
+      assert.equal(next.provider_id, prior.provider_id);
+      assert.equal(next.lease_id, prior.lease_id);
+    }
+  }
+
+  const displacedReplayFixtures = [...overflowFixtures];
+  displacedReplayFixtures[0] = displacedFixture;
+  const displacedReplay = evaluateContext({
+    context: overflowContext,
+    evaluatedAt: "1500",
+    fixtures: displacedReplayFixtures,
+    priorJournal: currentJournal
+  });
+  assert.equal(displacedReplay.available_shards, 2);
+  assert.equal(displacedReplay.placements[0].status, "rejected");
+  assert.equal(displacedReplay.placements[0].reason, "reproof-context-mismatch");
+
+  const journalBytesBeforeOverflow = new Uint8Array(currentJournal.bytes);
+  assert.throws(
+    () => commitContext({
+      context: overflowContext,
+      evaluation: overflowEvaluation,
+      priorJournal: currentJournal
+    }),
+    (error) => error.code === "E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT" &&
+      error.message === "journal epoch history is full"
+  );
+  assert.deepEqual(currentJournal.bytes, journalBytesBeforeOverflow);
+  const restoredAfterOverflow = restoreConfidentialPlacementJournal(currentJournal.bytes);
+  assert.equal(restoredAfterOverflow.journal_id, finalJournal.journal_id);
+  assert.equal(restoredAfterOverflow.generation, "129");
+  assert.equal(restoredAfterOverflow.receipt_high_waters.length, 384);
+  assert.deepEqual(
+    restoredAfterOverflow.receipt_high_waters.map(({ shard_index: shardIndex }) => shardIndex),
+    finalJournal.receipt_high_waters.map(({ shard_index: shardIndex }) => shardIndex)
+  );
+});
+
 test("existing receipt chains require exact direct successors and the current derived nonce", async () => {
   const created = await scenarioPromise;
   const context3Bound = await createBoundSet({
@@ -481,7 +803,7 @@ function sharedCopy(bytes) {
   return shared;
 }
 
-test("profile-generated history and document limits fail closed without pruning", async () => {
+test("synthetic parser corpus enforces profile-generated history and document limits without pruning", async () => {
   const created = await scenarioPromise;
   assert.deepEqual(CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS, {
     document_bytes: 2 * 1024 * 1024,

@@ -2349,3 +2349,179 @@ result, and reproducible verification.
   fresh immutable independent review, App attestation, separately credentialed
   native approval, expected-head merge, exact-main Verify/Deploy, and public
   artifact readback remain external gates.
+
+## 2026-08-10 KST — PR #58 seventh BLOCK and stateful-100 remediation
+
+- Review `4893187627` at `193cfff1...` found that provider replacement could erase
+  cumulative replay barriers and required journal v2 plus stateful 100-transition
+  Node and Chromium/Lab regressions. Journal v2 implemented prior-head-bound reproof
+  contexts, chain/sequence/predecessor-derived challenges, cumulative epoch high-
+  waters, fresh-`3/3` v1 migration, generated caps, and predecessor-keyed no-replace
+  intent/successor claims.
+- Review `4893915817` at `e0148aa2...` confirmed the focused journal-v2 remediation
+  but BLOCKed its stale PR body and the then-named 100-cycle test, which merely re-
+  counted four cached evaluations. That exact head's policy, protocol, and browser-
+  parity checks passed, but no PASS receipt, App attestation, native approval, merge,
+  or deployment followed.
+- The current working source replaces the cached claim with 100 evolving prior-bound
+  transitions in the Node portable-kernel gate and 100 mixed-runtime transitions
+  whose provider keys, storage results, and signatures are created by actual
+  Chromium/Lab pages while the journal controller is orchestrated in Node. The Node
+  focused gate passed `1/1` in `1,850.9s`; the Chromium vertical passed in `1,886.9s`
+  with a `1,776.2s` dynamic segment, generation `102`, `106` cumulative high-waters,
+  and `306` distinct receipts. This is not independently in-browser journal-kernel
+  parity.
+- Chromium rotates logical signer identities inside three persistent provider pages
+  and recomputes possession evidence from already stored exact shard bytes. The
+  corpus does not represent 100 new browser processes, transfers, physical failures,
+  machines, accounts, administrators, or independent failure domains.
+- This remediation raises the current candidate's protocol and deploy workflow
+  maxima from 120 minutes to 180 minutes; relative to the task base, the final ceiling
+  is 60 to 180 minutes. No check is removed or weakened. Uninterrupted full-suite,
+  exact-head CI, fresh independent review, approval, merge, deployment, and public
+  readback remain separate gates for the containing revision.
+
+## 2026-08-10 KST — Stateful-100 full-suite relay boundary diagnosis
+
+- The first uninterrupted full-suite run for the stateful-100 source reached the
+  relay runtime after every preceding gate, including both new 100-transition
+  placement paths, had passed. It then failed after `6,167s` because the relay test
+  expected `429` but received `200`. This run is evidence of a failure and is not a
+  full-suite PASS.
+- Independent diagnosis found no relay Worker regression or state leakage from the
+  long placement run. The historical test inserted `limit - 1` only into the current
+  wall-clock minute and assumed its next two requests remained in that minute. If
+  the minute changed between those requests, the second request correctly entered a
+  fresh fixed-window bucket and returned `200`.
+- The test-only repair now primes both the current and next bounded minute before
+  each independent assertion: `limit - 1` proves the last request is admitted, then
+  `limit` proves the following request is rejected. The production Worker and rate
+  policy are unchanged; the 30-second test timeout cannot reach an unprimed second
+  successor bucket.
+- The repaired runtime passed 20 consecutive isolated runs in `107.045s`, crossing
+  the `19:03` and `19:04` minute boundaries, and the complete `test:relay` gate then
+  passed in `9.0s`, including contract tests, the Worker runtime, and Wrangler dry
+  deployment. A new uninterrupted full suite remains required before local release
+  evidence can be promoted from HOLD.
+
+## 2026-08-10 KST — Stateful-100 full-suite Chromium deadline HOLD
+
+- After the relay harness repair passed 20 isolated runtime repetitions and complete
+  `test:relay`, a second uninterrupted `npm test` still did not close the release
+  gate. All ordered gates through the Node stateful-100 corpus and the first actual
+  P2P Chromium vertical passed.
+- The run stopped after `6,122.7s` in the mixed-runtime Chromium 100-transition
+  segment because its local `1,800,000ms` guard expired after logged progress through
+  75/100 cycles. The earlier focused segment took `1,776,198ms`, leaving only
+  `23,802ms` (`1.32%`) headroom. Later ordered gates were not executed.
+- This is deadline-budget failure evidence, not semantic PASS evidence and not by
+  itself proof of a protocol regression. Independent review projected approximately
+  `2,400,000ms` at the observed full-run pace, so the harness remains bounded at a
+  revised `2,700,000ms` while preserving all 100 sequential transitions and final
+  assertions. Protocol and deploy workflow maxima increase from 180 to 240 minutes;
+  no gate is removed or weakened.
+- Full-suite, exact-head CI, fresh independent review, approval, merge, deployment,
+  and public readback remain HOLD until a new exact-source run completes.
+
+## 2026-08-10 KST — Stateful-100 uninterrupted local full-suite PASS
+
+- A third fresh uninterrupted `npm test` on the current runtime/test source exited
+  `0` in `7,065.8s` (`117m 45.8s`). It completed the 100 sequential Node portable-
+  kernel replacements, the 100-transition mixed-runtime Chromium/Lab path within its
+  bounded `2,700,000ms` guard, the repaired relay runtime, and every later ordered
+  repository gate. The exact mixed-runtime segment duration was not recovered from
+  truncated output and is not estimated.
+- The Chromium boundary remains explicit: three persistent browser provider pages
+  held non-extractable keys and created the storage results and signatures; the
+  portable journal controller ran in Node. This is not independently in-browser
+  journal-kernel parity, 100 new browser processes/transfers, or evidence of 100
+  independent machines, accounts, administrators, regions, or failure domains.
+- The test root and all observed descendants were absent at
+  `2026-08-10 22:54:53.946+09:00` (`RootTreeLiveCount=0`). This successful run
+  supersedes the preceding `6,167s` relay-race and `6,122.7s` deadline HOLDs as the
+  current local full-suite result; both failed attempts remain retained above as
+  diagnostic history.
+- Workflow ceilings remain 240 minutes and the internal mixed-runtime guard remains
+  `2,700,000ms`; no ordered gate or final assertion was skipped. Only evidence
+  documentation changed after this run. Exact-head policy/Verify, fresh immutable
+  independent review, App attestation, separately credentialed native approval,
+  expected-head merge, exact-main Verify/Deploy, and public readback remain external
+  and pending.
+
+## 2026-08-11 KST — Exact generated-history ceiling focused PASS; full-suite HOLD
+
+- The former stateful-100 corpus did not exercise the profile-generated 128-chain-
+  per-shard/384-chain-total boundary. The Node replacement test now performs 128
+  sequential signed prior-head-bound transitions with 381 genuine provider
+  replacements. It reaches generation 129 with exactly 384 distinct provider,
+  lease, and chain identities (`128/128/128` by shard) plus 387 distinct execution
+  receipts. It then obtains a separately signed, proved generation-130 `3/3`
+  candidate and rejects its 385th total/129th shard-0 chain at commit without
+  changing the exact generation-129 journal bytes.
+- The focused Node body passed in `2,841,685.4279ms`; the Node test runner completed
+  in `2,842,481.1467ms` and the shell in `2,842,596ms`. The root test tree was absent
+  at `2026-08-11 00:05:11.662+09:00` (`RootTreeLiveCount=0`).
+- The first focused Chromium attempt failed after `84,073ms` because a test-only
+  aggregate omitted initial `chain_id` values before comparing the complete signed
+  history. The aggregation was corrected; protocol/runtime semantics and the
+  generated caps were unchanged. This failed attempt is retained as evidence rather
+  than counted as PASS.
+- The corrected mixed-runtime Chromium/Lab gate passed 127 cycles from generation 2
+  to the same generation-129 ceiling in `2,549,195ms` dynamic time and `2,666,619ms`
+  total. It records 384 distinct provider/lease/chain identities
+  (`128/128/128` by shard) and 387 receipts, proves a browser-signed generation-130
+  `3/3` candidate, rejects its plus-one commit without changing bytes, reloads the
+  serialized ceiling and rejects the oldest replay, exposes no private material,
+  and records zero post-cut requests. The browser tree was absent at
+  `2026-08-11 00:54:04.267+09:00` (`RootTreeLiveCount=0`).
+- Three persistent browser pages reuse already stored exact shard bytes, and Node
+  orchestrates the portable journal controller. This is genuine browser-signature
+  evidence but not independent in-browser journal-kernel parity, 127 fresh browser
+  processes/transfers, independent possession domains, machines, accounts,
+  administrators, networks, regions, or credentials.
+- The passing deadline-wrapped `2,549,195ms` Chromium dynamic segment consumed
+  94.41% of the former `2,700,000ms` guard (`2,666,619ms` total outside that exact
+  segment boundary). The test-only bound is now `3,300,000ms`; the workflow limits
+  remain 240 minutes and no cycle or final assertion is skipped.
+- The preceding `7,065.8s` uninterrupted full-suite PASS is historical pre-ceiling
+  evidence and does not transfer to this changed source. Current status is **focused
+  exact-ceiling PASS; full suite pending; exact-SHA external**. A fresh uninterrupted
+  `npm test` is required before exact-head CI, immutable review, approval, merge,
+  deployment, or public readback can advance.
+
+## 2026-08-11 KST — Exact-ceiling exact-tree uninterrupted full-suite PASS
+
+- A fresh exact-tree `npm test` started at
+  `2026-08-11 01:06:58.716+09:00` and ended at
+  `2026-08-11 03:21:35.542+09:00`. It exited `0` after exactly `8,076,826ms`
+  (`8,076.826s`; `134m 36.826s`).
+- The ordered chain completed the current 128-transition Node exact-ceiling test,
+  the current 127-cycle mixed-runtime Chromium exact-ceiling test, all subsequent
+  repository stages, and the final `verify:s4` PASS. This promotes the current local
+  evidence from focused-only to uninterrupted exact-source full-suite PASS without
+  altering the earlier focused runtimes, the `3,300,000ms` Chromium dynamic guard,
+  or the 240-minute workflow ceilings.
+- PID `23824` was absent at `2026-08-11 03:24:59.475+09:00`. A fresh conservative
+  probe at `03:26:01.147+09:00` found that root absent and zero other matching
+  MortalOS test workloads after excluding the probe process itself.
+- This remains local source/runtime evidence. Mixed-runtime Node orchestration,
+  same-PC persistent provider pages, unsigned journal/context/transition documents,
+  conforming same-filesystem hard-link CAS, and all physical/admin/credential-domain
+  nonclaims remain unchanged. Exact-head CI, immutable review, App attestation,
+  native approval, merge, exact-main Verify/Deploy, and public readback remain
+  external and pending.
+
+## 2026-08-11 KST — Full-suite evidence scope correction
+
+- The preceding entry's “exact-tree” and “exact-source full-suite” wording was too
+  broad. The `npm test` ended at `03:21:35.542+09:00`, while evidence documents were
+  edited afterward to record that result. Therefore the later 67-file working tree
+  as a whole did not run that full suite and must not inherit an exact-tree PASS.
+- The bounded claim is: the unchanged current runtime/test/workflow source bytes ran
+  uninterrupted `npm test` from `01:06:58.716+09:00` to `03:21:35.542+09:00`, exited
+  `0` in `8,076.826s`, and completed both exact-ceiling paths plus every later gate
+  through final `verify:s4`. Only evidence docs changed afterward.
+- The current documentation tree is validated separately by `verify:spec`,
+  `verify:links`, and `git diff --check`. This split evidence does not prove a full
+  suite over the whole current tree. Exact-SHA CI, immutable review, approval, merge,
+  deployment, and public readback remain external gates.

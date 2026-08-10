@@ -198,7 +198,7 @@ test("one generation instant governs lease completion, revocation, and proof fre
   assert.equal(afterRevocation.placements[0].receipt_id, null);
 });
 
-test("100 seeded failure-policy cycles never promote loss or stale evidence and repair with a new receipt", async () => {
+test("four failure-policy cases reject loss and stale evidence and accept a new repair receipt", async () => {
   const created = await createdPromise;
   const original = created.initial.map((fixture, index) => withIndex(fixture, index));
   const corrupt = new Uint8Array(created.initial[0].placement.execution_receipts[0]);
@@ -214,14 +214,4 @@ test("100 seeded failure-policy cycles never promote loss or stale evidence and 
   assert.deepEqual(corpus.map(({ status }) => status), [
     "repairing", "unavailable", "proved", "repairing"
   ]);
-  let proved = 0;
-  let repairing = 0;
-  let unavailable = 0;
-  for (let seed = 0; seed < 100; seed += 1) {
-    const result = corpus[seed % corpus.length];
-    if (result.status === "proved") proved += 1;
-    else if (result.status === "repairing") repairing += 1;
-    else unavailable += 1;
-  }
-  assert.deepEqual({ proved, repairing, unavailable }, { proved: 25, repairing: 50, unavailable: 25 });
 });
