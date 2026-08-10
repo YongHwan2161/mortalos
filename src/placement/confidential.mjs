@@ -1,8 +1,10 @@
 import {
+  asBytes,
   byteLengthOfBytes,
   concatBytes,
   decodeBase64Url,
-  encodeBase64Url
+  encodeBase64Url,
+  isSharedByteView
 } from "../bytes.mjs";
 import { canonicalBytes, isCanonical, parseJsonBytes } from "../codec.mjs";
 import { deriveResourceExecutionWorkloadId } from "../crypto.mjs";
@@ -13,10 +15,13 @@ import {
   verifyResourceExecutionReceipt
 } from "../resource-execution.mjs";
 import { verifyResourceOffer } from "../resource-contract.mjs";
+import { PROTOCOL_PROFILE } from "../generated/protocol-profile.mjs";
 import {
   arraySlice,
   arraySort,
   arrayValueAt,
+  bigInt,
+  bigIntToString,
   copyOwnDataArray,
   createArray,
   createMap,
@@ -27,6 +32,7 @@ import {
   freeze,
   mapGet,
   mapSet,
+  mapValues,
   objectHasOwn,
   ownDataRecordEntry,
   ownKeys,
@@ -34,6 +40,8 @@ import {
   setAdd,
   setHas,
   snapshotOwnDataRecord,
+  stringSlice,
+  typedArraySubarray,
   weakMapGet,
   weakMapSet
 } from "../primordials.mjs";
@@ -44,22 +52,39 @@ import {
 } from "./storage.mjs";
 
 export const CONFIDENTIAL_PLACEMENT_FORMATS = Object.freeze({
-  journal: "mortalos-confidential-placement-journal/1",
+  journal: "mortalos-confidential-placement-journal/2",
+  legacy_journal: "mortalos-confidential-placement-journal/1",
   manifest: "mortalos-confidential-placement-manifest/1",
+  reproof_context: "mortalos-confidential-placement-reproof-context/1",
   shard: "mortalos-confidential-placement-shard/1"
 });
 
 const DOMAINS = Object.freeze({
-  journal: "MortalOS confidential placement journal v1",
+  chain: "MortalOS confidential placement receipt chain v1",
+  epoch: "MortalOS confidential placement journal epoch v1",
+  journal: "MortalOS confidential placement journal v2",
+  legacyJournal: "MortalOS confidential placement journal v1",
   manifest: "MortalOS confidential placement manifest v1",
   package: "MortalOS confidential placement package v1",
+  reproofContext: "MortalOS confidential placement reproof context v1",
+  reproofNonce: "MortalOS confidential placement reproof challenge nonce v1",
   shard: "MortalOS confidential placement shard v1"
 });
 const DIGEST = /^sha256:[A-Za-z0-9_-]{43}$/u;
 const PEER_ID = /^peer:[A-Za-z0-9_-]{43}$/u;
+const RESOURCE_LEASE_ID = /^resource-lease:[A-Za-z0-9_-]{43}$/u;
 const RESOURCE_EXECUTION_RECEIPT_ID = /^resource-execution:[A-Za-z0-9_-]{43}$/u;
 const WORKLOAD_ID = /^resource-workload:[A-Za-z0-9_-]{43}$/u;
 const MAX_DOCUMENT_BYTES = 16 * 1024 * 1024;
+export const CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS = freeze({
+  document_bytes: PROTOCOL_PROFILE.placement_journal.document_bytes,
+  epoch_nonce_bytes: PROTOCOL_PROFILE.placement_journal.epoch_nonce_bytes,
+  head_transitions_max: PROTOCOL_PROFILE.placement_journal.head_transitions_max,
+  high_waters_per_shard_max:
+    PROTOCOL_PROFILE.placement_journal.high_waters_per_shard_max,
+  high_waters_total_max: PROTOCOL_PROFILE.placement_journal.high_waters_total_max,
+  reproof_nonce_bytes: PROTOCOL_PROFILE.placement_journal.reproof_nonce_bytes
+});
 const RECORD_KEYS = Object.freeze([
   "consumption_announcements",
   "execution_receipts",
@@ -81,13 +106,44 @@ const EVALUATION_KEYS = Object.freeze([
 ]);
 const JOURNAL_CREATE_KEYS = Object.freeze([
   "evaluation",
+  "prior_journal_bytes",
+  "reproof_context_bytes"
+]);
+const REPROOF_CONTEXT_CREATE_KEYS = Object.freeze([
+  "epoch_nonce",
   "generation",
   "manifest_bytes",
   "max_proof_age_ms",
+  "prior_journal_bytes",
   "quorum",
+  "rotate_epoch",
   "target_shards"
 ]);
+const REPROOF_EVALUATION_KEYS = Object.freeze([
+  "evaluated_at_ms",
+  "placements",
+  "prior_journal_bytes",
+  "reproof_context_bytes",
+  "unavailable_provider_ids"
+]);
+const REPROOF_NONCE_KEYS = Object.freeze([
+  "challenge_sequence",
+  "lease_id",
+  "previous_execution_receipt_id",
+  "provider_id",
+  "reproof_context_bytes",
+  "shard_index",
+  "workload_id"
+]);
+const JOURNAL_EVALUATION_KEYS = Object.freeze([
+  "evaluated_at_ms",
+  "journal_bytes",
+  "placements",
+  "reproof_context_bytes",
+  "unavailable_provider_ids"
+]);
 const evaluationRecords = createWeakMap();
+const reproofEvaluationRecords = createWeakMap();
 
 function registerEvaluation(result, { manifestId, maximumAge, quorum, targetShards }) {
   const receiptBarriers = createArray();
@@ -100,10 +156,14 @@ function registerEvaluation(result, { manifestId, maximumAge, quorum, targetShar
       placement.status !== "unavailable"
     ) continue;
     defineArrayIndex(receiptBarriers, barrierCount, freeze({
+      challenge_nonce: placement.challenge_nonce,
       challenge_sequence: placement.challenge_sequence,
+      lease_id: placement.lease_id,
+      previous_execution_receipt_id: placement.previous_execution_receipt_id,
       provider_id: placement.provider_id,
       receipt_id: placement.receipt_id,
-      shard_index: placement.shard_index
+      shard_index: placement.shard_index,
+      workload_id: placement.workload_id
     }));
     barrierCount += 1;
   }
@@ -201,11 +261,15 @@ function exactKeys(value, expected, label) {
 }
 
 function ownedBytes(value, label, maximum = MAX_DOCUMENT_BYTES) {
-  const length = byteLengthOfBytes(value);
-  if (length === null || length < 1 || length > maximum) {
+  if (isSharedByteView(value)) {
+    fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `${label} must not use shared memory`);
+  }
+  const source = asBytes(value);
+  const length = source === null ? null : byteLengthOfBytes(source);
+  if (source === null || length === null || length < 1 || length > maximum) {
     fail("E_CONFIDENTIAL_PLACEMENT_FORMAT", `${label} must be bounded bytes`);
   }
-  return createUint8Array(value);
+  return createUint8Array(source);
 }
 
 function parseCanonical(bytes, label, maximum = MAX_DOCUMENT_BYTES) {
@@ -461,6 +525,7 @@ function placementRecord(value, index) {
 
 function rejected(shardIndex, reason, extra = {}) {
   return Object.freeze({
+    challenge_nonce: null,
     challenge_sequence: null,
     issued_at_ms: null,
     lease_id: null,
@@ -523,6 +588,7 @@ function evaluatePlacement(
   const issuedAt = decimal(last.challenge.body.issued_at_ms, "challenge issued_at_ms");
   const age = evaluatedAt - issuedAt;
   const common = {
+    challenge_nonce: last.challenge.body.challenge_nonce,
     challenge_sequence: last.challenge.body.challenge_sequence,
     issued_at_ms: last.challenge.body.issued_at_ms,
     lease_id: basic.lease_id,
@@ -696,126 +762,76 @@ export function evaluateConfidentialStoragePlacements(options) {
   );
 }
 
-export function createConfidentialPlacementJournal(options) {
-  requireIntactRealm();
-  const optionDescriptors = snapshotExactDataRecord(
-    options,
-    JOURNAL_CREATE_KEYS,
-    "confidential placement journal options"
-  );
-  const evaluation = dataValue(optionDescriptors, "evaluation");
-  const generation = dataValue(optionDescriptors, "generation");
-  const manifestBytes = dataValue(optionDescriptors, "manifest_bytes");
-  const maximumAge = dataValue(optionDescriptors, "max_proof_age_ms");
-  const quorum = dataValue(optionDescriptors, "quorum");
-  const targetShards = dataValue(optionDescriptors, "target_shards");
-  requireIntactRealm();
-  const manifest = verifyManifest(manifestBytes);
-  requireIntactRealm();
-  const parsedGeneration = decimal(generation, "generation");
-  decimal(maximumAge, "max_proof_age_ms", { minimum: 1 });
-  const record = weakMapGet(evaluationRecords, evaluation);
-  if (
-    !record || record.manifest_id !== manifest.manifest_id ||
-    record.max_proof_age_ms !== maximumAge ||
-    record.quorum !== quorum || record.target_shards !== targetShards
-  ) fail(
-    "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
-    "verified evaluation and exact journal policy binding required"
-  );
-  if (
-    record.quorum !== 2 || record.target_shards !== 3 || record.proofs.length !== 3
-  ) fail(
-    "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
-    "journal v1 requires a complete three-shard receipt barrier"
-  );
-  for (let index = 0; index < record.proofs.length; index += 1) {
-    const proof = record.proofs[index];
-    if (proof.shard_index !== index) {
-      fail(
-        "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
-        "journal v1 requires one receipt barrier for each shard"
-      );
-    }
-    for (let prior = 0; prior < index; prior += 1) {
-      if (record.proofs[prior].provider_id === proof.provider_id) {
-        fail(
-          "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
-          "journal v1 requires distinct receipt-barrier providers"
-        );
-      }
-    }
-  }
-  const proofs = createArray(record.proofs.length);
-  for (let index = 0; index < record.proofs.length; index += 1) {
-    const proof = record.proofs[index];
-    defineArrayIndex(proofs, index, {
-      challenge_sequence: proof.challenge_sequence,
-      provider_id: proof.provider_id,
-      receipt_id: proof.receipt_id,
-      shard_index: proof.shard_index
-    });
-  }
-  const basis = {
-    format: CONFIDENTIAL_PLACEMENT_FORMATS.journal,
-    generation: String(parsedGeneration),
-    manifest_base64url: encodeBase64Url(manifest.bytes),
-    manifest_id: manifest.manifest_id,
-    max_proof_age_ms: maximumAge,
-    proofs,
-    quorum,
-    target_shards: targetShards
-  };
-  const journal = freeze({
-    ...basis,
-    journal_id: domainHash(DOMAINS.journal, canonicalBytes(basis))
+function nextDecimal(value, label) {
+  decimal(value, label, {
+    maximum: CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.head_transitions_max
   });
-  requireIntactRealm();
-  return freeze({ bytes: canonicalBytes(journal), journal, journal_id: journal.journal_id });
+  const next = bigInt(value) + 1n;
+  if (next > bigInt(CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.head_transitions_max)) {
+    fail("E_CONFIDENTIAL_PLACEMENT_LIMIT", `${label} cannot advance`);
+  }
+  return bigIntToString(next);
 }
 
-export function restoreConfidentialPlacementJournal(journalBytes) {
-  requireIntactRealm();
-  const parsed = parseCanonical(journalBytes, "placement journal", 2 * 1024 * 1024);
-  requireIntactRealm();
+function restoreLegacyJournalParsed(parsed) {
   exactKeys(
     parsed.value,
-    ["format", "generation", "journal_id", "manifest_base64url", "manifest_id", "max_proof_age_ms", "proofs", "quorum", "target_shards"],
-    "placement journal"
+    [
+      "format",
+      "generation",
+      "journal_id",
+      "manifest_base64url",
+      "manifest_id",
+      "max_proof_age_ms",
+      "proofs",
+      "quorum",
+      "target_shards"
+    ],
+    "legacy placement journal"
   );
   const value = parsed.value;
-  if (value.format !== CONFIDENTIAL_PLACEMENT_FORMATS.journal || !DIGEST.test(value.journal_id)) {
-    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal format is invalid");
-  }
-  decimal(value.generation, "generation");
-  decimal(value.max_proof_age_ms, "max_proof_age_ms", { minimum: 1 });
+  if (
+    value.format !== CONFIDENTIAL_PLACEMENT_FORMATS.legacy_journal ||
+    !DIGEST.test(value.journal_id)
+  ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "legacy journal format is invalid");
+  decimal(value.generation, "legacy journal generation", {
+    maximum: CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.head_transitions_max
+  });
+  decimal(value.max_proof_age_ms, "legacy journal max_proof_age_ms", { minimum: 1 });
   if (value.quorum !== 2 || value.target_shards !== 3) {
-    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal policy is invalid");
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "legacy journal policy is invalid");
   }
   const manifestBytes = decodeBase64Url(value.manifest_base64url);
-  if (!manifestBytes) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal manifest is invalid");
+  if (!manifestBytes) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "legacy journal manifest is invalid");
   const manifest = verifyManifest(manifestBytes);
-  if (manifest.manifest_id !== value.manifest_id || !Array.isArray(value.proofs) || value.proofs.length !== 3) {
-    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal manifest or proofs are invalid");
+  const proofs = ownedDataArray(value.proofs, "legacy journal proofs", 3);
+  if (manifest.manifest_id !== value.manifest_id || proofs.length !== 3) {
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "legacy journal manifest or proofs are invalid");
   }
-  const proofs = value.proofs.map((proof, index) => {
-    exactKeys(proof, ["challenge_sequence", "provider_id", "receipt_id", "shard_index"], `journal proof ${index}`);
+  const restoredProofs = createArray(3);
+  for (let index = 0; index < proofs.length; index += 1) {
+    const proof = proofs[index];
+    exactKeys(
+      proof,
+      ["challenge_sequence", "provider_id", "receipt_id", "shard_index"],
+      `legacy journal proof ${index}`
+    );
     if (
       !PEER_ID.test(proof.provider_id) ||
       !RESOURCE_EXECUTION_RECEIPT_ID.test(proof.receipt_id) ||
-      typeof proof.challenge_sequence !== "string" ||
       proof.shard_index !== index
-    ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", `journal proof ${index} is invalid`);
-    decimal(proof.challenge_sequence, `journal proof ${index} sequence`);
-    return Object.freeze({ ...proof });
-  });
-  for (let index = 0; index < proofs.length; index += 1) {
-    for (let prior = 0; prior < index; prior += 1) {
+    ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", `legacy journal proof ${index} is invalid`);
+    decimal(proof.challenge_sequence, `legacy journal proof ${index} sequence`);
+    for (let priorIndex = 0; priorIndex < index; priorIndex += 1) {
       if (
-        proofs[prior].provider_id === proofs[index].provider_id ||
-        proofs[prior].receipt_id === proofs[index].receipt_id
-      ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal receipt barriers must be distinct");
+        restoredProofs[priorIndex].provider_id === proof.provider_id ||
+        restoredProofs[priorIndex].receipt_id === proof.receipt_id
+      ) fail(
+        "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
+        "legacy journal receipt barriers must be distinct"
+      );
     }
+    defineArrayIndex(restoredProofs, index, freeze({ ...proof }));
   }
   const basis = {
     format: value.format,
@@ -827,75 +843,818 @@ export function restoreConfidentialPlacementJournal(journalBytes) {
     quorum: value.quorum,
     target_shards: value.target_shards
   };
-  if (domainHash(DOMAINS.journal, canonicalBytes(basis)) !== value.journal_id) {
-    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal ID mismatch");
+  if (domainHash(DOMAINS.legacyJournal, canonicalBytes(basis)) !== value.journal_id) {
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "legacy journal ID mismatch");
   }
-  return Object.freeze({
+  return freeze({
     bytes: parsed.bytes,
+    format: value.format,
     generation: value.generation,
     journal_id: value.journal_id,
     manifest,
     max_proof_age_ms: value.max_proof_age_ms,
-    proofs: Object.freeze(proofs),
+    migration_required: true,
+    proofs: freeze(restoredProofs),
     quorum: value.quorum,
     target_shards: value.target_shards
   });
 }
 
-export function evaluateConfidentialPlacementJournal({
-  evaluated_at_ms: evaluatedAt,
-  journal_bytes: journalBytes,
-  placements,
-  unavailable_provider_ids: unavailableProviderIds
-}) {
+export function restoreLegacyConfidentialPlacementJournal(journalBytes) {
   requireIntactRealm();
-  const journal = restoreConfidentialPlacementJournal(journalBytes);
+  const parsed = parseCanonical(
+    journalBytes,
+    "legacy placement journal",
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.document_bytes
+  );
+  requireIntactRealm();
+  return restoreLegacyJournalParsed(parsed);
+}
+
+function restoreAnyPriorJournal(journalBytes) {
+  if (journalBytes === null) return null;
+  const parsed = parseCanonical(
+    journalBytes,
+    "prior placement journal",
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.document_bytes
+  );
+  requireIntactRealm();
+  if (parsed.value?.format === CONFIDENTIAL_PLACEMENT_FORMATS.legacy_journal) {
+    return restoreLegacyJournalParsed(parsed);
+  }
+  return restoreConfidentialPlacementJournal(parsed.bytes);
+}
+
+function epochId({ epochNonceBase64Url, epochParentJournalId, manifestId }) {
+  return domainHash(DOMAINS.epoch, canonicalBytes({
+    epoch_nonce_base64url: epochNonceBase64Url,
+    epoch_parent_journal_id: epochParentJournalId,
+    manifest_id: manifestId
+  }));
+}
+
+export function createConfidentialPlacementReproofContext(options) {
+  requireIntactRealm();
+  const descriptors = snapshotExactDataRecord(
+    options,
+    REPROOF_CONTEXT_CREATE_KEYS,
+    "confidential placement reproof context options"
+  );
+  const epochNonceSource = dataValue(descriptors, "epoch_nonce");
+  const generation = dataValue(descriptors, "generation");
+  const manifestBytes = dataValue(descriptors, "manifest_bytes");
+  const maximumAge = dataValue(descriptors, "max_proof_age_ms");
+  const priorJournalBytes = dataValue(descriptors, "prior_journal_bytes");
+  const quorum = dataValue(descriptors, "quorum");
+  const rotateEpoch = dataValue(descriptors, "rotate_epoch");
+  const targetShards = dataValue(descriptors, "target_shards");
+  requireIntactRealm();
+  const manifest = verifyManifest(manifestBytes);
+  decimal(generation, "reproof generation", {
+    minimum: 1,
+    maximum: CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.head_transitions_max
+  });
+  decimal(maximumAge, "reproof max_proof_age_ms", { minimum: 1 });
+  if (quorum !== 2 || targetShards !== 3 || typeof rotateEpoch !== "boolean") {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "exact 2-of-3 reproof policy required");
+  }
+  const prior = restoreAnyPriorJournal(priorJournalBytes);
+  if (prior === null && generation !== "1") {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "a new journal epoch must start at generation 1");
+  }
+  if (prior !== null) {
+    if (
+      generation !== nextDecimal(prior.generation, "prior journal generation") ||
+      prior.manifest.manifest_id !== manifest.manifest_id ||
+      prior.max_proof_age_ms !== maximumAge ||
+      prior.quorum !== quorum || prior.target_shards !== targetShards
+    ) fail(
+      "E_CONFIDENTIAL_PLACEMENT_REPROOF",
+      "reproof context must bind the exact prior head, next generation, manifest, and policy"
+    );
+  }
+  let epochNonceBase64Url;
+  let epochParentJournalId;
+  let resolvedEpochId;
+  if (rotateEpoch) {
+    const epochNonce = ownedBytes(
+      epochNonceSource,
+      "placement journal epoch nonce",
+      CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.epoch_nonce_bytes
+    );
+    if (epochNonce.byteLength !== CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.epoch_nonce_bytes) {
+      fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "a 256-bit epoch nonce is required");
+    }
+    epochNonceBase64Url = encodeBase64Url(epochNonce);
+    epochParentJournalId = prior?.journal_id ?? null;
+    resolvedEpochId = epochId({
+      epochNonceBase64Url,
+      epochParentJournalId,
+      manifestId: manifest.manifest_id
+    });
+  } else {
+    if (epochNonceSource !== null || prior?.format !== CONFIDENTIAL_PLACEMENT_FORMATS.journal) {
+      fail(
+        "E_CONFIDENTIAL_PLACEMENT_REPROOF",
+        "an existing v2 epoch or an explicit 256-bit rotation nonce is required"
+      );
+    }
+    epochNonceBase64Url = prior.context.epoch_nonce_base64url;
+    epochParentJournalId = prior.context.epoch_parent_journal_id;
+    resolvedEpochId = prior.epoch_id;
+  }
+  const basis = {
+    epoch_id: resolvedEpochId,
+    epoch_nonce_base64url: epochNonceBase64Url,
+    epoch_parent_journal_id: epochParentJournalId,
+    format: CONFIDENTIAL_PLACEMENT_FORMATS.reproof_context,
+    generation,
+    manifest_base64url: encodeBase64Url(manifest.bytes),
+    manifest_id: manifest.manifest_id,
+    max_proof_age_ms: maximumAge,
+    prior_journal_id: prior?.journal_id ?? null,
+    quorum,
+    rotate_epoch: rotateEpoch,
+    target_shards: targetShards
+  };
+  const context = freeze({
+    ...basis,
+    context_id: domainHash(DOMAINS.reproofContext, canonicalBytes(basis))
+  });
+  requireIntactRealm();
+  return freeze({
+    bytes: canonicalBytes(context),
+    context,
+    context_id: context.context_id,
+    epoch_id: context.epoch_id,
+    generation: context.generation,
+    manifest,
+    reproof_context_id: context.context_id
+  });
+}
+
+export function restoreConfidentialPlacementReproofContext(contextBytes) {
+  requireIntactRealm();
+  const parsed = parseCanonical(
+    contextBytes,
+    "placement reproof context",
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.document_bytes
+  );
+  requireIntactRealm();
+  exactKeys(
+    parsed.value,
+    [
+      "context_id",
+      "epoch_id",
+      "epoch_nonce_base64url",
+      "epoch_parent_journal_id",
+      "format",
+      "generation",
+      "manifest_base64url",
+      "manifest_id",
+      "max_proof_age_ms",
+      "prior_journal_id",
+      "quorum",
+      "rotate_epoch",
+      "target_shards"
+    ],
+    "placement reproof context"
+  );
+  const value = parsed.value;
+  const nonce = decodeBase64Url(value.epoch_nonce_base64url);
+  if (
+    value.format !== CONFIDENTIAL_PLACEMENT_FORMATS.reproof_context ||
+    !DIGEST.test(value.context_id) || !DIGEST.test(value.epoch_id) ||
+    (value.prior_journal_id !== null && !DIGEST.test(value.prior_journal_id)) ||
+    (value.epoch_parent_journal_id !== null && !DIGEST.test(value.epoch_parent_journal_id)) ||
+    !nonce || nonce.byteLength !== CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.epoch_nonce_bytes ||
+    typeof value.rotate_epoch !== "boolean"
+  ) fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof context format is invalid");
+  decimal(value.generation, "reproof context generation", {
+    minimum: 1,
+    maximum: CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.head_transitions_max
+  });
+  decimal(value.max_proof_age_ms, "reproof context max_proof_age_ms", { minimum: 1 });
+  if (value.quorum !== 2 || value.target_shards !== 3) {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof context policy is invalid");
+  }
+  if (value.prior_journal_id === null && value.generation !== "1") {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "a genesis reproof context must be generation 1");
+  }
+  if (
+    (value.rotate_epoch && value.epoch_parent_journal_id !== value.prior_journal_id) ||
+    (!value.rotate_epoch && value.prior_journal_id === null)
+  ) fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof epoch transition is invalid");
+  const manifestBytes = decodeBase64Url(value.manifest_base64url);
+  if (!manifestBytes) fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof manifest is invalid");
+  const manifest = verifyManifest(manifestBytes);
+  if (manifest.manifest_id !== value.manifest_id) {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof manifest binding is invalid");
+  }
+  if (epochId({
+    epochNonceBase64Url: value.epoch_nonce_base64url,
+    epochParentJournalId: value.epoch_parent_journal_id,
+    manifestId: value.manifest_id
+  }) !== value.epoch_id) fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof epoch ID mismatch");
+  const { context_id: ignoredContextId, ...basis } = value;
+  if (domainHash(DOMAINS.reproofContext, canonicalBytes(basis)) !== value.context_id) {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof context ID mismatch");
+  }
+  return freeze({
+    bytes: parsed.bytes,
+    context: freeze(value),
+    context_id: value.context_id,
+    epoch_id: value.epoch_id,
+    epoch_nonce_base64url: value.epoch_nonce_base64url,
+    epoch_parent_journal_id: value.epoch_parent_journal_id,
+    format: value.format,
+    generation: value.generation,
+    manifest,
+    max_proof_age_ms: value.max_proof_age_ms,
+    prior_journal_id: value.prior_journal_id,
+    quorum: value.quorum,
+    reproof_context_id: value.context_id,
+    rotate_epoch: value.rotate_epoch,
+    target_shards: value.target_shards
+  });
+}
+
+function receiptChainId({ leaseId, manifestId, providerId, shardIndex, workloadId }) {
+  return domainHash(DOMAINS.chain, canonicalBytes({
+    lease_id: leaseId,
+    manifest_id: manifestId,
+    provider_id: providerId,
+    shard_index: shardIndex,
+    workload_id: workloadId
+  }));
+}
+
+function validateChainIdentity({
+  challengeSequence,
+  leaseId,
+  previousReceiptId,
+  providerId,
+  shardIndex,
+  workloadId
+}) {
+  if (
+    !PEER_ID.test(providerId) || !RESOURCE_LEASE_ID.test(leaseId) ||
+    !WORKLOAD_ID.test(workloadId) ||
+    !Number.isSafeInteger(shardIndex) || shardIndex < 0 || shardIndex > 2 ||
+    (previousReceiptId !== null && !RESOURCE_EXECUTION_RECEIPT_ID.test(previousReceiptId))
+  ) fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "receipt chain identity is invalid");
+  decimal(challengeSequence, "receipt chain challenge sequence");
+}
+
+export function deriveConfidentialPlacementReproofNonce(options) {
+  requireIntactRealm();
+  const descriptors = snapshotExactDataRecord(
+    options,
+    REPROOF_NONCE_KEYS,
+    "confidential placement reproof nonce options"
+  );
+  const challengeSequence = dataValue(descriptors, "challenge_sequence");
+  const leaseId = dataValue(descriptors, "lease_id");
+  const previousReceiptId = dataValue(descriptors, "previous_execution_receipt_id");
+  const providerId = dataValue(descriptors, "provider_id");
+  const reproofContextBytes = dataValue(descriptors, "reproof_context_bytes");
+  const shardIndex = dataValue(descriptors, "shard_index");
+  const workloadId = dataValue(descriptors, "workload_id");
+  requireIntactRealm();
+  const context = restoreConfidentialPlacementReproofContext(reproofContextBytes);
+  validateChainIdentity({
+    challengeSequence,
+    leaseId,
+    previousReceiptId,
+    providerId,
+    shardIndex,
+    workloadId
+  });
+  const chainId = receiptChainId({
+    leaseId,
+    manifestId: context.manifest.manifest_id,
+    providerId,
+    shardIndex,
+    workloadId
+  });
+  const digest = domainHash(DOMAINS.reproofNonce, canonicalBytes({
+    challenge_sequence: challengeSequence,
+    chain_id: chainId,
+    context_id: context.context_id,
+    previous_execution_receipt_id: previousReceiptId
+  }));
+  const raw = decodeBase64Url(stringSlice(digest, 7));
+  if (!raw || raw.byteLength !== 32) {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof nonce derivation failed");
+  }
+  return encodeBase64Url(typedArraySubarray(
+    raw,
+    0,
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.reproof_nonce_bytes
+  ));
+}
+
+function bindPriorJournal(context, priorJournalBytes) {
+  const prior = restoreAnyPriorJournal(priorJournalBytes);
+  if (context.prior_journal_id === null) {
+    if (prior !== null || context.generation !== "1") {
+      fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "invalid genesis reproof context");
+    }
+    return freeze({ high_waters: freeze(createArray()), prior: null });
+  }
+  if (
+    prior === null || prior.journal_id !== context.prior_journal_id ||
+    context.generation !== nextDecimal(prior.generation, "prior journal generation") ||
+    prior.manifest.manifest_id !== context.manifest.manifest_id ||
+    prior.max_proof_age_ms !== context.max_proof_age_ms ||
+    prior.quorum !== context.quorum || prior.target_shards !== context.target_shards
+  ) fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "reproof context does not match prior journal");
+  if (context.rotate_epoch) {
+    if (context.epoch_parent_journal_id !== prior.journal_id) {
+      fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "rotated epoch parent mismatch");
+    }
+    return freeze({ high_waters: freeze(createArray()), prior });
+  }
+  if (
+    prior.format !== CONFIDENTIAL_PLACEMENT_FORMATS.journal ||
+    prior.epoch_id !== context.epoch_id ||
+    prior.context.epoch_nonce_base64url !== context.epoch_nonce_base64url ||
+    prior.context.epoch_parent_journal_id !== context.epoch_parent_journal_id
+  ) fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "continued epoch binding mismatch");
+  return freeze({ high_waters: prior.receipt_high_waters, prior });
+}
+
+function highWaterFromPlacement(placement, manifestId) {
+  validateChainIdentity({
+    challengeSequence: placement.challenge_sequence,
+    leaseId: placement.lease_id,
+    previousReceiptId: placement.previous_execution_receipt_id,
+    providerId: placement.provider_id,
+    shardIndex: placement.shard_index,
+    workloadId: placement.workload_id
+  });
+  if (!RESOURCE_EXECUTION_RECEIPT_ID.test(placement.receipt_id)) {
+    fail("E_CONFIDENTIAL_PLACEMENT_REPROOF", "receipt ID is invalid");
+  }
+  return freeze({
+    chain_id: receiptChainId({
+      leaseId: placement.lease_id,
+      manifestId,
+      providerId: placement.provider_id,
+      shardIndex: placement.shard_index,
+      workloadId: placement.workload_id
+    }),
+    challenge_sequence: placement.challenge_sequence,
+    lease_id: placement.lease_id,
+    previous_execution_receipt_id: placement.previous_execution_receipt_id,
+    provider_id: placement.provider_id,
+    receipt_id: placement.receipt_id,
+    shard_index: placement.shard_index,
+    workload_id: placement.workload_id
+  });
+}
+
+function rejectReproof(placement, reason) {
+  return freeze({ ...placement, reason, status: "rejected" });
+}
+
+export function evaluateConfidentialPlacementReproof(options) {
+  requireIntactRealm();
+  const descriptors = snapshotExactDataRecord(
+    options,
+    REPROOF_EVALUATION_KEYS,
+    "confidential placement reproof options"
+  );
+  const evaluatedAt = dataValue(descriptors, "evaluated_at_ms");
+  const placements = dataValue(descriptors, "placements");
+  const priorJournalBytes = dataValue(descriptors, "prior_journal_bytes");
+  const reproofContextBytes = dataValue(descriptors, "reproof_context_bytes");
+  const unavailableProviderIds = dataValue(descriptors, "unavailable_provider_ids");
+  const context = restoreConfidentialPlacementReproofContext(reproofContextBytes);
+  const boundPrior = bindPriorJournal(context, priorJournalBytes);
   const evaluated = evaluateConfidentialStoragePlacements({
     evaluated_at_ms: evaluatedAt,
-    manifest_bytes: journal.manifest.bytes,
-    max_proof_age_ms: journal.max_proof_age_ms,
+    manifest_bytes: context.manifest.bytes,
+    max_proof_age_ms: context.max_proof_age_ms,
     placements,
-    quorum: journal.quorum,
-    target_shards: journal.target_shards,
+    quorum: context.quorum,
+    target_shards: context.target_shards,
     unavailable_provider_ids: unavailableProviderIds
   });
   requireIntactRealm();
   const previous = createMap();
-  for (let index = 0; index < journal.proofs.length; index += 1) {
-    const proof = journal.proofs[index];
-    mapSet(previous, `${proof.shard_index}:${proof.provider_id}`, proof);
+  for (let index = 0; index < boundPrior.high_waters.length; index += 1) {
+    const highWater = boundPrior.high_waters[index];
+    mapSet(previous, highWater.chain_id, highWater);
   }
   const checked = createArray(evaluated.placements.length);
+  const activeProofs = createArray();
+  let activeCount = 0;
   for (let index = 0; index < evaluated.placements.length; index += 1) {
     let placement = evaluated.placements[index];
     if (placement.status === "proved") {
-      const prior = mapGet(previous, `${placement.shard_index}:${placement.provider_id}`);
-      if (prior) {
-        const expectedSequence = String(Number(prior.challenge_sequence) + 1);
+      const current = highWaterFromPlacement(placement, context.manifest.manifest_id);
+      const expectedNonce = deriveConfidentialPlacementReproofNonce({
+        challenge_sequence: placement.challenge_sequence,
+        lease_id: placement.lease_id,
+        previous_execution_receipt_id: placement.previous_execution_receipt_id,
+        provider_id: placement.provider_id,
+        reproof_context_bytes: context.bytes,
+        shard_index: placement.shard_index,
+        workload_id: placement.workload_id
+      });
+      const prior = mapGet(previous, current.chain_id);
+      if (placement.challenge_nonce !== expectedNonce) {
+        placement = rejectReproof(placement, "reproof-context-mismatch");
+      } else if (prior === undefined) {
         if (
-          placement.previous_execution_receipt_id !== prior.receipt_id ||
-          placement.challenge_sequence !== expectedSequence
-        ) {
-          placement = freeze({
-            ...placement,
-            reason: "restart-reproof-required",
-            status: "rejected"
-          });
-        }
+          placement.challenge_sequence !== "0" ||
+          placement.previous_execution_receipt_id !== null
+        ) placement = rejectReproof(placement, "restart-reproof-required");
+      } else if (
+        placement.challenge_sequence !== nextDecimal(
+          prior.challenge_sequence,
+          "prior receipt challenge sequence"
+        ) ||
+        placement.previous_execution_receipt_id !== prior.receipt_id
+      ) {
+        placement = rejectReproof(placement, "restart-reproof-required");
+      }
+      if (placement.status === "proved") {
+        defineArrayIndex(activeProofs, activeCount, freeze({
+          challenge_nonce: placement.challenge_nonce,
+          ...current
+        }));
+        activeCount += 1;
       }
     }
     defineArrayIndex(checked, index, placement);
   }
-  return freeze({
-    ...summarizePlacements({
-      manifest: journal.manifest,
-      placements: checked,
-      quorum: journal.quorum,
-      targetShards: journal.target_shards
-    }),
-    generation: journal.generation,
-    journal_id: journal.journal_id
+  arraySort(activeProofs, (left, right) => left.shard_index - right.shard_index);
+  const summary = summarizePlacements({
+    manifest: context.manifest,
+    placements: checked,
+    quorum: context.quorum,
+    targetShards: context.target_shards
   });
+  const result = freeze({
+    ...summary,
+    context_id: context.context_id,
+    epoch_id: context.epoch_id,
+    generation: context.generation,
+    prior_journal_id: context.prior_journal_id
+  });
+  if (
+    activeProofs.length === 3 && result.status === STORAGE_PLACEMENT_STATUS.proved &&
+    activeProofs[0].shard_index === 0 && activeProofs[1].shard_index === 1 &&
+    activeProofs[2].shard_index === 2
+  ) {
+    weakMapSet(reproofEvaluationRecords, result, freeze({
+      active_proofs: freeze(activeProofs),
+      context_id: context.context_id,
+      prior_journal_id: context.prior_journal_id
+    }));
+  }
+  requireIntactRealm();
+  return result;
+}
+
+function compareHighWaters(left, right) {
+  if (left.shard_index !== right.shard_index) {
+    return left.shard_index < right.shard_index ? -1 : 1;
+  }
+  if (left.chain_id === right.chain_id) return 0;
+  return left.chain_id < right.chain_id ? -1 : 1;
+}
+
+function mergeHighWaters(previous, activeProofs) {
+  const merged = createMap();
+  for (let index = 0; index < previous.length; index += 1) {
+    mapSet(merged, previous[index].chain_id, previous[index]);
+  }
+  for (let index = 0; index < activeProofs.length; index += 1) {
+    const { challenge_nonce: ignoredNonce, ...highWater } = activeProofs[index];
+    mapSet(merged, highWater.chain_id, freeze(highWater));
+  }
+  const entries = mapValues(merged);
+  const values = createArray(entries.length);
+  for (let index = 0; index < entries.length; index += 1) {
+    defineArrayIndex(values, index, entries[index]);
+  }
+  if (values.length > CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_total_max) {
+    fail("E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT", "journal epoch history is full");
+  }
+  const shardCounts = [0, 0, 0];
+  for (let index = 0; index < values.length; index += 1) {
+    shardCounts[values[index].shard_index] += 1;
+    if (
+      shardCounts[values[index].shard_index] >
+      CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_per_shard_max
+    ) fail("E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT", "journal shard history is full");
+  }
+  arraySort(values, compareHighWaters);
+  return freeze(values);
+}
+
+export function createConfidentialPlacementJournal(options) {
+  requireIntactRealm();
+  const descriptors = snapshotExactDataRecord(
+    options,
+    JOURNAL_CREATE_KEYS,
+    "confidential placement journal options"
+  );
+  const evaluation = dataValue(descriptors, "evaluation");
+  const priorJournalBytes = dataValue(descriptors, "prior_journal_bytes");
+  const reproofContextBytes = dataValue(descriptors, "reproof_context_bytes");
+  const context = restoreConfidentialPlacementReproofContext(reproofContextBytes);
+  const boundPrior = bindPriorJournal(context, priorJournalBytes);
+  const record = weakMapGet(reproofEvaluationRecords, evaluation);
+  if (
+    !record || record.context_id !== context.context_id ||
+    record.prior_journal_id !== context.prior_journal_id ||
+    record.active_proofs.length !== 3
+  ) fail(
+    "E_CONFIDENTIAL_PLACEMENT_JOURNAL",
+    "verified context-bound three-shard reproof evaluation required"
+  );
+  const activeProofs = createArray(3);
+  for (let index = 0; index < record.active_proofs.length; index += 1) {
+    const proof = record.active_proofs[index];
+    defineArrayIndex(activeProofs, index, freeze({
+      challenge_nonce: proof.challenge_nonce,
+      chain_id: proof.chain_id,
+      challenge_sequence: proof.challenge_sequence,
+      lease_id: proof.lease_id,
+      previous_execution_receipt_id: proof.previous_execution_receipt_id,
+      provider_id: proof.provider_id,
+      receipt_id: proof.receipt_id,
+      shard_index: proof.shard_index,
+      workload_id: proof.workload_id
+    }));
+  }
+  const highWaters = mergeHighWaters(boundPrior.high_waters, record.active_proofs);
+  const basis = {
+    active_proofs: freeze(activeProofs),
+    epoch_id: context.epoch_id,
+    format: CONFIDENTIAL_PLACEMENT_FORMATS.journal,
+    generation: context.generation,
+    manifest_base64url: encodeBase64Url(context.manifest.bytes),
+    manifest_id: context.manifest.manifest_id,
+    max_proof_age_ms: context.max_proof_age_ms,
+    prior_journal_id: context.prior_journal_id,
+    quorum: context.quorum,
+    receipt_high_waters: highWaters,
+    reproof_context_base64url: encodeBase64Url(context.bytes),
+    reproof_context_id: context.context_id,
+    target_shards: context.target_shards
+  };
+  const journal = freeze({
+    ...basis,
+    journal_id: domainHash(DOMAINS.journal, canonicalBytes(basis))
+  });
+  const bytes = canonicalBytes(journal);
+  if (bytes.byteLength > CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.document_bytes) {
+    fail("E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT", "journal document limit exceeded");
+  }
+  requireIntactRealm();
+  return freeze({ bytes, journal, journal_id: journal.journal_id });
+}
+
+function restoreHighWater(value, manifestId, label, { challengeNonce = false } = {}) {
+  const keys = challengeNonce
+    ? [
+      "challenge_nonce",
+      "chain_id",
+      "challenge_sequence",
+      "lease_id",
+      "previous_execution_receipt_id",
+      "provider_id",
+      "receipt_id",
+      "shard_index",
+      "workload_id"
+    ]
+    : [
+      "chain_id",
+      "challenge_sequence",
+      "lease_id",
+      "previous_execution_receipt_id",
+      "provider_id",
+      "receipt_id",
+      "shard_index",
+      "workload_id"
+    ];
+  exactKeys(value, keys, label);
+  validateChainIdentity({
+    challengeSequence: value.challenge_sequence,
+    leaseId: value.lease_id,
+    previousReceiptId: value.previous_execution_receipt_id,
+    providerId: value.provider_id,
+    shardIndex: value.shard_index,
+    workloadId: value.workload_id
+  });
+  if (
+    !DIGEST.test(value.chain_id) ||
+    !RESOURCE_EXECUTION_RECEIPT_ID.test(value.receipt_id) ||
+    (challengeNonce && (
+      !decodeBase64Url(value.challenge_nonce) ||
+      decodeBase64Url(value.challenge_nonce).byteLength !==
+        CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.reproof_nonce_bytes
+    )) ||
+    value.chain_id !== receiptChainId({
+      leaseId: value.lease_id,
+      manifestId,
+      providerId: value.provider_id,
+      shardIndex: value.shard_index,
+      workloadId: value.workload_id
+    })
+  ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", `${label} is invalid`);
+  return freeze({ ...value });
+}
+
+export function restoreConfidentialPlacementJournal(journalBytes) {
+  requireIntactRealm();
+  const parsed = parseCanonical(
+    journalBytes,
+    "placement journal",
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.document_bytes
+  );
+  requireIntactRealm();
+  if (parsed.value?.format === CONFIDENTIAL_PLACEMENT_FORMATS.legacy_journal) {
+    restoreLegacyJournalParsed(parsed);
+    fail("E_CONFIDENTIAL_PLACEMENT_MIGRATION", "v1 journal requires a fresh v2 epoch reproof");
+  }
+  exactKeys(
+    parsed.value,
+    [
+      "active_proofs",
+      "epoch_id",
+      "format",
+      "generation",
+      "journal_id",
+      "manifest_base64url",
+      "manifest_id",
+      "max_proof_age_ms",
+      "prior_journal_id",
+      "quorum",
+      "receipt_high_waters",
+      "reproof_context_base64url",
+      "reproof_context_id",
+      "target_shards"
+    ],
+    "placement journal"
+  );
+  const value = parsed.value;
+  if (
+    value.format !== CONFIDENTIAL_PLACEMENT_FORMATS.journal ||
+    !DIGEST.test(value.journal_id) || !DIGEST.test(value.epoch_id) ||
+    !DIGEST.test(value.reproof_context_id) ||
+    (value.prior_journal_id !== null && !DIGEST.test(value.prior_journal_id))
+  ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal format is invalid");
+  decimal(value.generation, "journal generation", {
+    minimum: 1,
+    maximum: CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.head_transitions_max
+  });
+  decimal(value.max_proof_age_ms, "journal max_proof_age_ms", { minimum: 1 });
+  if (value.quorum !== 2 || value.target_shards !== 3) {
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal policy is invalid");
+  }
+  const manifestBytes = decodeBase64Url(value.manifest_base64url);
+  const contextBytes = decodeBase64Url(value.reproof_context_base64url);
+  if (!manifestBytes || !contextBytes) {
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal embedded documents are invalid");
+  }
+  const manifest = verifyManifest(manifestBytes);
+  const context = restoreConfidentialPlacementReproofContext(contextBytes);
+  if (
+    manifest.manifest_id !== value.manifest_id ||
+    context.context_id !== value.reproof_context_id ||
+    context.epoch_id !== value.epoch_id || context.generation !== value.generation ||
+    context.manifest.manifest_id !== value.manifest_id ||
+    context.max_proof_age_ms !== value.max_proof_age_ms ||
+    context.prior_journal_id !== value.prior_journal_id ||
+    context.quorum !== value.quorum || context.target_shards !== value.target_shards
+  ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal reproof binding is invalid");
+  const activeSources = ownedDataArray(value.active_proofs, "journal active proofs", 3);
+  const highWaterSources = ownedDataArray(
+    value.receipt_high_waters,
+    "journal receipt high waters",
+    CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_total_max
+  );
+  if (activeSources.length !== 3 || highWaterSources.length < 3) {
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal active proofs or history are incomplete");
+  }
+  const activeProofs = createArray(3);
+  const highWaters = createArray(highWaterSources.length);
+  const activeProviders = createSet();
+  const highWaterChains = createSet();
+  const highWaterReceipts = createSet();
+  const shardCounts = [0, 0, 0];
+  for (let index = 0; index < activeSources.length; index += 1) {
+    const proof = restoreHighWater(
+      activeSources[index],
+      manifest.manifest_id,
+      `journal active proof ${index}`,
+      { challengeNonce: true }
+    );
+    if (proof.shard_index !== index || setHas(activeProviders, proof.provider_id)) {
+      fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal active proofs must be exact 3-of-3");
+    }
+    setAdd(activeProviders, proof.provider_id);
+    const expectedNonce = deriveConfidentialPlacementReproofNonce({
+      challenge_sequence: proof.challenge_sequence,
+      lease_id: proof.lease_id,
+      previous_execution_receipt_id: proof.previous_execution_receipt_id,
+      provider_id: proof.provider_id,
+      reproof_context_bytes: context.bytes,
+      shard_index: proof.shard_index,
+      workload_id: proof.workload_id
+    });
+    if (proof.challenge_nonce !== expectedNonce) {
+      fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal active proof context mismatch");
+    }
+    defineArrayIndex(activeProofs, index, proof);
+  }
+  for (let index = 0; index < highWaterSources.length; index += 1) {
+    const highWater = restoreHighWater(
+      highWaterSources[index],
+      manifest.manifest_id,
+      `journal receipt high water ${index}`
+    );
+    if (
+      (index > 0 && compareHighWaters(highWaters[index - 1], highWater) >= 0) ||
+      setHas(highWaterChains, highWater.chain_id) ||
+      setHas(highWaterReceipts, highWater.receipt_id)
+    ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal receipt history is ambiguous");
+    setAdd(highWaterChains, highWater.chain_id);
+    setAdd(highWaterReceipts, highWater.receipt_id);
+    shardCounts[highWater.shard_index] += 1;
+    if (
+      shardCounts[highWater.shard_index] >
+      CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS.high_waters_per_shard_max
+    ) fail("E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT", "journal shard history is full");
+    defineArrayIndex(highWaters, index, highWater);
+  }
+  for (let index = 0; index < activeProofs.length; index += 1) {
+    const active = activeProofs[index];
+    let matched = false;
+    for (let historyIndex = 0; historyIndex < highWaters.length; historyIndex += 1) {
+      const highWater = highWaters[historyIndex];
+      if (highWater.chain_id !== active.chain_id) continue;
+      if (
+        highWater.challenge_sequence !== active.challenge_sequence ||
+        highWater.receipt_id !== active.receipt_id
+      ) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "active proof is not the receipt high water");
+      matched = true;
+      break;
+    }
+    if (!matched) fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "active proof is absent from history");
+  }
+  const { journal_id: ignoredJournalId, ...basis } = value;
+  if (domainHash(DOMAINS.journal, canonicalBytes(basis)) !== value.journal_id) {
+    fail("E_CONFIDENTIAL_PLACEMENT_JOURNAL", "journal ID mismatch");
+  }
+  requireIntactRealm();
+  return freeze({
+    active_proofs: freeze(activeProofs),
+    bytes: parsed.bytes,
+    context,
+    epoch_id: value.epoch_id,
+    format: value.format,
+    generation: value.generation,
+    journal_id: value.journal_id,
+    manifest,
+    max_proof_age_ms: value.max_proof_age_ms,
+    prior_journal_id: value.prior_journal_id,
+    proofs: freeze(activeProofs),
+    quorum: value.quorum,
+    receipt_high_waters: freeze(highWaters),
+    reproof_context_id: value.reproof_context_id,
+    target_shards: value.target_shards
+  });
+}
+
+export function evaluateConfidentialPlacementJournal(options) {
+  requireIntactRealm();
+  const descriptors = snapshotExactDataRecord(
+    options,
+    JOURNAL_EVALUATION_KEYS,
+    "confidential placement journal evaluation options"
+  );
+  const evaluatedAt = dataValue(descriptors, "evaluated_at_ms");
+  const journalBytes = dataValue(descriptors, "journal_bytes");
+  const placements = dataValue(descriptors, "placements");
+  const reproofContextBytes = dataValue(descriptors, "reproof_context_bytes");
+  const unavailableProviderIds = dataValue(descriptors, "unavailable_provider_ids");
+  requireIntactRealm();
+  const journal = restoreConfidentialPlacementJournal(journalBytes);
+  const evaluated = evaluateConfidentialPlacementReproof({
+    evaluated_at_ms: evaluatedAt,
+    placements,
+    prior_journal_bytes: journal.bytes,
+    reproof_context_bytes: reproofContextBytes,
+    unavailable_provider_ids: unavailableProviderIds
+  });
+  return freeze({ ...evaluated, journal_id: journal.journal_id });
 }
 
 export function planConfidentialStorageRepair(evaluation) {

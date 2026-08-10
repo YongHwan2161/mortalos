@@ -59,11 +59,17 @@ count. One corrupt copy is rejected and two valid copies recover the bytes.
 This revision closes the confidentiality/freshness gap locally. A encrypts the real
 file as an S4 package for B; providers receive three distinct ciphertext envelopes,
 any two reconstruct the package, and only fresh exact-workload receipts from
-distinct providers/shards count. Journal creation requires a module-private verified
-evaluation and a complete three-shard receipt barrier; the durable adapter rederives
-it from raw signed placement evidence and refuses raw, empty, partial, cloned, or
-self-hashed incomplete journals. The canonical journal survives an actual process
-restart and rejects pre-crash receipt replay. After A exits, B does not inherit A's
+distinct providers/shards count. Journal v2 binds each reproof context to the exact
+prior head, next generation, manifest/policy, and epoch, then derives every receipt
+challenge nonce from that context and the chain predecessor. Journal creation
+  requires a module-private branded active `3/3` evaluation; its epoch accumulator
+  retains the high-water of every committed receipt chain across provider replacement.
+The durable adapter rederives raw signed evidence and uses predecessor-keyed
+no-replace hard-link claims for one context intent and one successor. V1 is
+metadata-only migration input and needs a fresh rotated-epoch `3/3` reproof. The
+bounded canonical journal survives process restart and rejects replay of every
+committed chain high-water. It remains unsigned local evidence, not hostile-disk,
+hidden-history, or global-consensus proof. After A exits, B does not inherit A's
 private lease key: B reconstructs the encrypted package and renews all placements
 under separately generated successor-authorized operational keys. Those keys are not
 inferred to be, or cryptographically bound to, B's Continuity custody identity.
@@ -222,8 +228,30 @@ Strict pass criteria:
 - resource-contract status and proof age use the same canonical generation
   `evaluated_at_ms`; unsigned historical placement observation time cannot prolong
   a completed or effectively revoked lease;
-- a crash-safe local controller reconstructs state from canonical evidence, then
-  re-challenges before scheduling or billing;
+- every reproof context binds the exact prior journal ID, next generation,
+  manifest, max-age/`2-of-3` policy, epoch ID, and 256-bit epoch nonce; every storage
+  challenge nonce binds that context plus receipt-chain identity, sequence, and
+  predecessor;
+- a journal head requires exactly three active proofs for shards 0/1/2 under three
+  distinct providers. A proved quorum of two is sufficient for recovery policy but
+  insufficient to advance durable anti-replay state;
+- within an epoch, one cumulative high-water is retained for every
+  lease/provider/shard/workload chain ever committed. A known chain must advance by
+  exactly one and name the prior receipt; a genuinely new chain starts at sequence
+  zero with no predecessor;
+- provider replacement does not discard older chain barriers. Epoch rotation may
+  reset the accumulator only after a fresh context-bound `3/3` set is verified and
+  committed; legacy v1 supplies parent metadata only and never seeds v2 high-waters;
+- the portable limits are generated from `protocol/profile.v1.json`: 2 MiB journal,
+  4,096 head transitions, 128 high-waters per shard, 384 total, 32-byte epoch nonce,
+  and 16-byte derived reproof nonce. The constants are profile-pinned; exact-total
+  and representative plus-one document/history cases fail closed without pruning;
+- a crash-safe local controller fsyncs immutable context, journal, and transition
+  files. Separate predecessor-keyed no-replace hard-link claims serialize reproof
+  intent and successor commit; stale or losing writers cannot replace the winner.
+  Every visible v1 anchor is audited for a v2 successor, so a late legacy writer
+  competing with a migrated anchor halts as a root fork. Crash-left pending files are
+  ignored; bounded reclamation and sudden-power-loss durability remain HOLD;
 - timeout, delayed response, crash, partition, corrupt shard, replay, fork, revoke,
   exhaustion, restart, heal, and repair preserve quorum without provider duplication
   or cross-lease reuse in at least 100 seeded cycles;
@@ -233,16 +261,24 @@ Strict pass criteria:
   the same scenario contract. Physical independence and same-origin signer isolation
   remain HOLD until separately proven.
 
-Source result: PASS locally. `test/confidential-placement.test.mjs` proves every
+Source result: implemented in the current source; exact final verification remains
+the containing revision's gate. `test/confidential-placement.test.mjs` proves every
 2-of-3 combination, exact-age and max+1 behavior, generation-time expiry and
-effective-revocation rejection, duplicate provider/shard rejection,
-actual journal commit-process exit and load-process restart, directly chained
-re-proof, and 100 deterministic controller-policy cycles over cryptographically
-verified states. `verify-confidential-placement-chromium.mjs` proves a native
+effective-revocation rejection, duplicate provider/shard rejection, and 100
+deterministic controller-policy cycles. `test/confidential-journal-v2.test.mjs`
+proves cumulative A/B/C→D/E/F high-waters, old/unseen receipt rejection, exact known-
+chain successors, epoch rotation, v1 fresh-reproof migration, generated caps, and
+tamper/hostile-input failure. `test/confidential-controller-v2.test.mjs` uses fresh
+processes to prove predecessor-bound intent/successor hard-link CAS, one concurrent
+winner, stale-writer rejection, restart traversal, and v1 migration HOLD until a
+fresh v2 commit. `verify-confidential-placement-chromium.mjs` proves a native
 98,317-byte File, S4 encryption for B, distinct shards over direct DataChannels,
-provider-signed exact workloads, origin cut, loss/repair, A exit, new leases under a
-separately generated successor-authorized operational signer, corrupt-shard
-rejection, and exact decrypt. No custody-identity binding is claimed. See
+context-bound initial and replacement receipts, cumulative high-waters, old-receipt
+replay rejection, origin cut, loss/repair, A exit, new leases under a separately
+generated successor-authorized operational signer, corrupt-shard rejection, and
+exact decrypt. No custody-identity binding is claimed. Journal/context/transition
+documents are unsigned local evidence; hostile-disk integrity, completely hidden
+history, and cross-host/global consensus remain unproved. See
 [Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md).
 
 ### P0 — Lineage-bound controller handoff and repair convergence (source + local evidence PASS)
@@ -416,7 +452,7 @@ usable and stable.
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 | Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer, exact-head CI/review/App/native approval/merge | Merged local execution claim; physical independence **HOLD** |
 | P2P placement | Direct WebRTC storage, exact receipt gating, provider loss and new-lease repair | Node process plus actual Chromium origin-cut vertical | Source + local evidence; exact-SHA governance external; Internet reachability **HOLD** |
-| Confidential controller | S4 2-of-3 provider shards, proof-age policy, crash-safe journal, successor-authorized operational leases | Node process restart, 100-cycle policy corpus, actual Chromium 98,317-byte file vertical, packed SDK import | Source + local evidence; custody-identity binding and physical independence **HOLD** |
+| Confidential controller | S4 2-of-3 provider shards, generation-time freshness, prior-head/context-nonce journal v2, cumulative epoch chain high-waters, active `3/3` head barrier, hard-link successor CAS, and successor-authorized operational leases | `test/confidential-placement.test.mjs`, `test/confidential-journal-v2.test.mjs`, `test/confidential-controller-v2.test.mjs`, actual Chromium 98,317-byte file vertical, packed SDK import | Source implementation; exact-revision gates required. Unsigned local evidence only; hostile disk, hidden history, global consensus, custody-identity binding, and physical independence **HOLD** |
 | Lineage placement convergence | Generation/evidence/prior/repair binding, current-descriptor sign-once commit, derived plan, executor revalidation contract, fork halt | Node A→B and adversarial siblings, two fresh verifier processes, 1,000 partition/heal events, actual Chromium origin-cut A→B repair/commit | Source + local evidence; exact-SHA governance external |
 | Quorum liveness certificates | Offer-rostered sequence/predecessor challenge, consumer-selected bounded window, 3-of-4 local-duration observations, canonical failure certificate, generation binding, conditional late-proof conflict | Node threshold/fork corpus, offer-roster negative, fresh-process lineage replay, WebRTC artifact gate, actual Chromium unreachable provider plus four observer processes | Core conditional PASS; provider-agreed liveness SLA, breach/death/settlement evidence, Lab gossip/execution reconciliation, Sybil resistance, and independent failure domains **HOLD** |
 

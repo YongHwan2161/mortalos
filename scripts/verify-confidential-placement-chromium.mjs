@@ -7,9 +7,13 @@ import { chromium } from "playwright";
 import { decodeBase64Url, encodeBase64Url } from "../src/bytes.mjs";
 import {
   createConfidentialPlacementJournal,
+  createConfidentialPlacementReproofContext,
+  deriveConfidentialPlacementReproofNonce,
   evaluateConfidentialPlacementJournal,
+  evaluateConfidentialPlacementReproof,
   evaluateConfidentialStoragePlacements,
-  planConfidentialStorageRepair
+  planConfidentialStorageRepair,
+  restoreConfidentialPlacementJournal
 } from "../src/placement/confidential.mjs";
 import {
   createStoragePlacementFixture
@@ -195,6 +199,14 @@ function record(fixture, shardIndex) {
   return Object.freeze({ ...fixture.placement, shard_index: shardIndex });
 }
 
+function reproofNonce(context, shardIndex) {
+  return (identity) => deriveConfidentialPlacementReproofNonce({
+    ...identity,
+    reproof_context_bytes: context.bytes,
+    shard_index: shardIndex
+  });
+}
+
 function browserRecord(fixture, shardIndex) {
   const value = record(fixture, shardIndex);
   return Object.freeze({
@@ -229,6 +241,16 @@ function evaluate(manifestBase64Url, records, unavailable = [], evaluatedAt = "1
   });
 }
 
+function evaluateReproof(context, records, priorJournal = null, evaluatedAt = "1800") {
+  return evaluateConfidentialPlacementReproof({
+    evaluated_at_ms: evaluatedAt,
+    placements: records,
+    prior_journal_bytes: priorJournal?.bytes ?? null,
+    reproof_context_bytes: context.bytes,
+    unavailable_provider_ids: []
+  });
+}
+
 let consumerA;
 let consumerB;
 const providers = [];
@@ -236,7 +258,7 @@ const providers = [];
 try {
   consumerA = await openEndpoint("consumer-a", "consumer");
   consumerB = await openEndpoint("consumer-b", "consumer");
-  for (let index = 0; index < 4; index += 1) {
+  for (let index = 0; index < 6; index += 1) {
     providers.push(await openEndpoint(`provider-${index}`, "provider"));
   }
   const bCustodian = await consumerB.page.evaluate(() =>
@@ -269,12 +291,24 @@ try {
     signer(consumerB),
     ...providers
       .filter((ignored, index) => index !== providerIndex)
+      .slice(0, 3)
       .map((endpoint) => signer(endpoint))
   ];
+  const context1 = createConfidentialPlacementReproofContext({
+    epoch_nonce: randomBytes(32),
+    generation: "1",
+    manifest_bytes: decodeBase64Url(shardSet.manifest_base64url),
+    max_proof_age_ms: "500",
+    prior_journal_bytes: null,
+    quorum: 2,
+    rotate_epoch: true,
+    target_shards: 3
+  });
   const initial = [];
   for (let index = 0; index < 3; index += 1) {
     const bytes = Buffer.from(shardSet.shards[index].bytes_base64url, "base64url");
     const fixture = await createStoragePlacementFixture({
+      challengeNonceFactory: reproofNonce(context1, index),
       consumer: signer(consumerA),
       provider: providerAdapter(consumerA, providers[index]),
       resourceBytes: bytes,
@@ -286,27 +320,34 @@ try {
   }
   const requestCountAtCut = server.requests.length;
   await Promise.all(endpoints.map((endpoint) => endpoint.cut()));
-  const initialEvaluation = evaluate(
-    shardSet.manifest_base64url,
-    initial.map((fixture, index) => record(fixture, index))
-  );
+  const initialRecords = initial.map((fixture, index) => record(fixture, index));
+  const initialEvaluation = evaluateReproof(context1, initialRecords);
   assert.equal(initialEvaluation.status, "proved");
-  const journal = createConfidentialPlacementJournal({
+  const journal1 = createConfidentialPlacementJournal({
     evaluation: initialEvaluation,
-    generation: "1",
+    prior_journal_bytes: null,
+    reproof_context_bytes: context1.bytes
+  });
+  const context2 = createConfidentialPlacementReproofContext({
+    epoch_nonce: null,
+    generation: "2",
     manifest_bytes: decodeBase64Url(shardSet.manifest_base64url),
     max_proof_age_ms: "500",
+    prior_journal_bytes: journal1.bytes,
     quorum: 2,
+    rotate_epoch: false,
     target_shards: 3
   });
   const replayed = evaluateConfidentialPlacementJournal({
     evaluated_at_ms: "1800",
-    journal_bytes: journal.bytes,
-    placements: initial.map((fixture, index) => record(fixture, index)),
+    journal_bytes: journal1.bytes,
+    placements: initialRecords,
+    reproof_context_bytes: context2.bytes,
     unavailable_provider_ids: []
   });
   assert.equal(replayed.status, "unavailable");
-  assert.ok(replayed.placements.every(({ reason }) => reason === "restart-reproof-required"));
+  assert.equal(replayed.available_shards, 0);
+  assert.ok(replayed.placements.every(({ reason }) => reason === "reproof-context-mismatch"));
 
   const lostProviderId = providers[0].identity.key_id;
   const livenessObservers = providerWitnesses(0);
@@ -416,21 +457,20 @@ try {
   reconstructed.package_base64url);
   assert.deepEqual(successorSet, shardSet);
   const bWitnesses = await witnesses(consumerB);
-  const successorProviders = [providers[3], providers[1], providers[2]];
+  const successorProviders = [providers[3], providers[4], providers[5]];
   const successor = [];
   for (let index = 0; index < 3; index += 1) {
     successor.push(await createStoragePlacementFixture({
+      challengeNonceFactory: reproofNonce(context2, index),
       consumer: signer(consumerB),
-      provider: providerAdapter(consumerB, successorProviders[index], { reuseStored: index !== 0 }),
+      provider: providerAdapter(consumerB, successorProviders[index]),
       resourceBytes: Buffer.from(successorSet.shards[index].bytes_base64url, "base64url"),
       seed: 80 + index * 4,
       witnesses: bWitnesses
     }));
   }
-  const continued = evaluate(
-    successorSet.manifest_base64url,
-    successor.map((fixture, index) => record(fixture, index))
-  );
+  const successorRecords = successor.map((fixture, index) => record(fixture, index));
+  const continued = evaluateReproof(context2, successorRecords, journal1);
   assert.equal(continued.status, "proved");
   assert.equal(continued.available_shards, 3);
   assert.equal(new Set(continued.placements.map(({ provider_id: id }) => id)).size, 3);
@@ -440,6 +480,44 @@ try {
     [],
     "1801"
   ).status, "unavailable");
+  const journal2 = createConfidentialPlacementJournal({
+    evaluation: continued,
+    prior_journal_bytes: journal1.bytes,
+    reproof_context_bytes: context2.bytes
+  });
+  const restoredJournal2 = restoreConfidentialPlacementJournal(journal2.bytes);
+  assert.equal(restoredJournal2.prior_journal_id, journal1.journal_id);
+  assert.equal(restoredJournal2.receipt_high_waters.length, 6);
+  const context3 = createConfidentialPlacementReproofContext({
+    epoch_nonce: null,
+    generation: "3",
+    manifest_bytes: decodeBase64Url(successorSet.manifest_base64url),
+    max_proof_age_ms: "500",
+    prior_journal_bytes: journal2.bytes,
+    quorum: 2,
+    rotate_epoch: false,
+    target_shards: 3
+  });
+  const oldAbcReplay = evaluateConfidentialPlacementJournal({
+    evaluated_at_ms: "1800",
+    journal_bytes: journal2.bytes,
+    placements: initialRecords,
+    reproof_context_bytes: context3.bytes,
+    unavailable_provider_ids: []
+  });
+  assert.equal(oldAbcReplay.status, "unavailable");
+  assert.equal(oldAbcReplay.available_shards, 0);
+  assert.ok(oldAbcReplay.placements.every(({ reason }) =>
+    reason === "reproof-context-mismatch" || reason === "restart-reproof-required"));
+  assert.throws(() => createConfidentialPlacementJournal({
+    evaluation: oldAbcReplay,
+    prior_journal_bytes: journal2.bytes,
+    reproof_context_bytes: context3.bytes
+  }), /three-shard reproof evaluation required/u);
+  assert.equal(
+    restoreConfidentialPlacementJournal(journal2.bytes).journal_id,
+    restoredJournal2.journal_id
+  );
 
   const generation2 = await consumerB.page.evaluate((options) =>
     globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createPlacementGeneration(options), {
@@ -484,11 +562,11 @@ try {
   assert.equal(convergenceForward.value.selected_commit_id, committed2.commit_id);
   assert.equal(convergenceForward.bytes_base64url, convergenceReverse.bytes_base64url);
 
-  await providers[1].page.evaluate(() =>
+  await providers[4].page.evaluate(() =>
     globalThis.__MORTALOS_P2P_PLACEMENT__.corruptStoredResource(100));
-  const corruptOne = await retrieve(consumerB, providers[1], "corrupt-read-1");
+  const corruptOne = await retrieve(consumerB, providers[4], "corrupt-read-1");
   const goodZero = await retrieve(consumerB, providers[3], "valid-read-0");
-  const goodTwo = await retrieve(consumerB, providers[2], "valid-read-2");
+  const goodTwo = await retrieve(consumerB, providers[5], "valid-read-2");
   await assert.rejects(
     consumerB.page.evaluate(({ manifest, shards }) =>
       globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.reconstructPackage(manifest, shards), {
@@ -526,7 +604,8 @@ try {
   console.log("- browser A encrypted an actual 98,317-byte File for browser B and split only the S4 package into 2-of-3 shards");
   console.log("- three browser providers stored distinct shards over direct WebRTC DataChannels and signed exact workload receipts");
   console.log("- exact freshness boundary passed; one millisecond beyond the bound failed closed");
-  console.log("- a restored journal rejected replayed pre-crash receipts until new evidence or new successor leases existed");
+  console.log("- journal v2 bound every storage challenge to its exact prior head; cumulative A/B/C and D/E/F high-waters survived provider replacement");
+  console.log("- exact old A/B/C replay produced zero proved shards against the D/E/F head and could not create or advance a successor journal");
   console.log("- local provider-process termination plus a quorum certificate qualified a deterministic repair scheduling plan; browser B renewed all leases under its own non-transferred key");
   console.log("- one failed provider and four separate browser observers received the same challenge over WebRTC; 3-of-4 signed the bounded local no-response window without a global clock");
   console.log("- A committed the degraded generation before the Lab performed replacement placement; this Lab does not yet execute repair through an effect-time, current-evidence-gated action-plan executor");

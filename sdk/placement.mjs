@@ -5,13 +5,19 @@ export {
 } from "../src/placement/storage.mjs";
 export {
   CONFIDENTIAL_PLACEMENT_FORMATS,
+  CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS,
   createConfidentialPlacementJournal,
+  createConfidentialPlacementReproofContext,
   createConfidentialPlacementShardSet,
+  deriveConfidentialPlacementReproofNonce,
   evaluateConfidentialPlacementJournal,
+  evaluateConfidentialPlacementReproof,
   evaluateConfidentialStoragePlacements,
   planConfidentialStorageRepair,
   reconstructConfidentialPackage,
-  restoreConfidentialPlacementJournal
+  restoreConfidentialPlacementJournal,
+  restoreConfidentialPlacementReproofContext,
+  restoreLegacyConfidentialPlacementJournal
 } from "../src/placement/confidential.mjs";
 export {
   LINEAGE_PLACEMENT_FORMATS,

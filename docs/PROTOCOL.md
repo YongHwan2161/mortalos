@@ -851,29 +851,52 @@ the `2-of-3` coding policy, every shard index/digest/size, and the exact storage
 workload ID for each shard. This coding improves ciphertext availability; it does
 not replace S4 encryption and does not grant decryption authority.
 
-`mortalos-confidential-placement-journal/1` is unsigned local policy evidence. It
-binds one manifest, generation, proof-age policy, recovery/target thresholds, and
-the last observed provider/shard/receipt barrier tuples. V1 MUST contain exactly one
-ordered barrier for each shard `0`, `1`, and `2`, under three distinct provider and
-receipt identities. A conforming creator MUST accept only an evaluator-produced
-module-private result. Before issuing that brand, the evaluator MUST acquire every
-recognized record, dense array, and byte view into owned inert data without invoking
-caller methods or recognized getters, use contained collection operations, and fail
-closed if the runtime changes during acquisition or nested artifact validation. A
-selective array-method, Proxy-array, accessor, or collection override MUST NOT be
-able to fabricate the proof basis. A durable adapter MUST re-evaluate raw signed placement
-evidence and derive the journal inside the commit boundary rather than persist
-caller-supplied self-hashed journal bytes. Empty, partial, cloned, accessor-backed,
-Proxy-backed, or manually self-hashed incomplete input MUST NOT advance the durable
-pointer. Restoration MUST independently recheck the complete v1 barrier invariant.
-The durable loader MUST treat filesystem enumeration and pointer selection as part of
-the same trust boundary: it MUST snapshot the listing, contain pointer parsing and
-maximum-generation/fork selection, and fail closed on runtime drift before or after
-filesystem acquisition. An override that hides a newer existing pointer MUST NOT make
-an older generation current, and listing order MUST NOT change the current-fork
-verdict.
+`mortalos-confidential-placement-reproof-context/1` is the prerequisite for every
+durable placement generation. It binds one epoch, the exact prior journal ID (or
+genesis), the consecutive next generation, manifest, proof-age policy, quorum, and
+target shards. A rotated epoch additionally binds a fresh 256-bit nonce and its exact
+parent journal. The 128-bit storage challenge nonce MUST be derived from the context
+ID, receipt-chain ID, challenge sequence, and previous execution-receipt ID. Because
+that nonce is inside the consumer-signed challenge and provider-signed execution
+receipt, a receipt made for another prior head or generation MUST NOT count.
+
+`mortalos-confidential-placement-journal/2` is unsigned local policy evidence. It
+contains exactly three current `active_proofs` for shards `0`, `1`, and `2` under
+distinct providers, plus a sorted cumulative `receipt_high_waters` set. Receipt-chain
+identity MUST bind manifest, shard, provider, lease, and workload. Existing chains
+MUST advance by exactly one and name the exact preceding receipt; a newly admitted
+lease chain MUST start at sequence zero with a null predecessor. Replacing a provider
+MUST NOT delete its earlier high-water. Within one epoch the set is append-only:
+128 chains per shard and 384 total are the generated bounds, and overflow MUST halt
+without eviction or lossy pruning. A prior-bound epoch rotation with three fresh
+proofs MAY compact history because old-epoch receipts cannot satisfy the new context.
+
+A conforming creator MUST accept only an evaluator-produced module-private reproof
+result. Before issuing that brand, the evaluator MUST acquire every recognized
+record, dense array, and byte view into owned inert data without invoking caller
+methods or recognized getters, use contained collection operations, and fail closed
+if the runtime changes during acquisition or nested artifact validation. A durable
+adapter MUST first persist one immutable context intent, then reload the authoritative
+head and intent, re-evaluate raw signed placement evidence, and derive the journal
+inside commit. The caller MUST NOT choose the prior journal, generation, high-water
+set, context bytes, or journal bytes at that boundary.
+
+The adapter MUST fsync complete immutable journal and transition documents before
+atomically claiming a canonical prior-keyed successor path with no replacement. That
+claim is the CAS linearization point. Two different candidates for one prior cannot
+both commit; an exact retry is idempotent; a stale writer fails; a pre-CAS crash leaves
+  only ignored orphans; and a post-CAS reader observes a complete transition. These
+  are process-crash guarantees. A platform that rejects directory fsync MUST expose
+  sudden-power-loss durability as an explicit nonclaim. Loading
+MUST follow successor claims from genesis or the exact legacy head rather than choose
+the largest directory entry. `mortalos-confidential-placement-journal/1` is only
+migration metadata: its visible three barriers MUST NOT seed v2 history, and the
+system remains unavailable until a newly persisted epoch intent receives three fresh
+context-bound proofs.
+
 The journal MUST NOT be interpreted as a lifecycle event, global placement consensus,
-billing authority, signature, or hostile-disk tamper proof.
+billing authority, signature, hostile-disk tamper proof, or independent-provider
+attestation.
 
 A confidential shard counts only after the ordinary resource validators prove its
 exact active storage workload and the local evaluator proves distinct provider and
@@ -882,10 +905,11 @@ MUST NOT count; exact maximum age MAY count. Resource-contract status and receip
 age MUST be evaluated at the same canonical generation `evaluated_at_ms`.
 Per-placement `observed_at_ms` is historical carrier metadata and MUST NOT prolong a
 lease that is completed or effectively revoked at generation time. After journal
-restoration, an existing lease MUST present the direct successor of the journaled
-execution receipt before counting again. `stale` and `unavailable` receipt-bearing
-placements remain barriers so omission cannot make their old receipt fresh again.
-A new provider/lease MAY enter with a new valid first receipt. A
+restoration, all counted proofs MUST carry the exact current reproof context. An
+existing chain MUST present the direct successor of its cumulative high-water. A new
+provider/lease MAY enter at sequence zero only with a current-context receipt. Stale,
+unavailable, partial, old-context, and replayed sets MUST NOT advance the durable
+head. A
 successor-authorized operational signing identity MAY form new offers and leases;
 that identity is not inferred to be, or cryptographically bound to, the Continuity
 custody identity. Transfer of the prior consumer private key is forbidden.

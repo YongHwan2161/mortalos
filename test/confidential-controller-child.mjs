@@ -1,36 +1,32 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { deserialize } from "node:v8";
 import {
+  beginConfidentialPlacementReproof,
   commitConfidentialPlacementJournal,
   loadConfidentialPlacementJournal
 } from "../lab/placement/confidential-controller.mjs";
 import {
   createConfidentialPlacementJournal,
-  evaluateConfidentialStoragePlacements
+  evaluateConfidentialPlacementReproof
 } from "../src/placement/confidential.mjs";
 
 function evaluationOptions(input, placements = input.placements) {
   return {
     evaluated_at_ms: input.evaluated_at_ms,
-    manifest_bytes: input.manifest_bytes,
-    max_proof_age_ms: input.max_proof_age_ms,
     placements,
-    quorum: input.quorum,
-    target_shards: input.target_shards,
+    prior_journal_bytes: input.prior_journal_bytes,
+    reproof_context_bytes: input.reproof_context_bytes,
     unavailable_provider_ids: input.unavailable_provider_ids
   };
 }
 
 function attempt(input, options = evaluationOptions(input)) {
   try {
-    const evaluation = evaluateConfidentialStoragePlacements(options);
+    const evaluation = evaluateConfidentialPlacementReproof(options);
     const journal = createConfidentialPlacementJournal({
       evaluation,
-      generation: input.generation,
-      manifest_bytes: input.manifest_bytes,
-      max_proof_age_ms: input.max_proof_age_ms,
-      quorum: input.quorum,
-      target_shards: input.target_shards
+      prior_journal_bytes: input.prior_journal_bytes,
+      reproof_context_bytes: input.reproof_context_bytes
     });
     return { error: null, journal: journal.journal_id };
   } catch (error) {
@@ -201,14 +197,55 @@ function loadWithSelectiveSelfRestoringMapPoison(directory) {
   return { calls, error, generation };
 }
 
-const [action, directory, documentPath] = process.argv.slice(2);
-if (action === "commit") {
-  const input = deserialize(readFileSync(documentPath));
-  const result = commitConfidentialPlacementJournal({
+function commitInput(directory, input) {
+  return commitConfidentialPlacementJournal({
     ...input,
     directory
   });
+}
+
+function waitForRelease(path) {
+  const waitState = new Int32Array(new SharedArrayBuffer(4));
+  while (!existsSync(path)) Atomics.wait(waitState, 0, 0, 10);
+}
+
+function contestedCommit(directory, documentPath, readyPath, releasePath) {
+  const input = deserialize(readFileSync(documentPath));
+  writeFileSync(readyPath, String(process.pid), { flag: "wx" });
+  waitForRelease(releasePath);
+  try {
+    return {
+      outcome: "success",
+      result: commitInput(directory, input)
+    };
+  } catch (error) {
+    return {
+      code: typeof error?.code === "string" ? error.code : null,
+      message: typeof error?.message === "string" ? error.message : "rejected",
+      outcome: "error"
+    };
+  }
+}
+
+const [action, directory, documentPath, readyPath, releasePath] = process.argv.slice(2);
+if (action === "begin") {
+  const input = deserialize(readFileSync(documentPath));
+  const result = beginConfidentialPlacementReproof({
+    ...input,
+    directory
+  });
+  process.stdout.write(JSON.stringify({
+    reproof_context_id: result.reproof_context_id,
+    status: result.status
+  }));
+} else if (action === "commit") {
+  const input = deserialize(readFileSync(documentPath));
+  const result = commitInput(directory, input);
   process.stdout.write(JSON.stringify(result));
+} else if (action === "commit-contended") {
+  process.stdout.write(JSON.stringify(
+    contestedCommit(directory, documentPath, readyPath, releasePath)
+  ));
 } else if (action === "load") {
   const restored = loadConfidentialPlacementJournal(directory);
   writeFileSync(documentPath, restored.journal_bytes);
@@ -223,5 +260,7 @@ if (action === "commit") {
 } else if (action === "load-map-poison") {
   process.stdout.write(JSON.stringify(loadWithSelectiveSelfRestoringMapPoison(directory)));
 } else {
-  throw new Error("commit, load, load-map-poison, or poison action required");
+  throw new Error(
+    "begin, commit, commit-contended, load, load-map-poison, or poison action required"
+  );
 }

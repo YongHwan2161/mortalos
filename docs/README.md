@@ -11,7 +11,8 @@ Last synchronized: **2026-08-10 KST**
 - [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) — source
   contract, executable local gates, and nonclaims.
 - [Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md)
-  — ciphertext shards, proof freshness, crash recovery, and custody succession.
+  — ciphertext shards, journal-v2 reproof epochs and cumulative receipt high-waters,
+  local crash recovery, and custody succession.
 - [Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md) — current-
   descriptor generation commit, derived placement action plan, deterministic
   convergence, and fork halt.
@@ -59,10 +60,17 @@ discovery, signaling, Cloudflare, and GPT decide none of those results.
 Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
 continuity and local resource-execution verticals. This revision adds direct WebRTC
 transport, receipt-gated placement/repair, S4 ciphertext-only 2-of-3 provider
-shards, bounded proof freshness, evaluator-branded complete-barrier crash journals
-rederived inside the durable commit boundary, and
-successor-authorized new-lease continuation after A exits. The operational signer is
-not inferred to be B's Continuity custody identity. This revision also binds
+shards, bounded proof freshness, and journal v2. Each reproof context binds the exact
+prior head, next generation, manifest/policy, and epoch; each challenge nonce binds
+that context plus its receipt-chain predecessor. Durable commit rederives a branded
+active `3/3` set from raw signed evidence, retains cumulative per-chain high-waters,
+and claims one successor per prior through a no-replace hard link. V1 is metadata-only
+migration input and requires a fresh rotated-epoch `3/3` reproof. The format and
+adapter are bounded and fail closed at their generated caps. They remain unsigned
+local evidence, not hostile-disk protection, hidden-history detection, or global
+consensus. The same revision adds successor-authorized new-lease continuation after
+A exits. The operational signer is not inferred to be B's Continuity custody
+identity. It also binds
 placement generations to Continuity, gates derived placement action plans on a
 current-descriptor commit, requires every supplied authenticated Capsule tip to be
 represented by the convergence chain, and halts incomplete or sibling forks.

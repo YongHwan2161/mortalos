@@ -27,6 +27,14 @@
     "responses_per_evaluation": 16,
     "witnesses_per_policy": 16
   },
+  "placement_journal": {
+    "document_bytes": 2097152,
+    "epoch_nonce_bytes": 32,
+    "head_transitions_max": 4096,
+    "high_waters_per_shard_max": 128,
+    "high_waters_total_max": 384,
+    "reproof_nonce_bytes": 16
+  },
   "provider": {
     "object_bytes": 8388608,
     "objects_per_room": 512

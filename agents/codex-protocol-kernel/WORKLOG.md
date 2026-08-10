@@ -2290,3 +2290,62 @@ result, and reproducible verification.
   Verify, immutable independent review, App attestation, separately credentialed
   native approval, expected-head merge, exact-main Verify/Deploy, and public artifact
   readback remain external gates.
+
+## 2026-08-10 KST — Journal v2 cumulative anti-replay and hard-link successor CAS
+
+- The fifth-review journal repair proved complete active `3/3` provenance for one
+  head but did not preserve every older receipt-chain barrier after provider
+  replacement. A public evaluator input could also choose its own replay context.
+  Journal v2 moves that authority into a prior-head-bound reproof intent and a
+  module-private branded evaluation.
+- Each reproof context binds prior journal ID, next generation, manifest, policy,
+  epoch parent, and a 256-bit epoch nonce. Each challenge nonce is derived from the
+  context plus the exact chain ID, sequence, and predecessor. Only active shards
+  0/1/2 under three distinct providers can advance the head.
+- The journal now carries cumulative per-chain high-waters for the epoch. A/B/C
+  remain replay barriers after D/E/F becomes active; a known chain advances only as
+  the exact direct successor, while a new chain starts at sequence zero. A rotated
+  epoch can reset this bounded state only after a fresh context-bound `3/3` reproof.
+- Legacy v1 is metadata-only migration input. It cannot seed v2 high-waters or be
+  treated as available until a fresh rotated-epoch reproof commits. Generated caps
+  bound documents, linked transitions, per-shard and total high-waters, and nonce
+  sizes; overflow fails closed without pruning.
+- The durable adapter fsyncs immutable context, journal, and transition files before
+  separate predecessor-keyed no-replace hard-link claims for reproof intent and
+  successor commit. This gives conforming same-filesystem writers a single winner
+  and rejects stale writers without reintroducing a mutable current pointer.
+- Focused source gates are `test/confidential-journal-v2.test.mjs` and
+  `test/confidential-controller-v2.test.mjs`, with the existing confidential policy
+  corpus and actual Chromium vertical as supplementary evidence. Verification and
+  exact-revision governance results must be recorded separately; this entry does not
+  infer PASS, approval, merge, deployment, or promotion.
+- Journal, context, and transition artifacts remain unsigned local evidence. They do
+  not prove hostile-disk integrity, completely hidden receipt history, cross-host or
+  global consensus/currentness, physical independence, or arbitrary Internet
+  reachability. The next P0 order remains provider-agreed lease-bound liveness policy
+  plus effect-time exactly-once repair execution, followed by lineage-governed
+  admission and failure-domain accounting.
+
+## 2026-08-10 KST — Journal v2 final local release gate
+
+- Adversarial pre-freeze review found and closed late-v1 migration-anchor drift,
+  self-rehashed skipped-generation genesis contexts, SharedArrayBuffer-backed byte
+  inputs, partial-canonical crash publication, generation-4096 off-by-one handling,
+  and mutable diagnostic proof projections. Visible late-v1 competition now halts
+  as `E_CONFIDENTIAL_PLACEMENT_ROOT_FORK`; `prior=null` requires generation 1 at
+  restore, binding, and durable genesis boundaries.
+- Exact focused evidence: journal plus confidential placement `12/12`; durable
+  controller `3/3` in `409.7s`; security boundary `26/26` with `22` direct and `128`
+  discovered surfaces; packed SDK/profile/spec/links PASS; audit `0` vulnerabilities.
+  The controller corpus includes different-candidate one-winner, same-candidate
+  idempotence, partial/complete pending orphan isolation, late-v1 root fork, exact
+  generation 4,096 load, generation 4,097 rejection, and child `LiveCount=0`.
+- A fresh uninterrupted ordered `npm test` then passed in `4,304.1s` (`71m 44s`),
+  including both actual Chromium placement verticals, lineage, portable
+  `10,000/10,000`, UX, Lab, and historical H2/S3/S4 verifiers. No test workload
+  remained after completion. Only this evidence-only documentation update followed
+  the runtime run; final exact-head CI must rerun the complete chain.
+- This is local source/runtime evidence, not promotion. Policy, exact-head Verify,
+  fresh immutable independent review, App attestation, separately credentialed
+  native approval, expected-head merge, exact-main Verify/Deploy, and public
+  artifact readback remain external gates.

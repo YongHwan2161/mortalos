@@ -34,6 +34,21 @@ if (
     "placement failure certificates must hold the maximum resource offer witness roster"
   );
 }
+const journal = profile.placement_journal;
+if (
+  !journal ||
+  journal.document_bytes !== 2 * 1024 * 1024 ||
+  journal.epoch_nonce_bytes !== 32 ||
+  journal.reproof_nonce_bytes !== 16 ||
+  journal.head_transitions_max !== 4096 ||
+  !Number.isSafeInteger(journal.high_waters_per_shard_max) ||
+  journal.high_waters_per_shard_max < 1 ||
+  journal.high_waters_total_max !== journal.high_waters_per_shard_max * 3
+) {
+  throw new Error(
+    "placement journal limits must bind 256-bit epochs, 128-bit reproofs, 2 MiB documents, and three equal shard histories"
+  );
+}
 const body = JSON.stringify(sorted(profile), null, 2)
   .replace(/"([^"\\]+)":/g, "$1:")
   .replace(/^(\s*)"([^"\\]*)"([,]?)$/gm, '$1"$2"$3');

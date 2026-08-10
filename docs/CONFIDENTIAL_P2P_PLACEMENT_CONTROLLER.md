@@ -63,42 +63,62 @@ lineage creator emits no proved generation for either stale-time input.
 
 ## Crash and custody succession
 
-The portable journal contains only canonical public evidence: manifest, policy,
-generation, provider/shard identity, challenge sequence, and last receipt ID. A v1
-journal is valid only when it contains exactly one receipt barrier for each of the
-three shards under three distinct providers. Barriers include the last verified
-receipt even when its current evaluation is `stale` or `unavailable`; otherwise a
-caller could omit that record and replay it after restart.
+The portable v2 journal contains only canonical public evidence. Its
+`active_proofs` are the current distinct-provider shard 0/1/2 proofs, while
+`receipt_high_waters` is an epoch-wide append-only logical set for every receipt
+chain ever committed in that epoch. A chain is identified by manifest, shard,
+provider, lease, and workload—not by provider alone and not by receipt ID. Provider
+replacement therefore does not erase an earlier chain, while the same provider may
+legitimately start sequence zero under a different signed lease.
+
+Every generation begins with a canonical reproof context that binds the exact prior
+journal ID, next generation, manifest, proof-age policy, quorum, target shards, and
+epoch. The storage execution challenge nonce is deterministically derived from that
+context plus chain identity, sequence, and prior receipt ID. Because the complete
+challenge is signed by the consumer and embedded in the provider-signed execution
+receipt, a byte-identical receipt created before the current durable head cannot be
+relabelled as current proof. An existing chain must advance by exactly one and name
+its exact high-water receipt; a new lease chain must start at sequence zero with a
+null predecessor. All three active receipts must be current-context proofs before a
+new journal can be branded or committed. Stale, unavailable, partial, old-context,
+and replayed evidence leaves the durable head unchanged.
 
 `createConfidentialPlacementJournal` accepts only a module-private result produced
-by `evaluateConfidentialStoragePlacements`, not an evaluation-shaped plain object,
-clone, accessor, or Proxy. That brand is issued only after the evaluator copies its
-recognized option/placement records, dense arrays, and byte views into owned inert
-data, uses captured array and collection operations, and rechecks the runtime after
-hostile acquisition and after nested signed-artifact validators. It never invokes a
-caller array method or recognized getter. Selective `Array.prototype.map`, a
-Proxy-array method override, `Map.get`, or `Set.has` therefore cannot fabricate a
-proved evaluation and obtain the private brand. The Node Lab commit boundary does not accept caller-made
-`journal_bytes`; it re-evaluates the raw signed placement records and derives the
-journal in the commit process. Empty or partial evidence cannot advance v1 because
-v1 has no authenticated prior-barrier carry-forward mechanism. Restoration again
-requires the complete ordered barrier set. The adapter then persists the immutable
-journal and append-only generation-pointer files. A crash before the pointer leaves
-an ignored orphan; two different pointers for the same highest generation halt as a
-fork instead of choosing a winner. Restart loading checks runtime integrity at entry
-and after each filesystem acquisition, copies the directory listing into dense owned
-data, and uses captured pointer parsing plus an order-independent bounded scan for the
-maximum generation. A selective self-restoring prototype override therefore cannot
-hide the newest pointer and make an older journal current. A historical fork below a
-unique later generation remains historical rather than becoming a listing-order
-dependent false halt.
+by `evaluateConfidentialPlacementReproof`, not an evaluation-shaped plain object,
+clone, accessor, or Proxy wrapper around that result. The evaluator snapshots recognized records, dense arrays,
+and byte views into owned inert data, uses captured collection operations, and
+rechecks the realm around nested signed-artifact validation. The durable commit API
+does not accept caller-selected generation, prior journal, high-water set, context
+bytes, or journal bytes. `beginConfidentialPlacementReproof` reads the authoritative
+head and fsyncs one immutable prior-bound intent before any receipt is produced;
+commit reloads that intent and head, re-evaluates raw signed placements, and derives
+the journal inside the boundary.
 
-After restart, an old receipt is not silently reused. For an existing lease, the
-next counted proof must directly reference the journaled receipt and increment the
-challenge sequence. A genuinely new provider and lease may enter with its first
-valid receipt. The journal remains unsigned local crash-policy evidence: file mode,
-directory custody, and the conforming commit adapter are trust assumptions. It does
-not claim hostile-disk tamper resistance or global placement truth.
+The v2 adapter writes immutable journal and transition files, then hard-links the
+complete transition to a canonical `successor-<prior>.json` path. That no-replace
+hard link is the CAS linearization point: different candidates for one prior cannot
+both commit, an identical retry is idempotent, and a stale writer cannot append to a
+  superseded head. A process crash before CAS leaves only ignored immutable orphans; after CAS,
+  the claim already names a complete fsynced transition and journal. Loading follows
+  successor claims from genesis or the exact legacy head rather than selecting the
+  largest directory filename.
+
+Journal v1 remains parseable only as migration metadata. Its three visible barriers
+are not treated as complete history. Migration first persists a new 256-bit epoch
+intent bound to the v1 head and remains unavailable until three fresh context-bound
+storage receipts exist. Every visible v1 pointer is also checked for a v2 successor;
+a late v1 writer that competes with an already-migrated anchor is a root fork, never
+an automatically selected replacement. The epoch high-water ceilings are generated from the protocol
+profile (128 chains per shard, 384 total); overflow fails closed without pruning and
+requires another prior-bound epoch rotation. The journal remains unsigned local
+  crash-policy evidence: file mode, directory custody, and the conforming controller
+  are trust assumptions. It does not claim hostile-disk tamper resistance, global
+  placement consensus, physical provider independence, or sudden-power-loss
+  durability on a platform/filesystem that rejects directory fsync. Crash-left
+  `.mortalos-pending-*` files are ignored but bounded reclamation is not yet implemented,
+  so repeated crashes can consume disk and cause fail-closed unavailability. The
+  adapter also assumes a trusted Node bootstrap and unmodified built-in module
+  bindings; same-process arbitrary code is not a sandboxed adversary.
 
 A stronger operational rule applies after endpoint A exits: A's private consumer
 key is not transferred merely to extend A's leases. B reconstructs the encrypted
@@ -112,7 +132,7 @@ controller delegation.
 
 | Gate | Command | Result |
 | --- | --- | --- |
-| Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future/replay rejection; generation-time completion and effective-revocation rejection; owned-inert evaluator acquisition, selective array/Proxy/collection poison containment, private brand/WeakMap-prototype containment, zero/partial/self-hashed incomplete journal rejection, durable in-process re-derivation, self-restoring stale-pointer concealment rejection, order-independent current-fork selection, real commit-process exit/load-process restart, and directly chained re-proof |
+| Shard, freshness, journal, repair negatives | `node --test test/confidential-placement.test.mjs test/confidential-journal-v2.test.mjs` | Actual S4 package; every 2-of-3 pair; one/corrupt/duplicate/wrong-workload/stale/future rejection; generation-time completion and effective-revocation rejection; owned-inert evaluator and reproof-context acquisition; A/B/C→D/E/F→old A/B/C replay rejection; unseen historical receipt rejection; direct successor and new-lease acceptance only under the current context; v1 migration reproof; exact history cap/+1 failure; and journal/context tamper rejection |
 | Seeded controller policy corpus | same command | 100 deterministic loss, stale, repair, and corrupt-evidence cycles over cryptographically verified fixture states; no claim of 100 physical failures |
 | Existing plaintext P2P regression | `node scripts/verify-p2p-placement-chromium.mjs` | Direct DataChannel transport, provider loss, repair, A exit, 2-of-3 readback |
 | Confidential Chromium vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual 98,317-byte native File; S4 encryption for B; three distinct ciphertext shards plus liveness challenge over WebRTC; provider loss; four observer processes and 3-of-4 certificate; A lineage commit; sign-once A→B custody handoff; A exit; successor-authorized operational signer creates new leases and successor commit; byte-identical convergence; corrupt-shard rejection; exact decryption; no custody-identity binding claim |

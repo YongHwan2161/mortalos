@@ -70,6 +70,8 @@ export async function createPlacementSigner() {
 }
 
 export async function createStoragePlacementFixture({
+  challengeNonce = null,
+  challengeNonceFactory = null,
   consumer,
   provider,
   resourceBytes,
@@ -78,6 +80,9 @@ export async function createStoragePlacementFixture({
 }) {
   if (!consumer?.identity || !provider?.identity || !Array.isArray(witnesses) || witnesses.length !== 4) {
     throw new TypeError("consumer, provider, and four witness signers required");
+  }
+  if (challengeNonce !== null && challengeNonceFactory !== null) {
+    throw new TypeError("provide either challengeNonce or challengeNonceFactory");
   }
   const resource = new Uint8Array(resourceBytes);
   if (typeof provider.store === "function") await provider.store(resource);
@@ -144,13 +149,23 @@ export async function createStoragePlacementFixture({
   const workload = createResourceContentCommitment(resource);
   const openedOffer = JSON.parse(new TextDecoder().decode(offer));
   const openedLease = JSON.parse(new TextDecoder().decode(lease));
+  const challengeIdentity = Object.freeze({
+    challenge_sequence: "0",
+    lease_id: openedLease.lease_id,
+    previous_execution_receipt_id: null,
+    provider_id: provider.identity.key_id,
+    workload_id: deriveResourceExecutionWorkloadId({ kind: "storage", workload })
+  });
+  const resolvedChallengeNonce = challengeNonceFactory === null
+    ? (challengeNonce ?? nonce(seed + 2))
+    : await challengeNonceFactory(challengeIdentity);
   const challengeDraft = prepareResourceExecutionChallenge({
     offer,
     lease,
     previous_execution_receipts: [],
     usage_receipts: [],
     body: {
-      challenge_nonce: nonce(seed + 2),
+      challenge_nonce: resolvedChallengeNonce,
       challenge_sequence: "0",
       consumption_id: activation.consumption_id,
       issued_at_ms: "1300",
@@ -247,6 +262,8 @@ export async function createStoragePlacementFixture({
 }
 
 export async function refreshStoragePlacementFixture({
+  challengeNonce = null,
+  challengeNonceFactory = null,
   consumer,
   fixture,
   issuedAtMs,
@@ -259,6 +276,9 @@ export async function refreshStoragePlacementFixture({
   }
   if (!Number.isSafeInteger(issuedAtMs) || issuedAtMs < 1302 || issuedAtMs >= 8900) {
     throw new TypeError("issuedAtMs must remain inside the active lease");
+  }
+  if (challengeNonce !== null && challengeNonceFactory !== null) {
+    throw new TypeError("provide either challengeNonce or challengeNonceFactory");
   }
   const resource = new Uint8Array(resourceBytes);
   const prior = fixture.placement;
@@ -283,13 +303,23 @@ export async function refreshStoragePlacementFixture({
   const openedLease = JSON.parse(new TextDecoder().decode(lease));
   const sequence = executions.length;
   const workload = createResourceContentCommitment(resource);
+  const challengeIdentity = Object.freeze({
+    challenge_sequence: String(sequence),
+    lease_id: openedLease.lease_id,
+    previous_execution_receipt_id: lastExecution.receipt_id,
+    provider_id: provider.identity.key_id,
+    workload_id: deriveResourceExecutionWorkloadId({ kind: "storage", workload })
+  });
+  const resolvedChallengeNonce = challengeNonceFactory === null
+    ? (challengeNonce ?? nonce(seed))
+    : await challengeNonceFactory(challengeIdentity);
   const challengeDraft = prepareResourceExecutionChallenge({
     offer,
     lease,
     previous_execution_receipts: executions,
     usage_receipts: usages,
     body: {
-      challenge_nonce: nonce(seed),
+      challenge_nonce: resolvedChallengeNonce,
       challenge_sequence: String(sequence),
       consumption_id: lastExecution.body.consumption_id,
       issued_at_ms: String(issuedAtMs),

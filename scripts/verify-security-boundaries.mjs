@@ -229,11 +229,12 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
 
 // These synchronous producer/commit boundaries mint or persist replay-policy
 // evidence. Pin their complete reviewed implementations so a later edit cannot
-// silently weaken the module-private evaluation brand or reintroduce a raw-journal
-// durable commit path while the async-only inventory remains green.
+// silently weaken the module-private evaluation brand, prior-head reproof context,
+// cumulative receipt high-water, or no-replace durable successor boundary while the
+// async-only inventory remains green.
 const SYNC_TRUST_BOUNDARY_MODULE_DIGESTS = Object.freeze({
-  "lab/placement/confidential-controller.mjs": "907a0b1c766836f94ffdf32393d64e1b08a99fc48407f1503e6a34ab07283d1c",
-  "src/placement/confidential.mjs": "77a35151f49153ba582cfc7f56ca51ba5e72432af5796f32481571eaec0d3feb"
+  "lab/placement/confidential-controller.mjs": "0ff04b683512f9d8493ef5c6dd5720a57df9c2e0abcda562a273fd31bc3710d5",
+  "src/placement/confidential.mjs": "b1340f5c3c8bac048db734650df0f1ca7147593204fc67db56fcab3f6c0f5e04"
 });
 
 // A classification is a reviewed security decision, not a permanent textual

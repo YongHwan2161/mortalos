@@ -336,10 +336,32 @@ unavailability cannot count. Meeting the recovery quorum but not the target retu
 
 The confidential composition adds shard-specific workload binding and an explicit
 local freshness window. Exact maximum age counts; maximum plus one millisecond is
-`stale-proof`. A crash-restored journal requires an existing lease to extend the
-journaled execution receipt directly before it can count again. A separately
-generated successor-authorized operational signer creates new leases rather than
-receiving A's private key. The operational signer is not inferred to be, or
+`stale-proof`. Journal v2 creates a canonical reproof context before receipt
+production. The context binds the exact prior journal ID, next generation,
+confidential manifest, freshness/`2-of-3` policy, and epoch. Each storage challenge
+nonce is derived from the context ID, receipt-chain identity, next sequence, and
+previous receipt ID. A durable head requires three currently active proofs for
+shards 0/1/2 under three distinct providers; two shards remain enough for recovery
+but cannot advance anti-replay state.
+
+Within one journal epoch, `receipt_high_waters` retains the latest committed receipt
+for every lease/provider/shard/workload chain, including chains that are no longer
+in the active `3/3`. A known chain must present the exact next sequence and direct
+receipt predecessor. A genuinely new chain starts at sequence zero with no
+predecessor. Provider replacement therefore adds D/E/F without discarding A/B/C's
+barriers. Rotation may reset this bounded accumulator only after a new epoch context
+and fresh context-bound `3/3` proofs commit. A v1 journal contributes parent and
+generation metadata only; it cannot seed v2 high-waters or become live without that
+fresh rotated-epoch reproof.
+
+The Node durable adapter writes immutable context, journal, and transition files and
+uses separate predecessor-keyed no-replace hard-link claims for the reproof intent
+and successor commit. This is a local same-filesystem CAS for conforming writers,
+not a signature or global fork-choice mechanism. Journal, context, and transition
+documents are unsigned; hostile-disk replacement, valid receipt history withheld
+from the local accumulator, and cross-host/global consensus remain outside the
+claim. A separately generated successor-authorized operational signer creates new
+leases rather than receiving A's private key. It is not inferred to be, or
 cryptographically bound to, B's Continuity custody identity.
 
 The lineage-placement source derives a deterministic placement action plan

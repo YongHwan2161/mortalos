@@ -30,19 +30,22 @@ post-merge workflows, and deployed asset manifest.
   channels with origin/relay cut after bootstrap, Lab parity, packed-consumer
   operation, corrupt/single/stale/fork/cross-lease/revoked/exhausted/duplicate-
   provider rejection, and explicit physical-independence HOLD.
-- Focused policy, Node process, transport, Chromium origin-cut, SDK, clean package,
-  Lab build, portable `10,000/10,000`, and async security-inventory gates pass
-  locally. The final ordered `npm test` passed in `4,168.7s`. The first full run
+- Focused journal/controller, policy, Node process, transport, Chromium origin-cut,
+  SDK, clean package, Lab build, portable `10,000/10,000`, and async security-
+  inventory gates pass on the current journal-v2 source. Its final ordered `npm test`
+  passed without a skipped gate in `4,304.1s` (`71m 44s`). The first full run
   correctly BLOCKed a WebRTC adapter under portable `src/`; moving it to the Lab
   browser-platform layer preserved actual browser behavior and restored the
   network-free portable boundary. This source document does not infer exact-head
   governance, deployment, or promotion status.
 - The confidential controller is implemented locally: S4 package 2-of-3 shards,
   shard/provider/workload identity binding, exact proof-age boundary, crash-safe
-  canonical journal, post-restart direct-successor proof requirement, deterministic
-  repair plan, and new leases under a separately generated successor-authorized
-  operational signer after A exits. That signer is not cryptographically bound to
-  B's Continuity custody identity.
+  journal-v2 reproof contexts bound to the exact prior head and epoch, cumulative
+  receipt-chain high-waters, an active distinct-provider `3/3` head barrier, and
+  predecessor-keyed hard-link successor CAS. V1 is migration metadata only and needs
+  a fresh rotated-epoch reproof. Deterministic repair and new leases use a separately
+  generated successor-authorized operational signer after A exits; that signer is
+  not cryptographically bound to B's Continuity custody identity.
 - The lineage-bound source revision adds canonical placement generations, revalidates
   nested public evidence, and commits only through the current Continuity
   descriptor's required quorum. `deriveCommittedPlacementActionPlan` returns
@@ -156,6 +159,35 @@ post-merge workflows, and deployed asset manifest.
   historical prefixes and deterministic input ordering remain supported. A hidden
   newer Capsule and hostile local-disk replacement remain explicit nonclaims. Fresh
   exact-head CI and immutable re-review are external facts and are not inferred here.
+- The journal-v1 provenance repair above was necessary but not sufficient for
+  cumulative anti-replay. Current journal v2 gives each predecessor exactly one
+  immutable reproof-context intent, binding prior journal ID, next generation,
+  manifest/policy, epoch parent, and a 256-bit epoch nonce. Storage challenge nonces
+  are derived from that context plus chain identity, sequence, and predecessor.
+  Only a module-private branded active shards-0/1/2 distinct-provider `3/3` can form
+  a head. `receipt_high_waters` accumulates every committed chain in the epoch, so
+  replacing A/B/C with D/E/F does not erase A/B/C replay barriers; a known chain
+  must advance exactly once while a new chain starts at sequence zero.
+- `beginConfidentialPlacementReproof` and `commitConfidentialPlacementJournal`
+  rederive the current linked head and use separate predecessor-keyed no-replace
+  hard-link claims for intent and successor. Immutable context, journal, and
+  transition files are fsynced before the link linearization point. V1 load remains
+  unavailable, continuation without rotation fails, and migration commits only
+  after a fresh context-bound `3/3` set. All visible v1 anchors are checked for a v2
+  successor; a late v1 pointer competing with the migrated anchor halts as a root
+  fork. Caps are profile-generated: 2 MiB document,
+  4,096 head transitions, 128 high-waters per shard, 384 total, 32-byte epoch nonce,
+  and 16-byte derived reproof nonce; no pruning is an authorization path.
+- Primary focused gates are `test/confidential-journal-v2.test.mjs` and
+  `test/confidential-controller-v2.test.mjs`, supplemented by
+  `test/confidential-placement.test.mjs` and the actual Chromium confidential
+  vertical. The v2 artifacts remain unsigned local crash-policy evidence. A
+  conforming same-filesystem hard-link winner does not prove hostile-disk integrity,
+  receipt history hidden from every supplied head, cross-host consensus, or global
+  currentness. Crash-left pending files are ignored, but bounded cleanup and sudden-
+  power-loss durability remain HOLD. The next P0 remains provider-agreed lease-bound
+  liveness policy plus independent possession response and effect-time exactly-once
+  repair execution; lineage-governed admission/failure-domain accounting follows.
 
 ### HISTORICAL CONTEXT — Receipt-gated participant placement and repair
 

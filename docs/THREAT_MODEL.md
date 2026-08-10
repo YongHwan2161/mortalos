@@ -592,8 +592,12 @@ The revision must identify the new trust assumption, affected invariant, failure
   package. Providers receive no resource plaintext, epoch key, unwrap authority, or
   custodian private key. This depends on S4 encryption; XOR shard coding itself is
   availability coding and is not plaintext secret sharing.
-- A restored controller does not count the same prior receipt again. An existing
-  lease must extend the journaled receipt directly; after custody moves from A to B,
+- A restored controller does not count the same prior receipt again, including after
+  its provider was replaced and later returns. Every counted receipt carries a
+  signed challenge nonce derived from the exact prior journal and next generation.
+  The epoch-wide cumulative high-water retains replaced provider/lease chains; an
+  existing chain must extend its exact high-water and a new lease may start at zero
+  only under the current context. After custody moves from A to B,
   a separately generated successor-authorized operational signer creates new leases
   rather than receiving A's private consumer key. This operational identity is not
   inferred to be, or cryptographically bound to, B's Continuity custody identity.
@@ -604,14 +608,24 @@ The revision must identify the new trust assumption, affected invariant, failure
   and nested validators before issuing the brand. It does not invoke caller array
   methods or recognized getters, so selective array-method, Proxy-array, accessor,
   Map, or Set poisoning fails closed rather than producing proved barriers. The durable commit
-  adapter rederives a complete three-shard barrier from raw verified placement
-  evidence. Empty, partial, cloned, accessor-backed, Proxy-backed, or manually
-  self-hashed incomplete journals cannot advance the pointer. Stale or unavailable
-  receipt-bearing placements remain barriers. Restart enumeration and pointer
-  selection are also contained and checked before/after filesystem reads; a
-  self-restoring prototype override cannot conceal the newest existing generation,
-  and current-fork selection is independent of listing order. Hostile replacement of an otherwise
-  complete unsigned journal on local disk is outside this source claim.
+  adapter first persists a prior-bound reproof intent and then rederives a complete
+  three-shard v2 journal from raw verified placement evidence. Empty, partial, old-
+  context, stale, unavailable, cloned, accessor-backed, or manually self-hashed input
+  cannot advance the head. A transparent Proxy is judged by its captured own-data view
+  under the general Proxy nonclaim; it cannot manufacture the private evaluator brand
+  or valid signed receipts. Replaced chains remain in the bounded
+  cumulative high-water; overflow halts without pruning. The v1 visible barriers are
+  never treated as full migration history, so v1 remains unavailable until a fresh
+  epoch-bound 3/3 reproof exists. A visible late v1 pointer competing with a migrated
+  v1 anchor is a root fork and halts. The filesystem adapter fsyncs immutable journal and
+  transition documents and uses one prior-keyed no-replace hard link as its CAS.
+  This makes a pre-CAS orphan invisible and prevents two conforming writers from
+  committing different successors to one prior. Hostile replacement of otherwise
+  complete unsigned local files and sudden power loss on a filesystem that rejects
+  directory fsync remain outside this source claim. Crash-left pending files are
+  ignored; bounded garbage collection for repeated pending-file accumulation remains HOLD.
+  The local adapter assumes trusted Node bootstrap/built-in bindings and does not
+  sandbox arbitrary code already running with the same process and directory authority.
 - Canonical placement generations are committed through the current Continuity
   descriptor's quorum-authorized sign-once transition. A verified commit qualifies derivation of a
   deterministic placement action plan. `deriveCommittedPlacementActionPlan` returns

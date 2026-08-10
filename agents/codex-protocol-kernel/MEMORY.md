@@ -217,27 +217,45 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   deterministic 2-of-3 ciphertext envelopes and binds each shard to its own exact
   storage workload. Any two valid shards reconstruct and reverify the package;
   one, duplicate, corrupt, or wrong-manifest shard fails closed.
-- Placement counts only fresh distinct-provider/distinct-shard receipts. Exact max
-  age passes and max+1 fails. A restored canonical journal refuses the same
-  pre-crash receipt and requires a direct chained successor or a new provider/lease.
-- A journal-shaped object and its self-hash are not producer evidence. Journal v1
-  accepts only a module-private branded evaluator result with exact `2-of-3` policy
-  and a complete three-shard/distinct-provider receipt barrier. Brand issuance uses
-  owned inert snapshots, captured collection operations, and post-acquisition plus
-  post-validator realm checks; caller array methods, Proxy-array method overrides,
-  accessors, and selective collection poisoning cannot mint the brand. Stale and unavailable
-  receipt-bearing placements remain barriers. The durable commit process re-evaluates
-  raw signed placement evidence and refuses raw journal bytes, empty/partial evidence,
-  clones, accessors, Proxies, and self-hashed incomplete documents. The unsigned
-  local journal does not claim hostile-disk tamper resistance.
-- Restart load checks the realm at entry and after filesystem reads, copies the
-  directory listing as dense own data, and uses contained pointer parsing plus one
-  order-independent maximum-generation/fork scan. A selective self-restoring array
-  method cannot hide the newest existing pointer; it is rejected without invocation.
-  Only a fork at the current maximum generation halts, independent of listing order.
-- The Node gate uses separate commit and load processes for the journal and runs
-  100 deterministic loss/stale/repair/corrupt policy cycles over cryptographically
-  verified states. This is not 100 physical failure domains.
+- Placement counts only fresh distinct-provider/distinct-shard receipts at the
+  canonical generation time. Exact max age passes and max+1 fails; historical
+  observation time cannot preserve an expired or effectively revoked lease.
+- Journal v2 first claims an immutable reproof context bound to the exact prior
+  journal head, next generation, manifest, max-age/`2-of-3` policy, epoch parent,
+  and a 256-bit epoch nonce. Each storage challenge nonce is derived from that
+  context plus receipt-chain identity, sequence, and predecessor.
+- A journal-shaped object and its self-hash are not producer evidence. Only a
+  module-private branded active shards-0/1/2, distinct-provider `3/3` evaluation can
+  form a head. Brand issuance uses owned inert snapshots, captured collection
+  operations, and post-acquisition plus post-validator realm checks; caller array
+  methods, Proxy-array method overrides, accessors, and selective collection
+  poisoning cannot mint the brand.
+- `receipt_high_waters` is cumulative for every lease/provider/shard/workload chain
+  committed during an epoch. Replacing A/B/C with D/E/F does not erase A/B/C replay
+  barriers. A known chain must advance exactly one sequence and name the prior
+  receipt; a new chain starts at sequence zero. Rotation can reset the bounded
+  accumulator only after a fresh context-bound `3/3` set commits.
+- V1 is migration metadata only. It supplies parent/generation provenance but never
+  seeds v2 high-waters or becomes available until a fresh rotated-epoch context and
+  three new context-bound receipts commit.
+- The durable adapter re-evaluates raw signed inputs, fsyncs immutable context,
+  journal, and transition files, and uses separate predecessor-keyed no-replace
+  hard-link claims for reproof intent and successor commit. Conforming writers on
+  one filesystem get one successor winner; stale writers fail and restart walks the
+  linked head rather than trusting a mutable current pointer.
+- Profile-generated caps are 2 MiB per journal, 4,096 linked head transitions, 128
+  high-waters per shard, 384 total, a 32-byte epoch nonce, and a 16-byte derived
+  reproof nonce. Overflow fails closed without silent pruning.
+- `test/confidential-journal-v2.test.mjs` covers cumulative A/B/C-to-D/E/F history,
+  old/unseen replay, exact known-chain successors, epoch rotation, v1 fresh-reproof
+  migration, caps, and hostile inputs. `test/confidential-controller-v2.test.mjs`
+  covers fresh-process intent/successor CAS, concurrent one-winner behavior, stale
+  writers, restart traversal, and migration HOLD. The older policy corpus and actual
+  Chromium confidential vertical remain supplementary gates.
+- Journal, context, and transition documents are unsigned local crash-policy
+  evidence. They do not prove hostile-disk integrity, discover completely hidden
+  valid receipt history, establish cross-host/global consensus or global currentness,
+  or turn 100 deterministic cycles into 100 physical failure domains.
 - The actual Chromium vertical encrypts a native 98,317-byte File for B, stores only
   distinct ciphertext shards over direct DataChannels, cuts origin/relay requests,
   loses a provider, exits A, and makes B issue renewed placements under new
@@ -257,6 +275,15 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
 - The earlier lineage-only source passed its then-current final ordered `npm test`
   in 3,129.8s. Governance and deployment of any later revision are exact-SHA
   external facts and are never inferred from this memory.
+- The current journal-v2 source passed a fresh uninterrupted ordered `npm test` in
+  `4,304.1s` (`71m 44s`), including cumulative anti-replay, durable-controller
+  concurrency/migration/4,096-boundary regressions, lineage, both actual Chromium
+  placement verticals, portable `10,000/10,000`, UX, and historical receipts. The
+  evidence-only HANDOFF/MEMORY/WORKLOG update followed that runtime run; exact-head
+  CI remains authoritative for the final commit.
+- The next P0 order remains provider-agreed lease-bound liveness policy and an
+  effect-time exactly-once repair executor first; lineage-governed admission and
+  failure-domain accounting follow.
 
 ## Stable decisions
 

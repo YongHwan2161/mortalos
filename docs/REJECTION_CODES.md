@@ -232,19 +232,43 @@ authenticated placement transition visible in any supplied verified Capsule retu
 reset to generation 1. Historical prefix candidates remain valid when the complete
 chain represents every supplied Capsule tip.
 
-The confidential placement journal uses `E_CONFIDENTIAL_PLACEMENT_JOURNAL` when a
-caller supplies an unbranded evaluation, mismatched policy, empty/partial receipt
-barrier, non-v1 `2-of-3` policy, repeated provider/receipt identity, unordered shard
-barrier, or self-hashed incomplete document. The Lab durable commit boundary accepts
-raw signed placement inputs only and rejects a `journal_bytes`-shaped invocation
-before writing a journal or pointer. Evaluator acquisition and nested validation use
-owned inert snapshots plus contained operations; executable recognized fields,
-sparse arrays, caller method overrides, or runtime drift fail closed as
-`E_CONFIDENTIAL_PLACEMENT_FORMAT` and never produce the private journal brand.
-Durable load reports an intact-realm failure before invoking a poisoned listing
-method; malformed pointers use `E_CONFIDENTIAL_PLACEMENT_POINTER`, and two different
-journal IDs at the maximum observed generation use
-`E_CONFIDENTIAL_PLACEMENT_POINTER_FORK` independent of directory order.
+The confidential placement journal-v2 layer uses
+`E_CONFIDENTIAL_PLACEMENT_REPROOF` for a malformed context or one that does not bind
+the exact prior journal head, next generation, manifest/policy, or epoch transition,
+and for invalid chain/nonce-derivation inputs. During evaluation, a challenge nonce
+that differs from the context-derived value becomes the placement reason
+`reproof-context-mismatch`; a previously seen chain that is not the exact
+sequence/predecessor successor of its cumulative high-water becomes
+`restart-reproof-required`. Neither can enter the private active-proof brand.
+`E_CONFIDENTIAL_PLACEMENT_JOURNAL` rejects an unbranded evaluation, anything other
+than an active distinct-provider/shard `3/3` set, a context/journal mismatch,
+ambiguous or incomplete high-water history, an active proof that is not its chain
+high-water, or a malformed/self-hash-mismatched v2 document. Evaluator acquisition
+and nested validation use owned inert snapshots plus contained operations;
+executable recognized fields, sparse arrays, caller method overrides, or runtime
+drift fail closed as `E_CONFIDENTIAL_PLACEMENT_FORMAT` and cannot mint the private
+reproof brand.
+
+`E_CONFIDENTIAL_PLACEMENT_MIGRATION` prevents a legacy v1 journal from being restored
+as a live v2 head. The durable adapter reports
+`E_CONFIDENTIAL_PLACEMENT_MIGRATION_REPROOF_REQUIRED` until a v1 head receives a
+fresh 256-bit rotated-epoch context and three new context-bound receipts.
+The generated 2 MiB document, 4,096-transition head walk, 128 high-waters per
+shard, and 384 total high-water caps fail closed without pruning. Depending on the
+validation boundary, an overflow reports `E_CONFIDENTIAL_PLACEMENT_LIMIT`,
+`E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT`, or, for an oversized encoded input,
+`E_CONFIDENTIAL_PLACEMENT_FORMAT`. The v2 durable path uses predecessor-keyed
+no-replace hard links rather than a mutable current pointer:
+`E_CONFIDENTIAL_PLACEMENT_HEAD_STALE` rejects stale expected heads or losing
+successors, `E_CONFIDENTIAL_PLACEMENT_REPROOF_CONTEXT` rejects a missing or mismatched
+claimed intent, `E_CONFIDENTIAL_PLACEMENT_REPROOF_CONTEXT_FORK` rejects two
+incompatible intents for one predecessor, `E_CONFIDENTIAL_PLACEMENT_TRANSITION` and
+`E_CONFIDENTIAL_PLACEMENT_TRANSITION_BINDING` reject malformed or mismatched linked
+successors, `E_CONFIDENTIAL_PLACEMENT_GENERATION_SEQUENCE` rejects a nonconsecutive
+walk, `E_CONFIDENTIAL_PLACEMENT_IMMUTABLE_COLLISION` rejects different bytes at an
+already claimed immutable path, and `E_CONFIDENTIAL_PLACEMENT_ROOT_FORK` rejects
+simultaneous legacy and v2 roots. `E_CONFIDENTIAL_PLACEMENT_POINTER*` remains
+legacy-v1 migration parsing only, not the current-head protocol.
 
 The liveness layer uses local verifier errors: `E_PLACEMENT_LIVENESS_RUNTIME` and
 `E_PLACEMENT_LIVENESS_PROFILE` for realm-integrity or generated-ceiling drift;
