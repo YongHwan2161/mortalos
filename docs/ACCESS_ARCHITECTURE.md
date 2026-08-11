@@ -1,8 +1,8 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **PORTABLE CORE PROMOTED; P2P SOURCE + LOCAL EVIDENCE PASS; EXACT-SHA PROMOTION EXTERNAL**
+Status: **PORTABLE CORE PROMOTED; CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL**
 
-Last synchronized: **2026-08-10 KST**
+Last synchronized: **2026-08-11 KST**
 
 ## Decision
 
@@ -133,6 +133,18 @@ local range, remote range, or subscriber visibility while an allowed
 still not an end-to-end acknowledgement; signed higher-layer evidence remains the
 only placement authority.
 
+The one private transcript is also the shared resource-accounting boundary for both
+directions: at most 512 unique canonical messages and 8,388,608 decoded raw bytes.
+Duplicates are non-consuming. Outbound capacity is checked before native send and
+state is committed only after send succeeds. Inbound overflow commits no transcript
+or dedupe entry and schedules no subscriber delivery before fail-close; terminal
+cleanup then clears subscriptions. The virtual transport applies the
+same exact decoded-byte ceiling. The relay edge's base64 estimate may overcount
+slightly, so it shares only the upper ceiling and fail-closed guarantee, not byte-
+identical accounting. Local close, remote channel close, peer close, and error share
+one idempotent teardown path; each native close capability runs at most once, and a
+remote channel close closes a still-live peer instead of stranding it.
+
 ## Implemented portability evidence
 
 - R1-A has frozen bounded, versioned JavaScript operation/result records and committed
@@ -162,6 +174,14 @@ only placement authority.
   before exact 2-of-3 decrypt. That signer is not inferred to be, or
   cryptographically bound to, B's Continuity custody identity. Pages, origin, relay,
   and domain remain absent from the validity path.
+- Literal generated-boundary regressions cover exact 512 and message 513, exact
+8,388,608 raw bytes and byte 8,388,609, duplicate non-consumption, no overflow-frame
+commit or delivery before cleanup, and at-most-once native close capability use. The current candidate passes
+  focused Node `24/24` in `31,241ms` and the actual Chromium probe in `50,086ms`.
+  The prior `8,076.826s` runtime/test/workflow full-suite PASS predates the current
+  WebRTC remediation. The frozen runtime/test/workflow candidate passes the fresh
+  `8,631,790ms` suite through final `verify:s4`, its covered files stayed unchanged,
+  and docs pass separate spec/link/diff. Exact-SHA governance remains external.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
 or ambient-random dependency. All portable corpus results must remain byte-identical
@@ -215,7 +235,8 @@ conforming endpoint, requires a browser-only signed value, treats relay/GPT/UI o
 as authority, silently persists an ephemeral key, or converts disconnect into an
 unconditional death fact.
 
-The next root P0 is failure-precommitted liveness policy plus independent provider
-response and effect-time repair reconciliation. Lineage-governed admission and
+The next root P0 is a provider-signed lease-bound liveness policy plus independent
+provider possession response and an effect-time exactly-once repair executor.
+Lineage-governed admission and
 failure-domain accounting with explicit trust roots follows; self-asserted metadata
 must not manufacture quorum diversity.

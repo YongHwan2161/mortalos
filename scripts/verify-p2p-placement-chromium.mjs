@@ -76,6 +76,25 @@ async function verifyWebRtcPrimordials() {
       }
     });
     await page.goto(server.url, { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      const prototype = globalThis.RTCPeerConnection.prototype;
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, "close");
+      const nativeClose = descriptor.value;
+      Object.defineProperty(globalThis, "__MORTALOS_RTC_CLOSE_STATES__", {
+        configurable: true,
+        value: []
+      });
+      globalThis.__MORTALOS_RTC_CLOSE_TOTAL__ = 0;
+      Object.defineProperty(prototype, "close", {
+        ...descriptor,
+        value(...argumentsList) {
+          globalThis.__MORTALOS_RTC_CLOSE_TOTAL__ += 1;
+          const result = Reflect.apply(nativeClose, this, argumentsList);
+          globalThis.__MORTALOS_RTC_CLOSE_STATES__.push(this.connectionState);
+          return result;
+        }
+      });
+    });
     const result = await page.evaluate(async () => {
       const probe = await import("/webrtc-primordials.js");
       return probe.runWebRtcPrimordialBrowserProbe();
@@ -87,6 +106,16 @@ async function verifyWebRtcPrimordials() {
       constructor_poison_calls: 0,
       forbidden_local_frames: 0,
       forbidden_remote_frames: 0,
+      generated_boundaries: {
+        inbound_rejected_bytes: 8_388_609,
+        inbound_retained_bytes: 8_388_209,
+        inbound_messages: 512,
+        outbound_rejected_bytes: 8_388_609,
+        outbound_retained_bytes: 8_388_608,
+        outbound_messages: 512,
+        remote_peer_close_calls: 1,
+        remote_peer_connection_state: "closed"
+      },
       map_poison_calls: 0,
       peer_poison_calls: 0,
       remote_frames: 3,
@@ -554,6 +583,7 @@ try {
   console.log("- one corrupt readback was rejected and marked locally unavailable");
   console.log("- origin/HTTP/relay were denied after bundle load; no request occurred after the cut");
   console.log("- actual Chromium DataChannels retained captured transcript, scheduler, and peer capabilities under prototype poison");
+  console.log("- actual Chromium enforced generated 512-message/8-MiB outbound and inbound transcript ceilings and closed the peer on remote channel close");
   console.log("- selective artifact-kind Set.has poison could not send or commit a verdict; a challenge still crossed both peers");
   console.log("- all browsers shared one host/admin domain; physical independence remains HOLD");
 } finally {

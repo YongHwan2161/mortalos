@@ -8,7 +8,8 @@ import {
   createRelayControlMessage,
   decodeRelayFrame,
   decodeRelayMessageBytes,
-  openResourcePlacementArtifact
+  openResourcePlacementArtifact,
+  RELAY_LIMITS
 } from "../src/transport/protocol.mjs";
 import {
   decodeWebRtcSignal,
@@ -21,16 +22,24 @@ const sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
 
 async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = {}) {
   let channel;
+  let connection;
   class FakeChannel extends EventTarget {
     constructor() {
       super();
       this.bufferedAmount = 0;
+      this.closeCalls = 0;
       this.label = "mortalos-participant-v1";
       this.ordered = true;
       this.readyState = "open";
+      this.sendCalls = 0;
     }
-    close() { this.readyState = "closed"; }
+    close() {
+      this.closeCalls += 1;
+      this.readyState = "closed";
+      this.dispatchEvent(new Event("close"));
+    }
     send(value) {
+      this.sendCalls += 1;
       if (sendImpl) return sendImpl.call(this, value);
       this.sent = new Uint8Array(value);
     }
@@ -38,6 +47,8 @@ async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = 
   class FakePeer extends EventTarget {
     constructor() {
       super();
+      connection = this;
+      this.closeCalls = 0;
       this.connectionState = "connected";
       this.iceGatheringState = "complete";
       this.localDescription = null;
@@ -46,7 +57,11 @@ async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = 
     createDataChannel() { channel = new FakeChannel(); return channel; }
     async createOffer() { return { sdp, type: "offer" }; }
     async setLocalDescription(value) { this.localDescription = value; }
-    close() { this.connectionState = "closed"; }
+    close() {
+      this.closeCalls += 1;
+      this.connectionState = "closed";
+      this.dispatchEvent(new Event("connectionstatechange"));
+    }
   }
   const prior = globalThis.RTCPeerConnection;
   globalThis.RTCPeerConnection = FakePeer;
@@ -54,11 +69,55 @@ async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = 
     const { transport } = await ManualWebRtcParticipantTransport.createOffer({ endpointId });
     return {
       channel,
+      connection,
       restore() {
         if (prior === undefined) delete globalThis.RTCPeerConnection;
         else globalThis.RTCPeerConnection = prior;
       },
       transport
+    };
+  } catch (error) {
+    if (prior === undefined) delete globalThis.RTCPeerConnection;
+    else globalThis.RTCPeerConnection = prior;
+    throw error;
+  }
+}
+
+async function openFakeAcceptedTransport(endpointId = "B-direct") {
+  let connection;
+  class FakePeer extends EventTarget {
+    constructor() {
+      super();
+      connection = this;
+      this.closeCalls = 0;
+      this.connectionState = "connected";
+      this.iceGatheringState = "complete";
+      this.localDescription = null;
+      this.remoteDescription = null;
+    }
+    async createAnswer() { return { sdp, type: "answer" }; }
+    async setLocalDescription(value) { this.localDescription = value; }
+    async setRemoteDescription(value) { this.remoteDescription = value; }
+    close() {
+      this.closeCalls += 1;
+      this.connectionState = "closed";
+      this.dispatchEvent(new Event("connectionstatechange"));
+    }
+  }
+  const prior = globalThis.RTCPeerConnection;
+  globalThis.RTCPeerConnection = FakePeer;
+  try {
+    const accepted = await ManualWebRtcParticipantTransport.acceptOffer({
+      endpointId,
+      offer: encodeWebRtcSignal({ endpoint_id: "A-direct", sdp, type: "offer" })
+    });
+    return {
+      connection,
+      restore() {
+        if (prior === undefined) delete globalThis.RTCPeerConnection;
+        else globalThis.RTCPeerConnection = prior;
+      },
+      transport: accepted.transport
     };
   } catch (error) {
     if (prior === undefined) delete globalThis.RTCPeerConnection;
@@ -73,6 +132,46 @@ function placementArtifactBytes(requestId = "ownership-1") {
     payloadBytes: canonicalBytes({ value: "owned" }),
     requestId
   }));
+}
+
+const exactPaddingLengths = new Map();
+
+function paddedPlacementArtifactBytes(marker, paddingLength) {
+  return canonicalBytes(createResourcePlacementArtifactMessage({
+    artifactKind: "challenge",
+    payloadBytes: canonicalBytes({ marker, padding: "x".repeat(paddingLength) }),
+    requestId: "room-byte-boundary"
+  }));
+}
+
+function exactSizedPlacementArtifactBytes(marker, targetBytes) {
+  const cacheKey = `${marker.length}:${targetBytes}`;
+  let paddingLength = exactPaddingLengths.get(cacheKey);
+  if (paddingLength === undefined) {
+    let low = 0;
+    let high = targetBytes;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      if (paddedPlacementArtifactBytes(marker, middle).byteLength < targetBytes) low = middle + 1;
+      else high = middle - 1;
+    }
+    paddingLength = -1;
+    for (let candidate = Math.max(0, low - 4); candidate <= low + 4; candidate += 1) {
+      if (paddedPlacementArtifactBytes(marker, candidate).byteLength === targetBytes) {
+        paddingLength = candidate;
+        break;
+      }
+    }
+    assert.notEqual(paddingLength, -1, `no canonical relay message has ${targetBytes} bytes`);
+    exactPaddingLengths.set(cacheKey, paddingLength);
+  }
+  const bytes = paddedPlacementArtifactBytes(marker, paddingLength);
+  assert.equal(bytes.byteLength, targetBytes);
+  return bytes;
+}
+
+function dispatchInbound(channel, bytes) {
+  channel.dispatchEvent(new MessageEvent("message", { data: bytes }));
 }
 
 test("manual WebRTC signaling is canonical, bounded, exact, and endpoint-bound", () => {
@@ -358,11 +457,370 @@ test("WebRTC preserves ordinary ArrayBuffer and DataView publishing while owning
   }
 });
 
+test("WebRTC outbound transcript enforces exact generated message and raw-byte ceilings atomically", async () => {
+  const countCase = await openFakeTransport("count-outbound");
+  try {
+    let firstBytes;
+    for (let index = 0; index < RELAY_LIMITS.room_messages; index += 1) {
+      const bytes = placementArtifactBytes(`count-${index}`);
+      firstBytes ??= bytes;
+      await countCase.transport.publish(bytes);
+    }
+    const duplicate = await countCase.transport.publish(firstBytes);
+    assert.equal(duplicate.duplicate, true);
+    const overflow = placementArtifactBytes("count-overflow");
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await assert.rejects(
+        countCase.transport.publish(overflow),
+        (error) => error.code === "RELAY_LIMIT"
+      );
+    }
+    assert.equal(countCase.channel.sendCalls, RELAY_LIMITS.room_messages);
+    assert.equal((await countCase.transport.fetchRange(RELAY_LIMITS.room_messages - 1)).length, 1);
+  } finally {
+    countCase.transport.close();
+    countCase.restore();
+  }
+
+  const exactCase = await openFakeTransport("bytes-outbound-exact");
+  try {
+    let firstBytes;
+    for (let index = 0; index < RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes; index += 1) {
+      const bytes = exactSizedPlacementArtifactBytes(
+        `exact-${String(index).padStart(3, "0")}`,
+        RELAY_LIMITS.message_bytes
+      );
+      firstBytes ??= bytes;
+      await exactCase.transport.publish(bytes);
+    }
+    assert.equal((await exactCase.transport.publish(firstBytes)).duplicate, true);
+    await assert.rejects(
+      exactCase.transport.publish(placementArtifactBytes("bytes-overflow")),
+      (error) => error.code === "RELAY_LIMIT"
+    );
+    assert.equal(exactCase.channel.sendCalls, RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes);
+  } finally {
+    exactCase.transport.close();
+    exactCase.restore();
+  }
+
+  let boundarySendCalls = 0;
+  const boundaryRetryCase = await openFakeTransport("bytes-outbound-boundary-retry", {
+    sendImpl(value) {
+      boundarySendCalls += 1;
+      if (boundarySendCalls === RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes) {
+        throw new DOMException("transient boundary send failure", "OperationError");
+      }
+      this.sent = new Uint8Array(value);
+    }
+  });
+  try {
+    const exactMessages = RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes;
+    for (let index = 0; index < exactMessages - 1; index += 1) {
+      await boundaryRetryCase.transport.publish(exactSizedPlacementArtifactBytes(
+        `retry-${String(index).padStart(3, "0")}`,
+        RELAY_LIMITS.message_bytes
+      ));
+    }
+    const finalBytes = exactSizedPlacementArtifactBytes("retry-final", RELAY_LIMITS.message_bytes);
+    await assert.rejects(
+      boundaryRetryCase.transport.publish(finalBytes),
+      (error) => error.name === "OperationError"
+    );
+    assert.equal((await boundaryRetryCase.transport.fetchRange(exactMessages - 1)).length, 0);
+    const retried = await boundaryRetryCase.transport.publish(finalBytes);
+    assert.equal(retried.duplicate, false);
+    assert.equal(retried.frame.sequence, exactMessages);
+    assert.equal(boundarySendCalls, exactMessages + 1);
+    await assert.rejects(
+      boundaryRetryCase.transport.publish(placementArtifactBytes("retry-overflow")),
+      (error) => error.code === "RELAY_LIMIT"
+    );
+  } finally {
+    boundaryRetryCase.transport.close();
+    boundaryRetryCase.restore();
+  }
+
+  const plusOneCase = await openFakeTransport("bytes-outbound-plus-one");
+  try {
+    const fullMessages = RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes - 1;
+    for (let index = 0; index < fullMessages; index += 1) {
+      await plusOneCase.transport.publish(exactSizedPlacementArtifactBytes(
+        `plus1-${String(index).padStart(3, "0")}`,
+        RELAY_LIMITS.message_bytes
+      ));
+    }
+    await plusOneCase.transport.publish(exactSizedPlacementArtifactBytes(
+      "plus1-remainder",
+      RELAY_LIMITS.message_bytes - 399
+    ));
+    const exactPlusOne = exactSizedPlacementArtifactBytes("plus1-overflow", 400);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await assert.rejects(
+        plusOneCase.transport.publish(exactPlusOne),
+        (error) => error.code === "RELAY_LIMIT"
+      );
+    }
+    assert.equal(plusOneCase.channel.sendCalls, fullMessages + 1);
+    assert.equal((await plusOneCase.transport.fetchRange(fullMessages)).length, 1);
+  } finally {
+    plusOneCase.transport.close();
+    plusOneCase.restore();
+  }
+});
+
+test("WebRTC inbound transcript treats duplicates as free and fail-closes before overflow mutation", async () => {
+  const countCase = await openFakeTransport("count-inbound");
+  try {
+    let firstBytes;
+    for (let index = 0; index < RELAY_LIMITS.room_messages; index += 1) {
+      const bytes = placementArtifactBytes(`inbound-count-${index}`);
+      firstBytes ??= bytes;
+      dispatchInbound(countCase.channel, bytes);
+    }
+    dispatchInbound(countCase.channel, firstBytes);
+    assert.equal(countCase.transport.state, "open");
+    let ghostDeliveries = 0;
+    countCase.transport.subscribe(() => { ghostDeliveries += 1; }, {
+      startAfter: RELAY_LIMITS.room_messages
+    });
+    dispatchInbound(countCase.channel, placementArtifactBytes("inbound-count-overflow"));
+    await new Promise((resolve) => queueMicrotask(resolve));
+    assert.equal(ghostDeliveries, 0);
+    assert.equal(countCase.transport.state, "failed");
+    assert.equal((await countCase.transport.fetchRange(RELAY_LIMITS.room_messages - 1)).length, 1);
+    assert.equal(countCase.channel.closeCalls, 1);
+    assert.equal(countCase.connection.closeCalls, 1);
+  } finally {
+    countCase.transport.close();
+    countCase.restore();
+  }
+
+  const exactCase = await openFakeTransport("bytes-inbound-exact");
+  try {
+    let firstBytes;
+    const fullMessages = RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes;
+    for (let index = 0; index < fullMessages; index += 1) {
+      const bytes = exactSizedPlacementArtifactBytes(
+        `input-${String(index).padStart(3, "0")}`,
+        RELAY_LIMITS.message_bytes
+      );
+      firstBytes ??= bytes;
+      dispatchInbound(exactCase.channel, bytes);
+    }
+    dispatchInbound(exactCase.channel, firstBytes);
+    assert.equal(exactCase.transport.state, "open");
+    dispatchInbound(exactCase.channel, placementArtifactBytes("inbound-bytes-overflow"));
+    assert.equal(exactCase.transport.state, "failed");
+    assert.equal(exactCase.channel.closeCalls, 1);
+    assert.equal(exactCase.connection.closeCalls, 1);
+  } finally {
+    exactCase.transport.close();
+    exactCase.restore();
+  }
+
+  const plusOneCase = await openFakeTransport("bytes-inbound-plus-one");
+  try {
+    const fullMessages = RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes - 1;
+    for (let index = 0; index < fullMessages; index += 1) {
+      dispatchInbound(plusOneCase.channel, exactSizedPlacementArtifactBytes(
+        `in-p1-${String(index).padStart(3, "0")}`,
+        RELAY_LIMITS.message_bytes
+      ));
+    }
+    dispatchInbound(plusOneCase.channel, exactSizedPlacementArtifactBytes(
+      "in-p1-remainder",
+      RELAY_LIMITS.message_bytes - 399
+    ));
+    let ghostDeliveries = 0;
+    plusOneCase.transport.subscribe(() => { ghostDeliveries += 1; }, {
+      startAfter: fullMessages + 1
+    });
+    dispatchInbound(plusOneCase.channel, exactSizedPlacementArtifactBytes("in-p1-overflow", 400));
+    await new Promise((resolve) => queueMicrotask(resolve));
+    assert.equal(ghostDeliveries, 0);
+    assert.equal(plusOneCase.transport.state, "failed");
+    assert.equal((await plusOneCase.transport.fetchRange(fullMessages)).length, 1);
+  } finally {
+    plusOneCase.transport.close();
+    plusOneCase.restore();
+  }
+});
+
+test("WebRTC inbound and outbound entries consume one combined generated transcript budget", async () => {
+  const countCase = await openFakeTransport("mixed-count");
+  try {
+    const half = RELAY_LIMITS.room_messages / 2;
+    for (let index = 0; index < half; index += 1) {
+      await countCase.transport.publish(placementArtifactBytes(`mixed-out-${index}`));
+      dispatchInbound(countCase.channel, placementArtifactBytes(`mixed-in-${index}`));
+    }
+    await assert.rejects(
+      countCase.transport.publish(placementArtifactBytes("mixed-count-overflow")),
+      (error) => error.code === "RELAY_LIMIT"
+    );
+    assert.equal(countCase.channel.sendCalls, half);
+    assert.equal((await countCase.transport.fetchRange(RELAY_LIMITS.room_messages - 1)).length, 1);
+  } finally {
+    countCase.transport.close();
+    countCase.restore();
+  }
+
+  const byteCase = await openFakeTransport("mixed-bytes");
+  try {
+    const half = RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes / 2;
+    for (let index = 0; index < half; index += 1) {
+      await byteCase.transport.publish(exactSizedPlacementArtifactBytes(
+        `mixout-${String(index).padStart(3, "0")}`,
+        RELAY_LIMITS.message_bytes
+      ));
+      dispatchInbound(byteCase.channel, exactSizedPlacementArtifactBytes(
+        `mixin-${String(index).padStart(3, "0")}`,
+        RELAY_LIMITS.message_bytes
+      ));
+    }
+    await assert.rejects(
+      byteCase.transport.publish(placementArtifactBytes("mixed-byte-overflow")),
+      (error) => error.code === "RELAY_LIMIT"
+    );
+    assert.equal(byteCase.channel.sendCalls, half);
+    assert.equal((await byteCase.transport.fetchRange(
+      RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes - 1
+    )).length, 1);
+  } finally {
+    byteCase.transport.close();
+    byteCase.restore();
+  }
+});
+
+test("WebRTC terminal cleanup closes captured channel and peer capabilities at most once", async () => {
+  const remoteChannel = await openFakeTransport("cleanup-remote-channel");
+  try {
+    remoteChannel.channel.readyState = "closed";
+    remoteChannel.channel.dispatchEvent(new Event("close"));
+    assert.equal(remoteChannel.transport.state, "closed");
+    assert.equal(remoteChannel.channel.closeCalls, 0);
+    assert.equal(remoteChannel.connection.closeCalls, 1);
+    remoteChannel.transport.close();
+    remoteChannel.channel.dispatchEvent(new Event("error"));
+    remoteChannel.connection.dispatchEvent(new Event("connectionstatechange"));
+    assert.equal(remoteChannel.channel.closeCalls, 0);
+    assert.equal(remoteChannel.connection.closeCalls, 1);
+  } finally {
+    remoteChannel.restore();
+  }
+
+  const explicit = await openFakeTransport("cleanup-explicit");
+  try {
+    explicit.transport.close();
+    explicit.transport.close();
+    explicit.channel.dispatchEvent(new Event("error"));
+    assert.equal(explicit.transport.state, "closed");
+    assert.equal(explicit.channel.closeCalls, 1);
+    assert.equal(explicit.connection.closeCalls, 1);
+  } finally {
+    explicit.restore();
+  }
+
+  const remoteConnection = await openFakeTransport("cleanup-remote-connection");
+  try {
+    remoteConnection.connection.connectionState = "closed";
+    remoteConnection.connection.dispatchEvent(new Event("connectionstatechange"));
+    remoteConnection.transport.close();
+    assert.equal(remoteConnection.transport.state, "closed");
+    assert.equal(remoteConnection.channel.closeCalls, 1);
+    assert.equal(remoteConnection.connection.closeCalls, 0);
+  } finally {
+    remoteConnection.restore();
+  }
+
+  const failed = await openFakeTransport("cleanup-error");
+  try {
+    failed.channel.dispatchEvent(new Event("error"));
+    failed.channel.dispatchEvent(new Event("error"));
+    failed.transport.close();
+    assert.equal(failed.transport.state, "failed");
+    assert.equal(failed.channel.closeCalls, 1);
+    assert.equal(failed.connection.closeCalls, 1);
+  } finally {
+    failed.restore();
+  }
+
+  const late = await openFakeAcceptedTransport("cleanup-late-channel");
+  try {
+    late.connection.connectionState = "closed";
+    late.connection.dispatchEvent(new Event("connectionstatechange"));
+    let closeCalls = 0;
+    const lateChannel = new (class extends EventTarget {
+      constructor() {
+        super();
+        this.label = "mortalos-participant-v1";
+        this.ordered = true;
+        this.readyState = "open";
+      }
+      close() {
+        closeCalls += 1;
+        this.readyState = "closed";
+      }
+      send() {}
+    })();
+    const dataChannelEvent = new Event("datachannel");
+    Object.defineProperty(dataChannelEvent, "channel", { value: lateChannel });
+    late.connection.dispatchEvent(dataChannelEvent);
+    late.transport.close();
+    await assert.rejects(
+      late.transport.ready(),
+      (error) => error.code === "WEBRTC_CONNECTION_CLOSED"
+    );
+    assert.equal(late.transport.state, "closed");
+    assert.equal(lateChannel.readyState, "closed");
+    assert.equal(closeCalls, 1);
+    assert.equal(late.connection.closeCalls, 0);
+  } finally {
+    late.restore();
+  }
+});
+
+test("WebRTC shutdown and unsubscribe cancel already-scheduled subscriber delivery", async () => {
+  const closing = await openFakeTransport("pending-delivery-close");
+  try {
+    let deliveries = 0;
+    closing.transport.subscribe(() => { deliveries += 1; });
+    dispatchInbound(closing.channel, placementArtifactBytes("pending-before-close"));
+    closing.channel.readyState = "closed";
+    closing.channel.dispatchEvent(new Event("close"));
+    await new Promise((resolve) => queueMicrotask(resolve));
+    assert.equal(deliveries, 0);
+    assert.equal(closing.connection.closeCalls, 1);
+    assert.throws(
+      () => closing.transport.subscribe(() => {}),
+      (error) => error.code === "WEBRTC_CONNECTION_CLOSED"
+    );
+  } finally {
+    closing.restore();
+  }
+
+  const unsubscribed = await openFakeTransport("pending-delivery-unsubscribe");
+  try {
+    let deliveries = 0;
+    const unsubscribe = unsubscribed.transport.subscribe(() => { deliveries += 1; });
+    dispatchInbound(unsubscribed.channel, placementArtifactBytes("pending-before-unsubscribe"));
+    unsubscribe();
+    await new Promise((resolve) => queueMicrotask(resolve));
+    assert.equal(deliveries, 0);
+    unsubscribed.transport.close();
+  } finally {
+    unsubscribed.restore();
+  }
+});
+
 test("WebRTC transcript uses captured collection, scheduler, and channel capabilities", () => {
   const childPath = fileURLToPath(new URL("./webrtc-transport-primordials-child.mjs", import.meta.url));
   for (const poisonCase of [
     "artifact-kind-membership",
     "constructors",
+    "error-constructor-null",
+    "error-has-instance",
     "signal-type",
     "map-get",
     "map-set",

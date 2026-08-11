@@ -2525,3 +2525,69 @@ result, and reproducible verification.
   `verify:links`, and `git diff --check`. This split evidence does not prove a full
   suite over the whole current tree. Exact-SHA CI, immutable review, approval, merge,
   deployment, and public readback remain external gates.
+
+## 2026-08-11 KST — PR #58 transcript-ceiling and terminal-cleanup BLOCK remediation
+
+- An independent exact-snapshot audit of head
+  `a2210f1958080067b021a9c75336645f718c7427` correctly BLOCKed two remaining
+  WebRTC resource-lifecycle defects. A peer could retain more than the generated
+  512 unique canonical messages and 8,388,608 decoded raw message bytes, and a
+  remote DataChannel close marked the transport closed without closing the still-live
+  RTCPeerConnection. No GitHub review, PASS receipt, App attestation, native
+  approval, merge, or deployment was issued for that head.
+- `ManualWebRtcParticipantTransport` now treats inbound and outbound entries as one
+  combined transcript budget. Duplicate detection precedes capacity accounting, so
+  exact duplicates consume neither count nor bytes. Outbound cap checks precede
+  native send and frame/dedupe state commits only after send success. Inbound
+  overflow creates no transcript/dedupe entry or subscriber delivery before
+  fail-close cleanup clears subscriptions.
+- `VirtualTransportNetwork` now enforces the exact generated decoded raw-byte ceiling
+  as well as the unique-message ceiling. The relay edge retains its conservative
+  base64 decoded-size estimate and may reject slightly earlier. Therefore the bounded
+  claim is the same upper ceiling plus fail-closed behavior, not byte-identical edge,
+  virtual, and WebRTC accounting.
+- Local close, remote channel close, remote peer close, error, and repeated calls now
+  converge through one idempotent shutdown path. Captured native DataChannel and
+  RTCPeerConnection close capabilities are each invoked at most once; remote channel
+  close closes the still-live peer instead of stranding it. Error propagation no
+  longer consults ambient `Error` construction or `instanceof`, and focused poison
+  cases cover hostile `Error` and `Symbol.hasInstance`.
+- Literal focused evidence passes on the frozen replacement source: Node transport
+  `24/24` in `31,241ms` command time (`30,998.3923ms` TAP duration) and actual
+  Chromium in `50,086ms`. These gates cover exact 512/message 513, exact 8,388,608/
+  byte 8,388,609, combined inbound/outbound consumption, duplicate non-consumption,
+  send-failure retry, no overflow-frame commit or delivery before cleanup,
+  remote-channel cleanup, and one close of the still-live remote peer in the actual
+  Chromium scenario. `git diff --check` also passes for the candidate.
+- The earlier uninterrupted `8,076.826s` runtime/test/workflow full-suite PASS
+  predates the current WebRTC runtime/test/security remediation and is historical. A
+  fresh complete local suite, exact-head CI, immutable review, approval, merge,
+  exact-main Verify/Deploy, and public readback remain pending or external gates.
+- The root next P0 order is unchanged: provider-signed lease-bound liveness policy,
+  independent provider possession response, and an effect-time exactly-once repair
+  executor first; lineage-governed admission and failure-domain accounting follow.
+
+## 2026-08-11 KST — WebRTC-remediated uninterrupted full-suite PASS
+
+- The first fresh `npm test` attempt began around `05:23` KST. User steering stopped
+  its tool cell and test process after approximately 82 minutes. It produced neither
+  an exit-0 result nor the final `verify:s4` receipt and is therefore retained as an
+  interrupted attempt, not a full-suite PASS.
+- A separate hidden wrapper restarted the complete ordered suite at
+  `2026-08-11T06:42:38.6738575+09:00`. It ended at
+  `2026-08-11T09:06:30.4636057+09:00`, exited `0`, and completed every ordered stage
+  through final `verify:s4` after `8,631,790ms` (`143m 51.790s`). This is the current
+  runtime/test/workflow full-suite PASS for the WebRTC-remediated candidate.
+- Covered source/runtime/test/workflow files remained unchanged after the successful
+  run. A post-run process inventory found zero related workloads after excluding the
+  inventory command itself.
+- Evidence documents changed afterward only to record the successful run and are
+  validated separately by `verify:spec`, `verify:links`, and `git diff --check`.
+  Therefore the bounded claim is **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS;
+  CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL**, not a whole-current-tree
+  exact full-suite PASS.
+- The reviewer identity SSOT is also corrected without changing runtime code: the
+  logical reviewer COMMENT/receipt, GitHub App ID `4456370` exact-head attestation,
+  and machine user `ant713900-web` native latest-head approval are separate required
+  gates. None substitutes for another, and exact-head governance remains external
+  until all are re-issued for the final immutable candidate.

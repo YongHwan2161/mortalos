@@ -22,6 +22,7 @@ import {
   objectKeys,
   regexpTest,
   setAdd,
+  setHas,
   setValues,
   snapshotDataMethod,
   stringStartsWith,
@@ -47,6 +48,7 @@ const setTimeoutIntrinsic = globalThis.setTimeout;
 const promiseResolveIntrinsic = Promise.resolve;
 const promiseThenIntrinsic = Promise.prototype.then;
 const setDeleteIntrinsic = Set.prototype.delete;
+const setClearIntrinsic = Set.prototype.clear;
 const eventTargetPrototype = globalThis.EventTarget?.prototype ?? null;
 const eventTargetAddIntrinsic = eventTargetPrototype?.addEventListener ?? null;
 const eventTargetRemoveIntrinsic = eventTargetPrototype?.removeEventListener ?? null;
@@ -383,13 +385,24 @@ function detachedRelayFrame(frame) {
   });
 }
 
+function assertTranscriptCapacity(messageCount, retainedBytes, nextMessageBytes) {
+  if (messageCount >= RELAY_LIMITS.room_messages) {
+    fail("RELAY_LIMIT", "WebRTC room message ceiling reached");
+  }
+  if (retainedBytes + nextMessageBytes > RELAY_LIMITS.room_bytes) {
+    fail("RELAY_LIMIT", "WebRTC room byte ceiling reached");
+  }
+}
+
 export class ManualWebRtcParticipantTransport {
   #channel = null;
   #channelClose = null;
+  #channelCloseStarted = false;
   #channelSend = null;
   #closed = false;
   #connection;
   #connectionClose;
+  #connectionCloseStarted = false;
   #connectionSetRemoteDescription;
   #endpointId;
   #error = null;
@@ -399,6 +412,7 @@ export class ManualWebRtcParticipantTransport {
   #openReject;
   #openResolve;
   #remoteEndpointId = null;
+  #retainedBytes = 0;
 
   constructor(endpoint, connection) {
     this.#endpointId = endpointId(endpoint);
@@ -431,8 +445,10 @@ export class ManualWebRtcParticipantTransport {
         rtcPeerConnectionConnectionStateGetter,
         "connectionState"
       );
-      if (connectionState === "failed" || connectionState === "closed") {
+      if (connectionState === "failed") {
         this.#markClosed(new WebRtcTransportError("WEBRTC_CONNECTION_CLOSED", connectionState));
+      } else if (connectionState === "closed") {
+        this.#shutdown(null, { connectionClosed: true });
       }
     });
   }
@@ -540,6 +556,10 @@ export class ManualWebRtcParticipantTransport {
     if (!numberIsSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) {
       fail("WEBRTC_TIMEOUT", "ready timeout is invalid");
     }
+    if (this.#error) throw this.#error;
+    if (this.#closed) {
+      fail("WEBRTC_CONNECTION_CLOSED", "transport closed before DataChannel opened");
+    }
     if (
       this.#channel &&
       channelSlot(this.#channel, rtcDataChannelReadyStateGetter, "readyState") === "open"
@@ -572,6 +592,7 @@ export class ManualWebRtcParticipantTransport {
     const duplicate = mapGet(this.#frames, opened.message_id);
     if (duplicate) return freeze({ duplicate: true, frame: detachedRelayFrame(duplicate) });
     const messageByteLength = reflectApply(typedArrayByteLength, messageBytes, []);
+    assertTranscriptCapacity(mapSize(this.#frames), this.#retainedBytes, messageByteLength);
     const bufferedAmount = channelSlot(
       this.#channel,
       rtcDataChannelBufferedAmountGetter,
@@ -583,6 +604,7 @@ export class ManualWebRtcParticipantTransport {
     const frame = immutableRelayFrame(mapSize(this.#frames) + 1, messageBytes);
     this.#channelSend(messageBytes);
     mapSet(this.#frames, opened.message_id, frame);
+    this.#retainedBytes += messageByteLength;
     return freeze({ duplicate: false, frame: detachedRelayFrame(frame) });
   }
 
@@ -601,6 +623,7 @@ export class ManualWebRtcParticipantTransport {
   }
 
   subscribe(handler, { startAfter = 0 } = {}) {
+    if (this.#closed) fail("WEBRTC_CONNECTION_CLOSED", "transport closed");
     if (typeof handler !== "function") fail("WEBRTC_SUBSCRIBER", "subscriber function required");
     if (!numberIsSafeInteger(startAfter) || startAfter < 0) fail("WEBRTC_RANGE", "start cursor is invalid");
     const subscription = freeze({ handler, startAfter });
@@ -628,16 +651,14 @@ export class ManualWebRtcParticipantTransport {
   }
 
   close() {
-    if (this.#closed) return;
-    this.#closed = true;
-    if (this.#channel && this.#channelClose) {
-      this.#channelClose();
-    }
-    this.#connectionClose();
-    this.#openReject?.(new WebRtcTransportError("WEBRTC_CONNECTION_CLOSED", "transport closed"));
+    this.#shutdown(null);
   }
 
   #attachChannel(channel) {
+    if (this.#closed) {
+      closeDetachedChannel(channel);
+      return;
+    }
     if (this.#channel) {
       closeDetachedChannel(channel);
       this.#markClosed(new WebRtcTransportError("WEBRTC_CHANNEL_DUPLICATE", "duplicate DataChannel rejected"));
@@ -673,18 +694,24 @@ export class ManualWebRtcParticipantTransport {
     } else {
       channel.binaryType = "arraybuffer";
     }
-    addEventListener(channel, "open", () => this.#openResolve?.(this));
-    addEventListener(channel, "close", () => { this.#closed = true; });
+    addEventListener(channel, "open", () => this.#resolveOpen());
+    addEventListener(channel, "close", () => {
+      this.#shutdown(null, { channelClosed: true });
+    });
     addEventListener(channel, "error", () => {
       this.#markClosed(new WebRtcTransportError("WEBRTC_CHANNEL_ERROR", "DataChannel failed"));
     });
     addEventListener(channel, "message", (event) => {
+      if (this.#closed) return;
       try {
         const messageBytes = ownedBinaryBytes(eventSlot(event, messageEventDataGetter, "data"));
         const opened = decodeRelayMessageBytes(messageBytes);
         if (mapHas(this.#frames, opened.message_id)) return;
+        const messageByteLength = reflectApply(typedArrayByteLength, messageBytes, []);
+        assertTranscriptCapacity(mapSize(this.#frames), this.#retainedBytes, messageByteLength);
         const frame = immutableRelayFrame(mapSize(this.#frames) + 1, messageBytes);
         mapSet(this.#frames, opened.message_id, frame);
+        this.#retainedBytes += messageByteLength;
         const subscriptions = setValues(this.#handlers);
         for (let index = 0; index < subscriptions.length; index += 1) {
           const subscription = subscriptions[index];
@@ -692,9 +719,8 @@ export class ManualWebRtcParticipantTransport {
         }
       } catch (error) {
         this.#markClosed(
-          error instanceof Error
-            ? error
-            : new WebRtcTransportError("WEBRTC_CHANNEL_ERROR", "untrusted inbound frame failed")
+          error ||
+            new WebRtcTransportError("WEBRTC_CHANNEL_ERROR", "untrusted inbound frame failed")
         );
       }
     });
@@ -703,6 +729,7 @@ export class ManualWebRtcParticipantTransport {
   #deliver(subscription, frame) {
     const detachedFrame = detachedRelayFrame(frame);
     reflectApply(queueMicrotaskIntrinsic, globalThis, [() => {
+      if (this.#closed || !setHas(this.#handlers, subscription)) return;
       let result;
       try {
         result = subscription.handler(detachedFrame);
@@ -715,20 +742,55 @@ export class ManualWebRtcParticipantTransport {
   }
 
   #markClosed(error) {
-    if (!this.#error) this.#error = error;
+    this.#shutdown(error);
+  }
+
+  #resolveOpen() {
+    const resolve = this.#openResolve;
+    if (!resolve) return;
+    this.#openResolve = null;
+    this.#openReject = null;
+    resolve(this);
+  }
+
+  #rejectOpen(error) {
+    const reject = this.#openReject;
+    if (!reject) return;
+    this.#openResolve = null;
+    this.#openReject = null;
+    reject(error);
+  }
+
+  #shutdown(error, { channelClosed = false, connectionClosed = false } = {}) {
+    if (channelClosed) this.#channelCloseStarted = true;
+    if (connectionClosed) this.#connectionCloseStarted = true;
+    if (this.#closed) return;
     this.#closed = true;
-    if (this.#channel && this.#channelClose) {
-      this.#channelClose();
+    if (error && !this.#error) this.#error = error;
+    reflectApply(setClearIntrinsic, this.#handlers, []);
+
+    let cleanupError = null;
+    if (!this.#channelCloseStarted && this.#channel && this.#channelClose) {
+      this.#channelCloseStarted = true;
+      try {
+        this.#channelClose();
+      } catch (closeError) {
+        cleanupError = closeError;
+      }
     }
-    if (
-      peerSlot(
-        this.#connection,
-        rtcPeerConnectionConnectionStateGetter,
-        "connectionState"
-      ) !== "closed"
-    ) {
-      this.#connectionClose();
+    if (!this.#connectionCloseStarted) {
+      this.#connectionCloseStarted = true;
+      try {
+        this.#connectionClose();
+      } catch (closeError) {
+        cleanupError ??= closeError;
+      }
     }
-    this.#openReject?.(error);
+    if (cleanupError && !this.#error) this.#error = cleanupError;
+    this.#rejectOpen(
+      error ||
+        cleanupError ||
+        new WebRtcTransportError("WEBRTC_CONNECTION_CLOSED", "transport closed")
+    );
   }
 }

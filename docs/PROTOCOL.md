@@ -832,6 +832,29 @@ Artifact-kind allowlist membership MUST NOT dispatch through a later-mutable pub
 collection method. A forbidden kind such as `verdict` MUST be rejected before any
 transport send or local/remote transcript commit even if ambient prototypes change.
 
+The manual WebRTC adapter MUST keep one combined inbound/outbound transcript per
+peer. Its generated ceiling is 512 unique canonical relay messages and 8,388,608
+decoded raw message bytes across both directions. An exact duplicate MUST remain
+idempotent and consume neither count nor byte budget. After duplicate detection, an
+outbound over-limit message MUST reject before native send and MUST produce no local
+frame or dedupe mutation; an accepted outbound message MUST enter the transcript
+only after native send returns successfully. An inbound over-limit message MUST
+commit no transcript or dedupe entry and MUST schedule no subscriber delivery before
+fail-close. Terminal cleanup MUST clear the transport's subscriptions.
+
+The virtual transport MUST apply the same exact decoded raw-byte and unique-message
+ceilings. The relay edge MAY use its existing conservative base64 decoded-size
+estimate and therefore MAY reject slightly before the exact decoded-byte boundary;
+conformance claims only the same upper ceiling and fail-closed behavior, not byte-
+identical accounting between the edge and in-process transports.
+
+Local close, remote DataChannel close, peer close, and transport error MUST converge
+through one idempotent terminal path. Each captured native DataChannel and
+RTCPeerConnection close capability MUST be invoked at most once, and a remote
+DataChannel close MUST not strand an otherwise open peer connection. Terminal error
+classification MUST NOT depend on a later-mutable global `Error` constructor or
+`Symbol.hasInstance` hook.
+
 A receiver MUST decode and verify the nested canonical bytes through the existing
 resource and placement validators. Connection state, endpoint labels, arrival order,
 presence, UI state, and carrier metadata MUST NOT make a placement usable. Direct

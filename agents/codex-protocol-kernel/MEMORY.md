@@ -1,6 +1,6 @@
 # Durable memory
 
-Last reconciled: 2026-08-10 KST
+Last reconciled: 2026-08-11 KST
 
 Source branch context: `agent/codex-protocol-kernel--p2p-placement-repair` (historical
 when this revision is read from `main`)
@@ -133,6 +133,25 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   visibility while an allowed `challenge` crosses both peers once. This covers the
   named capabilities rather than every future decoder dependency. Native send
   success remains local queue admission, not an end-to-end receipt.
+- Each peer now owns one combined inbound/outbound transcript budget: 512 unique
+  canonical messages and 8,388,608 decoded raw bytes. Exact duplicates are
+  non-consuming. Outbound capacity rejects before native send and local frame/dedupe
+  state commits only after send success. Inbound overflow performs zero transcript,
+  subscriber, or dedupe mutation before fail-close. The virtual transport enforces
+  the same exact decoded-byte ceiling; the relay edge can conservatively overcount
+  base64 and reject slightly earlier, so byte-identical edge accounting is not
+  claimed. Local close, remote channel close, peer close, and error share one
+  idempotent cleanup path and invoke each captured native close capability at most
+  once.
+- An independent exact-snapshot audit of
+  `a2210f1958080067b021a9c75336645f718c7427` found the
+  missing combined transcript ceilings and a remote-channel-close peer leak. That
+  head remains BLOCKed. The replacement focused Node gate passes `24/24`, including
+  literal cap-plus-one, combined-direction, cleanup, `Error` constructor, and
+  `Symbol.hasInstance` poison cases; actual Chromium exercises both literal ceilings
+  and native peer cleanup. The current frozen runtime/test/workflow bytes subsequently
+  pass the complete hidden-wrapper suite in `8,631,790ms` through final `verify:s4`;
+  exact-SHA governance remains external.
 - Confidential placement evaluates resource-contract status and receipt age at one
   canonical generation instant. Per-placement `observed_at_ms` remains historical
   carrier metadata and cannot keep a lease active after generation time. Exact
@@ -159,7 +178,7 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
 1. Commit a provider-signed, lease-bound liveness policy before failure. It must
    bind the observer-policy digest, response window, challenge rate/outstanding
    ceiling, independent provider response path, and validity sequence range.
-2. Add a dedicated exactly-once repair executor that treats the public action plan
+2. Add a dedicated effect-time exactly-once repair executor that treats the public action plan
    as non-capability data, reconciles current signed evidence immediately before an
    effect, and calls provider/session authority zero times for stale, superseded,
    forged, or contested plans.
@@ -316,22 +335,29 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   of the former
   `2,700,000ms` cap, the internal guard is now `3,300,000ms`; workflows remain 240
   minutes.
-- The uninterrupted `npm test` over the unchanged current runtime/test/workflow
-  source bytes started at
+- The uninterrupted `npm test` over the then-current runtime/test/workflow source
+  bytes started at
   `2026-08-11 01:06:58.716+09:00`, ended at `03:21:35.542+09:00`, exited `0`, and
   completed every ordered stage through final `verify:s4` in `8,076,826ms`
-  (`8,076.826s`; `134m 36.826s`). It includes both current exact-ceiling paths and
+  (`8,076.826s`; `134m 36.826s`). It includes both then-current exact-ceiling paths and
   every later gate. PID `23824` was absent at `03:24:59.475+09:00`; a fresh probe at
   `03:26:01.147+09:00` confirmed that root absent and zero other matching MortalOS
-  test workloads after excluding the probe itself. Only evidence docs changed after
-  the run; the current documentation tree separately passes spec, link, and diff
-  checks. Current status is focused exact-ceiling plus current runtime/test/workflow
-  full-suite PASS and current-docs spec/link/diff PASS. This is not a whole-current-
-  tree full-suite claim. Exact-SHA CI, immutable review, approval, merge, deployment,
-  and public readback remain external gates.
-- The next P0 order remains provider-agreed lease-bound liveness policy and an
-  effect-time exactly-once repair executor first; lineage-governed admission and
-  failure-domain accounting follow.
+  test workloads after excluding the probe itself. The current WebRTC runtime/test/
+  security remediation postdates that `8,076.826s` run, so it is historical.
+  Current-candidate focused evidence is Node `24/24` in `31,241ms` command time and
+  actual Chromium in `50,086ms`. A fresh uninterrupted hidden-wrapper `npm test`
+  started at `2026-08-11T06:42:38.6738575+09:00`, ended at
+  `2026-08-11T09:06:30.4636057+09:00`, exited `0` after `8,631,790ms`
+  (`143m 51.790s`), and completed final `verify:s4`. Covered source/runtime/test/
+  workflow files remained unchanged after the run, and a post-run process inventory
+  found zero related workloads after excluding itself. Docs changed afterward only
+  to record the evidence and pass separate spec/link/diff gates. Current status is
+  runtime/test/workflow full-suite PASS plus current-docs spec/link/diff PASS, not a
+  whole-current-tree exact full-suite claim. Exact-SHA CI, immutable review,
+  approval, merge, deployment, and public readback remain external gates.
+- The next P0 order remains a provider-signed lease-bound liveness policy,
+  independent provider possession response, and an effect-time exactly-once repair
+  executor first; lineage-governed admission and failure-domain accounting follow.
 
 ## Stable decisions
 

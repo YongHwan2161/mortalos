@@ -345,6 +345,24 @@ deliverable. This does not claim that every future relay validator dependency is
 automatically primordial-safe. A successful send is only local queue admission, not a
 peer acknowledgement, durable storage proof, or placement verdict.
 
+The private peer transcript is a combined inbound/outbound resource boundary, not
+two independently refillable budgets. It retains at most 512 unique canonical
+messages and 8,388,608 decoded raw bytes; duplicates are non-consuming. Outbound
+capacity checks happen before native send and local state commits only after send
+success. Inbound overflow exposes no frame, dedupe entry, or subscriber delivery and
+then fail-closes. The virtual transport enforces the same exact raw-byte ceiling.
+The relay edge conservatively estimates decoded bytes from base64 and can overcount
+slightly, so byte-identical accounting is explicitly not claimed; the shared property
+is an upper ceiling with fail-closed rejection.
+
+Terminal cleanup is a capability boundary too. Local close, remote channel close,
+peer close, and error converge through one idempotent path, invoke captured native
+close capabilities at most once, and close the still-live peer after remote channel
+closure. Error propagation uses owned values rather than ambient `Error` construction
+or `instanceof`, so hostile `Error` replacement or `Symbol.hasInstance` cannot skip
+cleanup. Without that convergence, a remote close could strand network resources
+even though the public transport already reported closed.
+
 ### 11.1 Bootstrap endpoint boundary
 
 A CLI or other endpoint MAY create a `1-of-1` singleton. One browser MAY instead create three volatile logical custodian keys and complete unanimous Genesis approval for a `2-of-3` descriptor. These bootstrap profiles differ cryptographically but share a deployment limitation: one physical domain controls continuation.
@@ -670,9 +688,16 @@ The revision must identify the new trust assumption, affected invariant, failure
   replaceable availability capabilities but never validity authorities.
 - Separate browser and Node processes on this PC share hardware, network,
   administrator, and credential domains. Physical S7/S8 claims remain HOLD.
+- Literal count/byte cap-plus-one and terminal-cleanup regressions pass in the
+  focused Node and actual Chromium gates. The prior `8,076.826s` complete
+  runtime/test/workflow PASS predates the current WebRTC runtime/test/security
+  remediation. The frozen current runtime/test/workflow candidate passes the fresh
+  `8,631,790ms` suite through final `verify:s4`; covered files remained unchanged and
+  docs pass separate spec/link/diff. Exact-SHA governance remains external.
 
-The next root P0 is failure-precommitted liveness policy plus independent provider
-response and effect-time exactly-once repair reconciliation. Lineage-governed
+The next root P0 is a provider-signed lease-bound liveness policy plus independent
+provider possession response and an effect-time exactly-once repair executor.
+Lineage-governed
 admission/failure-domain accounting with explicit trust roots follows. Self-asserted
 topology labels must not count as independent domains; admission and diversity
 claims require evidence rooted outside the admitted actor.

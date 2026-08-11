@@ -208,7 +208,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "lab/storage/durable-store.mjs": "95356dae9aeb166f1a214a310deb61e22275466bcc7d47c084902c55162c4f39",
   "lab/scenario-compiler.mjs": "15409c8e709ddf3e11c15efc3dba4cd314b69c66da691efc4ce2ed51164c9999",
   "lab/transport/http-relay.mjs": "50bbeaa94e2c42d93b3dc34ed25f173b51e8248d2e45e7c1a48a330779df2090",
-  "lab/transport/virtual-transport.mjs": "ff50dfafe1d862d651ac0a859dfc9be3ac74c76ee7158239ea77eaf27f09513c",
+  "lab/transport/virtual-transport.mjs": "ccc57815ca0c46ef96222767b036dbecdb0f787bc8ed2cae9696f9a248fca828",
   "src/bytes.mjs": "b210b22775b4e279394be49f64e854d7c19c849d9bcc8cf3fad952e601cd0e57",
   "src/confidential/counter.mjs": "9871611eb4868ee913d4dc092f2407fd6e8b299571ae637c11682c3f87621376",
   "src/confidential/format.mjs": "d3c9b70d31e2dc3007c495dc404f0a71ef65ae8557a10c6200fc6efec54a61bc",
@@ -224,7 +224,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
   "src/transport/protocol.mjs": "d9d2f925b5f2753a1e0e927b4a6ae3ee2a471d728a3710a9810a9ef51ef8ab0b",
-  "lab/transport/webrtc-peer.mjs": "916b1926d0a0437fbb3fb053aab3ec7603500a05a529b4d865ea34d209d6868b"
+  "lab/transport/webrtc-peer.mjs": "26321761c8c98d909ff79a80f2373662a075a18d5d07b595a0686795b4691292"
 });
 
 // These synchronous producer/commit boundaries mint or persist replay-policy
@@ -344,8 +344,8 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async createOffer": "9ec5d2cdbcb4759cce808bc5f2096cf66693189b50cd66a119ff5194eab4d2aa",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "312dca19733fd7464d95ccb0ffc5e1909229d2849eff5f319faa34b9bce46626",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "bad59957d4f2e1e69468d3bb90116d9cfcee18497e5128e2f28438d32aae3769",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "4a565da4551683d9003ec8277731e397cedc3653b4aac5e410f78fbb94ecea4e",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "1c29d3ff7eb6fe86bb5627c31aa7f31a72511fbb56f8dbc6e410ec87007b079b",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "9cce22bbcfa0dba396f69810dd8d8b38d4067743da66ef5850e880e0dbdd6929",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "09b45f9c220f20bbbf716f789b48fb194d03002d16f7410fa5bd057ed071535b",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "35ad0b7680d8d04498ba958c31aafaa7e6cf1a3d7d6f1b2336977ea4543b04d9",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "7409b9b1176a28d5f8c847220e87eb43b35526c12f2342aae2af7b6e0314ce51",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "8903f54681ed29ce7bc6f9e40b02102cdd707cd5d5ccb4ddce50c13c861aa8f9"

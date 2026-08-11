@@ -1,6 +1,6 @@
 # Quorum-observed liveness and repair certificates
 
-Status: **SOURCE + FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; INDEPENDENT FAILURE-DOMAIN PROMOTION HOLD**
+Status: **SOURCE + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; INDEPENDENT FAILURE-DOMAIN PROMOTION HOLD**
 
 Last synchronized: **2026-08-11 KST**
 
@@ -112,10 +112,11 @@ The Chromium acceptance uses no backend clock or outage oracle:
 | --- | --- |
 | `node --test test/placement-liveness.test.mjs` | Exact 3-of-4 threshold, duplicate/under-threshold rejection, outsider and wait mismatch rejection, no-clock schema, late response conflict, challenge fork, response fork, accessor/Proxy/sparse-array and realm-drift rejection, exact/max+1 roster bound, and honest `clear` for absent evidence |
 | `node --test test/lineage-placement.test.mjs` | Exact offer-witness-roster and lease-consumer binding; certificate-to-placement/predecessor/sequence binding; committed repair certificate IDs; stale-prior rejection; conditional late-proof conflict with supplied fresh response/current placement evidence; A-to-B handoff; fresh-process deterministic replay; four 250-event partition/heal batches; sibling-generation halt |
-| `node --test test/webrtc-transport.test.mjs` | Challenge, observation, response, and certificate are bounded untrusted WebRTC artifact kinds; selective artifact-kind `Set.has` poison still rejects `verdict` before send/local commit and transports a challenge once |
+| `node --test test/transport.test.mjs test/webrtc-transport.test.mjs` | Focused Node `24/24` in `31,241ms`: challenge, observation, response, and certificate remain bounded untrusted artifact kinds; one combined 512-message/8,388,608-raw-byte transcript, duplicates, outbound/inbound atomicity, virtual byte ceiling, hostile `Error`/`Symbol.hasInstance`, at-most-once native close capability use, and selective artifact-kind poison pass |
+| `node scripts/verify-p2p-placement-chromium.mjs` | Actual Chromium PASS in `50,086ms`: literal inbound/outbound count/byte cap-plus-one, forbidden-verdict zero visibility, challenge delivery, and remote-channel cleanup that closes the still-live peer once. Relay base64 estimation may reject slightly early; byte-identical edge accounting is not claimed. |
 | `node scripts/verify-confidential-placement-chromium.mjs` | Native 98,317-byte file, direct challenge delivery, four separate observer browser processes, actual local duration, 3-of-4 certificate, committed repair, A exit, B continuation, exact 2-of-3 recovery, zero post-cut origin/relay requests |
 | `npm run test:sdk` and `node scripts/verify-sdk-package.mjs` | Authority-free public drafts, finalizers, verifiers, evaluator, and clean packed import; no signing key or network authority exported |
-| `npm test` | Unchanged current runtime/test/workflow source PASS in `8,076.826s` through final `verify:s4`; only evidence docs changed afterward and separately pass spec/link/diff, so this is not a whole-current-tree full-suite claim; historical 4,263.6/4,304.1-second and 7,065.8-second baselines do not transfer; exact-SHA CI remains the publication authority |
+| `npm test` | Current frozen runtime/test/workflow PASS in `8,631,790ms` through final `verify:s4`; covered files remained unchanged and related workload count was zero excluding the probe. Docs pass separate spec/link/diff, so no whole-current-tree exact full-suite is claimed. The prior `8,076.826s` run is historical; exact-SHA CI remains the publication authority. |
 
 ## Explicit nonclaims
 
@@ -141,8 +142,8 @@ The Chromium acceptance uses no backend clock or outage oracle:
 
 ## Next root P0
 
-The next P0 is **failure-precommitted liveness policy and effect-time repair
-execution**. A provider-signed, lease-bound policy must commit window/rate/path and
+The next P0 is a **provider-signed lease-bound liveness policy and effect-time
+exactly-once repair executor**. The policy must commit window/rate/path and
 response-proof semantics before failure; the provider must be able to submit an
 independent self-contained possession response without a fresh consumer signature;
 an ID-only assertion must not become authoritative `alive`; and a dedicated

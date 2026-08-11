@@ -1,8 +1,8 @@
 # Browser participant compatibility
 
-Status: source and local implementation evidence; exact-SHA governance and
-deployment are external facts, and production support requires the exact deployed
-commit to pass the same gate.
+Status: **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF
+PASS; EXACT-SHA EXTERNAL**. Production support still requires exact deployed-commit
+evidence.
 
 MortalOS exposes two deliberately different browser modes.
 
@@ -114,13 +114,33 @@ the returned derived action plan is public, forgeable JSON rather than a capabil
 so any executor must reverify the original Capsule, generation, commit, placement,
 and liveness evidence before performing placement effects.
 
+Each peer's single transcript combines inbound and outbound traffic and retains at
+most 512 unique canonical messages or 8,388,608 decoded raw bytes. Exact duplicates
+consume neither budget. Outbound overflow occurs before native send and successful
+state commits only after send returns; inbound overflow commits no transcript/dedupe
+entry or subscriber delivery before fail-close cleanup clears subscriptions. Remote DataChannel close, local
+close, peer close, and errors converge through an idempotent cleanup path that closes
+the still-live native peer once while invoking each native close capability at most
+once. The actual Chromium probe exercises literal
+count and byte cap-plus-one cases in both directions and the remote-close path; it
+passes in `50,086ms`. Focused Node transport tests pass `24/24` in `31,241ms`.
+
+The virtual transport applies the same exact decoded raw-byte boundary. The relay
+edge uses a conservative base64 estimate that may reject slightly earlier; this is
+not byte-identical accounting, only the same upper ceiling and fail-closed result.
+The prior `8,076.826s` full-suite PASS predates the current WebRTC remediation. The
+frozen runtime/test/workflow candidate passes the fresh `8,631,790ms` suite through
+final `verify:s4`; covered files remained unchanged and docs pass separate spec/link/
+diff. This is not a whole-current-tree exact full-suite claim.
+
 This focused gate is Chromium-only. Firefox and WebKit have not passed this complete
 P2P data-plane scenario. Manual same-host ICE does not prove arbitrary NAT traversal
 or Internet reachability, and all processes still share one machine and
 administrator. The complete confidential path has not yet passed Firefox or WebKit.
 
-The next root P0 is failure-precommitted liveness policy plus independent provider
-response and effect-time exactly-once repair reconciliation. Lineage-governed
+The next root P0 is a provider-signed lease-bound liveness policy plus independent
+provider possession response and an effect-time exactly-once repair executor.
+Lineage-governed
 admission/failure-domain accounting follows. Browser profiles and self-asserted
 identity metadata do not prove independent accounts, devices, networks, credentials,
 or administrators.

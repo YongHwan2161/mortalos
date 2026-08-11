@@ -1,6 +1,6 @@
 # Lineage-bound placement convergence
 
-Status: **SOURCE + FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; PHYSICAL INDEPENDENCE HOLD**
+Status: **SOURCE + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; PHYSICAL INDEPENDENCE HOLD**
 
 Last synchronized: **2026-08-11 KST**
 
@@ -92,7 +92,8 @@ one generation, an incomplete or broken prior link, or different organisms retur
 | `node scripts/verify-confidential-placement-chromium.mjs` | Native File, WebRTC ciphertext shards and liveness challenge, four observer browser processes, actual 5,000 ms local window, 3-of-4 certificate, A commit, sign-once A→B handoff, real A close, B repair/commit, byte-identical convergence, corrupt-shard rejection, zero post-cut requests |
 | `npm run verify:security-boundaries` | Async commit owns caller bytes and resolves authority before its first suspension |
 | `npm run test:sdk` and `npm run verify:sdk-package` | Public placement subpath verifies/converges without exporting signing authority |
-| `npm test` | Unchanged current runtime/test/workflow source PASS in `8,076.826s` through final `verify:s4`; only evidence docs changed afterward and separately pass spec/link/diff, so this is not a whole-current-tree full-suite claim; historical 4,263.6/4,304.1-second and 7,065.8-second baselines do not transfer; exact-SHA CI remains the publication authority |
+| focused WebRTC remediation | Node `24/24` in `31,241ms` and actual Chromium in `50,086ms`; combined 512-message/8,388,608-raw-byte transcript, duplicate non-consumption, outbound/inbound atomicity, virtual-transport byte ceiling, hostile `Error`/`Symbol.hasInstance` containment, and remote-channel cleanup that closes a still-live peer with each native close capability invoked at most once PASS. Relay base64 estimation may reject slightly earlier, so byte-identical edge accounting is not claimed. |
+| `npm test` | Current frozen runtime/test/workflow PASS in `8,631,790ms` through final `verify:s4`; covered files remained unchanged and related workload count was zero excluding the probe. Docs pass separate spec/link/diff, so no whole-current-tree exact full-suite is claimed. The prior `8,076.826s` run is historical; exact-SHA CI remains the publication authority. |
 
 ## Explicit nonclaims
 
@@ -122,9 +123,9 @@ one generation, an incomplete or broken prior link, or different organisms retur
 
 The liveness layer is implemented locally; see
 [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).
-The next P0 is **failure-precommitted liveness policy and effect-time repair
-execution**: provider-signed lease semantics, independent possession response, and
-exactly-once current-evidence reconciliation. Lineage-governed admission and
+The next P0 is a **provider-signed lease-bound liveness policy and effect-time
+exactly-once repair executor** with independent provider possession response and
+current-evidence reconciliation. Lineage-governed admission and
 failure-domain accounting with explicit trust roots follows. Threshold keys must be
 selected from a membership epoch committed before failure, and self-asserted device,
 network, region, account, credential, or administrator labels must not count as independent. Admission and

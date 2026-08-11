@@ -1,6 +1,6 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — FOCUSED EXACT-CEILING + CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; NEXT: FAILURE-PRECOMMITTED LIVENESS POLICY AND EFFECT-TIME EXECUTOR; THEN: LINEAGE-GOVERNED ADMISSION**
+Status: **ACTIVE IMPLEMENTATION SSOT — CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; NEXT: PROVIDER-SIGNED LEASE-BOUND LIVENESS POLICY AND EFFECT-TIME EXACTLY-ONCE EXECUTOR; THEN: LINEAGE-GOVERNED ADMISSION**
 
 Last synchronized: **2026-08-11 KST**
 
@@ -55,6 +55,16 @@ signed offer/lease/witness/usage/execution artifacts, provider loss, new-lease r
 consumer A exit, and consumer B readback cross direct `RTCDataChannel` connections.
 Only distinct-provider active storage execution receipts for the exact workload
 count. One corrupt copy is rejected and two valid copies recover the bytes.
+
+The current remediation closes two resource-lifecycle holes in that direct carrier.
+Each peer now has one combined inbound/outbound transcript bounded at 512 unique
+canonical messages and 8,388,608 decoded raw bytes; duplicates are non-consuming,
+outbound capacity precedes native send and commits only after success, and inbound
+overflow commits no transcript/dedupe entry or subscriber delivery before fail-close;
+terminal cleanup then clears subscriptions. The virtual
+transport enforces the same exact raw-byte bound. Relay edge base64 estimation may
+reject slightly earlier, so identical edge accounting is not claimed. Remote/local
+terminal events share one idempotent cleanup path and cannot strand a live peer.
 
 This revision closes the confidentiality/freshness gap locally. A encrypts the real
 file as an S4 package for B; providers receive three distinct ciphertext envelopes,
@@ -193,6 +203,19 @@ Strict pass criteria:
   plus module are verifier-pinned as a transitive `publish` dependency. Selective
   membership poison must leave forbidden `verdict` send/local/remote/subscriber
   visibility at zero while an allowed `challenge` reaches both peers once;
+- the single WebRTC transcript combines inbound and outbound unique messages. Exact
+  512 and 8,388,608 decoded raw bytes pass; message 513 and byte 8,388,609 fail
+  closed. Duplicates consume neither limit;
+- outbound overflow performs zero native send/transcript/dedupe mutation; an
+  accepted outbound entry commits only after send success. Inbound overflow commits
+  no transcript/dedupe entry and schedules no subscriber delivery before fail-close;
+  terminal cleanup clears subscriptions;
+- the virtual transport enforces the same exact decoded raw-byte limit. The relay
+  edge's conservative base64 estimate may reject slightly earlier, so only the same
+  upper ceiling and fail-closed result—not byte-identical accounting—are required;
+- local close, remote DataChannel close, peer close, error, and repetition converge
+  idempotently; the captured native channel/peer close capabilities execute at most
+  once and a remote channel close cannot strand the peer;
 - termination of one provider makes its placement unavailable; repair chooses a
   different offer, signs a new lease, preserves the exact workload/content ID, and
   produces a new valid receipt before counting restored redundancy;
@@ -205,8 +228,20 @@ Strict pass criteria:
   Distinct-account/region/credential/administrator trials and burn-in remain a
   separate S7/S8 promotion gate.
 
-Source result: PASS locally in Node child processes and separate Chromium
-processes. The historical regression sends plaintext, while the composed controller
+Source result: the current WebRTC remediation passes focused Node `24/24` in
+`31,241ms`, actual Chromium in `50,086ms`, and diff checking. Literal count/byte
+  cap-plus-one, combined-direction budget, duplicate non-consumption, no overflow-frame
+  commit or delivery before cleanup, and at-most-once native close capability use are
+  exercised. The prior
+`8,076.826s` runtime/test/workflow full-suite PASS predates the current WebRTC
+runtime/test/security remediation. The frozen candidate then passed full `npm test`
+from `2026-08-11T06:42:38.6738575+09:00` through
+`2026-08-11T09:06:30.4636057+09:00`, exit `0`, wall `8,631,790ms`
+(`143m 51.790s`), through final `verify:s4`. Covered source/runtime/test/workflow
+files remained unchanged; related workload count was zero after excluding the probe.
+Docs separately pass spec/link/diff, so this is not a whole-current-tree exact full-
+suite claim. The historical regression sends
+plaintext, while the composed controller
 below sends only ciphertext shards. Signaling is manual same-host ICE, availability
 is a local observation. Exact-SHA governance and deployment are external evidence;
 stage promotion remains HOLD.
@@ -274,8 +309,10 @@ Strict pass criteria:
   runtime Chromium/Lab gates named above. Physical independence and same-origin
   signer isolation remain HOLD until separately proven.
 
-Source result: implemented with focused exact-ceiling and current runtime/test/
-workflow full-suite PASS; current evidence docs separately pass spec/link/diff.
+Source result: the placement-history exact-ceiling implementation passed its focused
+Node and mixed-runtime Chromium/Lab gates. The prior `8,076.826s` complete suite is
+historical, while the current frozen runtime/test/workflow bytes pass the fresh
+`8,631,790ms` suite through final `verify:s4`; docs pass separate spec/link/diff.
 `test/confidential-placement.test.mjs`
 proves every 2-of-3 combination, exact-age and max+1 behavior, generation-time expiry
 and effective-revocation rejection, duplicate provider/shard rejection, and four
@@ -304,16 +341,20 @@ valid generation-130 `3/3` candidate, then fail closed on its plus-one chain wit
 changing the ceiling journal. Node passed in `2,841,685.4279ms` test-body time
 (`2,842,481.1467ms` runner; `2,842,596ms` shell); Chromium passed in `2,549,195ms`
 dynamic time (`2,666,619ms` total). Its guard is now `3,300,000ms`; workflows remain
-240 minutes. The historical `7,065.8s` full-suite PASS is pre-ceiling and does not
-transfer. The unchanged current runtime/test/workflow source bytes ran uninterrupted
-`npm test` starting at
+240 minutes. The historical `7,065.8s` full-suite PASS is pre-ceiling. A preceding
+runtime/test/workflow candidate ran uninterrupted `npm test` starting at
 `2026-08-11 01:06:58.716+09:00`, ended at `03:21:35.542+09:00`, exited `0`, and
 completed every ordered gate through final `verify:s4` in `8,076,826ms`
-(`8,076.826s`; `134m 36.826s`). Only evidence docs changed afterward and separately
-pass spec/link/diff; this is not a whole-current-tree full-suite claim. Independently
+(`8,076.826s`; `134m 36.826s`). The WebRTC remediation postdates that run; its frozen
+runtime/test/workflow candidate passed from
+`2026-08-11T06:42:38.6738575+09:00` to
+`2026-08-11T09:06:30.4636057+09:00`, exit `0`, in `8,631,790ms`, through final
+`verify:s4`. Covered files remained unchanged and post-run related workload count was
+zero after excluding the probe. Independently
 in-browser journal-kernel parity and independent physical failure domains remain
-unclaimed. Exact-head CI, review,
-approval, merge, deployment, and public readback remain external. See
+unclaimed. Docs pass separate spec/link/diff; this is not a whole-current-tree exact
+full-suite claim. Exact-head CI, review, approval, merge, deployment, and public
+readback remain external. See
 [Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md).
 
 ### P0 — Lineage-bound controller handoff and repair convergence (source + local evidence PASS)
@@ -387,10 +428,11 @@ are supplied, challenge fork, response fork, and sibling generation fork. The
 current Lab/browser flow does not yet ingest asynchronous late proofs at execution.
 Historical 17-case and 4,263.6/4,304.1-second baselines and the later `7,065.8s`
 stateful-100 result all predate the current exact-ceiling source and do not transfer.
-The current focused exact-ceiling gates and the `8,076.826s` uninterrupted current
-runtime/test/workflow full suite pass through final `verify:s4`; later evidence-doc
-changes separately pass spec/link/diff. This is not a whole-current-tree full-suite
-claim. Exact-SHA CI is still the publication authority.
+The placement-history focused exact-ceiling gates and the `8,076.826s` uninterrupted
+suite remain historical evidence for their preceding runtime/test bytes. The current
+WebRTC-remediated runtime/test/workflow candidate passes focused Node, actual
+Chromium, and the `8,631,790ms` complete suite through final `verify:s4`; docs pass
+separate spec/link/diff. Exact-SHA CI is still the publication authority.
 See
 [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).
 
@@ -489,7 +531,7 @@ usable and stable.
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 | Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer, exact-head CI/review/App/native approval/merge | Merged local execution claim; physical independence **HOLD** |
-| P2P placement | Direct WebRTC storage, exact receipt gating, provider loss and new-lease repair | Node process plus actual Chromium origin-cut vertical | Source + local evidence; exact-SHA governance external; Internet reachability **HOLD** |
+| P2P placement | Direct WebRTC storage, combined 512-message/8,388,608-raw-byte transcript ceiling, outbound/inbound atomicity, idempotent native cleanup, exact receipt gating, provider loss, and new-lease repair | Focused Node `24/24`, actual Chromium literal cap-plus-one/remote-close probe, origin-cut vertical, and full `8,631,790ms` runtime/test/workflow suite through final `verify:s4` | Current runtime/test/workflow full-suite PASS plus separate docs spec/link/diff PASS; exact-SHA governance external; Internet reachability **HOLD** |
 | Confidential controller | S4 2-of-3 provider shards, generation-time freshness, prior-head/context-nonce journal v2, cumulative epoch chain high-waters, active `3/3` head barrier, hard-link successor CAS, and successor-authorized operational leases | `test/confidential-placement.test.mjs`, `test/confidential-journal-v2.test.mjs`, `test/confidential-controller-v2.test.mjs`, actual Chromium 98,317-byte file vertical, packed SDK import | Source implementation; exact-revision gates required. Unsigned local evidence only; hostile disk, hidden history, global consensus, custody-identity binding, and physical independence **HOLD** |
 | Lineage placement convergence | Generation/evidence/prior/repair binding, current-descriptor sign-once commit, derived plan, executor revalidation contract, fork halt | Node A→B and adversarial siblings, two fresh verifier processes, 1,000 partition/heal events, actual Chromium origin-cut A→B repair/commit | Source + local evidence; exact-SHA governance external |
 | Quorum liveness certificates | Offer-rostered sequence/predecessor challenge, consumer-selected bounded window, 3-of-4 local-duration observations, canonical failure certificate, generation binding, conditional late-proof conflict | Node threshold/fork corpus, offer-roster negative, fresh-process lineage replay, WebRTC artifact gate, actual Chromium unreachable provider plus four observer processes | Core conditional PASS; provider-agreed liveness SLA, breach/death/settlement evidence, Lab gossip/execution reconciliation, Sybil resistance, and independent failure domains **HOLD** |

@@ -4,6 +4,7 @@ import { canonicalBytes } from "../src/codec.mjs";
 import {
   createResourcePlacementArtifactMessage,
   RELAY_CONTROL_FORMAT,
+  RELAY_LIMITS,
   RESOURCE_PLACEMENT_ARTIFACT_FORMAT
 } from "../src/transport/protocol.mjs";
 import {
@@ -17,6 +18,7 @@ if (typeof poisonCase !== "string" || poisonCase.length === 0) {
   process.exit(64);
 }
 const sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
+const ErrorIntrinsic = Error;
 const PromiseIntrinsic = Promise;
 
 function artifactBytes(requestId) {
@@ -43,16 +45,22 @@ function rawArtifactBytes(artifactKind, requestId) {
 
 async function openFakeTransport(endpointId = "poison-a") {
   let channel;
+  let connection;
   let sendCalls = 0;
   class FakeChannel extends EventTarget {
     constructor() {
       super();
       this.bufferedAmount = 0;
+      this.closeCalls = 0;
       this.label = "mortalos-participant-v1";
       this.ordered = true;
       this.readyState = "open";
     }
-    close() { this.readyState = "closed"; }
+    close() {
+      this.closeCalls += 1;
+      this.readyState = "closed";
+      this.dispatchEvent(new Event("close"));
+    }
     send(value) {
       sendCalls += 1;
       this.sent = new Uint8Array(value);
@@ -61,6 +69,8 @@ async function openFakeTransport(endpointId = "poison-a") {
   class FakePeer extends EventTarget {
     constructor() {
       super();
+      connection = this;
+      this.closeCalls = 0;
       this.connectionState = "connected";
       this.iceGatheringState = "complete";
       this.localDescription = null;
@@ -69,7 +79,11 @@ async function openFakeTransport(endpointId = "poison-a") {
     createDataChannel() { channel = new FakeChannel(); return channel; }
     async createOffer() { return { sdp, type: "offer" }; }
     async setLocalDescription(value) { this.localDescription = value; }
-    close() { this.connectionState = "closed"; }
+    close() {
+      this.closeCalls += 1;
+      this.connectionState = "closed";
+      this.dispatchEvent(new Event("connectionstatechange"));
+    }
   }
   const previous = globalThis.RTCPeerConnection;
   globalThis.RTCPeerConnection = FakePeer;
@@ -77,6 +91,7 @@ async function openFakeTransport(endpointId = "poison-a") {
     const { transport } = await ManualWebRtcParticipantTransport.createOffer({ endpointId });
     return {
       channel,
+      connection,
       get sendCalls() { return sendCalls; },
       restore() {
         if (previous === undefined) delete globalThis.RTCPeerConnection;
@@ -187,6 +202,88 @@ async function runArtifactKindMembershipCase() {
     restore();
     opened.transport.close();
     opened.restore();
+  }
+}
+
+async function runErrorClassificationCase() {
+  const opened = await openFakeTransport(`material-${poisonCase}`);
+  const explicit = await openFakeTransport(`explicit-${poisonCase}`);
+  const retained = [];
+  for (let index = 0; index < RELAY_LIMITS.room_messages; index += 1) {
+    retained.push(artifactBytes(`material-${index}`));
+  }
+  const overflow = artifactBytes("material-overflow");
+  let deliveries = 0;
+  let restorePoison;
+  const uncaught = [];
+  const onUncaught = (reason) => { uncaught.push(reason); };
+  process.on("uncaughtException", onUncaught);
+  if (poisonCase === "error-constructor-null") {
+    const previous = globalThis.Error;
+    globalThis.Error = null;
+    restorePoison = () => { globalThis.Error = previous; };
+  } else {
+    const original = Object.getOwnPropertyDescriptor(ErrorIntrinsic, Symbol.hasInstance);
+    Object.defineProperty(ErrorIntrinsic, Symbol.hasInstance, {
+      configurable: true,
+      value() { throw "poisoned Error.hasInstance"; }
+    });
+    restorePoison = () => {
+      if (original) Object.defineProperty(ErrorIntrinsic, Symbol.hasInstance, original);
+      else delete ErrorIntrinsic[Symbol.hasInstance];
+    };
+  }
+  let stateBeforeOverflow;
+  let explicitCloseThrew = false;
+  try {
+    for (let index = 0; index < retained.length; index += 1) {
+      opened.channel.dispatchEvent(new MessageEvent("message", { data: retained[index] }));
+    }
+    opened.channel.dispatchEvent(new MessageEvent("message", { data: retained[0] }));
+    stateBeforeOverflow = opened.transport.state;
+    opened.transport.subscribe(() => { deliveries += 1; }, {
+      startAfter: RELAY_LIMITS.room_messages
+    });
+    opened.channel.dispatchEvent(new MessageEvent("message", { data: overflow }));
+    try {
+      explicit.transport.close();
+    } catch {
+      explicitCloseThrew = true;
+    }
+    await tick();
+    await tick();
+  } finally {
+    restorePoison();
+    process.removeListener("uncaughtException", onUncaught);
+  }
+  try {
+    assert.equal(stateBeforeOverflow, "open");
+    assert.equal(opened.transport.state, "failed");
+    assert.equal(deliveries, 0);
+    assert.equal(uncaught.length, 0);
+    assert.equal(explicitCloseThrew, false);
+    const last = await opened.transport.fetchRange(RELAY_LIMITS.room_messages - 1);
+    assert.equal(last.length, 1);
+    assert.equal(last[0].sequence, RELAY_LIMITS.room_messages);
+    assert.deepEqual(await opened.transport.fetchRange(RELAY_LIMITS.room_messages), []);
+    assert.equal(opened.channel.closeCalls, 1);
+    assert.equal(opened.connection.closeCalls, 1);
+    assert.equal(explicit.transport.state, "closed");
+    assert.equal(explicit.channel.closeCalls, 1);
+    assert.equal(explicit.connection.closeCalls, 1);
+    opened.transport.close();
+    opened.channel.dispatchEvent(new Event("error"));
+    explicit.transport.close();
+    explicit.channel.dispatchEvent(new Event("error"));
+    assert.equal(opened.channel.closeCalls, 1);
+    assert.equal(opened.connection.closeCalls, 1);
+    assert.equal(explicit.channel.closeCalls, 1);
+    assert.equal(explicit.connection.closeCalls, 1);
+  } finally {
+    opened.transport.close();
+    opened.restore();
+    explicit.transport.close();
+    explicit.restore();
   }
 }
 
@@ -347,6 +444,9 @@ async function runTransportCase() {
 if (poisonCase === "constructors") await runConstructorCase();
 else if (poisonCase === "artifact-kind-membership") await runArtifactKindMembershipCase();
 else if (poisonCase === "signal-type") await runSignalCase();
+else if (poisonCase === "error-constructor-null" || poisonCase === "error-has-instance") {
+  await runErrorClassificationCase();
+}
 else await runTransportCase();
 
 process.stdout.write(JSON.stringify({ case: poisonCase, pass: true }));

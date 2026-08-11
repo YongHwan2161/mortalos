@@ -57,6 +57,9 @@ discovery, signaling, Cloudflare, and GPT decide none of those results.
 
 ## Current boundary
 
+Status: **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF
+PASS; EXACT-SHA EXTERNAL**
+
 Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
 continuity and local resource-execution verticals. This revision adds direct WebRTC
 transport, receipt-gated placement/repair, S4 ciphertext-only 2-of-3 provider
@@ -74,19 +77,34 @@ identity. It also binds
 placement generations to Continuity, gates derived placement action plans on a
 current-descriptor commit, requires every supplied authenticated Capsule tip to be
 represented by the convergence chain, and halts incomplete or sibling forks.
-The current focused exact-ceiling gates pass locally. Node performs 128 signed
+The placement-history focused ceiling gates passed on the preceding candidate. Node
+performed 128 signed
 transitions with 381 genuine replacements to generation 129 and exactly 384
 provider/lease/chain high-waters (`128/128/128` by shard). Mixed-runtime Chromium/Lab
-performs 127 cycles from generation 2 to the same ceiling with actual browser-held
+performed 127 cycles from generation 2 to the same ceiling with actual browser-held
 non-extractable keys. Both prove a signed generation-130 `3/3` candidate, then reject
 its plus-one chain without changing the ceiling journal. The focused runtimes are
 `2,841,685.4279ms` Node test-body time and `2,666,619ms` total Chromium time; the
 Chromium guard is `3,300,000ms`. The historical `7,065.8s` full-suite PASS predates
-this exact-ceiling source and does not transfer. The unchanged current runtime/test/
-workflow source bytes ran uninterrupted `npm test`, exited `0` after `8,076,826ms`
-(`8,076.826s`; `134m 36.826s`), and completed every ordered gate through final
-`verify:s4`. Only evidence docs changed afterward and separately pass spec/link/diff;
-this is not a whole-current-tree full-suite claim. Three persistent Chromium pages hold non-extractable provider keys and
+that ceiling source. A later uninterrupted `8,076.826s` runtime/test/workflow PASS
+now also predates the current WebRTC runtime/test/security remediation and is
+historical rather than current-candidate evidence. The remediated direct and virtual
+transports enforce one combined transcript of at most 512 unique canonical messages
+and 8,388,608 decoded raw bytes; duplicates are free, outbound overflow precedes
+native send, inbound overflow commits no transcript/dedupe entry or subscriber
+delivery before fail-close cleanup clears subscriptions, and local/remote terminal
+paths close native capabilities at most once.
+The relay edge conservatively estimates decoded bytes from base64 and may reject
+slightly earlier, so only the same upper ceiling and fail-closed result are shared.
+The current candidate passes focused Node `24/24` in `31,241ms` and actual Chromium
+in `50,086ms`. A hidden-wrapper full `npm test` ran from
+`2026-08-11T06:42:38.6738575+09:00` through
+`2026-08-11T09:06:30.4636057+09:00`, exited `0` in `8,631,790ms`
+(`143m 51.790s`), and reached final `verify:s4`. Its source/runtime/test/workflow
+files remained unchanged after the run and the related-workload inventory was zero
+after excluding the probe itself. The docs separately pass spec/link/diff, so this
+is not a whole-current-tree exact full-suite claim. Three persistent Chromium pages
+hold non-extractable provider keys and
 produce storage results/signatures while Node orchestrates the portable journal;
 neither independent in-browser journal-kernel parity nor independent failure domains
 are claimed.

@@ -18,6 +18,7 @@ import {
   RelayChunkRecoveryAdapter
 } from "../src/transport/chunk-data-plane.mjs";
 import {
+  createResourcePlacementArtifactMessage,
   createRelayFrame,
   createRelayControlMessage,
   createRelayMessage,
@@ -35,6 +36,50 @@ const fork = JSON.parse(await readFile(new URL("./vectors/fork.json", import.met
 
 function message(record) {
   return canonicalBytes(createRelayMessage(record));
+}
+
+const exactPaddingLengths = new Map();
+
+function placementArtifactBytes(requestId) {
+  return canonicalBytes(createResourcePlacementArtifactMessage({
+    artifactKind: "challenge",
+    payloadBytes: canonicalBytes({ requestId }),
+    requestId
+  }));
+}
+
+function paddedPlacementArtifactBytes(marker, paddingLength) {
+  return canonicalBytes(createResourcePlacementArtifactMessage({
+    artifactKind: "challenge",
+    payloadBytes: canonicalBytes({ marker, padding: "x".repeat(paddingLength) }),
+    requestId: "virtual-byte-boundary"
+  }));
+}
+
+function exactSizedPlacementArtifactBytes(marker, targetBytes) {
+  const cacheKey = `${marker.length}:${targetBytes}`;
+  let paddingLength = exactPaddingLengths.get(cacheKey);
+  if (paddingLength === undefined) {
+    let low = 0;
+    let high = targetBytes;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      if (paddedPlacementArtifactBytes(marker, middle).byteLength < targetBytes) low = middle + 1;
+      else high = middle - 1;
+    }
+    paddingLength = -1;
+    for (let candidate = Math.max(0, low - 4); candidate <= low + 4; candidate += 1) {
+      if (paddedPlacementArtifactBytes(marker, candidate).byteLength === targetBytes) {
+        paddingLength = candidate;
+        break;
+      }
+    }
+    assert.notEqual(paddingLength, -1, `no canonical relay message has ${targetBytes} bytes`);
+    exactPaddingLengths.set(cacheKey, paddingLength);
+  }
+  const bytes = paddedPlacementArtifactBytes(marker, paddingLength);
+  assert.equal(bytes.byteLength, targetBytes);
+  return bytes;
 }
 
 async function publishRecords(network, records) {
@@ -110,6 +155,65 @@ test("virtual transport converges after duplicate, drop, reorder, disconnect, an
   assert.equal(replicas[0].publicState.accepted_records, 3);
   assert.equal(replicas[0].publicState.sequence, "2");
   await assert.rejects(() => endpoints[1].fetchRange(0), /closed/);
+});
+
+test("virtual transport enforces generated room message and decoded raw-byte ceilings", async () => {
+  const countNetwork = new VirtualTransportNetwork();
+  const countEndpoint = countNetwork.endpoint(ROOM, "count-boundary");
+  let firstBytes;
+  for (let index = 0; index < RELAY_LIMITS.room_messages; index += 1) {
+    const bytes = placementArtifactBytes(`virtual-count-${index}`);
+    firstBytes ??= bytes;
+    await countEndpoint.publish(bytes);
+  }
+  assert.equal((await countEndpoint.publish(firstBytes)).duplicate, true);
+  await assert.rejects(
+    countEndpoint.publish(placementArtifactBytes("virtual-count-overflow")),
+    (error) => error.code === "RELAY_LIMIT"
+  );
+  assert.equal((await countEndpoint.fetchRange(RELAY_LIMITS.room_messages - 1)).length, 1);
+  countEndpoint.close();
+
+  const exactNetwork = new VirtualTransportNetwork();
+  const exactEndpoint = exactNetwork.endpoint(ROOM, "byte-boundary-exact");
+  const exactMessages = RELAY_LIMITS.room_bytes / RELAY_LIMITS.message_bytes;
+  for (let index = 0; index < exactMessages; index += 1) {
+    await exactEndpoint.publish(exactSizedPlacementArtifactBytes(
+      `virtual-${String(index).padStart(3, "0")}`,
+      RELAY_LIMITS.message_bytes
+    ));
+  }
+  await assert.rejects(
+    exactEndpoint.publish(placementArtifactBytes("virtual-byte-overflow")),
+    (error) => error.code === "RELAY_LIMIT"
+  );
+  assert.equal((await exactEndpoint.fetchRange(exactMessages - 1)).length, 1);
+  exactEndpoint.close();
+
+  const plusOneNetwork = new VirtualTransportNetwork();
+  const plusOneEndpoint = plusOneNetwork.endpoint(ROOM, "byte-boundary-plus-one");
+  const fullMessages = exactMessages - 1;
+  for (let index = 0; index < fullMessages; index += 1) {
+    await plusOneEndpoint.publish(exactSizedPlacementArtifactBytes(
+      `virt-p1-${String(index).padStart(3, "0")}`,
+      RELAY_LIMITS.message_bytes
+    ));
+  }
+  await plusOneEndpoint.publish(exactSizedPlacementArtifactBytes(
+    "virt-p1-remainder",
+    RELAY_LIMITS.message_bytes - 359
+  ));
+  const exactPlusOne = exactSizedPlacementArtifactBytes("virt-p1-overflow", 360);
+  await assert.rejects(
+    plusOneEndpoint.publish(exactPlusOne),
+    (error) => error.code === "RELAY_LIMIT"
+  );
+  await assert.rejects(
+    plusOneEndpoint.publish(exactPlusOne),
+    (error) => error.code === "RELAY_LIMIT"
+  );
+  assert.equal((await plusOneEndpoint.fetchRange(fullMessages)).length, 1);
+  plusOneEndpoint.close();
 });
 
 test("two signed siblings converge to visible FORKED instead of last-write-wins", async () => {

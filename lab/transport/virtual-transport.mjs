@@ -2,6 +2,7 @@ import {
   assertRoomId,
   createRelayFrame,
   decodeRelayMessageBytes,
+  RelayProtocolError,
   RELAY_LIMITS
 } from "../../src/transport/protocol.mjs";
 
@@ -15,7 +16,13 @@ export class VirtualTransportNetwork {
   #room(roomId) {
     assertRoomId(roomId);
     if (!this.#rooms.has(roomId)) {
-      this.#rooms.set(roomId, { endpoints: new Map(), frames: [], messages: new Map(), queue: [] });
+      this.#rooms.set(roomId, {
+        endpoints: new Map(),
+        frames: [],
+        messages: new Map(),
+        queue: [],
+        rawBytes: 0
+      });
     }
     return this.#rooms.get(roomId);
   }
@@ -47,10 +54,17 @@ export class VirtualTransportNetwork {
         const opened = decodeRelayMessageBytes(messageBytes);
         const duplicate = room.messages.get(opened.message_id);
         if (duplicate) return { duplicate: true, frame: cloneFrame(duplicate) };
-        if (room.frames.length >= RELAY_LIMITS.room_messages) throw new Error("room message ceiling reached");
+        if (room.frames.length >= RELAY_LIMITS.room_messages) {
+          throw new RelayProtocolError("RELAY_LIMIT", "room message ceiling reached");
+        }
+        const nextRawBytes = room.rawBytes + opened.bytes.byteLength;
+        if (nextRawBytes > RELAY_LIMITS.room_bytes) {
+          throw new RelayProtocolError("RELAY_LIMIT", "room byte ceiling reached");
+        }
         const frame = createRelayFrame(room.frames.length + 1, opened.bytes);
         room.messages.set(opened.message_id, frame);
         room.frames.push(frame);
+        room.rawBytes = nextRawBytes;
         for (const [targetId, target] of room.endpoints) {
           if (!target.closed && target.handler) room.queue.push({ frame, room, targetId });
         }
