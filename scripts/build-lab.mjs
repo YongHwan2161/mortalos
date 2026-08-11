@@ -62,8 +62,10 @@ export async function buildLab({
     absWorkingDir: repositoryRoot,
     entryPoints: {
       app: "lab/app.mjs",
+      "confidential-placement": "lab/confidential-placement.mjs",
       "custodian-worker": "lab/custodian-worker.mjs",
-      "corpus-worker": "lab/corpus-worker.mjs"
+      "corpus-worker": "lab/corpus-worker.mjs",
+      "p2p-placement": "lab/p2p-placement.mjs"
     },
     outdir,
     bundle: true,

@@ -1,14 +1,17 @@
 # MortalOS v0/v1 Threat Model
 
-Current candidate note (2026-08-02): S2/S4 claim authority is reopened. A branded
+Current source note (2026-08-10): the hardened S2/S4 source merged through PR #51,
+while the revised S2/S4 stage claims remain reopened pending new exact-SHA receipts.
+A branded
 outer authority is insufficient when the store or method behind it is mutable.
 Security-sensitive async entrypoints must capture complete transitive invocation
 data and module-private capabilities before the first await, and authority-changing
 commits require exact readback. The AST-based suspension audit rejects
 marker-shaped comments/strings, same-expression comma and conditional escapes,
 template interpolation, repeating-loop reads, deferred closures, and ordinary
-borrowed-identifier reads after suspension. Historical receipts do not cover this
-source.
+borrowed-identifier reads after suspension. Historical receipts do not cover the
+revised claims. This rolling document cannot promote its containing revision;
+immutable receipt, review, CI, merge, and deployment records carry that decision.
 
 Status: **Normative for v0 and the Minimum Viable Life claim**  
 Protocol: `mortalos/0`, state extension `mortalos/1`
@@ -324,7 +327,41 @@ MortalOS may use infrastructure for peer discovery and NAT traversal. That infra
 - must not bypass current quorum; and
 - must not be required to reconstruct accepted state after peers connect, except as a non-authoritative cache.
 
-If later phases implement this architecture, the correct public claim will be **peer-to-peer execution and state authority with replaceable bootstrap infrastructure**, not zero infrastructure. The current portable kernel and its CLI/browser verification adapters have no participant-to-participant network transport.
+The source revision includes manual WebRTC participant transport plus receipt-gated
+encrypted placement and repair. The correct claim is **peer-to-peer execution and state authority
+with replaceable bootstrap infrastructure**, not zero
+infrastructure. The public Lab's default journey still uses the HTTP relay and the
+confidential P2P vertical remains an automated acceptance harness; neither fact
+establishes an open participant resource network or independent physical providers.
+The direct adapter treats public JavaScript constructors, collection/iterator
+methods, delivery schedulers, Event/DataChannel slots, and RTCPeerConnection methods
+as mutable capabilities. It captures reviewed native operations, keeps one private
+transcript map, publishes locally only after a synchronous native send succeeds, and
+returns detached immutable frames. Node and actual connected-Chromium poison corpora
+exercise those named boundaries. Relay artifact-kind membership is a separately
+pinned transitive decoder dependency and invokes captured `Set.has`; selective
+`verdict` poison must leave send and both transcripts at zero while challenge remains
+deliverable. This does not claim that every future relay validator dependency is
+automatically primordial-safe. A successful send is only local queue admission, not a
+peer acknowledgement, durable storage proof, or placement verdict.
+
+The private peer transcript is a combined inbound/outbound resource boundary, not
+two independently refillable budgets. It retains at most 512 unique canonical
+messages and 8,388,608 decoded raw bytes; duplicates are non-consuming. Outbound
+capacity checks happen before native send and local state commits only after send
+success. Inbound overflow exposes no frame, dedupe entry, or subscriber delivery and
+then fail-closes. The virtual transport enforces the same exact raw-byte ceiling.
+The relay edge conservatively estimates decoded bytes from base64 and can overcount
+slightly, so byte-identical accounting is explicitly not claimed; the shared property
+is an upper ceiling with fail-closed rejection.
+
+Terminal cleanup is a capability boundary too. Local close, remote channel close,
+peer close, and error converge through one idempotent path, invoke captured native
+close capabilities at most once, and close the still-live peer after remote channel
+closure. Error propagation uses owned values rather than ambient `Error` construction
+or `instanceof`, so hostile `Error` replacement or `Symbol.hasInstance` cannot skip
+cleanup. Without that convergence, a remote close could strand network resources
+even though the public transport already reported closed.
 
 ### 11.1 Bootstrap endpoint boundary
 
@@ -357,9 +394,13 @@ GPT-5.6 must not:
 
 ## 13. Privacy and resource limitations
 
-MortalOS v0 provides integrity and lineage semantics, not confidentiality. Public keys, membership changes, pulse metadata, and public state roots may be observable.
+MortalOS v0 provides integrity and lineage semantics, not confidentiality. Public keys, membership changes, pulse metadata, and public state roots may be observable. The later S4 extension encrypts bounded state packages, but that does not retroactively make v0 metadata confidential or promote the revised S4 stage claim.
 
-Resource contribution must be explicit and revocable in later participant-runtime phases. v0 does not include background execution, hidden mining, incentives, or unrestricted arbitrary code.
+Resource contribution is explicit, bounded, signed, metered, and revocable in the
+later resource-contract and P2P placement source extensions. Those extensions are
+outside the v0 validity/death claim and do not establish independent providers or
+honest metering. v0 itself does not include background execution, hidden mining,
+incentives, or unrestricted arbitrary code.
 
 ## 14. Security claims matrix
 
@@ -383,9 +424,9 @@ Resource contribution must be explicit and revocable in later participant-runtim
 | All hidden copies are erased at death | Not claimed | Impossible to establish in open untrusted clients. |
 | Byzantine quorum cannot fork | Not guaranteed | Future work. |
 | Sybil-resistant openness | Not implemented | Future work. |
-| Confidential prompts/state | Not implemented | Future work. |
+| Confidential bounded state packages | Implemented as the S4 source extension; revised stage claim reopened | Providers see ciphertext shards, not plaintext or keys; same-origin/XSS-resistant custody and independent-provider promotion remain HOLD. |
 | Zero infrastructure | Not claimed | Bootstrap/relay may exist. |
-| GPT cannot bypass validity | Required architecture property | Runtime integration and adversarial tests are planned for H4/P9. |
+| GPT cannot bypass validity | Required architecture property | The optional GPT/presentation path is non-authoritative and cost-gated; protocol validators do not consume its verdicts. |
 
 ## 15. v1 state-specific boundaries
 
@@ -504,15 +545,16 @@ epoch-key wrapping through WebCrypto.
 - Rotation activation is atomic old-or-new; any mixed membership/key/package state
   fails closed while the prior complete epoch remains readable.
 
-The candidate has focused relay/store capture evidence, standard and cross-runtime
+The hardened source revision has focused relay/store capture evidence, standard and cross-runtime
 vectors, one-million-record IV uniqueness, actual IndexedDB/Web Locks endpoint
 contention, browser-process restart recovery, persistent loss/equivocation
 rotation, mutable-store attack rejection, successor-substitution rejection,
 recipient-substitution rejection, failover-local authority rejection,
 removed-member denial, authority-only rotation, and
-every-write-boundary old-or-new fault evidence. These do not become a promoted
-confidentiality claim until the exact receipt, full suite, independent
-implementation review, merge, and exact-main deployment all pass.
+every-write-boundary old-or-new fault evidence. That source merged through PR #51,
+but the revised S4 stage claim remains reopened until a new exact-SHA receipt covers
+it. Rolling source text cannot substitute for immutable review, CI, merge,
+deployment, and receipt records.
 
 ## 19. Threat-model change control
 
@@ -541,10 +583,121 @@ The revision must identify the new trust assumption, affected invariant, failure
   not separate hosts, providers, administrators, or credential domains.
 - A Continuity Capsule contains public lineage plus encrypted resource state and no
   signing authority. A 2-of-3 Capsule quorum is content availability, not key quorum.
-- Chromium and Firefox have actual-engine candidate evidence. WebKit is selected by
+- Chromium and Firefox have actual-engine source-revision evidence. WebKit is selected by
   measured capability, not engine name or key generation: native non-extractable
   Ed25519 must sign and verify through the canonical 65,536-byte message ceiling
   before the full custody suite runs. `NotSupportedError` or `OperationError` permits
   verifier-only operation. Raw or exportable private-key fallback is forbidden.
 - Any valid divergent Capsule or lineage is equivocation evidence and halts automatic
   activation; MortalOS does not select a winner.
+
+## 21. Confidential P2P placement source boundary
+
+- WebRTC connection success, manual signaling text, a provider label, or receipt
+  delivery is not placement proof. Only the exact active lease and storage execution
+  chain for the requested workload can count.
+- Provider identity is derived from the signed offer. Repeated identity cannot count
+  as multiple failure domains.
+- A historical receipt proves possession at one challenge time. The confidential
+  evaluator applies a bounded local proof age: the exact maximum counts and maximum
+  plus one millisecond does not. This improves scheduling freshness but does not
+  prove continuous liveness; local failed readback remains non-global observation.
+- A historical placement timestamp is not evaluation authority. Resource-contract
+  completion or effective revocation and proof freshness are both evaluated at the
+  canonical generation instant; otherwise a caller could rewind only the placement
+  timestamp and admit an expired lease into a current generation.
+- The composed path sends providers only canonical shards of an S4 encrypted
+  package. Providers receive no resource plaintext, epoch key, unwrap authority, or
+  custodian private key. This depends on S4 encryption; XOR shard coding itself is
+  availability coding and is not plaintext secret sharing.
+- A restored controller does not count the same prior receipt again, including after
+  its provider was replaced and later returns. Every counted receipt carries a
+  signed challenge nonce derived from the exact prior journal and next generation.
+  The epoch-wide cumulative high-water retains replaced provider/lease chains; an
+  existing chain must extend its exact high-water and a new lease may start at zero
+  only under the current context. After custody moves from A to B,
+  a separately generated successor-authorized operational signer creates new leases
+  rather than receiving A's private consumer key. This operational identity is not
+  inferred to be, or cryptographically bound to, B's Continuity custody identity.
+- A journal-shaped object or its self-hash is not producer evidence. The conforming
+  creator accepts only a module-private evaluator result. The producer copies
+  recognized records, dense arrays, and byte views into owned inert data, uses
+  captured collection operations, and rechecks the runtime after hostile acquisition
+  and nested validators before issuing the brand. It does not invoke caller array
+  methods or recognized getters, so selective array-method, Proxy-array, accessor,
+  Map, or Set poisoning fails closed rather than producing proved barriers. The durable commit
+  adapter first persists a prior-bound reproof intent and then rederives a complete
+  three-shard v2 journal from raw verified placement evidence. Empty, partial, old-
+  context, stale, unavailable, cloned, accessor-backed, or manually self-hashed input
+  cannot advance the head. A transparent Proxy is judged by its captured own-data view
+  under the general Proxy nonclaim; it cannot manufacture the private evaluator brand
+  or valid signed receipts. Replaced chains remain in the bounded
+  cumulative high-water; overflow halts without pruning. The v1 visible barriers are
+  never treated as full migration history, so v1 remains unavailable until a fresh
+  epoch-bound 3/3 reproof exists. A visible late v1 pointer competing with a migrated
+  v1 anchor is a root fork and halts. The filesystem adapter fsyncs immutable journal and
+  transition documents and uses one prior-keyed no-replace hard link as its CAS.
+  This makes a pre-CAS orphan invisible and prevents two conforming writers from
+  committing different successors to one prior. Hostile replacement of otherwise
+  complete unsigned local files and sudden power loss on a filesystem that rejects
+  directory fsync remain outside this source claim. Crash-left pending files are
+  ignored; bounded garbage collection for repeated pending-file accumulation remains HOLD.
+  The local adapter assumes trusted Node bootstrap/built-in bindings and does not
+  sandbox arbitrary code already running with the same process and directory authority.
+- The exact-ceiling Chromium corpus creates fresh non-extractable logical provider
+  signers, offers, leases, and storage results inside three persistent provider pages
+  and recomputes possession evidence from already stored exact shard bytes. It runs
+  127 cycles from generation 2 to generation 129 with 384 distinct provider/lease/
+  chain high-waters, then proves a browser-signed generation-130 `3/3` candidate
+  whose plus-one commit is rejected without changing the ceiling bytes. The portable
+  journal controller remains Node-orchestrated. The corpus does not prove independent
+  in-browser journal-kernel parity, new browser/process deaths or network transfers,
+  independent possession domains, machines, accounts, or administrators.
+- Canonical placement generations are committed through the current Continuity
+  descriptor's quorum-authorized sign-once transition. A verified commit qualifies derivation of a
+  deterministic placement action plan. `deriveCommittedPlacementActionPlan` returns
+  `mortalos-lineage-placement-action-plan/1` with `planned_repair_actions`,
+  `verified_placement_receipt_ids`, `non_capability: true`, and
+  `requires_executor_reverification: true`; it is public, forgeable JSON rather than
+  authority. The effect executor must reverify the original Capsule, generation,
+  commit, current placement evidence, and liveness evidence. Generation numbering is
+  rederived from authenticated Capsule placement-transition history; repetition,
+  decrement, skip, or overflow fails closed. A valid same-generation
+  sibling fork halts with no selected head; reordered or duplicated evidence
+  converges byte-identically. Convergence also retains the authenticated latest
+  placement tip from every supplied verified Capsule; a chain that ends before any
+  supplied tip halts as `incomplete-chain` instead of selecting a historical winner.
+  A completely hidden newer Capsule remains unknowable and is not a global-currentness
+  claim.
+- Raw `unavailable_provider_ids` remains a lower-level diagnostic input and is
+  rejected by lineage generation. Provider failure at that layer requires a
+  predecessor/sequence-bound challenge and a threshold of role-disjoint observations
+  under the provider-signed offer witness policy. No global clock or deadline is
+  trusted. The core conditionally halts a derived plan for a valid late receipt
+  response, challenge fork, or response fork when the caller supplies the response
+  and corresponding verified current placement evidence. The current Lab/browser
+  harness supplies empty late-response/current-placement arrays and has no network
+  gossip plus execution-time reconciliation loop; that production control remains
+  unimplemented.
+- This prevents one controller key from declaring failure, but does not prove honest
+  observer timers or independent actors. One administrator may control multiple
+  valid observer keys; Sybil resistance and physical failure-domain diversity remain
+  HOLD.
+- Manual `iceServers: []` same-host success does not prove NAT traversal, Internet
+  reachability, or origin-free discovery. Signaling, STUN, TURN, and relays may be
+  replaceable availability capabilities but never validity authorities.
+- Separate browser and Node processes on this PC share hardware, network,
+  administrator, and credential domains. Physical S7/S8 claims remain HOLD.
+- Literal count/byte cap-plus-one and terminal-cleanup regressions pass in the
+  focused Node and actual Chromium gates. The prior `8,076.826s` complete
+  runtime/test/workflow PASS predates the current WebRTC runtime/test/security
+  remediation. The frozen current runtime/test/workflow candidate passes the fresh
+  `8,631,790ms` suite through final `verify:s4`; covered files remained unchanged and
+  docs pass separate spec/link/diff. Exact-SHA governance remains external.
+
+The next root P0 is a provider-signed lease-bound liveness policy plus independent
+provider possession response and an effect-time exactly-once repair executor.
+Lineage-governed
+admission/failure-domain accounting with explicit trust roots follows. Self-asserted
+topology labels must not count as independent domains; admission and diversity
+claims require evidence rooted outside the admitted actor.

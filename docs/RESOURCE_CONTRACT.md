@@ -311,5 +311,77 @@ local multi-process topology under the offer's declared witness-fault assumption
 It does **not** prove witness/provider identities are independently administered,
 the declared fault bound is true, cumulative metering is physically honest, the
 process ran on a distinct machine or region, or Sybil resistance/economic settlement.
-The next architecture gate is provider-neutral transport/adapters and a reproducible
-distinct-account, credential, administrator, and failure-domain evidence matrix.
+The next architecture gate is a provider-signed lease-bound liveness policy,
+independent possession response, and effect-time exactly-once repair executor.
+Lineage-governed admission/failure-domain accounting with explicit trust roots
+follows. Provider-neutral transport exists in the source, but self-asserted topology
+labels do not establish independent domains.
+
+## 13. Receipt-gated storage placement policy
+
+This source revision composes the existing documents without introducing a new
+signed placement verdict. `evaluateStoragePlacements` counts a placement only when:
+
+1. the signed offer derives a distinct provider identity;
+2. the exact mutual lease is active at the local observation time;
+3. the declared witness threshold converges on that lease;
+4. usage and execution receipts form one exact predecessor chain;
+5. the last execution is `storage`; and
+6. its workload ID equals the requested content commitment.
+
+Duplicate provider identity, invalid signature, wrong workload, cross-lease
+evidence, missing execution, expired/revoked/exhausted lease, or locally observed
+unavailability cannot count. Meeting the recovery quorum but not the target returns
+`repairing`; falling below quorum returns `unavailable`.
+
+The confidential composition adds shard-specific workload binding and an explicit
+local freshness window. Exact maximum age counts; maximum plus one millisecond is
+`stale-proof`. Journal v2 creates a canonical reproof context before receipt
+production. The context binds the exact prior journal ID, next generation,
+confidential manifest, freshness/`2-of-3` policy, and epoch. Each storage challenge
+nonce is derived from the context ID, receipt-chain identity, next sequence, and
+previous receipt ID. A durable head requires three currently active proofs for
+shards 0/1/2 under three distinct providers; two shards remain enough for recovery
+but cannot advance anti-replay state.
+
+Within one journal epoch, `receipt_high_waters` retains the latest committed receipt
+for every lease/provider/shard/workload chain, including chains that are no longer
+in the active `3/3`. A known chain must present the exact next sequence and direct
+receipt predecessor. A genuinely new chain starts at sequence zero with no
+predecessor. Provider replacement therefore adds D/E/F without discarding A/B/C's
+barriers. Rotation may reset this bounded accumulator only after a new epoch context
+and fresh context-bound `3/3` proofs commit. A v1 journal contributes parent and
+generation metadata only; it cannot seed v2 high-waters or become live without that
+fresh rotated-epoch reproof.
+
+The Node durable adapter writes immutable context, journal, and transition files and
+uses separate predecessor-keyed no-replace hard-link claims for the reproof intent
+and successor commit. This is a local same-filesystem CAS for conforming writers,
+not a signature or global fork-choice mechanism. Journal, context, and transition
+documents are unsigned; hostile-disk replacement, valid receipt history withheld
+from the local accumulator, and cross-host/global consensus remain outside the
+claim. A separately generated successor-authorized operational signer creates new
+leases rather than receiving A's private key. It is not inferred to be, or
+cryptographically bound to, B's Continuity custody identity.
+
+The lineage-placement source derives a deterministic placement action plan
+from a fully reverified placement generation only after the current Continuity
+descriptor commits it. `deriveCommittedPlacementActionPlan` returns
+`mortalos-lineage-placement-action-plan/1` with `planned_repair_actions`,
+`verified_placement_receipt_ids`, `non_capability: true`, and
+`requires_executor_reverification: true`. The output is public, forgeable JSON, not
+authority; an executor must reverify the
+original Capsule, generation, commit, and current placement/liveness evidence before
+effects. Raw unavailable-provider input is rejected at this layer. One
+provider counts as failed only when the provider-signed offer's witness policy signs
+a predecessor/sequence-bound non-response certificate. A late provider response
+must name an actual verified dual-signed execution receipt. The core conditionally
+halts on conflict when a caller supplies that response and current placement
+evidence; the current Lab/browser harness supplies empty late-response/current-
+placement arrays and has no network gossip plus execution-time reconciliation loop.
+This proves threshold key assertions, not honest
+timers, Sybil resistance, honest metering, consensus, or independent failure domains. See
+[P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) and
+[Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md),
+[Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md), and
+[Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).

@@ -796,15 +796,16 @@ results. They do not change Pulse validity, select a lineage head, or contribute
 the mortality classifier. In particular, missing chunks cannot become empty state
 and cannot establish protocol death.
 
-## 16. Candidate protocol profile, relay fragments, and Capsules
+## 16. Protocol profile, relay fragments, and Capsules
 
-`protocol/profile.v1.json` is the current candidate source for S3/S4 and transport
+`protocol/profile.v1.json` is the normative generated-profile source for this
+implementation's S3/S4 and transport
 ceilings. Generated constants must exactly match it. A 65,536-byte state chunk does
 not fit directly inside the 65,536-byte relay-message ceiling after encoding, so the
 real data plane carries it as bounded 32,768-byte domain-digested fragments and
 reassembles only after exact fragment, chunk, and resource-root verification.
 
-`mortalos-continuity-capsule/1` is a candidate portable container for canonical
+`mortalos-continuity-capsule/1` is the source implementation's portable container for canonical
 lineage records and one exact state package. A Capsule is not an accepted lineage
 record, private-key container, fork-choice vote, or mortality observation. It must
 be verified through the same lineage/state validators before any local activation.
@@ -818,3 +819,190 @@ expansion plus bounded metadata. Signed logical identity is not evidence that th
 providers have independent hosts, credentials, administrators, or failure domains.
 The raw Capsule quorum compatibility API only counts valid content observations and
 must not be used to make that distinct-copy claim.
+
+### Transport-neutral P2P placement extension
+
+`mortalos-webrtc-signal/1` is a bounded canonical manual signaling document for a
+replaceable browser transport. `mortalos-resource-placement-artifact/1` is an
+unsigned carrier for canonical offer, lease, announcement, challenge, usage,
+execution, and resource-descriptor payloads. Neither format is a lifecycle event,
+fork-choice input, signed placement verdict, or validity authority.
+
+Artifact-kind allowlist membership MUST NOT dispatch through a later-mutable public
+collection method. A forbidden kind such as `verdict` MUST be rejected before any
+transport send or local/remote transcript commit even if ambient prototypes change.
+
+The manual WebRTC adapter MUST keep one combined inbound/outbound transcript per
+peer. Its generated ceiling is 512 unique canonical relay messages and 8,388,608
+decoded raw message bytes across both directions. An exact duplicate MUST remain
+idempotent and consume neither count nor byte budget. After duplicate detection, an
+outbound over-limit message MUST reject before native send and MUST produce no local
+frame or dedupe mutation; an accepted outbound message MUST enter the transcript
+only after native send returns successfully. An inbound over-limit message MUST
+commit no transcript or dedupe entry and MUST schedule no subscriber delivery before
+fail-close. Terminal cleanup MUST clear the transport's subscriptions.
+
+The virtual transport MUST apply the same exact decoded raw-byte and unique-message
+ceilings. The relay edge MAY use its existing conservative base64 decoded-size
+estimate and therefore MAY reject slightly before the exact decoded-byte boundary;
+conformance claims only the same upper ceiling and fail-closed behavior, not byte-
+identical accounting between the edge and in-process transports.
+
+Local close, remote DataChannel close, peer close, and transport error MUST converge
+through one idempotent terminal path. Each captured native DataChannel and
+RTCPeerConnection close capability MUST be invoked at most once, and a remote
+DataChannel close MUST not strand an otherwise open peer connection. Terminal error
+classification MUST NOT depend on a later-mutable global `Error` constructor or
+`Symbol.hasInstance` hook.
+
+A receiver MUST decode and verify the nested canonical bytes through the existing
+resource and placement validators. Connection state, endpoint labels, arrival order,
+presence, UI state, and carrier metadata MUST NOT make a placement usable. Direct
+WebRTC and relay delivery of identical bytes MUST produce the same core result.
+
+The current manual transport uses one ordered binary DataChannel and no configured
+ICE server or fallback. This is a deterministic source baseline, not a normative
+ban on replaceable signaling, STUN, TURN, or relay adapters and not proof of
+arbitrary Internet reachability.
+
+### Confidential placement policy extension
+
+`mortalos-confidential-placement-shard/1` is a canonical envelope over one of three
+deterministic availability shards of an already encrypted S4 package.
+`mortalos-confidential-placement-manifest/1` binds the S4 package digest and size,
+the `2-of-3` coding policy, every shard index/digest/size, and the exact storage
+workload ID for each shard. This coding improves ciphertext availability; it does
+not replace S4 encryption and does not grant decryption authority.
+
+`mortalos-confidential-placement-reproof-context/1` is the prerequisite for every
+durable placement generation. It binds one epoch, the exact prior journal ID (or
+genesis), the consecutive next generation, manifest, proof-age policy, quorum, and
+target shards. A rotated epoch additionally binds a fresh 256-bit nonce and its exact
+parent journal. The 128-bit storage challenge nonce MUST be derived from the context
+ID, receipt-chain ID, challenge sequence, and previous execution-receipt ID. Because
+that nonce is inside the consumer-signed challenge and provider-signed execution
+receipt, a receipt made for another prior head or generation MUST NOT count.
+
+`mortalos-confidential-placement-journal/2` is unsigned local policy evidence. It
+contains exactly three current `active_proofs` for shards `0`, `1`, and `2` under
+distinct providers, plus a sorted cumulative `receipt_high_waters` set. Receipt-chain
+identity MUST bind manifest, shard, provider, lease, and workload. Existing chains
+MUST advance by exactly one and name the exact preceding receipt; a newly admitted
+lease chain MUST start at sequence zero with a null predecessor. Replacing a provider
+MUST NOT delete its earlier high-water. Within one epoch the set is append-only:
+128 chains per shard and 384 total are the generated bounds, and overflow MUST halt
+without eviction or lossy pruning. A prior-bound epoch rotation with three fresh
+proofs MAY compact history because old-epoch receipts cannot satisfy the new context.
+
+A conforming creator MUST accept only an evaluator-produced module-private reproof
+result. Before issuing that brand, the evaluator MUST acquire every recognized
+record, dense array, and byte view into owned inert data without invoking caller
+methods or recognized getters, use contained collection operations, and fail closed
+if the runtime changes during acquisition or nested artifact validation. A durable
+adapter MUST first persist one immutable context intent, then reload the authoritative
+head and intent, re-evaluate raw signed placement evidence, and derive the journal
+inside commit. The caller MUST NOT choose the prior journal, generation, high-water
+set, context bytes, or journal bytes at that boundary.
+
+The adapter MUST fsync complete immutable journal and transition documents before
+atomically claiming a canonical prior-keyed successor path with no replacement. That
+claim is the CAS linearization point. Two different candidates for one prior cannot
+both commit; an exact retry is idempotent; a stale writer fails; a pre-CAS crash leaves
+  only ignored orphans; and a post-CAS reader observes a complete transition. These
+  are process-crash guarantees. A platform that rejects directory fsync MUST expose
+  sudden-power-loss durability as an explicit nonclaim. Loading
+MUST follow successor claims from genesis or the exact legacy head rather than choose
+the largest directory entry. `mortalos-confidential-placement-journal/1` is only
+migration metadata: its visible three barriers MUST NOT seed v2 history, and the
+system remains unavailable until a newly persisted epoch intent receives three fresh
+context-bound proofs.
+
+The journal MUST NOT be interpreted as a lifecycle event, global placement consensus,
+billing authority, signature, hostile-disk tamper proof, or independent-provider
+attestation.
+
+A confidential shard counts only after the ordinary resource validators prove its
+exact active storage workload and the local evaluator proves distinct provider and
+shard identities. A proof issued in the future or older than the configured maximum
+MUST NOT count; exact maximum age MAY count. Resource-contract status and receipt
+age MUST be evaluated at the same canonical generation `evaluated_at_ms`.
+Per-placement `observed_at_ms` is historical carrier metadata and MUST NOT prolong a
+lease that is completed or effectively revoked at generation time. After journal
+restoration, all counted proofs MUST carry the exact current reproof context. An
+existing chain MUST present the direct successor of its cumulative high-water. A new
+provider/lease MAY enter at sequence zero only with a current-context receipt. Stale,
+unavailable, partial, old-context, and replayed sets MUST NOT advance the durable
+head. A
+successor-authorized operational signing identity MAY form new offers and leases;
+that identity is not inferred to be, or cryptographically bound to, the Continuity
+custody identity. Transfer of the prior consumer private key is forbidden.
+
+### Lineage-bound placement generation extension
+
+`mortalos-lineage-placement-generation/1` canonically binds the organism, exact
+lineage parent, confidential manifest, target/quorum/freshness policy, complete
+public placement evidence, derived proved receipts and repair intents, and the prior
+generation/commit. A verifier MUST rerun nested resource and placement validation;
+the embedded summary is never trusted by itself.
+
+`mortalos-lineage-placement-commit/1` identifies the accepted Continuity
+`state-transition` whose transition ID contains the exact generation hash. A placement
+action plan MUST NOT be derived until the generation, commit, complete Capsule
+lineage, and prior transition binding verify. `deriveCommittedPlacementActionPlan`
+returns `mortalos-lineage-placement-action-plan/1` with
+`planned_repair_actions`, `verified_placement_receipt_ids`,
+`non_capability: true`, and `requires_executor_reverification: true`. The result is
+deterministic, public, forgeable JSON: it is not a capability or an authority token.
+An executor MUST reverify the original
+Capsule, generation, commit, current placement evidence, and applicable liveness
+evidence before performing effects. The current Continuity descriptor's
+quorum-authorized sign-once transition is the only normal generation-commit
+authority; no controller service,
+domain, relay, UI, or transport state participates in validity.
+
+Multiple verified candidates MUST converge from generation 1 by exact consecutive
+generation and prior-commit links. Generation `N` is valid only when the signed
+Capsule history before its commit contains exactly `N - 1` placement transitions and
+the latest transition matches the named predecessor ID and head. Creation computes
+`N` from the restored canonical prior-generation bytes; commit and verification
+rederive it from authenticated Capsule history. A repeated, decremented, skipped, or
+overflowing number, history reset, incomplete chain, same-generation sibling,
+broken link, or different organism MUST halt with no selected winner. This
+serializes authority. See
+[Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md).
+
+### Quorum-observed liveness extension
+
+Lineage generations MUST NOT accept a caller-supplied unavailable-provider list.
+A placement may be treated as unavailable for redundant continuity scheduling only
+by a verified
+`mortalos-placement-failure-certificate/1`. Its embedded consumer-signed challenge
+MUST bind the exact Continuity parent, confidential manifest, lease, workload,
+provider, shard, last execution receipt, next sequence, nonce, bounded response
+window, and observer policy. That policy MUST equal the Byzantine witness policy in
+the provider-signed offer after `witnesses`/`observers` field normalization.
+The lease consumer selects the response window inside the generated profile bound;
+the offer signature does not pre-agree that duration or establish a liveness SLA.
+
+Each `mortalos-placement-liveness-observation/1` MUST be signed by one distinct
+rostered observer and bind `no-response` plus the exact local response-window
+duration. A certificate MUST contain a canonical threshold satisfying the offer's
+`n/f/q` bounds. It MUST contain no absolute deadline or global-clock assertion.
+Observer signatures authenticate local-duration claims; they do not prove honest
+timers or independent failure domains.
+The certificate MUST NOT be interpreted as provider death, breach, lease
+termination, penalty, settlement, or invalidation of an already verified receipt.
+
+A `mortalos-placement-liveness-response/1` binds the same challenge to a provider-
+signed execution receipt ID. Before it can affect repair eligibility, the named
+receipt MUST be present in a fully verified current offer/lease/usage/execution
+chain. A valid response and failure certificate for the same predecessor tuple,
+different valid challenges for that tuple, or multiple response receipt IDs for one
+challenge MUST halt with no repair winner. The committed repair intent MUST carry
+the challenge and certificate IDs. The core API conditionally rejects a late-proof
+conflict when a caller supplies newly observed responses with corresponding current
+placement evidence. The current Lab/browser harness supplies empty late-response
+and current-placement arrays and does not yet implement a network gossip plus
+execution-time reconciliation loop. A production executor MUST add that loop rather
+than cache a derived plan indefinitely. See
+[Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).

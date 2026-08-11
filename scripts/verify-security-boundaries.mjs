@@ -39,9 +39,11 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "src/confidential/recovery.mjs",
   "src/continuity.mjs",
   "src/distributed/quorum-counter-store.mjs",
+  "src/placement/lineage-controller.mjs",
   "src/state/recovery.mjs",
   "src/transport/corpus.mjs",
-  "src/transport/chunk-data-plane.mjs"
+  "src/transport/chunk-data-plane.mjs",
+  "lab/transport/webrtc-peer.mjs"
 ]);
 const REQUIRED_ENTRYPOINTS = Object.freeze([
   "cli/node-authority.mjs:export async function signNodeAuthority",
@@ -62,6 +64,7 @@ const REQUIRED_ENTRYPOINTS = Object.freeze([
   "src/confidential/recovery.mjs:export async function rotateConfidentialState",
   "src/continuity.mjs:export async function continueContinuity",
   "src/continuity.mjs:export async function createContinuity",
+  "src/placement/lineage-controller.mjs:export async function commitLineagePlacementGeneration",
   "src/state/recovery.mjs:export async function recoverStatePackage",
   "src/transport/chunk-data-plane.mjs:export async function publishStateChunk",
   "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks"
@@ -100,6 +103,7 @@ const DEEP_OWNERSHIP_PRIMITIVES = new Set([
   "snapshotAuthority",
   "snapshotContinuityContinueInvocation",
   "snapshotContinuityCreateInvocation",
+  "snapshotLineagePlacementCommitInvocation",
   "snapshotDataMethod",
   "snapshotNamedOwnDataValues",
   "snapshotObservedCounterAuthorityEquivocation",
@@ -133,6 +137,9 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
   },
   "lab/transport/http-relay.mjs": {
     ownRelayBytes: ["local", null, null, "b07f4ad8f5d37801cac227c96c83dbcc3730a036c5fa40634467b28fca6ebbd8"]
+  },
+  "lab/transport/webrtc-peer.mjs": {
+    decodeRelayMessageBytes: ["import", "../../src/transport/protocol.mjs", "decodeRelayMessageBytes", "18513ca4248da3da9959e97dfe99e9759c6b51703cade672c2c838199aa5972b"]
   },
   "src/confidential/keys.mjs": {
     assertCustodianId: ["import", "./format.mjs", "assertCustodianId", "5c7bebc0710396477d78548ba540c03f7daaf8d7e3fb5c1246a9e7dee4e1bb13"],
@@ -173,6 +180,9 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
     snapshotContinuityCreateInvocation: ["local", null, null, "4d63780c80c014e7815db639b1b4e13f14d0aefe9917a50f6395673358927f7c"],
     snapshotNamedOwnDataValues: ["import", "./primordials.mjs", "snapshotNamedOwnDataValues", "aab42c8f9795139df8c6073da9fd33656fb5858fc7e18fe466bc416b64c9f74d"]
   },
+  "src/placement/lineage-controller.mjs": {
+    snapshotLineagePlacementCommitInvocation: ["local", null, null, "57122aceff4cf285b7d5cc0f2e9f3e9b7b6e1573281d3a4317cfa26e41add2af"]
+  },
   "src/state/recovery.mjs": {
     snapshotRecoveryInvocation: ["local", null, null, "f2bcec674dea7d59d65de8fafc0eea7de0bb0b57b8d2383afde0551bed427bfe"],
     verifyStatePackage: ["import", "./package.mjs", "verifyStatePackage", "0afe9e042d0173a57791681e879dc73b9f3341fffb834019df8656980ab36b10"]
@@ -198,7 +208,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "lab/storage/durable-store.mjs": "95356dae9aeb166f1a214a310deb61e22275466bcc7d47c084902c55162c4f39",
   "lab/scenario-compiler.mjs": "15409c8e709ddf3e11c15efc3dba4cd314b69c66da691efc4ce2ed51164c9999",
   "lab/transport/http-relay.mjs": "50bbeaa94e2c42d93b3dc34ed25f173b51e8248d2e45e7c1a48a330779df2090",
-  "lab/transport/virtual-transport.mjs": "ff50dfafe1d862d651ac0a859dfc9be3ac74c76ee7158239ea77eaf27f09513c",
+  "lab/transport/virtual-transport.mjs": "ccc57815ca0c46ef96222767b036dbecdb0f787bc8ed2cae9696f9a248fca828",
   "src/bytes.mjs": "b210b22775b4e279394be49f64e854d7c19c849d9bcc8cf3fad952e601cd0e57",
   "src/confidential/counter.mjs": "9871611eb4868ee913d4dc092f2407fd6e8b299571ae637c11682c3f87621376",
   "src/confidential/format.mjs": "d3c9b70d31e2dc3007c495dc404f0a71ef65ae8557a10c6200fc6efec54a61bc",
@@ -207,11 +217,24 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/confidential/recovery.mjs": "30d7453b1af1107c26d17f779600f6b8828d8d07759c2198f89f665f49c36feb",
   "src/continuity.mjs": "defc12d9cd7d6aec2ecb0e9ca875a99375703d94e9210ecb41bbbea435dd3f76",
   "src/distributed/quorum-counter-store.mjs": "5aa2d7c0257c6e4ba4ef5502dadbc485a8fd0e95ce56fc98da30a6ff84265869",
-  "src/primordials.mjs": "75784b17c238638772df8377ecff2e7fa1d64f25b0321a47b258079679b3ca78",
+  "src/placement/lineage-controller.mjs": "55cd515797b6d5430c95e307cb66ca096b489ce937781a4325eb26460d7ba9fc",
+  "src/primordials.mjs": "a7a8c85573463956197926749e0bd41622470e1e640d4f3928e954ebd1c01630",
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
-  "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704"
+  "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
+  "src/transport/protocol.mjs": "d9d2f925b5f2753a1e0e927b4a6ae3ee2a471d728a3710a9810a9ef51ef8ab0b",
+  "lab/transport/webrtc-peer.mjs": "26321761c8c98d909ff79a80f2373662a075a18d5d07b595a0686795b4691292"
+});
+
+// These synchronous producer/commit boundaries mint or persist replay-policy
+// evidence. Pin their complete reviewed implementations so a later edit cannot
+// silently weaken the module-private evaluation brand, prior-head reproof context,
+// cumulative receipt high-water, or no-replace durable successor boundary while the
+// async-only inventory remains green.
+const SYNC_TRUST_BOUNDARY_MODULE_DIGESTS = Object.freeze({
+  "lab/placement/confidential-controller.mjs": "0ff04b683512f9d8493ef5c6dd5720a57df9c2e0abcda562a273fd31bc3710d5",
+  "src/placement/confidential.mjs": "b1340f5c3c8bac048db734650df0f1ca7147593204fc67db56fcab3f6c0f5e04"
 });
 
 // A classification is a reviewed security decision, not a permanent textual
@@ -317,7 +340,19 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async inventory": "2d46193e7fb518c6f81a5c932b50710ad9b31d0871da5c3092b8e1fdfc41cc0f",
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async readChunk": "94fe133d82c2e1c8dccf35daa5c4c31315b7c9003c3dfb2c8968ae34444cd1bb",
   "src/continuity.mjs:export async function createContinuityAuthority": "4e27da7380ce0fe1ede42a239dc7fc38ba2404f548e86b886de662a2a5528b75",
-  "src/continuity.mjs:export async function handoffContinuity": "547901d2b13e6634d9b6419496be097bbde4fc25998acd6c5d033e924fbd62dd"
+  "src/continuity.mjs:export async function handoffContinuity": "547901d2b13e6634d9b6419496be097bbde4fc25998acd6c5d033e924fbd62dd",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async createOffer": "9ec5d2cdbcb4759cce808bc5f2096cf66693189b50cd66a119ff5194eab4d2aa",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "312dca19733fd7464d95ccb0ffc5e1909229d2849eff5f319faa34b9bce46626",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "bad59957d4f2e1e69468d3bb90116d9cfcee18497e5128e2f28438d32aae3769",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "9cce22bbcfa0dba396f69810dd8d8b38d4067743da66ef5850e880e0dbdd6929",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "09b45f9c220f20bbbf716f789b48fb194d03002d16f7410fa5bd057ed071535b",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async fetchRange": "35ad0b7680d8d04498ba958c31aafaa7e6cf1a3d7d6f1b2336977ea4543b04d9",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async touchPresence": "7409b9b1176a28d5f8c847220e87eb43b35526c12f2342aae2af7b6e0314ce51",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "8903f54681ed29ce7bc6f9e40b02102cdd707cd5d5ccb4ddce50c13c861aa8f9"
+});
+const CLASSIFICATION_TRANSITIVE_DEPENDENCIES = Object.freeze({
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish":
+    Object.freeze(["decodeRelayMessageBytes"])
 });
 assert.deepEqual(
   Object.keys(CLASSIFICATION_DIGESTS).sort(),
@@ -350,7 +385,8 @@ const OWNERSHIP_PRELUDE_DIGESTS = Object.freeze({
   "src/transport/chunk-data-plane.mjs:export async function publishStateChunk": "834a7fee1833a22ae4d55a1e1d024ce8b46493a62c0047483ee50abb350b4e84",
   "src/transport/chunk-data-plane.mjs:export async function publishStatePackageChunks": "c101407df7bd62263823c2c91d7edeef82336c6247db778eabfe68ab8be5452d",
   "src/continuity.mjs:export async function createContinuity": "7c3f5c2d75b2928e355d032b27062c1baf56cadc73aa5e87f3610863a9fa38a1",
-  "src/continuity.mjs:export async function continueContinuity": "5ffded5a3705401e8e2aff9cf0f6cd0c633827ca4097119356fb84b7ea38a715"
+  "src/continuity.mjs:export async function continueContinuity": "5ffded5a3705401e8e2aff9cf0f6cd0c633827ca4097119356fb84b7ea38a715",
+  "src/placement/lineage-controller.mjs:export async function commitLineagePlacementGeneration": "a7dc924670d449ec0ee7faf79e9c2d22851c7e771b8f10c1d987505c6ef720f5"
 });
 assert.deepEqual(
   Object.keys(OWNERSHIP_PRELUDE_DIGESTS).sort(),
@@ -773,6 +809,17 @@ for (const classification of registry.classifications) {
     OWNERSHIP_MODULE_DIGESTS[classification.file],
     `${classification.file}: classified module drift requires a fresh security review`
   );
+  const transitiveDependencies = CLASSIFICATION_TRANSITIVE_DEPENDENCIES[classificationKey];
+  if (transitiveDependencies) {
+    await verifiedPrimitiveCallStarts({
+      ast,
+      entry: classification,
+      functionNode,
+      names: transitiveDependencies,
+      purpose: "transitive validator",
+      source
+    });
+  }
 }
 
 const RAW_DURABLE_CAPABILITY_CONSUMERS = new Set(["lab/storage/durable-store.mjs"]);
@@ -875,6 +922,15 @@ for (const entry of registry.entries) {
     testSource,
     new RegExp(entry.test_marker.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"),
     `${entry.file}: missing linked hostile-mutation regression`
+  );
+}
+
+for (const [file, expectedDigest] of Object.entries(SYNC_TRUST_BOUNDARY_MODULE_DIGESTS)) {
+  const source = await readFile(new URL(file, root), "utf8");
+  assert.equal(
+    sha256(source),
+    expectedDigest,
+    `${file}: synchronous trust boundary drift requires a fresh security review`
   );
 }
 

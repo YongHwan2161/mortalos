@@ -1,14 +1,17 @@
 # Browser participant compatibility
 
-Status: implementation evidence for the current candidate; production support is
-claimed only after the exact deployed commit passes the same gate.
+Status: **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF
+PASS; EXACT-SHA EXTERNAL**. Production support still requires exact deployed-commit
+evidence.
 
 MortalOS exposes two deliberately different browser modes.
 
 | Mode | Persistence | Signing authority after reload | Current verified support |
 | --- | --- | --- | --- |
 | Ephemeral Demo | none | no | Chromium; existing portable kernel also runs in the Node/browser differential target |
-| Durable Participant | consent-gated IndexedDB schema v2 | yes, until explicit removal or reached expiry | Chromium and Firefox candidate gates; WebKit capability-routed per runtime |
+| Durable Participant | consent-gated IndexedDB schema v2 | yes, until explicit removal or reached expiry | Chromium and Firefox source-revision gates; WebKit capability-routed per runtime |
+| Direct P2P storage participant | provider-process memory in this source revision | ephemeral provider key for bounded offer/lease/receipt | Chromium local evidence only; same-host manual ICE |
+| Confidential placement successor | non-extractable S4 custodian key in B process memory for the test vertical | B decrypts after A exits; a separate successor-authorized ephemeral operational signer forms new placement leases and is not cryptographically bound to B's custody identity | Chromium local evidence only; not durable/XSS-resistant custody |
 
 ## Durable Participant contract
 
@@ -44,10 +47,11 @@ of a non-extractable `CryptoKey` into IndexedDB, and `indexedDB.databases()` for
 no-implicit-storage check. If any prerequisite is unavailable, the site keeps the
 Ephemeral Demo available and does not silently create a weaker or extractable key.
 
-Firefox now passes the same actual-engine creation, non-extractable-key, concurrent
+Firefox passes the same actual-engine creation, non-extractable-key, concurrent
 CAS, full process restart, expiry/removal, A/B/C loss, D repair, S4 rotation, and
-corruption boundaries in the current candidate. It remains unpromoted until the
-  exact-head release gate passes. The capability gate requires actual Ed25519
+corruption boundaries for the tested source revision. Whether a deployed exact SHA
+passed the release gate is an external CI/deployment fact. The capability gate
+requires actual Ed25519
   sign/verify at 1, 1,024, and the canonical 65,536-byte message ceiling; key
   generation alone never grants custody. The Windows Playwright WebKit 26.5 build
   rejects Ed25519 with `NotSupportedError`. The Ubuntu build creates a valid
@@ -84,3 +88,59 @@ writer fails before its signer runs, and inconsistent `removed + key` or
 
 This verifies browser/profile isolation and protocol behavior. It does not by itself
 prove a distinct physical device or administrative failure domain.
+
+## Direct confidential P2P source vertical
+
+`npm run test:p2p-placement` launches consumer A, consumer B, and four provider
+Chromium processes. After every bundle is loaded it blocks all HTTP requests. A real
+selected file and the complete resource-evidence exchange then use direct ordered
+DataChannels only. One provider exits, D repairs under a new lease, A exits, and B
+recovers two exact copies while excluding one corrupt readback.
+
+The composed confidential gate additionally makes A encrypt a native 98,317-byte
+File for B, places three distinct S4 package shards, applies an exact bounded proof
+age, rejects journal receipt replay after restart, closes A, and makes B reconstruct,
+decrypt, and renew all placement leases under a separately generated
+successor-authorized ephemeral operational signer. The test does not
+cryptographically bind that signer to B's Continuity custody identity. One corrupt
+shard rejects before package reconstruction; another valid pair recovers exact
+bytes. Neither A's consumer key nor B's custodian private key crosses browsers.
+
+The core lineage API can conditionally reject a late liveness response when the
+caller supplies that response and its verified current placement evidence. The
+current Lab/browser harness supplies empty late-response/current-placement arrays;
+it does not yet gossip late proofs or revalidate them at effect execution. Likewise,
+the returned derived action plan is public, forgeable JSON rather than a capability,
+so any executor must reverify the original Capsule, generation, commit, placement,
+and liveness evidence before performing placement effects.
+
+Each peer's single transcript combines inbound and outbound traffic and retains at
+most 512 unique canonical messages or 8,388,608 decoded raw bytes. Exact duplicates
+consume neither budget. Outbound overflow occurs before native send and successful
+state commits only after send returns; inbound overflow commits no transcript/dedupe
+entry or subscriber delivery before fail-close cleanup clears subscriptions. Remote DataChannel close, local
+close, peer close, and errors converge through an idempotent cleanup path that closes
+the still-live native peer once while invoking each native close capability at most
+once. The actual Chromium probe exercises literal
+count and byte cap-plus-one cases in both directions and the remote-close path; it
+passes in `50,086ms`. Focused Node transport tests pass `24/24` in `31,241ms`.
+
+The virtual transport applies the same exact decoded raw-byte boundary. The relay
+edge uses a conservative base64 estimate that may reject slightly earlier; this is
+not byte-identical accounting, only the same upper ceiling and fail-closed result.
+The prior `8,076.826s` full-suite PASS predates the current WebRTC remediation. The
+frozen runtime/test/workflow candidate passes the fresh `8,631,790ms` suite through
+final `verify:s4`; covered files remained unchanged and docs pass separate spec/link/
+diff. This is not a whole-current-tree exact full-suite claim.
+
+This focused gate is Chromium-only. Firefox and WebKit have not passed this complete
+P2P data-plane scenario. Manual same-host ICE does not prove arbitrary NAT traversal
+or Internet reachability, and all processes still share one machine and
+administrator. The complete confidential path has not yet passed Firefox or WebKit.
+
+The next root P0 is a provider-signed lease-bound liveness policy plus independent
+provider possession response and an effect-time exactly-once repair executor.
+Lineage-governed
+admission/failure-domain accounting follows. Browser profiles and self-asserted
+identity metadata do not prove independent accounts, devices, networks, credentials,
+or administrators.

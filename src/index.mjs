@@ -19,6 +19,10 @@ export {
 export * from "./confidential/recovery.mjs";
 export * from "./transport/chunk-data-plane.mjs";
 export * from "./transport/protocol.mjs";
+export * from "./placement/storage.mjs";
+export * from "./placement/confidential.mjs";
+export * from "./placement/lineage-controller.mjs";
+export * from "./placement/liveness.mjs";
 export * from "./capsule.mjs";
 export * from "./custody.mjs";
 export * from "./continuity.mjs";

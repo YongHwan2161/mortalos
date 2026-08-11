@@ -1,9 +1,8 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **S1 promoted; S2 crash-safe participant storage implemented and exact-SHA
-promotion gated**
+Status: **PORTABLE CORE PROMOTED; CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL**
 
-Last synchronized: **2026-07-25 KST**
+Last synchronized: **2026-08-11 KST**
 
 ## Decision
 
@@ -26,7 +25,7 @@ browser | CLI | native | service | embedded
         │
         ▼
 transport adapter
-file | HTTP | WebSocket | future transports
+file | direct WebRTC | HTTP | WebSocket | future transports
         │ bounded public messages
         ▼
 R1 canonical operation/result bytes
@@ -93,7 +92,7 @@ The Worker, browser transport, and local acceptance server import one policy: tw
 active endpoints consume at most 204 scheduled operations/minute, or 252 with the
 explicit 48-operation interaction burst, below the 300/min room ceiling. A real
 two-profile Chromium gate also measures a 12-second active window; the remediated
-candidate recorded 39 operations and no local `429`.
+source-revision run recorded 39 operations and no local `429`.
 Presence-only and connect-only rooms also schedule expiry alarms. They remain a
 delivery optimization only.
 
@@ -108,6 +107,43 @@ Endpoints handle duplicates and out-of-order messages idempotently, buffer bound
 future records, surface sibling forks, and converge after reconnect by validating
 the same canonical evidence locally. Relay loss pauses delivery; it does not weaken
 validation or erase already held evidence.
+
+## Direct peer boundary
+
+This source revision adds canonical manual WebRTC signaling and one ordered binary
+DataChannel with `iceServers: []`. It carries the same bounded relay messages, chunk
+fragments, and untrusted placement-artifact wrappers. After the source bundle is
+loaded, the Chromium vertical denies origin and relay requests before transferring
+the runtime file or resource-contract evidence.
+
+Direct connection is not authority. Endpoints re-parse nested canonical bytes and
+count a placement only after exact resource-execution verification. Manual same-host
+ICE is a deterministic baseline, not arbitrary Internet/NAT proof. Replaceable
+signaling, STUN, TURN, and relay adapters may be added without entering validity.
+Outbound publication commits local range and duplicate state only after the
+DataChannel accepts the send. A synchronous close, backpressure, or send failure
+cannot manufacture local delivery, and an identical transient-failure retry remains
+eligible for a real send. One private transcript map is the cursor and duplicate
+SSOT; collection, iterator, scheduler, DataChannel, MessageEvent, and peer-connection
+operations are captured before exposure. Relay artifact-kind membership uses the
+captured Set operation as a separate transitive boundary. Named Node and actual
+Chromium cases require selective `verdict` membership poison to produce zero send,
+local range, remote range, or subscriber visibility while an allowed
+`challenge` still reaches both peers at sequence 1. Browser acceptance into its send queue is
+still not an end-to-end acknowledgement; signed higher-layer evidence remains the
+only placement authority.
+
+The one private transcript is also the shared resource-accounting boundary for both
+directions: at most 512 unique canonical messages and 8,388,608 decoded raw bytes.
+Duplicates are non-consuming. Outbound capacity is checked before native send and
+state is committed only after send succeeds. Inbound overflow commits no transcript
+or dedupe entry and schedules no subscriber delivery before fail-close; terminal
+cleanup then clears subscriptions. The virtual transport applies the
+same exact decoded-byte ceiling. The relay edge's base64 estimate may overcount
+slightly, so it shares only the upper ceiling and fail-closed guarantee, not byte-
+identical accounting. Local close, remote channel close, peer close, and error share
+one idempotent teardown path; each native close capability runs at most once, and a
+remote channel close closes a still-live peer instead of stranding it.
 
 ## Implemented portability evidence
 
@@ -127,6 +163,25 @@ validation or erase already held evidence.
   closes the browser process, and passes `100/100` B handoff recoveries plus
   `100/100` cold pair recovery/transition/D-repair/next-transition trials for each
   lost A, B, and C. This is same-host profile evidence, not S7 failure-domain proof.
+- The P2P source vertical transfers one actual file and complete signed placement evidence
+  to three provider Chromium processes after the HTTP cut, terminates one provider,
+  repairs through D under a new lease, terminates consumer A, and lets B recover two
+  exact of three readbacks with one corrupt copy rejected.
+- The confidential composition encrypts another actual native File for B, transfers
+  only three distinct S4 package shards to providers, excludes max-age + 1 receipts,
+  restores a public-evidence journal fail-closed, terminates A, and lets B renew
+  placement with a separately generated successor-authorized operational signer
+  before exact 2-of-3 decrypt. That signer is not inferred to be, or
+  cryptographically bound to, B's Continuity custody identity. Pages, origin, relay,
+  and domain remain absent from the validity path.
+- Literal generated-boundary regressions cover exact 512 and message 513, exact
+8,388,608 raw bytes and byte 8,388,609, duplicate non-consumption, no overflow-frame
+commit or delivery before cleanup, and at-most-once native close capability use. The current candidate passes
+  focused Node `24/24` in `31,241ms` and the actual Chromium probe in `50,086ms`.
+  The prior `8,076.826s` runtime/test/workflow full-suite PASS predates the current
+  WebRTC remediation. The frozen runtime/test/workflow candidate passes the fresh
+  `8,631,790ms` suite through final `verify:s4`, its covered files stayed unchanged,
+  and docs pass separate spec/link/diff. Exact-SHA governance remains external.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
 or ambient-random dependency. All portable corpus results must remain byte-identical
@@ -144,14 +199,34 @@ Chromium for the exact reviewed head.
   return `dead_under_v0_assumptions`, and only with explicit irreversibility and
   completeness assertions.
 - The deterministic state canary is not a general arbitrary-code agent genome.
+- `deriveCommittedPlacementActionPlan` (Lab:
+  `derivePlacementActionPlan`) returns
+  `mortalos-lineage-placement-action-plan/1` with
+  `planned_repair_actions`, `verified_placement_receipt_ids`,
+  `non_capability: true`, and `requires_executor_reverification: true`. It is public,
+  forgeable JSON, not authority. An effect executor must reverify the original
+  Capsule, generation, commit, and current placement/liveness evidence.
+- The core can reject a late-proof conflict when supplied fresh response and current
+  placement evidence. The Lab/browser harness currently supplies empty late-response
+  arrays and does not implement a network gossip plus execution-time reconciliation
+  loop.
+- Operational lease signers are separately authorized test identities; no source
+  rule cryptographically binds them to a successor's Continuity custody identity.
+- Provider/observer keys and labels do not prove independent devices, accounts,
+  regions, networks, credentials, or administrators without explicit trust roots.
 
 ## Release consequence
 
-The source sequence is now:
+The governed total gate order remains:
 
 `R1-C wire-only Lab → deterministic state → durable endpoint → transport-neutral runtime → Durable Object relay → two-browser succession → three-endpoint 2-of-3 repair`
 
-The publication sequence remains:
+This source revision extends that foundation through:
+
+`portable kernel → S4 ciphertext shards → signed bounded lease → direct peer transfer → fresh receipt-gated placement → crash recovery → successor-authorized operational repair → peer recovery`
+
+The publication sequence remains a gate contract, not a statement that the
+containing revision has passed it:
 
 `immutable independent review → expected-head merge → post-merge Verify → exact-main deploy → public EN/KO multi-browser readback`
 
@@ -159,3 +234,9 @@ Reopen this architecture decision if any endpoint accepts evidence rejected by a
 conforming endpoint, requires a browser-only signed value, treats relay/GPT/UI output
 as authority, silently persists an ephemeral key, or converts disconnect into an
 unconditional death fact.
+
+The next root P0 is a provider-signed lease-bound liveness policy plus independent
+provider possession response and an effect-time exactly-once repair executor.
+Lineage-governed admission and
+failure-domain accounting with explicit trust roots follows; self-asserted metadata
+must not manufacture quorum diversity.

@@ -16,6 +16,7 @@ import { CONFIDENTIAL_LIMITS } from "../src/confidential/format.mjs";
 import { CUSTODY_LIMITS, verifyContinuityCopy } from "../src/custody.mjs";
 import { RESOURCE_CONTRACT_LIMITS } from "../src/resource-contract.mjs";
 import { RESOURCE_EXECUTION_LIMITS } from "../src/resource-execution.mjs";
+import { PLACEMENT_LIVENESS_LIMITS } from "../src/placement/liveness.mjs";
 
 test("canonical protocol profile is the exact generated cross-layer source", async () => {
   const source = JSON.parse(await readFile(
@@ -28,6 +29,21 @@ test("canonical protocol profile is the exact generated cross-layer source", asy
   assert.ok(source.transport.room_bytes <= source.provider.object_bytes);
   assert.equal(source.continuity.signed_copy_count, 3);
   assert.equal(source.continuity.signed_copy_quorum, 2);
+  assert.deepEqual(
+    PLACEMENT_LIVENESS_LIMITS,
+    source.placement_liveness,
+    "liveness document, quorum, nonce, and local-window ceilings must share one profile"
+  );
+  assert.equal(
+    source.placement_liveness.witnesses_per_policy,
+    source.resource_contract.witnesses_per_offer_max,
+    "every provider-valid witness roster must be representable by liveness verification"
+  );
+  assert.ok(
+    source.placement_liveness.observations_per_certificate >=
+      source.placement_liveness.witnesses_per_policy,
+    "a certificate must be able to carry the maximum witness roster"
+  );
   assert.equal(
     source.continuity.copy_envelope_bytes,
     4 * Math.ceil(source.provider.object_bytes / 3) + 4_096,

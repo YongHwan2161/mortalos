@@ -4,33 +4,73 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import * as sdk from "../sdk/index.mjs";
 import * as continuitySdk from "../sdk/continuity.mjs";
+import * as placementSdk from "../sdk/placement.mjs";
 import * as resourceContractSdk from "../sdk/resource-contract.mjs";
 
 test("S5 SDK exports only the reviewed authority-free surface", () => {
   assert.deepEqual(Object.keys(sdk).sort(), [
+    "CONFIDENTIAL_PLACEMENT_FORMATS",
+    "CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS",
     "CONTINUITY_CAPSULE_FORMAT",
     "CONTINUITY_COPY_FORMAT",
     "CUSTODY_LIMITS",
     "ContinuityCapsuleError",
+    "LINEAGE_PLACEMENT_FORMATS",
+    "LineagePlacementError",
+    "PLACEMENT_LIVENESS_FORMATS",
+    "PLACEMENT_LIVENESS_LIMITS",
     "PROTOCOL_PROFILE",
+    "PlacementLivenessError",
     "RESOURCE_CONTRACT_LIMITS",
     "RESOURCE_EXECUTION_FORMATS",
     "RESOURCE_EXECUTION_LIMITS",
     "RESOURCE_FORMATS",
+    "STORAGE_PLACEMENT_STATUS",
+    "StoragePlacementError",
+    "convergeLineagePlacementCommits",
+    "createConfidentialPlacementJournal",
+    "createConfidentialPlacementReproofContext",
+    "createConfidentialPlacementShardSet",
     "createContinuityCapsule",
     "createLineage",
+    "createLineagePlacementGeneration",
+    "createPlacementFailureCertificate",
     "createResourceContentCommitment",
     "createStatePackage",
     "createStatePackageInput",
+    "deriveCommittedPlacementActionPlan",
+    "deriveConfidentialPlacementReproofNonce",
+    "evaluateConfidentialPlacementJournal",
+    "evaluateConfidentialPlacementReproof",
+    "evaluateConfidentialStoragePlacements",
+    "evaluatePlacementLivenessEvidence",
     "evaluateResourceContract",
     "evaluateResourceExecutionContract",
+    "evaluateStoragePlacements",
+    "finalizePlacementLivenessChallenge",
+    "finalizePlacementLivenessObservation",
+    "finalizePlacementLivenessResponse",
     "isValidatedAcceptance",
+    "planConfidentialStorageRepair",
+    "preparePlacementLivenessChallenge",
+    "preparePlacementLivenessObservation",
+    "preparePlacementLivenessResponse",
+    "reconstructConfidentialPackage",
     "recoverContinuityCapsuleQuorum",
     "recoverContinuityCopyQuorum",
+    "restoreConfidentialPlacementJournal",
+    "restoreConfidentialPlacementReproofContext",
+    "restoreLegacyConfidentialPlacementJournal",
+    "restoreLineagePlacementGeneration",
     "validateGenesis",
     "validatePulse",
     "verifyContinuityCapsule",
     "verifyContinuityCopy",
+    "verifyLineagePlacementCommit",
+    "verifyPlacementFailureCertificate",
+    "verifyPlacementLivenessChallenge",
+    "verifyPlacementLivenessObservation",
+    "verifyPlacementLivenessResponse",
     "verifyResourceConsumptionAnnouncement",
     "verifyResourceConsumptionWitness",
     "verifyResourceExecutionChallenge",
@@ -42,7 +82,54 @@ test("S5 SDK exports only the reviewed authority-free surface", () => {
     "verifyResourceUsageReceiptChain",
     "verifyStatePackage"
   ]);
-  assert.doesNotMatch(Object.keys(sdk).join(" "), /private|CryptoKey|decrypt|authority|store/i);
+  assert.equal(Object.keys(sdk).some((name) =>
+    /^(?:sign|decrypt)|private|CryptoKey|authority|Store$/iu.test(name)), false);
+});
+
+test("placement subpath exports verifier policy without transport or signing authority", () => {
+  assert.deepEqual(Object.keys(placementSdk).sort(), [
+    "CONFIDENTIAL_PLACEMENT_FORMATS",
+    "CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS",
+    "LINEAGE_PLACEMENT_FORMATS",
+    "LineagePlacementError",
+    "PLACEMENT_LIVENESS_FORMATS",
+    "PLACEMENT_LIVENESS_LIMITS",
+    "PlacementLivenessError",
+    "STORAGE_PLACEMENT_STATUS",
+    "StoragePlacementError",
+    "convergeLineagePlacementCommits",
+    "createConfidentialPlacementJournal",
+    "createConfidentialPlacementReproofContext",
+    "createConfidentialPlacementShardSet",
+    "createLineagePlacementGeneration",
+    "createPlacementFailureCertificate",
+    "deriveCommittedPlacementActionPlan",
+    "deriveConfidentialPlacementReproofNonce",
+    "evaluateConfidentialPlacementJournal",
+    "evaluateConfidentialPlacementReproof",
+    "evaluateConfidentialStoragePlacements",
+    "evaluatePlacementLivenessEvidence",
+    "evaluateStoragePlacements",
+    "finalizePlacementLivenessChallenge",
+    "finalizePlacementLivenessObservation",
+    "finalizePlacementLivenessResponse",
+    "planConfidentialStorageRepair",
+    "preparePlacementLivenessChallenge",
+    "preparePlacementLivenessObservation",
+    "preparePlacementLivenessResponse",
+    "reconstructConfidentialPackage",
+    "restoreConfidentialPlacementJournal",
+    "restoreConfidentialPlacementReproofContext",
+    "restoreLegacyConfidentialPlacementJournal",
+    "restoreLineagePlacementGeneration",
+    "verifyLineagePlacementCommit",
+    "verifyPlacementFailureCertificate",
+    "verifyPlacementLivenessChallenge",
+    "verifyPlacementLivenessObservation",
+    "verifyPlacementLivenessResponse"
+  ]);
+  assert.equal(Object.keys(placementSdk).some((name) =>
+    /^(?:sign|decrypt)|private|CryptoKey|network|Store$/iu.test(name)), false);
 });
 
 test("resource-contract subpath exposes signing drafts without owning private authority", () => {
@@ -137,6 +224,7 @@ test("S5 CLI is deterministic and the package tarball excludes lab and evidence 
   assert.ok(paths.includes("cli/node-authority.mjs"));
   assert.ok(paths.includes("sdk/continuity.mjs"));
   assert.ok(paths.includes("sdk/resource-contract.mjs"));
+  assert.ok(paths.includes("sdk/placement.mjs"));
   assert.ok(paths.includes("sdk/index.mjs"));
   for (const forbidden of ["agents/", "docs/", "evidence/", "lab/", "scripts/", "test/", ".github/"]) {
     assert.equal(paths.some((path) => path.startsWith(forbidden)), false, forbidden);

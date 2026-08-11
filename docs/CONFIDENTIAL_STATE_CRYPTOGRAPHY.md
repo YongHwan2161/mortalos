@@ -1,6 +1,7 @@
 # S4 confidential-state cryptography
 
-Status: **PROMOTED ADR — S4 RUNTIME CLAIM REOPENED / HARDENED CANDIDATE HOLD**
+Status: **PROMOTED ADR; HARDENED RUNTIME SOURCE MERGED; REVISED S4 STAGE CLAIM
+REOPENED PENDING A NEW EXACT-SHA S4 RECEIPT**
 
 The suite decision remains promoted. Runtime promotion is reopened because recovery
 now owns its complete expected basis before await, activation uses a module-private
@@ -13,11 +14,13 @@ Decision base: `1f8c055f1cf6fb4ee304f0b61cbe6507c65dba7d`
 ADR promotion commit: `39529337b2a739b1aee4697e680643d77704bbaa`
 
 The ADR passed immutable independent review and was promoted to `main` before any
-runtime implementation began. The S4 runtime remains a candidate until its exact
-receipt, complete repository gates, independent immutable implementation review,
-expected-head merge, and exact-main Verify plus Deploy all pass. The implementation
-must use only the suite and failure rules below; a different algorithm, encoding,
-nonce rule, or key lifecycle requires a replacement ADR and fresh review.
+runtime implementation began. Hardened runtime source subsequently merged through
+PR #51, but the revised S4 stage claim remains reopened until a new exact-SHA S4
+receipt covers it. This rolling document describes source requirements and does not
+self-promote its containing revision; immutable review, CI, merge, deployment, and
+receipt records carry external promotion facts. The implementation must use only the
+suite and failure rules below; a different algorithm, encoding, nonce rule, or key
+lifecycle requires a replacement ADR and fresh review.
 
 ## 1. Decision
 
@@ -265,7 +268,7 @@ non-extractable sign-only key, receipt-chain digest, and next counter. This prov
 reference failover within that storage/credential domain; it does not prove the S7
 independence of that domain or isolate signing from same-origin code. The reference
 CAS constrains conforming callers; XSS-resistant signing requires a different trust
-domain and is not an S4 candidate claim.
+domain and is not part of the revised S4 stage claim.
 
 The authority owns a distinct WebCrypto-generated Ed25519 key pair. Its private key
 is non-extractable with `sign` usage only. Its public key is the exact strict

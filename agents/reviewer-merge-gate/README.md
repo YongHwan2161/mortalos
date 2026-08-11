@@ -36,9 +36,16 @@ commit and either requests changes or merges that same commit.
    latest non-cancelled `Agent PR Policy` run. If body, base, head, changed-file
    count/digest, policy run ID/attempt/event/status/conclusion, or any required check
    moved, restart the review from step 2.
-8. Record one structured review attestation. If clean, merge with `expected_head_sha`
-   using squash; otherwise request changes and do not merge.
-9. Verify the resulting `main` head and the post-merge workflow result.
+8. Record the logical reviewer's structured `COMMENT` attestation and immutable
+   receipt. This is the independent code/evidence decision; it is not a native user
+   approval or the GitHub App check.
+9. Require GitHub App ID `4456370` to publish the exact-head attestation and require
+   machine user `ant713900-web` to submit a native `APPROVE` on the latest unchanged
+   head. Re-fetch both immediately before merge. Neither may substitute for the
+   logical reviewer COMMENT/receipt or for each other.
+10. If all three reviewer-identity layers and every other gate are clean, merge with
+    `expected_head_sha` using squash; otherwise request changes and do not merge.
+11. Verify the resulting `main` head and the post-merge workflow result.
 
 ## Pass attestation
 
@@ -75,6 +82,8 @@ Residual-Risk: <none or precise bounded risk>
 
 - body, base SHA, head SHA, changed-file evidence, or bound policy run changed
 - failed, missing, stale, cancelled, or still-running required check
+- missing or stale App ID `4456370` exact-head attestation, or missing native latest-
+  head approval from `ant713900-web`
 - incomplete diff access or unreadable generated/binary change
 - author and reviewer are the same logical agent
 - undeclared shared paths or scope materially differs from the PR body
@@ -86,8 +95,19 @@ The reviewer never merges merely because the author says tests passed.
 
 ## Identity limitation
 
-The current connected GitHub identity may be the same account that opened the PR.
-GitHub does not allow that account to be a genuinely independent native approver.
-Until a separate GitHub App or bot identity and branch rules are configured, use a
-`COMMENT` attestation and preserve independence at the agent-execution and reviewed-
-SHA layers. Do not misrepresent that as account-level separation.
+The logical reviewer may operate through a connected GitHub identity that is also
+the PR author. It therefore records only a structured `COMMENT` plus its independent
+immutable receipt and must never misrepresent that action as a native approval.
+
+The active protected-branch policy separately requires both:
+
+- GitHub App ID `4456370` exact-head attestation; and
+- machine user `ant713900-web` native `APPROVE` on the latest unchanged head.
+
+The App proves the exact-snapshot technical attestation, the machine user supplies
+GitHub's native approval identity, and the logical reviewer supplies the independent
+diff/evidence judgment. All three are required and non-substitutable. A changed head,
+body, base, changed-file evidence, or bound policy/check snapshot invalidates the
+affected evidence and restarts the gate. This is separate GitHub credential identity
+under the present operator; it is not proof of separate human or administrative
+control. Reviewer credentials remain outside any workflow that can execute PR code.

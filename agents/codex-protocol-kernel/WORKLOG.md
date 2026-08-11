@@ -1898,3 +1898,696 @@ result, and reproducible verification.
   ledger with governed PR #53 and PR #56 merges while retaining public-registry,
   honest-meter, and physical/administrative-independence HOLDs. The replacement head
   must rerun every exact-head gate and receive a fresh immutable review.
+## 2026-08-08 KST — P2P receipt-gated storage placement/repair candidate
+
+- Based branch `agent/codex-protocol-kernel--p2p-placement-repair` on exact
+  `origin/main` `25de18d8c1af8b3dfcb5adffb1a07538afa33332` in a dedicated worktree.
+- Added canonical manual WebRTC signaling, ordered binary DataChannel transport,
+  bounded untrusted placement-artifact carriage, and the authority-free
+  `evaluateStoragePlacements` policy plus `@mortal-os/core/placement` subpath.
+- The policy counts only distinct-provider active storage execution receipts for one
+  exact workload. Single, duplicate, corrupt, cross-lease, stale, unproved, and
+  wrong-workload evidence does not count; local loss yields `repairing` below target.
+- Actual Node child providers store bytes and sign from their own processes. One PID
+  exits and cannot sign again; a fourth provider/new offer/new lease repairs 3→2→3
+  while preserving workload identity.
+- Actual Chromium loads all bundles, cuts origin/HTTP/relay access, sends one runtime
+  file and complete contract evidence over direct peers, exits one provider, repairs
+  through D, destroys/exits consumer A, and lets B recover exact bytes from two valid
+  of three peer readbacks while rejecting one corrupt copy.
+- Focused placement, Node process, WebRTC, Chromium, Lab build, SDK, transport, and
+  async security inventory (`21/127`) checks pass locally. Full-suite, exact-head CI,
+  independent review, merge, exact-main verification, deployment, and promotion are
+  not yet claimed.
+- Root next gap: providers currently receive plaintext and one receipt is only a
+  point-in-time possession proof. Next P0 is ciphertext shards plus recurring chained
+  challenges, proof freshness, crash-safe controller recovery, and automatic repair.
+- The first ordered `npm test` ran for `2,788.4s` and correctly BLOCKed at
+  `verify:portable`: the WebRTC capability adapter was under portable `src/` and
+  therefore violated the network-free core boundary. No gate was weakened. The
+  adapter moved to `lab/transport`, while its eight async surfaces remained in the
+  ownership inventory.
+- After the boundary correction, async inventory `21/127`, portable source scan
+  `34` modules, portable `10,000/10,000`, WebRTC `4/4`, actual P2P Node/Chromium
+  `8/8` plus runtime vertical, Lab build, and the previously unreached tail
+  verifiers all passed.
+- The final unchanged ordered `npm test` passed end to end in `4,168.7s` with
+  specification, links, every stage receipt, actual browsers, P2P placement/repair,
+  SDK/packed consumer, UX, portable parity, independent Python differentials, and
+  S3/S4 receipt verification. Exact-head CI, independent review, merge, exact-main
+  verification, deployment, and external-topology promotion remain unclaimed.
+
+## 2026-08-08 KST — Confidential continuously re-proved P2P placement controller
+
+- Added `mortalos-confidential-placement-{shard,manifest,journal}/1`. A verified S4
+  package becomes three deterministic XOR-coded ciphertext envelopes; every two
+  distinct valid shards reconstruct and reverify the exact package. Each descriptor
+  binds shard index/digest/size and its exact storage workload ID.
+- Added a freshness-aware evaluator that counts only distinct provider and shard
+  identities with exact active storage receipts. Exact max age passes; max+1,
+  future-time, duplicate, corrupt, wrong workload, unavailable transport, and invalid
+  evidence fail closed without manufacturing a global outage fact.
+- Added an immutable canonical public-evidence journal and append-only generation-pointer Lab
+  adapter. An actual commit child exits and a new load child recovers exact bytes.
+  The restored controller counts no repeated pre-crash receipt; an existing lease
+  must extend the journaled receipt directly, while a new provider/lease may enter
+  with a fresh first proof.
+- The controller policy test passes every 2-of-3 pair, corrupt/single/duplicate
+  negatives, directly chained re-proof, and 100 deterministic loss/stale/repair/
+  corrupt schedules over cryptographically verified states. The 100 cycles are not
+  misrepresented as 100 physical machines or partitions.
+- Added an actual Chromium vertical. Browser A selects and encrypts a native
+  98,317-byte file for B; three providers receive distinct S4 package shards over
+  direct DataChannels and sign exact workload receipts. HTTP/origin/relay access is
+  cut after bundle load. Provider loss degrades the target, A destroys authority and
+  exits, and B reconstructs/decrypts exact bytes, then renews all placements through
+  B-owned new leases instead of receiving A's private key. One corrupted shard is
+  rejected and another valid pair succeeds.
+- Focused result: `npm run test:p2p-placement` PASS in 198.9s: 12 Node cases plus
+  the existing plaintext transport regression and new confidential Chromium
+  vertical. SDK allowlists, clean packed install, and five-entry Lab build pass.
+- Root next gap: the crash-safe journal is still local. Placement generations and
+  repair intent must bind into Continuity lineage so multiple legitimate controllers
+  converge, forks halt, and no partition can create silent duplicate repair/billing
+  authority. Physical/admin independence and arbitrary NAT reachability remain HOLD.
+- The first complete candidate `npm test` PASS took `3,476.4s`. Replacing the
+  delete/rename current-pointer window with fsync-backed append-only generation
+  pointers and explicit same-generation fork rejection passed in `3,177.5s`.
+  A final review then bound the pointer filename, journal ID, pointer generation,
+  and restored journal generation so an old journal cannot masquerade as a newer
+  generation; the final exact-source ordered `npm test` PASS took `3,101.1s`.
+  The final run included license,
+  spec/link/profile, async security, governance and historical receipts, Participant
+  Core, durable Chromium, S4 confidentiality, both P2P Chromium verticals, transport,
+  distributed counter, fuzz, SDK/packed consumer, continuity/Capsule/relay,
+  multi-browser/Lab/UX, portable `10,000/10,000`, independent Python differentials,
+  and S3/S4 receipt verification. No gate was reduced for this candidate.
+
+## 2026-08-09 KST — Lineage-bound placement handoff and convergence
+
+- Added `mortalos-lineage-placement-{generation,commit,authorization,convergence}/1`.
+  A generation carries complete canonical placement evidence and re-derives its
+  proof/repair summary instead of trusting controller output.
+- A generation becomes authoritative only through a current-custodian Continuity
+  state transition whose sign-once tuple binds one exact parent. The derived
+  authorization names committed repair actions and billable proof IDs; unsigned
+  plans do not grant either authority.
+- Node A commits a two-proof degraded generation, performs the existing sign-once
+  custody handoff to B without key transfer, is destroyed, and B commits a linked
+  three-proof repaired generation under B-owned leases. Two fresh verifier processes
+  reproduce byte-identical convergence output.
+- The adversarial fixture intentionally bypasses sign-once with an unsafe raw signer
+  and produces two separately valid same-parent generation commits. Both verify,
+  but convergence returns `generation-fork` and selects neither.
+- The actual Chromium vertical now creates controller authority from the selected
+  98,317-byte File, commits loss under A, hands control to B, closes A, repairs over
+  direct WebRTC, and commits under B. Reordered/duplicated evidence converges exactly
+  with origin and relay still cut; no private material appears in results.
+- Focused PASS: the hardened `npm run test:p2p-placement` completed in 372.6s with 14 Node
+  cases and both actual Chromium verticals; async security inventory, SDK surface,
+  clean packed-package import, and five-entry Lab build also pass.
+  Final ordered `npm test` then passed on the hardened source in 3,129.8s, including every existing browser,
+  protocol, SDK, continuity, Lab, portable, differential, and stage-receipt gate.
+  Exact commit, independent review, merge, deployment, and promotion remain open.
+- Root next gap: the commit proves who authorized a generation, not whether a local
+  timeout is globally true. Next P0 is quorum-observed, predecessor-linked liveness
+  and failure certificates without a global clock. Physical/admin independence,
+  honest metering, Sybil resistance, arbitrary NAT reachability, and XSS-resistant
+  signing remain HOLD.
+
+## 2026-08-09 KST — Quorum-observed liveness and repair certificates
+
+- Added canonical, domain-separated liveness challenge, observer no-response,
+  provider response, and threshold failure-certificate documents. Challenge order
+  is the exact prior execution receipt plus next sequence; the schema contains a
+  bounded local duration but no deadline, UTC time, clock server, or global clock.
+- Closed a policy-selection flaw found during implementation: the consumer cannot
+  create a favorable observer roster after failure. The roster and `n/f/q` must
+  equal the provider-signed offer witness policy already accepted by the lease.
+- Removed raw unavailable-provider input from lineage generation. Only verified
+  failed cases derive the lower-level unavailable set, and committed repair intent
+  carries the exact challenge and certificate IDs.
+- Added execution-time reconciliation. A late provider response counts only when a
+  supplied current placement proves the referenced dual-signed execution receipt;
+  response versus certificate, two challenges for one predecessor tuple, or two
+  receipt responses for one challenge halt with no repair winner.
+- Node liveness/transport focused gates pass. The lineage gate covers malicious
+  unagreed observers, committed certificate IDs, late-proof halt, two fresh verifier
+  processes, and 1,000 partition/heal inputs in four bounded batches. The exact
+  final lineage rerun remains part of the final ordered verification below.
+- Actual Chromium PASS: the challenge crossed direct WebRTC to provider 0 and four
+  observer browser processes, provider 0 exited, three observers signed after the
+  actual 5,000 ms local window, A committed the certified repair and handed control
+  to B without key transfer, A exited, and B committed repaired continuity. Origin,
+  HTTP, and relay request counts remained unchanged after cut.
+- Root insight: quorum signatures close controller-local outage fabrication but not
+  Sybil control. The next P0 is lineage-committed membership plus measured
+  failure-domain diversity so one operator cannot manufacture both provider and
+  observer populations. Same-PC/admin/network, honest timers, honest metering,
+  arbitrary NAT, and physical independence remain HOLD.
+- Final ordered repository regression PASS: `npm test` completed in `4,263.6s`.
+  The liveness-hardened placement gate passed 17 Node cases plus both actual
+  Chromium verticals; portable rejected `10,000/10,000` serialized adversarial
+  cases; state/state-package/R1 differentials, Lab/UX, SDK/continuity/Capsule,
+  relay/quorum, and the final S3/S4 receipt gates all passed. The command root and
+  descendants were absent at the post-run readback.
+
+## 2026-08-10 KST — Pre-publication security reconciliation and claim boundary
+
+- Independent adversarial review reproduced three release blockers and one derived-
+  plan gap: a rogue liveness consumer could differ from the verified lease consumer;
+  a stale prior generation could rewind placement numbering after a newer commit;
+  poisoned collection primordials could count one repeated observer as a quorum; and
+  an older committed generation could derive a plan against a later Capsule head.
+- The core now binds the full lease/challenge consumer identity, requires the unique
+  latest committed placement predecessor in creation, commit, and verification,
+  rejects superseded generation plans, and uses captured realm/own-data snapshots for
+  hostile accessor, Proxy, sparse-array, `Set`, `Map`, `Object`, and `Array` inputs.
+  The public plan remains forgeable `non_capability` data and grants no execution
+  authority.
+- `commitLineagePlacementGeneration` is now a direct async security-registry entry.
+  Its authority resolution and canonical input-byte ownership occur before the first
+  suspension. Generated-profile checks also require the resource-offer and liveness
+  witness ceilings to match and the certificate observation ceiling to represent the
+  full accepted roster; exact 16 witnesses pass and 17 reject.
+- Focused current-source PASS: lineage `2/2` in `740.9s`; liveness `5/5`;
+  resource/profile `15/15`; async security `26/26` with `22` direct and `128`
+  discovered entrypoints; SDK `5/5`; clean packed-package flow; specification,
+  links, generated profile, and `git diff --check`. A separate read-only security
+  rerun independently passed lineage `2/2` in `736.4s` and found no material release
+  block.
+- Claims are deliberately narrower than the implementation's signed transcript. The
+  response window is consumer-selected, not provider-agreed; a failure certificate
+  is not provider death, breach, lease termination, penalty, or settlement evidence;
+  and the current Chromium Lab does not execute repair through an effect-time,
+  current-evidence-gated executor.
+- Root next P0 is therefore a provider-signed, lease-bound liveness policy plus an
+  independent provider possession response and exactly-once repair executor. Only
+  after that semantic and effect boundary is fixed should lineage-governed membership
+  epochs assign trust-rooted failure-domain weights. Independent topology, absolute
+  Sybil resistance, honest metering, arbitrary NAT reachability, and same-origin
+  signer isolation remain HOLD.
+- After the implementation and preceding documentation reconciliation, the complete
+  ordered `npm test` passed without a skipped gate in `3,664.8s`. It included both
+  actual Chromium placement verticals, portable `10,000/10,000`, independent
+  state/state-package/R1 differentials, and the final S3/S4 receipt verifiers. This
+  evidence line was appended after that run; exact-head CI remains the authority for
+  the final committed documentation revision.
+- Exact-SHA review, CI, merge, deployment, and public promotion remain external facts
+  read from the PR, required checks, merge record, post-main workflows, and deployed
+  manifest; this append-only source record does not self-promote its containing SHA.
+
+## 2026-08-10 KST — PR #58 first independent BLOCK and replacement closure
+
+- PR #58's first immutable review pinned head
+  `1c559843c6af8300d744629215050c3fbd4d4781` and all 61 changed files. Trusted policy
+  run `31325465476` job `93274993590`, Verify run `31325465489` browser job
+  `93274993578`, and protocol job `93274993553` all passed. Structured review
+  `4892040607` nevertheless BLOCKed the head with four material findings; no PASS
+  receipt, App attestation, native approval, merge, or deployment was issued.
+- The status header in `IMPLEMENTATION_PLAN.md` contradicted the body by naming
+  admission as immediate NEXT, and HANDOFF omitted the changed `protocol/` path.
+  Both SSOT records now state the same ordered priority and exact shared-path set.
+- A WebRTC publisher, range reader, or first subscriber could mutate a shared internal
+  frame reference and poison later cursor/subscriber state. The adapter now owns
+  binary inputs through captured intrinsic slots, rejects accessor/Proxy/SAB
+  impostors, stores immutable frames, and returns a detached frozen record for every
+  publish, duplicate, fetch, and subscriber delivery. Transport regressions pass
+  `16/16`, including the original `1 -> 777` and cross-subscriber `900` attacks.
+- A forged latest-parent successor could repeat generation `2`, recompute its public
+  ID and commit hash, and still verify. Creation now derives the next number from
+  restored canonical prior bytes; commit and verification require generation `N` to
+  have exactly `N - 1` authenticated prior placement transitions plus the latest
+  predecessor ID/head. Repeated `2`, skipped `4`, noncanonical `01`, and overflow
+  all reject. The focused signed lineage suite passes `2/2` in `783.3s`.
+- Reviewed module and entrypoint digests were refreshed only after source inspection;
+  async security passes `26/26` with `22` direct and `128` discovered surfaces.
+  Specification, links, governance `30/30`, and `git diff --check` pass. Replacement
+  exact-head CI and fresh immutable re-review remain required before any approval,
+  merge, deployment, or promotion.
+
+## 2026-08-10 KST — PR #58 replacement BLOCK and send-failure closure
+
+- Replacement head `b282e0d3be74c0d8480c038199b5ebc960166e8d` passed trusted
+  policy `31329658282` job `93285742521`, browser parity job `93285745426`,
+  focused lineage `2/2`, transport `16/16`, async security `26/26`, governance
+  `30/30`, package, profile, spec, link, audit, and diff gates. Immutable review
+  `4892277944` confirmed all four findings from review `4892040607` were closed,
+  then correctly BLOCKed a new outbound-publication atomicity defect. No PASS
+  receipt, App attestation, native approval, merge, or deployment was issued.
+- `publish()` formerly inserted its frame and message-ID dedupe entry before
+  `DataChannel.send()`. A transient synchronous send failure therefore left a ghost
+  local frame; the exact retry returned `duplicate: true` without a second network
+  send. The adapter now sends first and commits local state only after success.
+- The new regression proves: failed send => zero range/subscriber/dedupe visibility;
+  exact retry => a real second send and exactly one committed frame; later duplicate
+  => idempotent without a third send; backpressure and closed-channel rejection =>
+  no extra frame. Transport plus virtual 10,000-schedule coverage passes `17/17`,
+  and reviewed security digests were refreshed only after inspecting the source.
+- The same North Star audit reproduced two honest HOLDs recorded in the active SSOT:
+  a consumer-selected 1 ms window can yield a valid local non-response certificate,
+  and an ID-only provider response is not self-contained possession proof. They are
+  inputs to the next provider-signed liveness-policy/possession/executor P0, not
+  grounds to overstate this scheduling-only source claim.
+
+## 2026-08-10 KST — PR #58 third BLOCK and transitive WebRTC capability containment
+
+- Exact head `dcdd02d0c88015fc867381cb97b07215a8d7e429` passed trusted policy
+  `31330801325/1` job `93288610889` and exact-head Verify `31330802529/1`
+  (`protocol` job `93288613346`, `browser-parity` job `93288613359`). Immutable
+  review `4892393270` confirmed the five prior findings were closed and then
+  correctly BLOCKed one remaining trust-boundary defect. No PASS receipt, App
+  attestation, native approval, merge, or deployment was issued.
+- The private WebRTC transcript still invoked ambient mutable `Map`, `Set`, `Array`,
+  iterator, scheduler, and attached-channel methods. Independent reproductions could
+  fabricate a first-send duplicate, suppress duplicate detection, fabricate range
+  sequence `777`, drop replay/live delivery, accept bogus signaling, or record local
+  publication after a replaced no-op `send` while the existing security digest gate
+  stayed green.
+- The replacement source uses one private ordered `Map` for frame order and message-ID
+  dedupe, invokes captured collection/iterator/scheduler operations, snapshots
+  fallback data-method capabilities without invoking accessors, and native-captures
+  DataChannel, MessageEvent, RTCDataChannelEvent, and RTCPeerConnection constructors,
+  methods, and live-slot getters. Publication performs the captured real send first
+  and makes one local transcript commit only after synchronous success.
+- Thirteen isolated child-process poison cases separate the adapter boundary from
+  the transitive codec parser and cover pre/post-construction Map/Set, individual
+  mutation and iterator methods, Array range construction, scheduler promises,
+  signaling type, and attached `send`. `test/webrtc-transport.test.mjs` passes
+  `10/10`. A test-only browser bundle connects an actual Chromium A/B DataChannel
+  pair, replaces native channel/peer methods and collection prototypes, records zero
+  poison calls, and still delivers exactly three remote frames.
+- The actual Chromium P2P vertical then passed in `55.3s`: runtime file and signed
+  evidence crossed direct peers, one provider loss repaired through a new lease, A
+  exited, and B recovered two valid copies while rejecting one corruption with zero
+  origin/relay requests after cut. The confidential vertical passed in `152.1s` with
+  the native 98,317-byte file, S4 2-of-3 shards, 3-of-4 no-clock observations,
+  lineage handoff, A exit, exact B recovery, and corrupt-shard rejection.
+- Reviewed module/function hashes were updated only after the containment and browser
+  evidence were inspected; the async security gate passes `26/26` (`22` direct,
+  `128` auto-discovered). A successful browser `send()` remains only local outbound
+  queue admission, not peer acknowledgement, durable possession, or placement truth.
+  Fresh exact-head CI and a fourth immutable review remain required.
+
+## 2026-08-10 KST — PR #58 fourth BLOCK: transitive relay allowlist containment
+
+- Immutable review `4892650018` at exact head
+  `8a3f285edf3e1056d4f78097b5cb5bc0ae065043` reproduced that the otherwise
+  contained WebRTC publisher still delegated artifact-kind classification to ambient
+  `Set.prototype.has`. Selective poisoning admitted a manually canonicalized
+  forbidden `verdict` and committed sequence 1 on both actual Chromium peers. No
+  PASS receipt, approval, merge, or deployment follows from the blocked head.
+- The source correction is deliberately narrow: `src/transport/protocol.mjs` imports
+  the module-captured `setHas` primordial and invokes it for the existing artifact-kind
+  allowlist. No relay schema, artifact set, WebRTC sequencing, or placement policy
+  changed.
+- The isolated Node regression canonicalizes raw forbidden and allowed carriers before
+  poison. Under selective membership replacement, `verdict` rejects with
+  `RELAY_SCHEMA`, performs zero sends, and leaves the local range empty; `challenge`
+  then sends once and commits sequence 1. The poison target records zero calls. The
+  parent covers 14 isolated cases, and a missing child argument now exits explicitly
+  with code 64 instead of entering a poison scenario.
+- The actual connected-Chromium A/B probe first rejects the same forbidden bytes in a
+  clean baseline and again under poison. Forbidden local range, remote range, and
+  subscriber delivery remain zero; while the poison is installed, an allowed
+  challenge reaches both peers at sequence 1. The verifier asserts
+  `artifact_kind_poison_calls: 0`, `forbidden_local_frames: 0`, and
+  `forbidden_remote_frames: 0` before continuing the origin-cut placement/repair
+  vertical.
+- `verify-security-boundaries.mjs` now pins the exact imported
+  `decodeRelayMessageBytes` function digest and full `src/transport/protocol.mjs`
+  module digest, and proves that classified `publish` directly invokes that named
+  dependency. This is evidence for the named dependency only, not a general claim
+  that future decoder dependencies are primordial-safe.
+- Current-tree focused evidence: transport/WebRTC `18/18`; async security `26/26`
+  with `22` direct and `128` auto-discovered entrypoints; actual Chromium P2P
+  placement/repair PASS in `39.8s`; specification PASS; links PASS; and
+  `git diff --check` PASS. Direct child execution passed, missing-argument exit took
+  `142ms`, and final process inspection found `PoisonChildNodeLiveCount=0` and
+  `ChromiumVerifierNodeLiveCount=0`.
+- Review `4892650018` also reported that confidential placement used historical
+  `record.observed_at_ms` for resource status while using generation time only for
+  proof age. The replacement evaluates both at the canonical generation instant.
+  With record `1500`, lease end `8900`, and generation `9000`, all three shards are
+  `resource-completed`, proof count is zero, and actual lineage creation halts. A
+  signed revocation effective `1700` similarly rejects in generation `1800`.
+- Confidential direct/lineage targeted regressions pass `2/2` in `53.0s`; the full
+  confidential suite passes `5/5` in `129.9s`. Exhaustion remains cumulative
+  receipt state and is not misreported as a time-based result. Fresh exact-head CI
+  and immutable re-review remain required before approval, merge, deployment, or
+  promotion.
+
+## 2026-08-10 KST — PR #58 fifth BLOCK: journal provenance and Capsule-tip completeness
+
+- Immutable review `4892815258` at exact head
+  `775d4dbfdb48985c31018a78bf7a80459ad4d8ed` confirmed all earlier BLOCK closures
+  and exact-head policy/Verify success, then correctly BLOCKed two deeper faults. A
+  caller-shaped evaluation and publicly self-hashed journal could omit every
+  pre-crash replay barrier; separately, convergence could select historical
+  generation 2 even when a supplied verified Capsule authenticated generation 3.
+  No PASS receipt, App attestation, approval, merge, or deployment followed.
+- Journal creation now accepts only a module-private evaluator result bound to the
+  exact manifest, policy, max age, and complete ordered distinct-provider `3/3`
+  receipt barrier. The producer first copies recognized records, dense arrays, and
+  bytes into owned inert data, uses captured collection/WeakMap operations, and
+  checks the runtime after hostile acquisition and nested signed-artifact validation.
+  Selective `Array.prototype.map`, Proxy-array method, accessor, Map, and Set attacks
+  invoke no caller method and cannot mint the brand. Incomplete evaluations are not
+  branded.
+- The durable commit API no longer accepts raw `journal_bytes`; it re-evaluates raw
+  signed placement evidence and derives/restores the canonical journal inside the
+  write boundary. V1 restore requires exactly one ordered barrier for each shard,
+  three distinct providers and receipts, exact `2-of-3` policy, and its canonical
+  self-hash. Empty, partial, cloned, accessor-backed, Proxy-backed, or self-hashed
+  incomplete documents cannot advance a pointer. A syntactically complete forged
+  unsigned local journal and hostile local-disk replacement remain explicit
+  nonclaims.
+- A pre-commit adversarial review then found that restart loading used ambient array
+  methods before its realm check. A self-restoring override hid generation 2 and made
+  an existing generation 1 current without changing disk. The loader now checks the
+  realm at entry and after filesystem reads, copies directory entries as dense own
+  data, uses captured pointer parsing, and selects the maximum generation plus fork
+  state in one bounded order-independent pass. The exact attack is rejected with
+  zero poison calls; a current-max fork halts while a unique later generation
+  supersedes a historical fork under both listing permutations.
+- Convergence retains every supplied Capsule's authenticated latest placement
+  transition count, ID, and head. Every such tip must be represented by a verified
+  candidate, the selected generation must equal the maximum supplied authenticated
+  count, and numeric gaps halt as `incomplete-chain`. Valid historical prefixes and
+  non-placement tails remain valid; sibling candidates halt as `generation-fork`;
+  duplicates and permutations remain byte-identical. A completely hidden newer
+  Capsule remains unknowable and is not claimed.
+- Exact frozen-source local evidence: confidential placement `7/7` in `133.9s`;
+  lineage placement `3/3` in `1,332.7s`; placement/liveness/WebRTC `19/19`;
+  profile/resource/execution `22/22`; transport `8/8`; SDK `5/5` plus clean packed
+  consumer; governance `30/30`; security boundary `26/26` with `22` direct and `128`
+  discovered surfaces; actual Chromium P2P placement/repair PASS in `40.8s`; actual
+  Chromium confidential A-to-B vertical PASS in `103.6s`; portable verifier PASS in
+  `452.4s` with `10,000/10,000` adversarial cases rejected; Lab `23/23`, UX, build,
+  license, specification, links, ruleset, audit-zero, and diff checks PASS. The sync
+  verifier pins exact frozen modules only after review.
+- These are source and local runtime facts, not promotion. Fresh exact-head policy,
+  Verify, immutable independent review, App attestation, separately credentialed
+  native approval, expected-head merge, exact-main Verify/Deploy, and public artifact
+  readback remain external gates.
+
+## 2026-08-10 KST — Journal v2 cumulative anti-replay and hard-link successor CAS
+
+- The fifth-review journal repair proved complete active `3/3` provenance for one
+  head but did not preserve every older receipt-chain barrier after provider
+  replacement. A public evaluator input could also choose its own replay context.
+  Journal v2 moves that authority into a prior-head-bound reproof intent and a
+  module-private branded evaluation.
+- Each reproof context binds prior journal ID, next generation, manifest, policy,
+  epoch parent, and a 256-bit epoch nonce. Each challenge nonce is derived from the
+  context plus the exact chain ID, sequence, and predecessor. Only active shards
+  0/1/2 under three distinct providers can advance the head.
+- The journal now carries cumulative per-chain high-waters for the epoch. A/B/C
+  remain replay barriers after D/E/F becomes active; a known chain advances only as
+  the exact direct successor, while a new chain starts at sequence zero. A rotated
+  epoch can reset this bounded state only after a fresh context-bound `3/3` reproof.
+- Legacy v1 is metadata-only migration input. It cannot seed v2 high-waters or be
+  treated as available until a fresh rotated-epoch reproof commits. Generated caps
+  bound documents, linked transitions, per-shard and total high-waters, and nonce
+  sizes; overflow fails closed without pruning.
+- The durable adapter fsyncs immutable context, journal, and transition files before
+  separate predecessor-keyed no-replace hard-link claims for reproof intent and
+  successor commit. This gives conforming same-filesystem writers a single winner
+  and rejects stale writers without reintroducing a mutable current pointer.
+- Focused source gates are `test/confidential-journal-v2.test.mjs` and
+  `test/confidential-controller-v2.test.mjs`, with the existing confidential policy
+  corpus and actual Chromium vertical as supplementary evidence. Verification and
+  exact-revision governance results must be recorded separately; this entry does not
+  infer PASS, approval, merge, deployment, or promotion.
+- Journal, context, and transition artifacts remain unsigned local evidence. They do
+  not prove hostile-disk integrity, completely hidden receipt history, cross-host or
+  global consensus/currentness, physical independence, or arbitrary Internet
+  reachability. The next P0 order remains provider-agreed lease-bound liveness policy
+  plus effect-time exactly-once repair execution, followed by lineage-governed
+  admission and failure-domain accounting.
+
+## 2026-08-10 KST — Journal v2 final local release gate
+
+- Adversarial pre-freeze review found and closed late-v1 migration-anchor drift,
+  self-rehashed skipped-generation genesis contexts, SharedArrayBuffer-backed byte
+  inputs, partial-canonical crash publication, generation-4096 off-by-one handling,
+  and mutable diagnostic proof projections. Visible late-v1 competition now halts
+  as `E_CONFIDENTIAL_PLACEMENT_ROOT_FORK`; `prior=null` requires generation 1 at
+  restore, binding, and durable genesis boundaries.
+- Exact focused evidence: journal plus confidential placement `12/12`; durable
+  controller `3/3` in `409.7s`; security boundary `26/26` with `22` direct and `128`
+  discovered surfaces; packed SDK/profile/spec/links PASS; audit `0` vulnerabilities.
+  The controller corpus includes different-candidate one-winner, same-candidate
+  idempotence, partial/complete pending orphan isolation, late-v1 root fork, exact
+  generation 4,096 load, generation 4,097 rejection, and child `LiveCount=0`.
+- A fresh uninterrupted ordered `npm test` then passed in `4,304.1s` (`71m 44s`),
+  including both actual Chromium placement verticals, lineage, portable
+  `10,000/10,000`, UX, Lab, and historical H2/S3/S4 verifiers. No test workload
+  remained after completion. Only this evidence-only documentation update followed
+  the runtime run; final exact-head CI must rerun the complete chain.
+- This is local source/runtime evidence, not promotion. Policy, exact-head Verify,
+  fresh immutable independent review, App attestation, separately credentialed
+  native approval, expected-head merge, exact-main Verify/Deploy, and public
+  artifact readback remain external gates.
+
+## 2026-08-10 KST — PR #58 seventh BLOCK and stateful-100 remediation
+
+- Review `4893187627` at `193cfff1...` found that provider replacement could erase
+  cumulative replay barriers and required journal v2 plus stateful 100-transition
+  Node and Chromium/Lab regressions. Journal v2 implemented prior-head-bound reproof
+  contexts, chain/sequence/predecessor-derived challenges, cumulative epoch high-
+  waters, fresh-`3/3` v1 migration, generated caps, and predecessor-keyed no-replace
+  intent/successor claims.
+- Review `4893915817` at `e0148aa2...` confirmed the focused journal-v2 remediation
+  but BLOCKed its stale PR body and the then-named 100-cycle test, which merely re-
+  counted four cached evaluations. That exact head's policy, protocol, and browser-
+  parity checks passed, but no PASS receipt, App attestation, native approval, merge,
+  or deployment followed.
+- The current working source replaces the cached claim with 100 evolving prior-bound
+  transitions in the Node portable-kernel gate and 100 mixed-runtime transitions
+  whose provider keys, storage results, and signatures are created by actual
+  Chromium/Lab pages while the journal controller is orchestrated in Node. The Node
+  focused gate passed `1/1` in `1,850.9s`; the Chromium vertical passed in `1,886.9s`
+  with a `1,776.2s` dynamic segment, generation `102`, `106` cumulative high-waters,
+  and `306` distinct receipts. This is not independently in-browser journal-kernel
+  parity.
+- Chromium rotates logical signer identities inside three persistent provider pages
+  and recomputes possession evidence from already stored exact shard bytes. The
+  corpus does not represent 100 new browser processes, transfers, physical failures,
+  machines, accounts, administrators, or independent failure domains.
+- This remediation raises the current candidate's protocol and deploy workflow
+  maxima from 120 minutes to 180 minutes; relative to the task base, the final ceiling
+  is 60 to 180 minutes. No check is removed or weakened. Uninterrupted full-suite,
+  exact-head CI, fresh independent review, approval, merge, deployment, and public
+  readback remain separate gates for the containing revision.
+
+## 2026-08-10 KST — Stateful-100 full-suite relay boundary diagnosis
+
+- The first uninterrupted full-suite run for the stateful-100 source reached the
+  relay runtime after every preceding gate, including both new 100-transition
+  placement paths, had passed. It then failed after `6,167s` because the relay test
+  expected `429` but received `200`. This run is evidence of a failure and is not a
+  full-suite PASS.
+- Independent diagnosis found no relay Worker regression or state leakage from the
+  long placement run. The historical test inserted `limit - 1` only into the current
+  wall-clock minute and assumed its next two requests remained in that minute. If
+  the minute changed between those requests, the second request correctly entered a
+  fresh fixed-window bucket and returned `200`.
+- The test-only repair now primes both the current and next bounded minute before
+  each independent assertion: `limit - 1` proves the last request is admitted, then
+  `limit` proves the following request is rejected. The production Worker and rate
+  policy are unchanged; the 30-second test timeout cannot reach an unprimed second
+  successor bucket.
+- The repaired runtime passed 20 consecutive isolated runs in `107.045s`, crossing
+  the `19:03` and `19:04` minute boundaries, and the complete `test:relay` gate then
+  passed in `9.0s`, including contract tests, the Worker runtime, and Wrangler dry
+  deployment. A new uninterrupted full suite remains required before local release
+  evidence can be promoted from HOLD.
+
+## 2026-08-10 KST — Stateful-100 full-suite Chromium deadline HOLD
+
+- After the relay harness repair passed 20 isolated runtime repetitions and complete
+  `test:relay`, a second uninterrupted `npm test` still did not close the release
+  gate. All ordered gates through the Node stateful-100 corpus and the first actual
+  P2P Chromium vertical passed.
+- The run stopped after `6,122.7s` in the mixed-runtime Chromium 100-transition
+  segment because its local `1,800,000ms` guard expired after logged progress through
+  75/100 cycles. The earlier focused segment took `1,776,198ms`, leaving only
+  `23,802ms` (`1.32%`) headroom. Later ordered gates were not executed.
+- This is deadline-budget failure evidence, not semantic PASS evidence and not by
+  itself proof of a protocol regression. Independent review projected approximately
+  `2,400,000ms` at the observed full-run pace, so the harness remains bounded at a
+  revised `2,700,000ms` while preserving all 100 sequential transitions and final
+  assertions. Protocol and deploy workflow maxima increase from 180 to 240 minutes;
+  no gate is removed or weakened.
+- Full-suite, exact-head CI, fresh independent review, approval, merge, deployment,
+  and public readback remain HOLD until a new exact-source run completes.
+
+## 2026-08-10 KST — Stateful-100 uninterrupted local full-suite PASS
+
+- A third fresh uninterrupted `npm test` on the current runtime/test source exited
+  `0` in `7,065.8s` (`117m 45.8s`). It completed the 100 sequential Node portable-
+  kernel replacements, the 100-transition mixed-runtime Chromium/Lab path within its
+  bounded `2,700,000ms` guard, the repaired relay runtime, and every later ordered
+  repository gate. The exact mixed-runtime segment duration was not recovered from
+  truncated output and is not estimated.
+- The Chromium boundary remains explicit: three persistent browser provider pages
+  held non-extractable keys and created the storage results and signatures; the
+  portable journal controller ran in Node. This is not independently in-browser
+  journal-kernel parity, 100 new browser processes/transfers, or evidence of 100
+  independent machines, accounts, administrators, regions, or failure domains.
+- The test root and all observed descendants were absent at
+  `2026-08-10 22:54:53.946+09:00` (`RootTreeLiveCount=0`). This successful run
+  supersedes the preceding `6,167s` relay-race and `6,122.7s` deadline HOLDs as the
+  current local full-suite result; both failed attempts remain retained above as
+  diagnostic history.
+- Workflow ceilings remain 240 minutes and the internal mixed-runtime guard remains
+  `2,700,000ms`; no ordered gate or final assertion was skipped. Only evidence
+  documentation changed after this run. Exact-head policy/Verify, fresh immutable
+  independent review, App attestation, separately credentialed native approval,
+  expected-head merge, exact-main Verify/Deploy, and public readback remain external
+  and pending.
+
+## 2026-08-11 KST — Exact generated-history ceiling focused PASS; full-suite HOLD
+
+- The former stateful-100 corpus did not exercise the profile-generated 128-chain-
+  per-shard/384-chain-total boundary. The Node replacement test now performs 128
+  sequential signed prior-head-bound transitions with 381 genuine provider
+  replacements. It reaches generation 129 with exactly 384 distinct provider,
+  lease, and chain identities (`128/128/128` by shard) plus 387 distinct execution
+  receipts. It then obtains a separately signed, proved generation-130 `3/3`
+  candidate and rejects its 385th total/129th shard-0 chain at commit without
+  changing the exact generation-129 journal bytes.
+- The focused Node body passed in `2,841,685.4279ms`; the Node test runner completed
+  in `2,842,481.1467ms` and the shell in `2,842,596ms`. The root test tree was absent
+  at `2026-08-11 00:05:11.662+09:00` (`RootTreeLiveCount=0`).
+- The first focused Chromium attempt failed after `84,073ms` because a test-only
+  aggregate omitted initial `chain_id` values before comparing the complete signed
+  history. The aggregation was corrected; protocol/runtime semantics and the
+  generated caps were unchanged. This failed attempt is retained as evidence rather
+  than counted as PASS.
+- The corrected mixed-runtime Chromium/Lab gate passed 127 cycles from generation 2
+  to the same generation-129 ceiling in `2,549,195ms` dynamic time and `2,666,619ms`
+  total. It records 384 distinct provider/lease/chain identities
+  (`128/128/128` by shard) and 387 receipts, proves a browser-signed generation-130
+  `3/3` candidate, rejects its plus-one commit without changing bytes, reloads the
+  serialized ceiling and rejects the oldest replay, exposes no private material,
+  and records zero post-cut requests. The browser tree was absent at
+  `2026-08-11 00:54:04.267+09:00` (`RootTreeLiveCount=0`).
+- Three persistent browser pages reuse already stored exact shard bytes, and Node
+  orchestrates the portable journal controller. This is genuine browser-signature
+  evidence but not independent in-browser journal-kernel parity, 127 fresh browser
+  processes/transfers, independent possession domains, machines, accounts,
+  administrators, networks, regions, or credentials.
+- The passing deadline-wrapped `2,549,195ms` Chromium dynamic segment consumed
+  94.41% of the former `2,700,000ms` guard (`2,666,619ms` total outside that exact
+  segment boundary). The test-only bound is now `3,300,000ms`; the workflow limits
+  remain 240 minutes and no cycle or final assertion is skipped.
+- The preceding `7,065.8s` uninterrupted full-suite PASS is historical pre-ceiling
+  evidence and does not transfer to this changed source. Current status is **focused
+  exact-ceiling PASS; full suite pending; exact-SHA external**. A fresh uninterrupted
+  `npm test` is required before exact-head CI, immutable review, approval, merge,
+  deployment, or public readback can advance.
+
+## 2026-08-11 KST — Exact-ceiling exact-tree uninterrupted full-suite PASS
+
+- A fresh exact-tree `npm test` started at
+  `2026-08-11 01:06:58.716+09:00` and ended at
+  `2026-08-11 03:21:35.542+09:00`. It exited `0` after exactly `8,076,826ms`
+  (`8,076.826s`; `134m 36.826s`).
+- The ordered chain completed the current 128-transition Node exact-ceiling test,
+  the current 127-cycle mixed-runtime Chromium exact-ceiling test, all subsequent
+  repository stages, and the final `verify:s4` PASS. This promotes the current local
+  evidence from focused-only to uninterrupted exact-source full-suite PASS without
+  altering the earlier focused runtimes, the `3,300,000ms` Chromium dynamic guard,
+  or the 240-minute workflow ceilings.
+- PID `23824` was absent at `2026-08-11 03:24:59.475+09:00`. A fresh conservative
+  probe at `03:26:01.147+09:00` found that root absent and zero other matching
+  MortalOS test workloads after excluding the probe process itself.
+- This remains local source/runtime evidence. Mixed-runtime Node orchestration,
+  same-PC persistent provider pages, unsigned journal/context/transition documents,
+  conforming same-filesystem hard-link CAS, and all physical/admin/credential-domain
+  nonclaims remain unchanged. Exact-head CI, immutable review, App attestation,
+  native approval, merge, exact-main Verify/Deploy, and public readback remain
+  external and pending.
+
+## 2026-08-11 KST — Full-suite evidence scope correction
+
+- The preceding entry's “exact-tree” and “exact-source full-suite” wording was too
+  broad. The `npm test` ended at `03:21:35.542+09:00`, while evidence documents were
+  edited afterward to record that result. Therefore the later 67-file working tree
+  as a whole did not run that full suite and must not inherit an exact-tree PASS.
+- The bounded claim is: the unchanged current runtime/test/workflow source bytes ran
+  uninterrupted `npm test` from `01:06:58.716+09:00` to `03:21:35.542+09:00`, exited
+  `0` in `8,076.826s`, and completed both exact-ceiling paths plus every later gate
+  through final `verify:s4`. Only evidence docs changed afterward.
+- The current documentation tree is validated separately by `verify:spec`,
+  `verify:links`, and `git diff --check`. This split evidence does not prove a full
+  suite over the whole current tree. Exact-SHA CI, immutable review, approval, merge,
+  deployment, and public readback remain external gates.
+
+## 2026-08-11 KST — PR #58 transcript-ceiling and terminal-cleanup BLOCK remediation
+
+- An independent exact-snapshot audit of head
+  `a2210f1958080067b021a9c75336645f718c7427` correctly BLOCKed two remaining
+  WebRTC resource-lifecycle defects. A peer could retain more than the generated
+  512 unique canonical messages and 8,388,608 decoded raw message bytes, and a
+  remote DataChannel close marked the transport closed without closing the still-live
+  RTCPeerConnection. No GitHub review, PASS receipt, App attestation, native
+  approval, merge, or deployment was issued for that head.
+- `ManualWebRtcParticipantTransport` now treats inbound and outbound entries as one
+  combined transcript budget. Duplicate detection precedes capacity accounting, so
+  exact duplicates consume neither count nor bytes. Outbound cap checks precede
+  native send and frame/dedupe state commits only after send success. Inbound
+  overflow creates no transcript/dedupe entry or subscriber delivery before
+  fail-close cleanup clears subscriptions.
+- `VirtualTransportNetwork` now enforces the exact generated decoded raw-byte ceiling
+  as well as the unique-message ceiling. The relay edge retains its conservative
+  base64 decoded-size estimate and may reject slightly earlier. Therefore the bounded
+  claim is the same upper ceiling plus fail-closed behavior, not byte-identical edge,
+  virtual, and WebRTC accounting.
+- Local close, remote channel close, remote peer close, error, and repeated calls now
+  converge through one idempotent shutdown path. Captured native DataChannel and
+  RTCPeerConnection close capabilities are each invoked at most once; remote channel
+  close closes the still-live peer instead of stranding it. Error propagation no
+  longer consults ambient `Error` construction or `instanceof`, and focused poison
+  cases cover hostile `Error` and `Symbol.hasInstance`.
+- Literal focused evidence passes on the frozen replacement source: Node transport
+  `24/24` in `31,241ms` command time (`30,998.3923ms` TAP duration) and actual
+  Chromium in `50,086ms`. These gates cover exact 512/message 513, exact 8,388,608/
+  byte 8,388,609, combined inbound/outbound consumption, duplicate non-consumption,
+  send-failure retry, no overflow-frame commit or delivery before cleanup,
+  remote-channel cleanup, and one close of the still-live remote peer in the actual
+  Chromium scenario. `git diff --check` also passes for the candidate.
+- The earlier uninterrupted `8,076.826s` runtime/test/workflow full-suite PASS
+  predates the current WebRTC runtime/test/security remediation and is historical. A
+  fresh complete local suite, exact-head CI, immutable review, approval, merge,
+  exact-main Verify/Deploy, and public readback remain pending or external gates.
+- The root next P0 order is unchanged: provider-signed lease-bound liveness policy,
+  independent provider possession response, and an effect-time exactly-once repair
+  executor first; lineage-governed admission and failure-domain accounting follow.
+
+## 2026-08-11 KST — WebRTC-remediated uninterrupted full-suite PASS
+
+- The first fresh `npm test` attempt began around `05:23` KST. User steering stopped
+  its tool cell and test process after approximately 82 minutes. It produced neither
+  an exit-0 result nor the final `verify:s4` receipt and is therefore retained as an
+  interrupted attempt, not a full-suite PASS.
+- A separate hidden wrapper restarted the complete ordered suite at
+  `2026-08-11T06:42:38.6738575+09:00`. It ended at
+  `2026-08-11T09:06:30.4636057+09:00`, exited `0`, and completed every ordered stage
+  through final `verify:s4` after `8,631,790ms` (`143m 51.790s`). This is the current
+  runtime/test/workflow full-suite PASS for the WebRTC-remediated candidate.
+- Covered source/runtime/test/workflow files remained unchanged after the successful
+  run. A post-run process inventory found zero related workloads after excluding the
+  inventory command itself.
+- Evidence documents changed afterward only to record the successful run and are
+  validated separately by `verify:spec`, `verify:links`, and `git diff --check`.
+  Therefore the bounded claim is **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS;
+  CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL**, not a whole-current-tree
+  exact full-suite PASS.
+- The reviewer identity SSOT is also corrected without changing runtime code: the
+  logical reviewer COMMENT/receipt, GitHub App ID `4456370` exact-head attestation,
+  and machine user `ant713900-web` native latest-head approval are separate required
+  gates. None substitutes for another, and exact-head governance remains external
+  until all are re-issued for the final immutable candidate.

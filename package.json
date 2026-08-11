@@ -10,6 +10,7 @@
   "exports": {
     ".": "./sdk/index.mjs",
     "./continuity": "./sdk/continuity.mjs",
+    "./placement": "./sdk/placement.mjs",
     "./protocol-profile": "./src/generated/protocol-profile.mjs",
     "./resource-contract": "./sdk/resource-contract.mjs"
   },
@@ -26,7 +27,7 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run verify:protocol-profile && npm run verify:security-boundaries && npm run verify:ruleset-policy && npm run test:reviewer-attestation && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:s3-receipt && npm run test:s4-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:confidentiality && npm run test:protocol-profile && npm run test:transport && npm run test:distributed-counter && npm run test:security-fuzz && npm run test:sdk && npm run test:continuity && npm run verify:sdk-package && npm run test:capsule && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2 && npm run verify:s3 && npm run verify:s4",
+    "test": "npm run verify:license && npm run verify:spec && npm run verify:links && npm run verify:protocol-profile && npm run verify:security-boundaries && npm run verify:ruleset-policy && npm run test:reviewer-attestation && npm run test:governance && npm run test:baseline-receipt && npm run test:s1-receipt && npm run test:s2-receipt && npm run test:s3-receipt && npm run test:s4-receipt && npm run test:participant-core && npm run test:participant-core:coverage && npm run verify:participant-core && npm run test:durable-quorum && npm run test:conformance && npm run test:properties && npm run test:i18n && npm run test:state && npm run test:state-package && npm run test:confidentiality && npm run test:protocol-profile && npm run test:p2p-placement && npm run test:transport && npm run test:distributed-counter && npm run test:security-fuzz && npm run test:sdk && npm run test:continuity && npm run verify:sdk-package && npm run test:capsule && npm run test:relay && npm run test:multi-browser && npm run test:lab && npm run verify:cost-controls && npm run test:r1 && npm run build:lab && npm run verify:ux && npm run verify:portable && npm run verify:state && npm run verify:state-package && npm run verify:r1 && npm run verify:singleton && npm run verify:h2 && npm run verify:s3 && npm run verify:s4",
     "generate:protocol-profile": "node scripts/generate-protocol-profile.mjs",
     "verify:protocol-profile": "node scripts/generate-protocol-profile.mjs --check",
     "verify:license": "node scripts/verify-license.mjs",
@@ -55,6 +56,7 @@
     "test:state-package": "node --test test/state-package.test.mjs",
     "test:confidentiality": "node --test test/confidential-format.test.mjs test/confidential-counter.test.mjs test/confidential-crypto-vectors.test.mjs test/confidential-package.test.mjs test/confidential-s3-recovery.test.mjs && node scripts/verify-confidential-chromium.mjs",
     "test:protocol-profile": "node --test test/protocol-profile.test.mjs test/resource-contract.test.mjs test/resource-execution.test.mjs test/resource-execution-process.test.mjs",
+    "test:p2p-placement": "node --test test/placement.test.mjs test/placement-process.test.mjs test/confidential-placement.test.mjs test/confidential-journal-v2.test.mjs test/confidential-controller-v2.test.mjs test/placement-liveness.test.mjs test/lineage-placement.test.mjs test/webrtc-transport.test.mjs && node scripts/verify-p2p-placement-chromium.mjs && node scripts/verify-confidential-placement-chromium.mjs",
     "test:distributed-counter": "node --test test/distributed-counter.test.mjs && node scripts/verify-independent-counter-topology.mjs",
     "test:security-fuzz": "node --test test/security-stateful-fuzz.test.mjs",
     "verify:security-boundaries": "node --test test/security-boundary-verifier.test.mjs",

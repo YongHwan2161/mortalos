@@ -112,6 +112,8 @@ const uint16ArrayConstructor = Uint16Array;
 const uint32ArrayConstructor = Uint32Array;
 const uriErrorConstructor = URIError;
 const weakMapConstructor = WeakMap;
+const weakMapGetIntrinsic = WeakMap.prototype.get;
+const weakMapSetIntrinsic = WeakMap.prototype.set;
 const weakSetConstructor = WeakSet;
 const weakSetAddIntrinsic = WeakSet.prototype.add;
 const weakSetDeleteIntrinsic = WeakSet.prototype.delete;
@@ -822,6 +824,19 @@ export function setValues(target) {
 
 export function setSize(target) {
   return reflectApply(setSizeIntrinsic, target, []);
+}
+
+export function createWeakMap() {
+  return new weakMapConstructor();
+}
+
+export function weakMapGet(target, key) {
+  return reflectApply(weakMapGetIntrinsic, target, [key]);
+}
+
+export function weakMapSet(target, key, value) {
+  reflectApply(weakMapSetIntrinsic, target, [key, value]);
+  return target;
 }
 
 export function createWeakSet() {

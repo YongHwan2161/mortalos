@@ -214,6 +214,82 @@ realm intrinsics. Raw `recoverContinuityCapsuleQuorum` is compatibility integrit
 counting; only `recoverContinuityCopyQuorum` proves distinct signed logical identities.
 These are local activation errors, not v0/v1 lineage rejection codes.
 
+The lineage-placement controller similarly throws local scheduling errors rather
+than validator rejection codes: `E_LINEAGE_PLACEMENT_RUNTIME` for realm-integrity
+drift, `E_LINEAGE_PLACEMENT_FORMAT` for malformed, accessor/Proxy/sparse-array, or
+non-canonical documents, `E_LINEAGE_PLACEMENT_LIMIT` for bounded-input violations
+including `generation-sequence-overflow`,
+`E_LINEAGE_PLACEMENT_GENERATION` for an invalid evidence summary, ID, prior binding,
+or repeated/decremented/skipped successor number (`generation-sequence`),
+`E_LINEAGE_PLACEMENT_STALE` when a generation no longer names the current
+Continuity parent, and `E_LINEAGE_PLACEMENT_COMMIT` when the named generation or
+prior transition is absent or mismatched in the verified Capsule. A valid sibling
+set is not thrown away; convergence returns the explicit fail-closed state
+`halted / generation-fork` with no selected commit. A candidate chain that omits
+generation 1, skips an intermediate generation, or fails to represent the latest
+authenticated placement transition visible in any supplied verified Capsule returns
+`halted / incomplete-chain`; a Capsule with an existing placement commit cannot
+reset to generation 1. Historical prefix candidates remain valid when the complete
+chain represents every supplied Capsule tip.
+
+The confidential placement journal-v2 layer uses
+`E_CONFIDENTIAL_PLACEMENT_REPROOF` for a malformed context or one that does not bind
+the exact prior journal head, next generation, manifest/policy, or epoch transition,
+and for invalid chain/nonce-derivation inputs. During evaluation, a challenge nonce
+that differs from the context-derived value becomes the placement reason
+`reproof-context-mismatch`; a previously seen chain that is not the exact
+sequence/predecessor successor of its cumulative high-water becomes
+`restart-reproof-required`. Neither can enter the private active-proof brand.
+`E_CONFIDENTIAL_PLACEMENT_JOURNAL` rejects an unbranded evaluation, anything other
+than an active distinct-provider/shard `3/3` set, a context/journal mismatch,
+ambiguous or incomplete high-water history, an active proof that is not its chain
+high-water, or a malformed/self-hash-mismatched v2 document. Evaluator acquisition
+and nested validation use owned inert snapshots plus contained operations;
+executable recognized fields, sparse arrays, caller method overrides, or runtime
+drift fail closed as `E_CONFIDENTIAL_PLACEMENT_FORMAT` and cannot mint the private
+reproof brand.
+
+`E_CONFIDENTIAL_PLACEMENT_MIGRATION` prevents a legacy v1 journal from being restored
+as a live v2 head. The durable adapter reports
+`E_CONFIDENTIAL_PLACEMENT_MIGRATION_REPROOF_REQUIRED` until a v1 head receives a
+fresh 256-bit rotated-epoch context and three new context-bound receipts.
+The generated 2 MiB document, 4,096-transition head walk, 128 high-waters per
+shard, and 384 total high-water caps fail closed without pruning. Depending on the
+validation boundary, an overflow reports `E_CONFIDENTIAL_PLACEMENT_LIMIT`,
+`E_CONFIDENTIAL_PLACEMENT_HISTORY_LIMIT`, or, for an oversized encoded input,
+`E_CONFIDENTIAL_PLACEMENT_FORMAT`. The v2 durable path uses predecessor-keyed
+no-replace hard links rather than a mutable current pointer:
+`E_CONFIDENTIAL_PLACEMENT_HEAD_STALE` rejects stale expected heads or losing
+successors, `E_CONFIDENTIAL_PLACEMENT_REPROOF_CONTEXT` rejects a missing or mismatched
+claimed intent, `E_CONFIDENTIAL_PLACEMENT_REPROOF_CONTEXT_FORK` rejects two
+incompatible intents for one predecessor, `E_CONFIDENTIAL_PLACEMENT_TRANSITION` and
+`E_CONFIDENTIAL_PLACEMENT_TRANSITION_BINDING` reject malformed or mismatched linked
+successors, `E_CONFIDENTIAL_PLACEMENT_GENERATION_SEQUENCE` rejects a nonconsecutive
+walk, `E_CONFIDENTIAL_PLACEMENT_IMMUTABLE_COLLISION` rejects different bytes at an
+already claimed immutable path, and `E_CONFIDENTIAL_PLACEMENT_ROOT_FORK` rejects
+simultaneous legacy and v2 roots. `E_CONFIDENTIAL_PLACEMENT_POINTER*` remains
+legacy-v1 migration parsing only, not the current-head protocol.
+
+The liveness layer uses local verifier errors: `E_PLACEMENT_LIVENESS_RUNTIME` and
+`E_PLACEMENT_LIVENESS_PROFILE` for realm-integrity or generated-ceiling drift;
+`E_PLACEMENT_LIVENESS_FORMAT` and `E_PLACEMENT_LIVENESS_LIMIT` for non-canonical,
+accessor/Proxy/sparse-array, or oversized evidence;
+`E_PLACEMENT_LIVENESS_IDENTITY`, `E_PLACEMENT_LIVENESS_SIGNATURE`, and
+`E_PLACEMENT_LIVENESS_BINDING` for invalid roles, signatures, or predecessor data;
+`E_PLACEMENT_LIVENESS_POLICY`, `E_PLACEMENT_LIVENESS_WINDOW`, and
+`E_PLACEMENT_LIVENESS_QUORUM` for an unsafe roster, mismatched duration, or
+under-threshold certificate; and `E_PLACEMENT_LIVENESS_EQUIVOCATION` for observer
+double-sign evidence. The lineage composition maps any invalid, offer-roster-mismatched,
+lease-consumer-mismatched, stale, forked, or late-proof-conflicting liveness input to
+`E_LINEAGE_PLACEMENT_LIVENESS` and derives no repair plan. Auditable details include
+`uncertified-repair-intent`, `offer-witness-roster-binding`,
+`lease-consumer-binding`, and `late-proof-conflict`; a stale supplied placement
+predecessor fails as `stale-prior-generation`, while a historically valid but
+superseded commit cannot derive a current plan and fails as
+`superseded-generation-plan`. A successful derived plan
+is public, forgeable JSON rather than a bearer capability; effect execution requires
+fresh verification of the original committed and current evidence.
+
 - Malformed JSON with forged signatures returns `E_PARSE_INVALID_JSON` before any cryptographic result.
 - An invalid-UTF-8 envelope with an oversized payload returns envelope `E_PARSE_INVALID_UTF8`; payload acquisition cannot overtake envelope parsing.
 - If a schema engine reports several faults, unknown fields take precedence, then wrong top-level kind, then the lexicographically first normalized JSON-Pointer/keyword pair by unsigned UTF-16 code units; engine error enumeration order is ignored.

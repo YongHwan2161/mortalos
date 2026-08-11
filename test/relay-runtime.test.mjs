@@ -28,6 +28,20 @@ function relayRequest(path, init = {}) {
   });
 }
 
+async function primeRateBuckets(stub, requestCount) {
+  await runInDurableObject(stub, async (_instance, state) => {
+    const currentBucket = Math.floor(Date.now() / 60_000);
+    state.storage.sql.exec("DELETE FROM rate_limits");
+    for (const offset of [0, 1]) {
+      state.storage.sql.exec(
+        "INSERT INTO rate_limits(bucket, request_count) VALUES (?, ?)",
+        currentBucket + offset,
+        requestCount
+      );
+    }
+  });
+}
+
 describe("MortalOSRoom runtime", () => {
   it("persists canonical public frames across eviction and deduplicates atomically", async () => {
     const stub = env.MORTALOS_ROOM.getByName(ROOM);
@@ -76,21 +90,14 @@ describe("MortalOSRoom runtime", () => {
     const body = publicMessage();
     const floodStub = env.MORTALOS_ROOM.getByName(floodRoom);
     expect((await floodStub.publish(floodRoom, body)).duplicate).toBe(false);
-    await runInDurableObject(floodStub, async (_instance, state) => {
-      const bucket = Math.floor(Date.now() / 60_000);
-      state.storage.sql.exec("DELETE FROM rate_limits");
-      state.storage.sql.exec(
-        "INSERT INTO rate_limits(bucket, request_count) VALUES (?, ?)",
-        bucket,
-        RELAY_RATE_POLICY.room_requests_per_minute - 1
-      );
-    });
+    await primeRateBuckets(floodStub, RELAY_RATE_POLICY.room_requests_per_minute - 1);
     const admittedAtCeiling = await relayRequest(floodPath, {
       method: "POST",
       body,
       headers: { "content-type": "application/json" }
     });
     expect(admittedAtCeiling.status).toBe(200);
+    await primeRateBuckets(floodStub, RELAY_RATE_POLICY.room_requests_per_minute);
     const limited = await relayRequest(floodPath, {
       method: "POST",
       body,

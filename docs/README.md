@@ -1,18 +1,32 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-08 KST**
+Last synchronized: **2026-08-11 KST**
 
-## Current authority
+## Read first
 
-- [North Star implementation SSOT](IMPLEMENTATION_PLAN.md) — sole current direction,
-  priority order, S0–S8 ledger, strict PASS/HOLD gates, and Definition of Done.
-- [Current claim matrix](CLAIM_MATRIX.md) — implemented, exact-head verified, physically verified, promoted, and explicitly unclaimed behavior.
+- [North Star implementation SSOT](IMPLEMENTATION_PLAN.md) — current direction,
+  evidence layers, priority order, and strict completion gates.
+- [Current claim matrix](CLAIM_MATRIX.md) — what is implemented, verified,
+  promoted, and explicitly unclaimed.
+- [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) — source
+  contract, executable local gates, and nonclaims.
+- [Confidential P2P placement controller](CONFIDENTIAL_P2P_PLACEMENT_CONTROLLER.md)
+  — ciphertext shards, journal-v2 reproof epochs and cumulative receipt high-waters,
+  local crash recovery, and custody succession.
+- [Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md) — current-
+  descriptor generation commit, derived placement action plan, deterministic
+  convergence, and fork halt.
+- [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md)
+  — offer-rostered observations, consumer-selected bounded window, global-clock-free evidence, committed
+  repair-plan derivation, conditional late-proof conflict, and the next
+  membership-truth gap.
 
-The former separate roadmap and stage-tracking files were folded into the
-implementation SSOT to prevent priority and status drift. GitHub issues remain
-coordination metadata; historical plans cannot promote a current claim.
+These current files answer “where are we now?” Completed contest-era evidence and UX
+plans remain isolated under `docs/archive/` because historical baseline receipts bind
+them; they are not current instructions. GitHub issues are coordination metadata and
+cannot promote a claim.
 
-## Normative protocol and evidence boundaries
+## Normative contracts
 
 - [Protocol](PROTOCOL.md)
 - [Threat model](THREAT_MODEL.md)
@@ -20,21 +34,18 @@ coordination metadata; historical plans cannot promote a current claim.
 - [Requirements traceability](TRACEABILITY.md)
 - [Signed bounded resource contract](RESOURCE_CONTRACT.md)
 
-`mortalos/0` preserves an opaque declared state root and has no state-transition
-event. `mortalos/1` binds exact bounded state artifacts and deterministic
-transitions. The [R3 state availability ADR](STATE_AVAILABILITY_AND_RECOVERY.md)
-adds the promoted bounded manifest/chunk recovery protocol, but does not prove
-physical-domain durability or global availability. The
-[S4 confidential-state ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md) is promoted. Its
-revised runtime is merged, but the revised confidentiality claim remains reopened
-until its own fresh stage receipt and promotion gates pass.
+The lifecycle kernel, resource contract, and placement policy are different layers.
+The kernel decides canonical lineage validity. The resource validator decides
+whether signed offer/lease/usage/execution evidence is valid. Placement is a local
+scheduling policy that counts only valid exact-workload receipts. Transport, UI,
+discovery, signaling, Cloudflare, and GPT decide none of those results.
 
 ## Architecture and compatibility
 
 - [Unified Participant Core](PARTICIPANT_CORE.md)
 - [Crash-safe durable quorum](DURABLE_QUORUM.md)
-- [R3 state availability and recovery](STATE_AVAILABILITY_AND_RECOVERY.md)
-- [S4 confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md)
+- [State availability and recovery](STATE_AVAILABILITY_AND_RECOVERY.md)
+- [Confidential-state cryptographic ADR](CONFIDENTIAL_STATE_CRYPTOGRAPHY.md)
 - [Distributed counter-authority ADR](DISTRIBUTED_COUNTER_AUTHORITY_ADR.md)
 - [Endpoint-neutral access architecture](ACCESS_ARCHITECTURE.md)
 - [Browser participant compatibility](BROWSER_PARTICIPANT_COMPATIBILITY.md)
@@ -44,33 +55,72 @@ until its own fresh stage receipt and promotion gates pass.
 - [Agent collaboration and merge protocol](AGENT_COLLABORATION.md)
 - [Repository contribution guide](../CONTRIBUTING.md)
 
-## Historical records
+## Current boundary
 
-- [Historical documentation archive](archive/README.md)
+Status: **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF
+PASS; EXACT-SHA EXTERNAL**
 
-The archive preserves release and experiment evidence without treating old
-deadlines, submission paths, or promotion status as current authority.
+Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
+continuity and local resource-execution verticals. This revision adds direct WebRTC
+transport, receipt-gated placement/repair, S4 ciphertext-only 2-of-3 provider
+shards, bounded proof freshness, and journal v2. Each reproof context binds the exact
+prior head, next generation, manifest/policy, and epoch; each challenge nonce binds
+that context plus its receipt-chain predecessor. Durable commit rederives a branded
+active `3/3` set from raw signed evidence, retains cumulative per-chain high-waters,
+and claims one successor per prior through a no-replace hard link. V1 is metadata-only
+migration input and requires a fresh rotated-epoch `3/3` reproof. The format and
+adapter are bounded and fail closed at their generated caps. They remain unsigned
+local evidence, not hostile-disk protection, hidden-history detection, or global
+consensus. The same revision adds successor-authorized new-lease continuation after
+A exits. The operational signer is not inferred to be B's Continuity custody
+identity. It also binds
+placement generations to Continuity, gates derived placement action plans on a
+current-descriptor commit, requires every supplied authenticated Capsule tip to be
+represented by the convergence chain, and halts incomplete or sibling forks.
+The placement-history focused ceiling gates passed on the preceding candidate. Node
+performed 128 signed
+transitions with 381 genuine replacements to generation 129 and exactly 384
+provider/lease/chain high-waters (`128/128/128` by shard). Mixed-runtime Chromium/Lab
+performed 127 cycles from generation 2 to the same ceiling with actual browser-held
+non-extractable keys. Both prove a signed generation-130 `3/3` candidate, then reject
+its plus-one chain without changing the ceiling journal. The focused runtimes are
+`2,841,685.4279ms` Node test-body time and `2,666,619ms` total Chromium time; the
+Chromium guard is `3,300,000ms`. The historical `7,065.8s` full-suite PASS predates
+that ceiling source. A later uninterrupted `8,076.826s` runtime/test/workflow PASS
+now also predates the current WebRTC runtime/test/security remediation and is
+historical rather than current-candidate evidence. The remediated direct and virtual
+transports enforce one combined transcript of at most 512 unique canonical messages
+and 8,388,608 decoded raw bytes; duplicates are free, outbound overflow precedes
+native send, inbound overflow commits no transcript/dedupe entry or subscriber
+delivery before fail-close cleanup clears subscriptions, and local/remote terminal
+paths close native capabilities at most once.
+The relay edge conservatively estimates decoded bytes from base64 and may reject
+slightly earlier, so only the same upper ceiling and fail-closed result are shared.
+The current candidate passes focused Node `24/24` in `31,241ms` and actual Chromium
+in `50,086ms`. A hidden-wrapper full `npm test` ran from
+`2026-08-11T06:42:38.6738575+09:00` through
+`2026-08-11T09:06:30.4636057+09:00`, exited `0` in `8,631,790ms`
+(`143m 51.790s`), and reached final `verify:s4`. Its source/runtime/test/workflow
+files remained unchanged after the run and the related-workload inventory was zero
+after excluding the probe itself. The docs separately pass spec/link/diff, so this
+is not a whole-current-tree exact full-suite claim. Three persistent Chromium pages
+hold non-extractable provider keys and
+produce storage results/signatures while Node orchestrates the portable journal;
+neither independent in-browser journal-kernel parity nor independent failure domains
+are claimed.
+Governance and deployment are exact-SHA external facts read from
+the PR, required checks, merge record, post-merge workflows, and deployed manifest;
+this document does not self-promote its containing revision. Physical independence
+remains HOLD.
 
-## Current claim boundary
-
-The repository promotes portable lifecycle validation, deterministic v1 state
-transition, read-only evidence replay, Chromium A→B succession, logical Chromium
-`2-of-3` loss/repair, the S1 Participant Core, the historical S2 durable quorum
-claim, and S3 exact logical resource recovery within the qualifications in the
-claim matrix. Main `0779741402244d6cd802a1179bd2c94555bdd030` also contains
-revised S2/S4 code, the governed PR #53 continuity vertical, S5–S8 implementation
-surfaces, and the governed PR #56 resource contract/execution vertical. Their
-presence in main does not replace a claim-specific receipt or prove physical
-independence.
-
-The real-file A-to-B continuity vertical, portable signed resource contract,
-threshold network-visible sign-once gossip, and lease-bound
-storage/bandwidth/compute receipts are merged. The execution proof is deliberately
-limited to an actual local provider process. Missing, tampered, replayed, forked,
-or cross-lease work evidence cannot be reported as proved. Provider loss requires a
-newly signed offer and lease while the same immutable workload ID can be retained.
-This does not prove independent witnesses, providers, credentials, administrators,
-regions, or failure domains. It does not promote the revised confidential-state
-claim, provider independence, public registry publication,
-Byzantine/Sybil resistance, global death, or WebKit full signing parity. GPT is
-optional and non-authoritative.
+This worktree additionally removes raw unavailability from lineage generation:
+offer-rostered 3-of-4 observer certificates bind exact predecessor/sequence and
+local duration without a global clock. The core conditionally halts a derived plan
+when supplied a late verified proof and current placement evidence; the current Lab
+does not gossip or reconcile that evidence at effect execution. Derived plans are
+forgeable data, so executors must reverify the original signed and committed inputs.
+The next P0 is failure-precommitted liveness policy plus independent provider
+response and effect-time exactly-once repair reconciliation. Lineage-governed
+admission/failure-domain accounting with explicit trust roots follows. Absolute
+Sybil resistance cannot be inferred from self-created keys; manual same-host ICE and
+one-PC administration remain explicit boundaries.

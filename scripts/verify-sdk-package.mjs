@@ -71,6 +71,52 @@ try {
   assert.deepEqual(JSON.parse(continuityOutput.trim()), [
     "continue", "create", "handoff", "inspect", "recover"
   ]);
+  const placementOutput = run(process.execPath, [
+    "--input-type=module",
+    "--eval",
+    "import('@mortal-os/core/placement').then((m)=>console.log(JSON.stringify(Object.keys(m).sort())))"
+  ], { cwd: temporary });
+  assert.deepEqual(JSON.parse(placementOutput.trim()), [
+    "CONFIDENTIAL_PLACEMENT_FORMATS",
+    "CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS",
+    "LINEAGE_PLACEMENT_FORMATS",
+    "LineagePlacementError",
+    "PLACEMENT_LIVENESS_FORMATS",
+    "PLACEMENT_LIVENESS_LIMITS",
+    "PlacementLivenessError",
+    "STORAGE_PLACEMENT_STATUS",
+    "StoragePlacementError",
+    "convergeLineagePlacementCommits",
+    "createConfidentialPlacementJournal",
+    "createConfidentialPlacementReproofContext",
+    "createConfidentialPlacementShardSet",
+    "createLineagePlacementGeneration",
+    "createPlacementFailureCertificate",
+    "deriveCommittedPlacementActionPlan",
+    "deriveConfidentialPlacementReproofNonce",
+    "evaluateConfidentialPlacementJournal",
+    "evaluateConfidentialPlacementReproof",
+    "evaluateConfidentialStoragePlacements",
+    "evaluatePlacementLivenessEvidence",
+    "evaluateStoragePlacements",
+    "finalizePlacementLivenessChallenge",
+    "finalizePlacementLivenessObservation",
+    "finalizePlacementLivenessResponse",
+    "planConfidentialStorageRepair",
+    "preparePlacementLivenessChallenge",
+    "preparePlacementLivenessObservation",
+    "preparePlacementLivenessResponse",
+    "reconstructConfidentialPackage",
+    "restoreConfidentialPlacementJournal",
+    "restoreConfidentialPlacementReproofContext",
+    "restoreLegacyConfidentialPlacementJournal",
+    "restoreLineagePlacementGeneration",
+    "verifyLineagePlacementCommit",
+    "verifyPlacementFailureCertificate",
+    "verifyPlacementLivenessChallenge",
+    "verifyPlacementLivenessObservation",
+    "verifyPlacementLivenessResponse"
+  ]);
   const resourceOutput = run(process.execPath, [
     "--input-type=module",
     "--eval",
