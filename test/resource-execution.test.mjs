@@ -560,7 +560,7 @@ test("accessors and Proxies cannot smuggle execution options", async () => {
   );
 });
 
-test("storage possession helpers bind nonce, lease, workload, and owned resource bytes", async () => {
+test("storage possession helpers bind the challenge-selected leaf, lease, workload, and owned resource bytes", async () => {
   const completed = await completeVertical();
   const resource = new Uint8Array(150_000);
   for (let index = 0; index < resource.length; index += 1) resource[index] = index & 0xff;
@@ -578,8 +578,22 @@ test("storage possession helpers bind nonce, lease, workload, and owned resource
     proof,
     workload
   }));
+  let differentLeafNonce = null;
+  for (let seed = 0; seed < 256; seed += 1) {
+    const candidateNonce = nonce(seed);
+    if (candidateNonce === options.challenge_nonce) continue;
+    const candidateProof = createResourceStoragePossessionProof({
+      ...options,
+      challenge_nonce: candidateNonce
+    });
+    if (candidateProof.leaf_index !== proof.leaf_index) {
+      differentLeafNonce = candidateNonce;
+      break;
+    }
+  }
+  assert.notEqual(differentLeafNonce, null, "expected another nonce to select a different leaf");
   assert.throws(() => verifyResourceStoragePossessionProof({
-    challenge_nonce: nonce(232),
+    challenge_nonce: differentLeafNonce,
     lease_id: options.lease_id,
     proof,
     workload
