@@ -4068,3 +4068,34 @@ result, and reproducible verification.
   (`43` modified, `78` untracked). No commit, push, merge, deployment, live authority,
   or external mutation occurred. Full suite, exact-SHA governance, and real separately
   administered multi-host execution remain HOLD.
+
+## 2026-08-23 — Exact-SHA flake discovery and serial P2P orchestration remediation
+
+- Committed the approved 121-path candidate as `116207b2ffb453ed70e2d9fb0a4bfc311e9a0094`
+  with exact tree `f483ff3780722c0edbb4fed9ce54af3eb38172cd`; branch and actual index were clean.
+  A fresh detached worktree and `npm ci` completed with exit `0`, 95 audited packages,
+  and zero vulnerabilities.
+- The first exact-SHA suite stopped at `test:protocol-profile` because the storage
+  possession test assumed two arbitrary nonces always select different Merkle leaves.
+  With three leaves, distinct nonces can validly collide on one challenge-selected
+  leaf. The test now searches for a nonce that actually selects another leaf before
+  requiring the original proof to reject. The focused case passes independently
+  `20/20`; the full protocol-profile group passes `23/23`. The fix is commit
+  `894661b107e4490883ec30c1b03bd889d5fdd1f8`.
+- Fresh detached execution on `894661b1...` passed every preceding stage and P2P Node
+  assertions, but ended nonzero after `6,598,172ms`: P2P summary was `70` pass / `2`
+  timeout cancellations / zero assertion failures. Executor crossed its
+  `1,500,000ms` limit; the `10,000 × 8` schedule crossed `900,000ms` by `55.4977ms`.
+  Complete log SHA-256 is
+  `76a639889b2f74e4ce30c9b79cb549b8e3f56dbeb11be1e4822e3e01123f8700`.
+- Serial replay proved concurrency `1` necessary but not sufficient: executor still
+  timed out at `1,538,640.1267ms`, while schedule passed in `846,722.895ms`. The package
+  gate now serializes P2P Node test files. Executor and schedule limits are
+  `2,000,000ms` and `1,200,000ms`; batch interruption remains `1,200,000ms`. No corpus,
+  seed, assertion, or product source changed.
+- The remediated executor/schedule pair passes serially `2/2`, with zero failure,
+  cancellation, or skip, in `2,178,485.7704ms`: executor `1,345,547.9513ms`, schedule
+  `832,008.0928ms`. Log SHA-256 is
+  `143cd1f2021075142086ff68e3e8b8fe711ba1b10dcca0404d1c650d53632f91`.
+  Fresh full-suite evidence on the successor exact SHA remains pending; no push, PR,
+  merge, deployment, or live authority mutation occurred.

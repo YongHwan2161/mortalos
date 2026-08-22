@@ -612,13 +612,16 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   `1/1` in `534,301.6707ms`; packed SDK and actual Chromium P2P/admission/repair PASS;
   security then covered `22` direct / `138` discovered. The later current-source full
   suite passes; exact-SHA governance remains pending.
-- An initial cumulative complete-suite run ended nonzero after `3,416,706ms` because
-  default test-file fan-out made the signed journal ceiling contend with batch,
-  executor, and schedule CPU corpora. Those three files pass serially `4/4` in
-  `2,894,352.8904ms`. Package-level p2p Node concurrency is now bounded to `2`; the
-  measured batch/executor budgets are `1,200,000ms`/`1,500,000ms`. The worst-case
-  four-file group passes `13/13` in `2,650,963.2847ms`. This focused evidence explains
-  the bounded orchestration used by the later complete-suite PASS.
+- Unbounded test-file fan-out and later concurrency `2` both proved unsafe for the
+  current signed journal/executor/schedule CPU corpora. Fresh detached exact-SHA
+  execution on `894661b1...` produced P2P Node `70` pass / `2` timeout cancellations
+  with zero assertion failures: executor crossed `1,500,000ms`, and schedule crossed
+  `900,000ms` by `55.4977ms`. Serial replay still timed out executor at
+  `1,538,640.1267ms` while schedule passed in `846,722.895ms`. Package-level p2p Node
+  concurrency is therefore `1`; executor/schedule budgets are `2,000,000ms` and
+  `1,200,000ms`, with corpora unchanged. The remediated serial pair passes `2/2` in
+  `2,178,485.7704ms` (`1,345,547.9513ms` / `832,008.0928ms`). Fresh exact-SHA full
+  suite evidence is still required.
 - The next P0 is operating the implemented policy-locked signer services under
   independently administered credentials, then measuring hosts/networks/regions. Only after
   that evidence should the system infer real-world diversity, weights, SLA, penalty,

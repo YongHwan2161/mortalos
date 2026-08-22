@@ -32,7 +32,7 @@ function inputs(fixture) {
 }
 
 test("10,000 signed-evidence repair schedules are deterministic and effect-safe across restart", {
-  timeout: 900_000
+  timeout: 1_200_000
 }, async () => {
   const fixture = await setupPlacementRepairBatchFixture();
   const first = await runPlacementRepairScheduleCorpus(inputs(fixture));

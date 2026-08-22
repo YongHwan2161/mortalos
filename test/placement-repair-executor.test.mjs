@@ -183,7 +183,7 @@ function completionOptions(fixture, directory, continuity, effectResult, overrid
 }
 
 test("single-shard repair re-verifies evidence, commits once, and rejects stale or contested effects", {
-  timeout: 1_500_000
+  timeout: 2_000_000
 }, async () => {
   const fixture = await setup();
   const directory = await mkdtemp(join(tmpdir(), "mortalos-repair-effect-"));

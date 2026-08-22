@@ -316,14 +316,20 @@ post-merge workflows, and deployed asset manifest.
   `534,301.6707ms`; packed SDK PASS; actual Chromium P2P/admission/repair PASS;
   security then covered `22` direct / `138` discovered. The later local complete suite
   passes; exact-SHA release gates remain pending.
-- The first complete-suite attempt on this cumulative source is not PASS evidence: the
-  default Node test-file fan-out ran the signed 128-cycle journal ceiling alongside
-  batch/executor/schedule CPU corpora, causing timeout-only cancellation after
-  `3,416,706ms`. The three cancelled files pass serially `4/4` in `2,894,352.8904ms`.
-  `test:p2p-placement` now bounds test-file concurrency to `2`; only the measured
-  batch-interruption and executor budgets increase to `1,200,000ms` and `1,500,000ms`.
-  The exact heavy four-file group passes `13/13` in `2,650,963.2847ms`; the later
-  uninterrupted local complete-suite PASS supersedes this timeout-only HOLD.
+- Earlier complete-suite attempts established that unbounded Node test-file fan-out
+  made the signed journal ceiling contend with batch/executor/schedule CPU corpora.
+  Bounding concurrency to `2` passed the then-current heavy group, but fresh detached
+  exact-SHA execution exposed insufficient variance margin: commit `894661b1...`
+  reached P2P Node `70` pass / `2` timeout cancellations with zero assertion failures.
+  Executor exceeded `1,500,000ms`; schedule exceeded `900,000ms` by `55.4977ms`.
+  A subsequent serial run reproduced executor timeout at `1,538,640.1267ms` while
+  schedule passed in `846,722.895ms`, proving that serialization alone was necessary
+  but insufficient. `test:p2p-placement` now uses test-file concurrency `1`; executor
+  and schedule budgets are `2,000,000ms` and `1,200,000ms`, while batch interruption
+  remains `1,200,000ms`. The unchanged executor and `10,000 × 8` schedule corpora then
+  pass serially `2/2` in `2,178,485.7704ms` (`1,345,547.9513ms` and
+  `832,008.0928ms`) with zero failures, cancellations, or skips. A fresh complete
+  suite on the successor exact SHA remains required.
 - Remaining next P0 is preparing separately custodied observer identities at their
   respective hosts, collecting only their public files, publishing one exact plan,
   collecting every ceremony-scoped acceptance, activating that one plan, and binding it
