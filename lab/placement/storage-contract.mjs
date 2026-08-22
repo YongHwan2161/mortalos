@@ -69,9 +69,7 @@ export async function createPlacementSigner() {
   });
 }
 
-export async function createStoragePlacementFixture({
-  challengeNonce = null,
-  challengeNonceFactory = null,
+export async function prepareStoragePlacementFixture({
   consumer,
   provider,
   resourceBytes,
@@ -81,11 +79,7 @@ export async function createStoragePlacementFixture({
   if (!consumer?.identity || !provider?.identity || !Array.isArray(witnesses) || witnesses.length !== 4) {
     throw new TypeError("consumer, provider, and four witness signers required");
   }
-  if (challengeNonce !== null && challengeNonceFactory !== null) {
-    throw new TypeError("provide either challengeNonce or challengeNonceFactory");
-  }
   const resource = new Uint8Array(resourceBytes);
-  if (typeof provider.store === "function") await provider.store(resource);
   const capacity = allocation(resource.byteLength);
   const sortedWitnesses = [...witnesses].sort((left, right) =>
     left.identity.key_id < right.identity.key_id ? -1 : 1);
@@ -137,6 +131,30 @@ export async function createStoragePlacementFixture({
     });
     announcements.push(createResourceConsumptionAnnouncement({ offer, lease, witness: witnessBytes }));
   }
+  return Object.freeze({
+    announcements: Object.freeze(announcements),
+    consumer,
+    lease,
+    offer,
+    provider,
+    resource,
+    seed
+  });
+}
+
+export async function executePreparedStoragePlacementFixture({
+  challengeNonce = null,
+  challengeNonceFactory = null,
+  prepared
+}) {
+  if (!prepared?.consumer?.identity || !prepared?.provider?.identity) {
+    throw new TypeError("prepared storage placement fixture required");
+  }
+  if (challengeNonce !== null && challengeNonceFactory !== null) {
+    throw new TypeError("provide either challengeNonce or challengeNonceFactory");
+  }
+  const { announcements, consumer, lease, offer, provider, resource, seed } = prepared;
+  if (typeof provider.store === "function") await provider.store(resource);
   const activation = evaluateResourceExecutionContract({
     consumption_announcements: announcements,
     offer,
@@ -259,6 +277,26 @@ export async function createStoragePlacementFixture({
     resource: encodeBase64Url(resource),
     resource_bytes: resource
   });
+}
+
+export async function createStoragePlacementFixture(options) {
+  const {
+    challengeNonce = null,
+    challengeNonceFactory = null,
+    consumer,
+    provider,
+    resourceBytes,
+    seed,
+    witnesses
+  } = options;
+  const prepared = await prepareStoragePlacementFixture({
+    consumer,
+    provider,
+    resourceBytes,
+    seed,
+    witnesses
+  });
+  return executePreparedStoragePlacementFixture({ challengeNonce, challengeNonceFactory, prepared });
 }
 
 export async function refreshStoragePlacementFixture({

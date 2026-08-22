@@ -275,20 +275,181 @@ The liveness layer uses local verifier errors: `E_PLACEMENT_LIVENESS_RUNTIME` an
 `E_PLACEMENT_LIVENESS_FORMAT` and `E_PLACEMENT_LIVENESS_LIMIT` for non-canonical,
 accessor/Proxy/sparse-array, or oversized evidence;
 `E_PLACEMENT_LIVENESS_IDENTITY`, `E_PLACEMENT_LIVENESS_SIGNATURE`, and
-`E_PLACEMENT_LIVENESS_BINDING` for invalid roles, signatures, or predecessor data;
+`E_PLACEMENT_LIVENESS_BINDING` for invalid roles, signatures, predecessor data, or
+nonce/lease/workload/Merkle sampled-response binding;
 `E_PLACEMENT_LIVENESS_POLICY`, `E_PLACEMENT_LIVENESS_WINDOW`, and
-`E_PLACEMENT_LIVENESS_QUORUM` for an unsafe roster, mismatched duration, or
+`E_PLACEMENT_LIVENESS_QUORUM` for an unsafe roster/response profile, a duration that
+does not equal the provider-signed lease policy, or
 under-threshold certificate; and `E_PLACEMENT_LIVENESS_EQUIVOCATION` for observer
 double-sign evidence. The lineage composition maps any invalid, offer-roster-mismatched,
 lease-consumer-mismatched, stale, forked, or late-proof-conflicting liveness input to
 `E_LINEAGE_PLACEMENT_LIVENESS` and derives no repair plan. Auditable details include
-`uncertified-repair-intent`, `offer-witness-roster-binding`,
-`lease-consumer-binding`, and `late-proof-conflict`; a stale supplied placement
+`uncertified-repair-intent`, `policy-bound-authority-required`, `policy-fork`,
+`offer-witness-roster-binding`, `lease-consumer-binding`,
+`response-possession-binding`, and
+`late-proof-conflict`; a stale supplied placement
 predecessor fails as `stale-prior-generation`, while a historically valid but
 superseded commit cannot derive a current plan and fails as
 `superseded-generation-plan`. A successful derived plan
 is public, forgeable JSON rather than a bearer capability; effect execution requires
 fresh verification of the original committed and current evidence.
+
+The placement-admission layer uses `E_PLACEMENT_ADMISSION_RUNTIME` and
+`E_PLACEMENT_ADMISSION_PROFILE` for realm or generated-ceiling drift;
+`E_PLACEMENT_ADMISSION_FORMAT` and `E_PLACEMENT_ADMISSION_LIMIT` for malformed,
+noncanonical, shared, sparse, or oversized inputs; `E_PLACEMENT_ADMISSION_IDENTITY`,
+`E_PLACEMENT_ADMISSION_SIGNATURE`, and `E_PLACEMENT_ADMISSION_BINDING` for invalid
+roles, issuer/custodian signatures, lineage references, or evidence/epoch IDs;
+`E_PLACEMENT_ADMISSION_LINEAGE` for a membership epoch not bound to the current or
+authenticated historical Capsule descriptor; `E_PLACEMENT_ADMISSION_POLICY` for an
+insufficient logically independent roster; `E_PLACEMENT_ADMISSION_QUORUM` for
+insufficient custody approval; `E_PLACEMENT_ADMISSION_INTERSECTION` for unsafe
+operator-root or failure-domain reconfiguration;
+`E_PLACEMENT_ADMISSION_ROOT_LIFECYCLE` for a skipped rotation, silent removal,
+invalid revocation, cumulative-history rewrite, retired-authority resurrection, old
+root-ID reuse, or issuer-key rollback; and `E_PLACEMENT_ADMISSION_TIME`
+for invalid root/evidence/epoch validity. Lineage maps a missing, duplicated,
+extraneous, or reference-mismatched epoch sidecar to
+`E_LINEAGE_PLACEMENT_LIVENESS` and performs no repair effect.
+
+The Lab process ceremony uses the internal `E_PLACEMENT_ADMISSION_SIGNER_*` family,
+including `E_PLACEMENT_ADMISSION_SIGNER_EQUIVOCATION`, to reject realm drift,
+malformed/oversized requests, an unconfigured role,
+identity, root, or policy, missing private signing capability, and conflicting reuse
+of one sign-once challenge slot. `E_PLACEMENT_ADMISSION_SIGNER_ENDPOINT` additionally
+rejects an explicit role-specific origin/key binding that differs from the signer's
+configured advertised origin before private-key use. The operator-facing adapter uses
+`E_PLACEMENT_ADMISSION_SIGNER_HTTP_*` and `E_PLACEMENT_ADMISSION_SIGNER_CLI` for
+authentication, route/content-type, concurrency, bounded-body, canonical-config,
+listen-state, bounded native-TLS certificate/private-key input, secure-context
+preflight, and runtime failures. An incomplete, oversized, malformed, or mismatched
+TLS pair, missing possession-only token, or reuse of the admission bearer as that token
+rejects before absent durable authority creation. The same signer families reject a
+malformed, oversized, wrong-role/key/origin, or conflicting TLS-exporter possession
+challenge/proof. These operational errors are not portable admission
+evidence or additional protocol authority; final evidence still verifies through the
+stable placement-admission codes above.
+
+The private-key-free HTTP coordinator uses the internal
+`E_PLACEMENT_ADMISSION_CEREMONY_*` family for malformed or oversized bundles,
+challenge/origin/key binding mismatches, wrong endpoint role or identity, invalid
+authorization syntax, remote plaintext origins, redirect/network/status failure,
+stream/time limits, runtime drift, and no-replace CLI publication failure. These
+errors describe an operational observation attempt. They are not portable membership
+rejections and do not make the coordinator, bearer token, endpoint origin, or bundle
+self-hash an admission authority.
+
+The fresh HTTPS observer uses the internal
+`E_PLACEMENT_ADMISSION_DEPLOYMENT_*` family. `FORMAT`, `LIMIT`, and `RUNTIME`
+reject malformed, shared, noncanonical, oversized, or realm-drifted inputs;
+`BINDING` and `IDENTITY` reject non-HTTPS signed origins, bundle mismatches, a live
+role/key mismatch, observer nonce/time/origin mismatch, TLS-exporter mismatch, invalid
+role-key possession signature, replayed proof, or derived-fact tampering; `TLS`, `HTTP`, `NETWORK`, and `TIMEOUT`
+reject a failed platform-trust-store handshake, status/content-type failure, transport
+failure, or bounded deadline. The CLI additionally uses `CLI_USAGE`, `CLI_FORMAT`,
+`CLI_LIMIT`, `CLI_OUTPUT_EXISTS`, `CLI_COLLISION`, and `CLI_FAILURE` for argument,
+file, possession-token environment, explicit legacy-mode, and no-replace publication
+failures. Missing proof authorization never silently selects legacy `/1`. These codes describe a non-authoritative
+observer-local transcript and never promote endpoint, administrator, or failure-domain
+independence.
+
+Deployment plan, acceptance, activation `/1`, membership binding `/2`, attestation `/5`, and the deterministic
+observer view reuse the same internal family. They additionally reject an invalid
+observer identity/signature; a plan, acceptance, activation, observation, or attestation
+ID mismatch; a noncanonical plan/activation/membership roster; a mixed ceremony, epoch,
+membership, plan, or activation;
+a missing assigned observer; duplicate observer, acceptance, nonce, observation, or
+declared vantage; a wrong observer assignment, nonce, or bounded logical window; an
+unadmitted/partial/extra observer roster; a ceremony subject absent from the epoch; a
+wrong current Capsule; a supplied membership candidate view with a missing prior or
+current epoch, sibling fork, cycle, unsafe root history/reconfiguration, extraneous
+candidate, selected-epoch mismatch, candidate-ID reorder, or candidate-view mismatch;
+an assignment whose identity/operator/failure-domain
+does not match its admitted member; an observer root/domain alias or subject overlap; an
+incomplete complete-plan roster/acceptance set; count outside `2..8`; and accessor/
+shared/sparse or oversized input. The durable authority separately emits
+`E_CONTINUITY_EQUIVOCATION` if one observer key is asked to accept a second plan for
+the same ceremony-scoped sign-once tuple, or to sign a different membership view,
+observation, or attestation instant through the same plan-scoped attestation tuple.
+Exact retries remain idempotent; ceremony-scoped plan acceptance means epoch rotation
+requires a fresh ceremony and accepted plan. Attestation-view `/1` additionally rejects
+a malformed or self-hash-mismatched manifest, noncanonical/duplicate/unordered roster
+IDs, and any missing, extra, reordered, or substituted attestation sidecar that fails to
+recreate the exact manifest. Restore alone is not a sidecar-verification result. CLI codes also cover public identity/plan/
+acceptance/activation input, path aliasing, and no-replace publication; an existing
+public-identity output rejects before a new local authority is created. These failures
+mean that precommitted selection, exact same-roster plan agreement, supplied-view
+membership convergence, configured-policy membership, observer attribution, or comparison could not be verified. A valid binding
+does admit the exact roster under its configured custody/issuer policy; it never turns
+locally supplied times or declared administration/failure-domain/vantage IDs into trusted
+clock, hidden-candidate completeness, issuer-honesty, Sybil, or physical-topology authority.
+
+The internal single-shard effect executor uses `E_PLACEMENT_REPAIR_RUNTIME` for
+realm drift, `E_PLACEMENT_REPAIR_FORMAT` for malformed options/bytes,
+`E_PLACEMENT_REPAIR_CAPABILITY` for a missing private provider method,
+`E_PLACEMENT_REPAIR_BINDING` for a provider result that does not prove the exact
+replacement lease/provider/workload/shard, `E_PLACEMENT_REPAIR_SLOT_CLAIMED` when a
+different replacement has already won the failure slot, and
+`E_PLACEMENT_REPAIR_IMMUTABLE_COLLISION` for non-identical bytes at an immutable
+effect/result path. Invalid, contested, already-repaired, stale, or superseded
+lineage evidence fails in the lineage verifier before provider invocation.
+`E_PLACEMENT_REPAIR_COMPLETION_CLAIMED` means another canonical successor candidate
+already owns the same prior-commit/effect-result/next-generation completion slot;
+the Continuity capability is not called for the losing candidate.
+The internal multi-action batch uses the same family. A missing, duplicate, or extra
+shard action is `E_PLACEMENT_REPAIR_FORMAT` or `E_PLACEMENT_REPAIR_BINDING`; a late
+response is rejected by lineage liveness before the next provider or Continuity call;
+and `E_PLACEMENT_REPAIR_COMPLETION_CLAIMED` also covers a different canonical all-
+result successor for the same batch slot.
+
+The durable provider-domain adapter uses `E_PLACEMENT_PROVIDER_SESSION_RUNTIME` for
+realm drift, `E_PLACEMENT_PROVIDER_SESSION_FORMAT` for malformed options, canonical
+requests, stored results, or provider placements, and
+`E_PLACEMENT_PROVIDER_SESSION_LIMIT` for bounded placement-evidence arrays.
+`E_PLACEMENT_PROVIDER_SESSION_CAPABILITY` means the private provider method was not an
+ordinary owned data capability. `E_PLACEMENT_PROVIDER_SESSION_BINDING` means the
+canonical effect ID, request, idempotency key, or stored result do not bind the same
+operation. `E_PLACEMENT_PROVIDER_SESSION_CLAIMED` means the existing no-replace claim
+already owns first execution for the exact request and no canonical result is yet
+available; a conforming loser does not invoke the provider. A malformed claim or one
+bound to a different request is `E_PLACEMENT_PROVIDER_SESSION_FORMAT` or
+`E_PLACEMENT_PROVIDER_SESSION_BINDING`, and
+`E_PLACEMENT_PROVIDER_SESSION_IMMUTABLE_COLLISION` means a request/result path already
+contains different bytes. `E_PLACEMENT_PROVIDER_SESSION_CLAIMED` has no timeout or
+automatic takeover meaning. `E_PLACEMENT_PROVIDER_SESSION_RECOVERY` means an import
+was attempted without the exact previously published request and no-replace claim.
+The recovery path accepts no provider execution capability; the outer executor must
+first verify an exact signed placement result. Without that proof, an unresolved
+winner remains unavailable.
+
+The durable Continuity-domain adapter uses
+`E_PLACEMENT_CONTINUITY_SESSION_RUNTIME` for realm drift and
+`E_PLACEMENT_CONTINUITY_SESSION_FORMAT` for malformed options, canonical requests,
+claims, stored results, or returned Capsule/commit bytes.
+`E_PLACEMENT_CONTINUITY_SESSION_CAPABILITY` means the private
+`commitPlacementGeneration` method was not an ordinary owned data capability.
+`E_PLACEMENT_CONTINUITY_SESSION_BINDING` means a stored claim or result does not bind
+the exact request and completion idempotency key.
+`E_PLACEMENT_CONTINUITY_SESSION_CLAIMED` means another process owns first Continuity
+execution for the exact request and no canonical result is yet available; a conforming
+loser performs zero Continuity calls. It has no timeout or automatic takeover meaning.
+`E_PLACEMENT_CONTINUITY_SESSION_IMMUTABLE_COLLISION` means an immutable request or
+result path already contains different bytes. A completed matching result is restored
+instead of calling Continuity again. `E_PLACEMENT_CONTINUITY_SESSION_RECOVERY` means
+an import was attempted without the exact previously published request and claim.
+The recovery path accepts no Continuity signing capability; the outer executor must
+first verify the exact successor Capsule/commit. Without those authoritative bytes,
+an unresolved winner remains unavailable.
+
+The internal transport-backed evidence session uses
+`E_PLACEMENT_NETWORK_EVIDENCE_RUNTIME` for realm drift,
+`E_PLACEMENT_NETWORK_EVIDENCE_CAPABILITY` for a missing private baseline/range
+method, `E_PLACEMENT_NETWORK_EVIDENCE_FORMAT` for malformed frames or owned bytes,
+`E_PLACEMENT_NETWORK_EVIDENCE_ORDER` for a non-monotonic transcript, and
+`E_PLACEMENT_NETWORK_EVIDENCE_LIMIT` for range or response ceilings. Passing this
+adapter does not authenticate a response: only the downstream lineage/liveness
+verifier can turn exact payload bytes into an `alive`, `failed`, or `contested`
+verdict.
 
 - Malformed JSON with forged signatures returns `E_PARSE_INVALID_JSON` before any cryptographic result.
 - An invalid-UTF-8 envelope with an oversized payload returns envelope `E_PARSE_INVALID_UTF8`; payload acquisition cannot overtake envelope parsing.

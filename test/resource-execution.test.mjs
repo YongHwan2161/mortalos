@@ -24,6 +24,7 @@ import {
   createResourceBandwidthExecutionResult,
   createResourceComputeExecutionResult,
   createResourceContentCommitment,
+  createResourceStoragePossessionProof,
   createResourceStorageExecutionResult,
   evaluateResourceExecutionContract,
   finalizeResourceExecutionChallenge,
@@ -31,7 +32,8 @@ import {
   prepareResourceExecutionChallenge,
   prepareResourceExecutionReceipt,
   verifyResourceExecutionChallenge,
-  verifyResourceExecutionReceipt
+  verifyResourceExecutionReceipt,
+  verifyResourceStoragePossessionProof
 } from "../src/resource-execution.mjs";
 
 function actor() {
@@ -556,6 +558,41 @@ test("accessors and Proxies cannot smuggle execution options", async () => {
     })),
     { code: "E_RESOURCE_FORMAT" }
   );
+});
+
+test("storage possession helpers bind nonce, lease, workload, and owned resource bytes", async () => {
+  const completed = await completeVertical();
+  const resource = new Uint8Array(150_000);
+  for (let index = 0; index < resource.length; index += 1) resource[index] = index & 0xff;
+  const workload = createResourceContentCommitment(resource);
+  const options = {
+    challenge_nonce: nonce(231),
+    lease_id: completed.fixture.leaseId,
+    resource_bytes: resource,
+    workload
+  };
+  const proof = createResourceStoragePossessionProof(options);
+  assert.doesNotThrow(() => verifyResourceStoragePossessionProof({
+    challenge_nonce: options.challenge_nonce,
+    lease_id: options.lease_id,
+    proof,
+    workload
+  }));
+  assert.throws(() => verifyResourceStoragePossessionProof({
+    challenge_nonce: nonce(232),
+    lease_id: options.lease_id,
+    proof,
+    workload
+  }), { code: "E_RESOURCE_EXECUTION" });
+  assert.throws(() => createResourceStoragePossessionProof(new Proxy(options, {
+    ownKeys() { throw new Error("trap"); }
+  })), { code: "E_RESOURCE_FORMAT" });
+  const shared = new Uint8Array(new SharedArrayBuffer(resource.byteLength));
+  shared.set(resource);
+  assert.throws(() => createResourceStoragePossessionProof({
+    ...options,
+    resource_bytes: shared
+  }), { code: "E_RESOURCE_FORMAT" });
 });
 
 test("lease-bound execution core bundles for a browser target without ambient authority", async () => {

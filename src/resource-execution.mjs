@@ -373,6 +373,30 @@ export function createResourceContentCommitment(resourceBytes) {
   });
 }
 
+export function createResourceStoragePossessionProof(options) {
+  assertRuntime();
+  const values = exactOptions(
+    options,
+    ["challenge_nonce", "lease_id", "resource_bytes", "workload"],
+    "resource storage possession proof options"
+  );
+  const challenge = storagePossessionChallenge(values[0], values[1], values[3]);
+  return createStorageProof(challenge, values[2]);
+}
+
+export function verifyResourceStoragePossessionProof(options) {
+  assertRuntime();
+  const values = exactOptions(
+    options,
+    ["challenge_nonce", "lease_id", "proof", "workload"],
+    "resource storage possession verification options"
+  );
+  const challenge = storagePossessionChallenge(values[0], values[1], values[3]);
+  const proof = ownCanonicalValue(values[2], "/proof");
+  verifyResult("storage", challenge.workload, proof, challenge);
+  return deepFreeze(proof);
+}
+
 function storageChallengeIndex(challengeBody, leafCount) {
   const digest = deriveResourceStorageChallengeDigest({
     challenge_nonce: challengeBody.challenge_nonce,
@@ -383,6 +407,49 @@ function storageChallengeIndex(challengeBody, leafCount) {
   let value = 0n;
   for (let index = 0; index < 8; index += 1) value = value * 256n + bigInt(raw[index]);
   return value % leafCount;
+}
+
+function storagePossessionChallenge(challengeNonce, leaseId, workloadSource) {
+  assertNonce(challengeNonce, "/challenge_nonce");
+  validateTagged(leaseId, "resource-lease:", "/lease_id");
+  const workload = ownCanonicalValue(workloadSource, "/workload");
+  validateWorkload("storage", workload, "/workload");
+  return freeze({
+    challenge_nonce: challengeNonce,
+    lease_id: leaseId,
+    workload
+  });
+}
+
+function createStorageProof(challengeBody, resourceBytes) {
+  const built = contentLayers(resourceBytes);
+  const root = deriveResourceContentRoot(built.descriptor);
+  if (root !== challengeBody.workload.content_root) {
+    fail("E_RESOURCE_EXECUTION", "/resource_bytes", "content-root");
+  }
+  const leafCount = bigInt(built.descriptor.leaf_count);
+  const leafIndex = storageChallengeIndex(challengeBody, leafCount);
+  const proof = [];
+  let position = Number(leafIndex);
+  for (let level = 0; level < arrayLength(built.layers) - 1; level += 1) {
+    const layer = arrayValueAt(built.layers, level);
+    const siblingIndex = position % 2 === 0 ? position + 1 : position - 1;
+    proof[level] = arrayValueAt(layer, siblingIndex) ?? arrayValueAt(layer, position);
+    position = mathFloor(position / 2);
+  }
+  const start = Number(leafIndex) * RESOURCE_EXECUTION_LIMITS.leaf_bytes;
+  const leaf = typedArraySubarray(
+    built.bytes,
+    start,
+    start + RESOURCE_EXECUTION_LIMITS.leaf_bytes
+  );
+  const result = {
+    leaf_bytes_base64url: encodeBase64Url(leaf),
+    leaf_index: String(leafIndex),
+    proof
+  };
+  verifyResult("storage", challengeBody.workload, result, challengeBody);
+  return deepFreeze(result);
 }
 
 function validateChallengeBody(body, context, previous) {
@@ -992,34 +1059,7 @@ export function createResourceStorageExecutionResult(options) {
   if (prepared.challenge.body.kind !== "storage") {
     fail("E_RESOURCE_EXECUTION", "/challenge/body/kind", "storage-required");
   }
-  const built = contentLayers(prepared.extra);
-  const root = deriveResourceContentRoot(built.descriptor);
-  if (root !== prepared.challenge.body.workload.content_root) {
-    fail("E_RESOURCE_EXECUTION", "/resource_bytes", "content-root");
-  }
-  const leafCount = bigInt(built.descriptor.leaf_count);
-  const leafIndex = storageChallengeIndex(prepared.challenge.body, leafCount);
-  const proof = [];
-  let position = Number(leafIndex);
-  for (let level = 0; level < arrayLength(built.layers) - 1; level += 1) {
-    const layer = arrayValueAt(built.layers, level);
-    const siblingIndex = position % 2 === 0 ? position + 1 : position - 1;
-    proof[level] = arrayValueAt(layer, siblingIndex) ?? arrayValueAt(layer, position);
-    position = mathFloor(position / 2);
-  }
-  const start = Number(leafIndex) * RESOURCE_EXECUTION_LIMITS.leaf_bytes;
-  const leaf = typedArraySubarray(
-    built.bytes,
-    start,
-    start + RESOURCE_EXECUTION_LIMITS.leaf_bytes
-  );
-  const result = {
-    leaf_bytes_base64url: encodeBase64Url(leaf),
-    leaf_index: String(leafIndex),
-    proof
-  };
-  verifyResult("storage", prepared.challenge.body.workload, result, prepared.challenge.body);
-  return deepFreeze(result);
+  return createStorageProof(prepared.challenge.body, prepared.extra);
 }
 
 export function createResourceBandwidthExecutionResult(options) {

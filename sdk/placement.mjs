@@ -20,6 +20,23 @@ export {
   restoreLegacyConfidentialPlacementJournal
 } from "../src/placement/confidential.mjs";
 export {
+  PLACEMENT_ADMISSION_FORMATS,
+  PLACEMENT_ADMISSION_LIMITS,
+  PlacementAdmissionError,
+  convergePlacementMembershipEpochs,
+  createPlacementAdmissionTrustRoot,
+  derivePlacementObserverRoster,
+  derivePlacementObserverRosterFromEpoch,
+  finalizePlacementAdmissionEvidence,
+  finalizePlacementMembershipEpoch,
+  preparePlacementAdmissionEvidence,
+  preparePlacementMembershipEpoch,
+  restorePlacementMembershipEpoch,
+  verifyPlacementAdmissionEvidence,
+  verifyPlacementMembershipEpoch,
+  verifyPlacementMembershipEpochHistory
+} from "../src/placement/admission.mjs";
+export {
   LINEAGE_PLACEMENT_FORMATS,
   LineagePlacementError,
   convergeLineagePlacementCommits,
@@ -31,17 +48,28 @@ export {
 export {
   PLACEMENT_LIVENESS_FORMATS,
   PLACEMENT_LIVENESS_LIMITS,
+  PLACEMENT_LIVENESS_RESPONSE_PROFILES,
   PlacementLivenessError,
   createPlacementFailureCertificate,
   evaluatePlacementLivenessEvidence,
+  finalizeAdmittedPlacementLivenessPolicy,
   finalizePlacementLivenessChallenge,
   finalizePlacementLivenessObservation,
+  finalizePlacementLivenessPossessionResponse,
+  finalizePlacementLivenessPolicy,
+  finalizePlacementLivenessPolicyChallenge,
   finalizePlacementLivenessResponse,
   preparePlacementLivenessChallenge,
+  prepareAdmittedPlacementLivenessPolicy,
   preparePlacementLivenessObservation,
+  preparePlacementLivenessPolicy,
+  preparePlacementLivenessPolicyChallenge,
+  preparePlacementLivenessPossessionResponse,
   preparePlacementLivenessResponse,
   verifyPlacementFailureCertificate,
+  verifyPlacementAdmittedLivenessPolicy,
   verifyPlacementLivenessChallenge,
   verifyPlacementLivenessObservation,
+  verifyPlacementLivenessPolicy,
   verifyPlacementLivenessResponse
 } from "../src/placement/liveness.mjs";

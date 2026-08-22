@@ -24,6 +24,10 @@ import {
   deriveCommittedPlacementActionPlan
 } from "../src/placement/lineage-controller.mjs";
 import {
+  finalizePlacementMembershipEpoch,
+  preparePlacementMembershipEpoch
+} from "../src/placement/admission.mjs";
+import {
   createContinuity,
   createContinuityAuthority,
   handoffContinuity
@@ -125,8 +129,41 @@ export function installConfidentialPlacementHarness() {
       });
       return Object.freeze({
         capsule_base64url: encodeBase64Url(created.capsule_bytes),
+        custodian: materialize(continuityAuthority.custodian),
         head_hash: created.head_hash,
         organism_id: created.organism_id,
+        private_material_exposed: false
+      });
+    },
+    async createPlacementMembershipEpoch(options) {
+      if (!continuityAuthority) throw new Error("E_CONTROLLER_AUTHORITY_UNAVAILABLE");
+      const capsuleBytes = decodeBase64Url(options.capsule_base64url);
+      const priorEpochBytes = options.prior_epoch_base64url === null
+        ? null
+        : decodeBase64Url(options.prior_epoch_base64url);
+      const parameters = {
+        ...options.parameters,
+        admission_evidence: options.parameters.admission_evidence_base64url.map(decodeBase64Url)
+      };
+      delete parameters.admission_evidence_base64url;
+      const prepared = preparePlacementMembershipEpoch({
+        capsule_bytes: capsuleBytes,
+        parameters,
+        prior_epoch_bytes: priorEpochBytes
+      });
+      const approval = await continuityAuthority.sign({
+        message: prepared.custody_approval_message,
+        tuple: prepared.custody_approval_tuple
+      });
+      const bytes = finalizePlacementMembershipEpoch({
+        approvals: [approval],
+        body: prepared.body,
+        capsule_bytes: capsuleBytes,
+        prior_epoch_bytes: priorEpochBytes
+      });
+      return Object.freeze({
+        epoch_base64url: encodeBase64Url(bytes),
+        epoch_id: prepared.epoch_id,
         private_material_exposed: false
       });
     },
@@ -146,6 +183,7 @@ export function installConfidentialPlacementHarness() {
         liveness_responses: options.liveness_responses_base64url.map(decodeBase64Url),
         manifest_bytes: decodeBase64Url(options.manifest_base64url),
         max_proof_age_ms: options.max_proof_age_ms,
+        membership_epochs: (options.membership_epochs_base64url ?? []).map(decodeBase64Url),
         placements: options.placements.map(placementRecord),
         prior_commit_bytes: options.prior_commit_base64url === null
           ? null

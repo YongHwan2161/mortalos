@@ -1,8 +1,8 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **PORTABLE CORE PROMOTED; CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL**
+Status: **PORTABLE CORE PROMOTED; CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING; MULTI-HOST INDEPENDENCE HOLD**
 
-Last synchronized: **2026-08-11 KST**
+Last synchronized: **2026-08-21 KST**
 
 ## Decision
 
@@ -179,9 +179,12 @@ remote channel close closes a still-live peer instead of stranding it.
 commit or delivery before cleanup, and at-most-once native close capability use. The current candidate passes
   focused Node `24/24` in `31,241ms` and the actual Chromium probe in `50,086ms`.
   The prior `8,076.826s` runtime/test/workflow full-suite PASS predates the current
-  WebRTC remediation. The frozen runtime/test/workflow candidate passes the fresh
-  `8,631,790ms` suite through final `verify:s4`, its covered files stayed unchanged,
-  and docs pass separate spec/link/diff. Exact-SHA governance remains external.
+  WebRTC remediation. The merged base then passed a fresh `8,631,790ms` suite through
+  final `verify:s4`. The lease-bound liveness-policy delta now passes uninterrupted
+  `npm test` in `7,476,222ms` through final `verify:s4`; exact-SHA governance remains
+  external for that source. The later membership-bound observer-attestation/view
+  source also reaches final `verify:s4` in a fresh ordered complete suite; post-run
+  docs pass separate static gates and exact-SHA governance remains external.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
 or ambient-random dependency. All portable corpus results must remain byte-identical
@@ -207,9 +210,10 @@ Chromium for the exact reviewed head.
   forgeable JSON, not authority. An effect executor must reverify the original
   Capsule, generation, commit, and current placement/liveness evidence.
 - The core can reject a late-proof conflict when supplied fresh response and current
-  placement evidence. The Lab/browser harness currently supplies empty late-response
-  arrays and does not implement a network gossip plus execution-time reconciliation
-  loop.
+  placement evidence. The single-shard Lab executor supplies that evidence directly:
+  delayed response is zero-call and certificate-only loss is one effect. The internal
+  Node batch re-reads a private evidence session between actions, but it is not a
+  transport gossip service.
 - Operational lease signers are separately authorized test identities; no source
   rule cryptographically binds them to a successor's Continuity custody identity.
 - Provider/observer keys and labels do not prove independent devices, accounts,
@@ -235,8 +239,33 @@ conforming endpoint, requires a browser-only signed value, treats relay/GPT/UI o
 as authority, silently persists an ephemeral key, or converts disconnect into an
 unconditional death fact.
 
-The next root P0 is a provider-signed lease-bound liveness policy plus independent
-provider possession response and an effect-time exactly-once repair executor.
-Lineage-governed admission and
-failure-domain accounting with explicit trust roots follows; self-asserted metadata
-must not manufacture quorum diversity.
+The policy/window, sampled response `/2`, one-shard effect/completion, provider- and
+Continuity-domain sequential restart recovery, and internal multi-action fresh-evidence
+batch slices are implemented. Cross-process first execution is excluded in both durable
+domains by no-replace claims. An unresolved winner remains fail-closed unless the outer
+executor supplies and verifies an already-authoritative exact result to a recovery
+capability with no provider/signing method; invalid or absent proof cannot advance it.
+The origin-cut Chromium Lab now connects the range adapter to an actual DataChannel
+transcript and proves late response/disconnect zero-call behavior. The bounded schedule
+corpus and lineage-governed logical admission are focused PASS. Custody-signed epoch
+sidecars now bind explicit roots and dual-signed challenge evidence, enforce direct
+root rotation/revocation with cumulative root/key history, collapse aliases by operator root,
+count one selected observer per logical domain, and preserve adjacent-epoch quorum
+intersection. A private-key-free coordinator now binds both signer keys to explicit
+challenge `/2` endpoint origins and emits an offline replay bundle. Each durable signer
+locks its own advertised origin before key use, but its executable evidence is
+still loopback. The operator CLI can now terminate TLS natively from bounded role-local
+certificate/private-key files, rejects a bad pair before absent authority creation, and
+reports HTTPS versus private-HTTP proxy mode without exposing either TLS key or bearer.
+Native mode also separates a possession-only token from the admission bearer. A fresh
+Node observer defaults to `/2`: each role key signs the exact ceremony/origin/role/key/
+nonce/time plus the same-connection TLS exporter digest. A replayed identity or proof
+under the same certificate on another TLS connection rejects. The observer records the
+proof, peer certificate/public-key/exporter digests, and socket addresses, but fixes administration and
+failure-domain independence to `unproven`. A durable observer key can now attest the
+exact probe plus declared administration/failure-domain/vantage digests, and a combined
+path orders probe before signature. Explicit identity-only `/1` is retained solely for
+legacy TLS-terminator compatibility and cannot be mistaken for possession evidence.
+These labels, measurements, and signatures remain inputs, not physical independence. The next root P0 is operating those exact services,
+coordinator, and at least two observer keys under distinct administration and measured
+multi-host topology.

@@ -26,6 +26,22 @@ const SECURITY_EXPORT_SCOPES = Object.freeze([
   "lab/participant/live-endpoint.mjs",
   "lab/participant/quorum-endpoint.mjs",
   "lab/participant/webcrypto-key-store.mjs",
+  "lab/placement/admission-ceremony-binding.mjs",
+  "lab/placement/admission-ceremony-client.mjs",
+  "lab/placement/admission-deployment-attestation.mjs",
+  "lab/placement/admission-deployment-observer.mjs",
+  "lab/placement/admission-deployment-plan.mjs",
+  "lab/placement/admission-deployment-plan-activation.mjs",
+  "lab/placement/admission-deployment-plan-membership.mjs",
+  "lab/placement/admission-pilot-inventory-closure.mjs",
+  "lab/placement/admission-role-execution-receipt.mjs",
+  "lab/placement/admission-signer-http-service.mjs",
+  "lab/placement/admission-signer-profile.mjs",
+  "lab/placement/admission-signer-session.mjs",
+  "lab/placement/durable-repair-continuity-session.mjs",
+  "lab/placement/durable-repair-provider-session.mjs",
+  "lab/placement/network-evidence-session.mjs",
+  "lab/placement/repair-executor.mjs",
   "lab/product-continuity.mjs",
   "lab/storage/confidential-counter-authority-store.mjs",
   "lab/storage/durable-document.mjs",
@@ -128,6 +144,29 @@ const OWNERSHIP_PROVENANCE = Object.freeze({
   "lab/participant/webcrypto-key-store.mjs": {
     ownSigningBytes: ["local", null, null, "b7cc87a511d933825955b7c73f803a7a520f1aa735354137ba89eb0f056ec234"]
   },
+  "lab/placement/admission-ceremony-client.mjs": {
+    verifyPlacementAdmissionCeremonySignerBinding: ["import", "./admission-ceremony-binding.mjs", "verifyPlacementAdmissionCeremonySignerBinding", "8253f02e85a7fbd0fca436c8c50fe481dae16be284a08ce1d6c21ec3b3220333"],
+    verifyRequestChallenge: ["local", null, null, "00f25ce168488c34b588021afbbc8723996e01f67864f17ea47a7c16d2c45d0e"]
+  },
+  "lab/placement/admission-deployment-attestation.mjs": {
+    attestPlacementAdmissionDeploymentObservation: ["local", null, null, "8cc02a463518d8b852f7c37a8506178f93d7058f0b6212885d797fa0e5c30155"],
+    observePlacementAdmissionDeployment: ["import", "./admission-deployment-observer.mjs", "observePlacementAdmissionDeployment", "a5bce660d765d137ef7fc91f7d71b12162b99f8a291b823a0013caea1b5113fc"],
+    restorePlacementAdmissionDeploymentObservation: ["import", "./admission-deployment-observer.mjs", "restorePlacementAdmissionDeploymentObservation", "2dd384ea1310babeed912f7445d7e2a7c77398fc55067c361bdd9fb86d28ebf6"],
+    restorePlacementAdmissionDeploymentPlan: ["import", "./admission-deployment-plan.mjs", "restorePlacementAdmissionDeploymentPlan", "b64cc93b2aac54774387bae7d5d2ecaa1f7cb8b9896495aaf491d09e59ea0732"],
+    restorePlacementAdmissionDeploymentPlanMembership: ["import", "./admission-deployment-plan-membership.mjs", "restorePlacementAdmissionDeploymentPlanMembership", "f3a814e74aab661cdd8c7e505cf3df2e95b3280d3e5344710b8977dd648df7ba"],
+    selectPlacementAdmissionDeploymentPlanActivationAssignment: ["import", "./admission-deployment-plan-activation.mjs", "selectPlacementAdmissionDeploymentPlanActivationAssignment", "0b92062df4232b9a635d0287e33b5f8fab16b7018d574db3f2ce40ff8f0f3a68"],
+    verifyPlacementAdmissionDeploymentPlanObservation: ["import", "./admission-deployment-plan.mjs", "verifyPlacementAdmissionDeploymentPlanObservation", "3e9bf86b4ec2bcf998ef5488efbb472806d5d3a1199c091971108f1493a9f6e6"],
+    verifyPlacementAdmissionDeploymentPlanMembership: ["import", "./admission-deployment-plan-membership.mjs", "verifyPlacementAdmissionDeploymentPlanMembership", "db9b0af67f33c65c7cb9d0b6855199ea3ee2c660985f7d9bf42411940f941627"],
+    verifyEd25519: ["import", "../../src/crypto.mjs", "verifyEd25519", "658c6879fed622c81f9383d04770e4071665e265f176d0ad2ad68ba858528b42"]
+  },
+  "lab/placement/admission-deployment-plan-activation.mjs": {
+    restorePlacementAdmissionDeploymentPlan: ["import", "./admission-deployment-plan.mjs", "restorePlacementAdmissionDeploymentPlan", "b64cc93b2aac54774387bae7d5d2ecaa1f7cb8b9896495aaf491d09e59ea0732"],
+    selectPlacementAdmissionDeploymentPlanAssignment: ["import", "./admission-deployment-plan.mjs", "selectPlacementAdmissionDeploymentPlanAssignment", "6add3f9f72ed5c1a79d6ce8711c50659b57b51cef49c6c522825e6c228ad3ac3"],
+    verifyEd25519: ["import", "../../src/crypto.mjs", "verifyEd25519", "658c6879fed622c81f9383d04770e4071665e265f176d0ad2ad68ba858528b42"]
+  },
+  "lab/placement/admission-signer-session.mjs": {
+    verifyPlacementAdmissionCeremonySignerBinding: ["import", "./admission-ceremony-binding.mjs", "verifyPlacementAdmissionCeremonySignerBinding", "8253f02e85a7fbd0fca436c8c50fe481dae16be284a08ce1d6c21ec3b3220333"]
+  },
   "lab/storage/durable-document.mjs": {
     clone: ["local", null, null, "1bc49fcf41c0de23a56b366455a1851e81c1d079a090ac0351cccb1d580dea1c"]
   },
@@ -203,6 +242,21 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "lab/participant/live-endpoint.mjs": "f6b124b56be9c8ab4e1bc6038b4c9d223aa49b8987398dac5940d3478afa198b",
   "lab/participant/quorum-endpoint.mjs": "c68507768d78b04d2807d7cbc597578c59cd23cc0441e00c887c8cfcd233c91a",
   "lab/participant/webcrypto-key-store.mjs": "4653689d16d49d4073145fa8fa1eab24dda80487183353706500ef7cd79c7cc3",
+  "lab/placement/admission-ceremony-binding.mjs": "5a9e22411376852642d782c5bb0655c055d8cc0ff387cdde17ceb0ef801443b6",
+  "lab/placement/admission-ceremony-client.mjs": "90099fe5be6096ce34c2dc3c317c9d470c6990cbd93f1a048b51964b49d93f40",
+  "lab/placement/admission-deployment-attestation.mjs": "0044ce0d591390ab839c4b7009d56c05c7f1a641e6cbca6617f7cee44c914ccb",
+  "lab/placement/admission-deployment-observer.mjs": "18717c7c0f49a494e1641bc39a4e584a8df2a48d1f8f90e42060aad0c6b2c425",
+  "lab/placement/admission-deployment-plan.mjs": "53b6f11fead89178f1902de811649b54cd408493ffa401a1792b9c361af11c10",
+  "lab/placement/admission-deployment-plan-activation.mjs": "36e2133096dbc3c5024d654c84b5925bbc8ac065d0d19d0b6b157bb44ebf1189",
+  "lab/placement/admission-deployment-plan-membership.mjs": "9d031c077c865f536c6a1af84e672f580d1379ab7f5bba4a4707e92bcb1f2640",
+  "lab/placement/admission-pilot-inventory-closure.mjs": "a7108b54330bca9b55cdd32601ec9f97a089840aaabbc89c7b1339bce30eb828",
+  "lab/placement/admission-role-execution-receipt.mjs": "12fce022814d511104531b05fbdcaa751dc16889206d0c6b914b304408ca7002",
+  "lab/placement/admission-signer-profile.mjs": "8af79356e5c81ca94fa2258c37eb43ebba11a6d830393753be43f59a7c6940c7",
+  "lab/placement/admission-signer-session.mjs": "2abf102e1082a6326a8dd7f0be674735dcfc2c516fd71fe6ba0fed7e511350d2",
+  "lab/placement/durable-repair-continuity-session.mjs": "3a87405a479f70af738ade062afebd1db1ec309c54166ef16d46362f8d16be96",
+  "lab/placement/durable-repair-provider-session.mjs": "06f1c63a37c0834c806727e2d1195a4186e2b98174f14792060630bc6738ec5b",
+  "lab/placement/network-evidence-session.mjs": "23c2786eef4dedab5db907171f95d3d2c21878c9b13377af13497f5cae81e75f",
+  "lab/placement/repair-executor.mjs": "62fecd6d32a227f8e4b668c232d73230c11ddc8ec774b693d8f96fdb9d98de8a",
   "lab/storage/confidential-counter-authority-store.mjs": "48f6bb602af094aaca7a35a8b6c0ba542e1a65d7a4224f101363bd211b4fe244",
   "lab/storage/durable-document.mjs": "6a12494b34d7f94e84e9c85c33ac53292f54421d77b4af48e093db90b1e27a9f",
   "lab/storage/durable-store.mjs": "95356dae9aeb166f1a214a310deb61e22275466bcc7d47c084902c55162c4f39",
@@ -210,6 +264,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "lab/transport/http-relay.mjs": "50bbeaa94e2c42d93b3dc34ed25f173b51e8248d2e45e7c1a48a330779df2090",
   "lab/transport/virtual-transport.mjs": "ccc57815ca0c46ef96222767b036dbecdb0f787bc8ed2cae9696f9a248fca828",
   "src/bytes.mjs": "b210b22775b4e279394be49f64e854d7c19c849d9bcc8cf3fad952e601cd0e57",
+  "src/crypto.mjs": "63361045eaa162295f5e5f254dee621df362d51c661e4b499e0f2ad08e2fb4d4",
   "src/confidential/counter.mjs": "9871611eb4868ee913d4dc092f2407fd6e8b299571ae637c11682c3f87621376",
   "src/confidential/format.mjs": "d3c9b70d31e2dc3007c495dc404f0a71ef65ae8557a10c6200fc6efec54a61bc",
   "src/confidential/keys.mjs": "79f350b7704c3c9e6cc1d0f891364b0a9cc050f8cee249fd3cc445a5f2123285",
@@ -217,7 +272,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/confidential/recovery.mjs": "30d7453b1af1107c26d17f779600f6b8828d8d07759c2198f89f665f49c36feb",
   "src/continuity.mjs": "defc12d9cd7d6aec2ecb0e9ca875a99375703d94e9210ecb41bbbea435dd3f76",
   "src/distributed/quorum-counter-store.mjs": "5aa2d7c0257c6e4ba4ef5502dadbc485a8fd0e95ce56fc98da30a6ff84265869",
-  "src/placement/lineage-controller.mjs": "55cd515797b6d5430c95e307cb66ca096b489ce937781a4325eb26460d7ba9fc",
+  "src/placement/lineage-controller.mjs": "b0e26beaca9ad1da75f5f893bca5eb3fa6c94b299511fcce5367b08fe596c5a8",
   "src/primordials.mjs": "a7a8c85573463956197926749e0bd41622470e1e640d4f3928e954ebd1c01630",
   "src/state/package.mjs": "082828e7e0db08bb5ca496bc47d0a6a969a01bcf99633c57150aa8fd576cf098",
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
@@ -234,13 +289,33 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
 // async-only inventory remains green.
 const SYNC_TRUST_BOUNDARY_MODULE_DIGESTS = Object.freeze({
   "lab/placement/confidential-controller.mjs": "0ff04b683512f9d8493ef5c6dd5720a57df9c2e0abcda562a273fd31bc3710d5",
-  "src/placement/confidential.mjs": "b1340f5c3c8bac048db734650df0f1ca7147593204fc67db56fcab3f6c0f5e04"
+  "src/placement/admission.mjs": "dbed9fd15611f4fc6fcba0c79b663d779aedef0b9f23ef1b36b84ce9dd3b0283",
+  "src/placement/confidential.mjs": "b1340f5c3c8bac048db734650df0f1ca7147593204fc67db56fcab3f6c0f5e04",
+  "src/placement/liveness.mjs": "d9923a05aa3ab8c0e0f800505b0e065b54d6d24998dcb16939e2eace9ce748a2",
+  "src/resource-execution.mjs": "7854e6815a8774c302f85c9d764ab962588720aae6a86e9db12de1717306e23e"
 });
 
 // A classification is a reviewed security decision, not a permanent textual
 // exemption. Pin both its exact function and its complete module so any drift
 // requires the reviewer to revisit the classification before CI can pass.
 const CLASSIFICATION_DIGESTS = Object.freeze({
+  "lab/placement/admission-ceremony-client.mjs:export async function runPlacementAdmissionHttpCeremony": "dd80bb8d195f9ec07ec31237170c4536824f24fa1ff88763ccdaa062b8bac7e1",
+  "lab/placement/admission-ceremony-client.mjs:export async function runPlacementAdmissionHttpCeremonyRole": "54c6bea33ff10fcb3702c42de79d1366a50fca56061ec36bb02f47df91706e21",
+  "lab/placement/admission-deployment-plan-activation.mjs:export async function acceptPlacementAdmissionDeploymentPlan": "1a9e7946e6f3304f6523132e7b47af8e410cf76ef18625db88e813305f2c09b8",
+  "lab/placement/admission-pilot-inventory-closure.mjs:export async function createPlacementAdmissionPilotInventoryRatification": "4333f16d4a7c06dd30119e3b1809024302048ae26825c9b932557c60b7306f35",
+  "lab/placement/admission-role-execution-receipt.mjs:export async function createPlacementAdmissionRoleExecutionReceipt": "a1453d039366c8716bf595356d4aa1489d89811bf3d59d94fe1bb94ec1f7b557",
+  "lab/placement/admission-deployment-attestation.mjs:export async function attestPlacementAdmissionDeploymentObservation": "8cc02a463518d8b852f7c37a8506178f93d7058f0b6212885d797fa0e5c30155",
+  "lab/placement/admission-deployment-attestation.mjs:export async function observeAndAttestPlacementAdmissionDeployment": "5d3bc0e80efbc526b070a69c33ce57b5f3364d46728ea82da0d9f455dabe20cc",
+  "lab/placement/admission-deployment-observer.mjs:export async function observePlacementAdmissionDeployment": "a5bce660d765d137ef7fc91f7d71b12162b99f8a291b823a0013caea1b5113fc",
+  "lab/placement/admission-signer-profile.mjs:export async function lockPlacementAdmissionSignerProfile": "345807a51f4f4e14b90f501876faddcc0bc77040c91cf528f5dc7edefc20d488",
+  "lab/placement/admission-signer-session.mjs:PlacementAdmissionSignerSession.async signAdmissionRequest": "84dc316f6d9a23f13485267943f5f518194a81f22dde5425581a370a2f34b12a",
+  "lab/placement/admission-signer-session.mjs:PlacementAdmissionSignerSession.async signDeploymentPossession": "43564dbfb9be38aae7ddd9af3c39ae4a8a753d50b2a2a734a7a6e8c22a002952",
+  "lab/placement/durable-repair-continuity-session.mjs:DurableRepairContinuitySession.async commitPlacementGeneration": "e5abd2c3c76135affd65d98e4a328de2961cdc133b38819c5a88c3c2cfe5f164",
+  "lab/placement/durable-repair-provider-session.mjs:DurableRepairProviderSession.async executeRepairEffect": "fa86947034690e0c29598e260d5951652211c4ace2aec557ee2db9e780168c1d",
+  "lab/placement/network-evidence-session.mjs:PlacementNetworkEvidenceSession.async readCurrentEvidence": "e111d6ba07bec4c642f7c8e8a25d7f016e4bc6a2e1570e16cd9442c0c1b9810e",
+  "lab/placement/repair-executor.mjs:export async function completeLineagePlacementRepairEffect": "d8cf56775681840a4b1727d5ce963215050432d0db9cec9330753451f5237dd9",
+  "lab/placement/repair-executor.mjs:export async function executeAndCompleteLineagePlacementRepairBatch": "7177d62bc87f3f27c5651efbe1d4f3232eee07b4fef6fb67134239e78e75eba5",
+  "lab/placement/repair-executor.mjs:export async function executeLineagePlacementRepairEffect": "b5bc83cb8e88091e342048d203a0259c4ee2f6d3ef2c1ea7c267949077290d13",
   "cli/node-authority.mjs:export async function loadNodeAuthority": "5b0dcbd55cf97aadd22be8cc54f793156514e34c4f8eeb7416bf54b725bc3d65",
   "lab/live-incubator.mjs:BrowserIncubator.async birth": "eb0852385f67cc7a5957c821ed3c7e137604f3765780781dfb966a190f7b2592",
   "lab/live-incubator.mjs:BrowserIncubator.async completeHeartbeat": "87588c407a0f9d9be0f414c44c3254b3573797eba23b870d4db97395dbb7052d",
@@ -351,6 +426,34 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async presence": "8903f54681ed29ce7bc6f9e40b02102cdd707cd5d5ccb4ddce50c13c861aa8f9"
 });
 const CLASSIFICATION_TRANSITIVE_DEPENDENCIES = Object.freeze({
+  "lab/placement/admission-ceremony-client.mjs:export async function runPlacementAdmissionHttpCeremony":
+    Object.freeze(["verifyRequestChallenge"]),
+  "lab/placement/admission-ceremony-client.mjs:export async function runPlacementAdmissionHttpCeremonyRole":
+    Object.freeze(["verifyPlacementAdmissionCeremonySignerBinding"]),
+  "lab/placement/admission-deployment-plan-activation.mjs:export async function acceptPlacementAdmissionDeploymentPlan":
+    Object.freeze([
+      "restorePlacementAdmissionDeploymentPlan",
+      "selectPlacementAdmissionDeploymentPlanAssignment",
+      "verifyEd25519"
+    ]),
+  "lab/placement/admission-deployment-attestation.mjs:export async function attestPlacementAdmissionDeploymentObservation":
+    Object.freeze([
+      "restorePlacementAdmissionDeploymentObservation",
+      "selectPlacementAdmissionDeploymentPlanActivationAssignment",
+      "verifyPlacementAdmissionDeploymentPlanMembership",
+      "verifyPlacementAdmissionDeploymentPlanObservation",
+      "verifyEd25519"
+    ]),
+  "lab/placement/admission-deployment-attestation.mjs:export async function observeAndAttestPlacementAdmissionDeployment":
+    Object.freeze([
+      "attestPlacementAdmissionDeploymentObservation",
+      "observePlacementAdmissionDeployment",
+      "restorePlacementAdmissionDeploymentPlan",
+      "selectPlacementAdmissionDeploymentPlanActivationAssignment",
+      "verifyPlacementAdmissionDeploymentPlanMembership"
+    ]),
+  "lab/placement/admission-signer-session.mjs:PlacementAdmissionSignerSession.async signAdmissionRequest":
+    Object.freeze(["verifyPlacementAdmissionCeremonySignerBinding"]),
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish":
     Object.freeze(["decodeRelayMessageBytes"])
 });
@@ -396,6 +499,18 @@ assert.deepEqual(
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+const STATIC_TRUST_BOUNDARY_MODULE_DIGESTS = Object.freeze({
+  "lab/placement/admission-ceremony-binding.mjs": "5a9e22411376852642d782c5bb0655c055d8cc0ff387cdde17ceb0ef801443b6",
+  "lab/placement/admission-signer-http-service.mjs": "d78a0e84bdb245edede4a6d3ddb2418434a8ad7a96de01ddbec9de1931d843b1"
+});
+for (const [file, digest] of Object.entries(STATIC_TRUST_BOUNDARY_MODULE_DIGESTS)) {
+  assert.equal(
+    sha256(await readFile(new URL(file, root))),
+    digest,
+    `${file}: static trust-boundary module drift requires a fresh security review`
+  );
 }
 
 export function assertSupportedOwnershipPrelude(functionNode, boundary, file = "module") {

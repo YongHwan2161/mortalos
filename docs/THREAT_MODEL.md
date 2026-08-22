@@ -669,15 +669,32 @@ The revision must identify the new trust assumption, affected invariant, failure
   supplied tip halts as `incomplete-chain` instead of selecting a historical winner.
   A completely hidden newer Capsule remains unknowable and is not a global-currentness
   claim.
+- The one-result completion coordinator does not trust its result JSON as authority.
+  It rederives the effect, verifies the signed placement chain, requires a proved
+  single-shard replacement generation, and durably claims the exact completion slot
+  before invoking a private idempotent Continuity session. This prevents forged,
+  stale, contested, or competing completion input from reaching the signer. It does
+  not by itself provide multi-action ordering, cross-host currentness, network
+  reconciliation, or signer durability independent of that private session. The
+  internal batch adds deterministic local multi-action ordering and fresh private-
+  evidence reads, but not cross-host discovery or session-independent durability.
 - Raw `unavailable_provider_ids` remains a lower-level diagnostic input and is
   rejected by lineage generation. Provider failure at that layer requires a
   predecessor/sequence-bound challenge and a threshold of role-disjoint observations
   under the provider-signed offer witness policy. No global clock or deadline is
   trusted. The core conditionally halts a derived plan for a valid late receipt
   response, challenge fork, or response fork when the caller supplies the response
-  and corresponding verified current placement evidence. The current Lab/browser
-  harness supplies empty late-response/current-placement arrays and has no network
-  gossip plus execution-time reconciliation loop; that production control remains
+  and corresponding verified current placement evidence. The one-shard Lab/browser
+  executor supplies both immediately before effect. The internal Node batch checks
+  a captured bounded range session between actions; canonical transport frames can
+  contribute response payload bytes, but relay metadata is never authority. The
+  provider-domain adapter now restores a canonical result after sequential restart.
+  No-replace claims now exclude cross-process first provider and Continuity execution,
+  and an unresolved winner can advance only when the outer executor verifies an exact
+  signed placement or successor Capsule/commit before local result import. The import
+  capability has no provider/signing method; absent proof remains fail-closed without
+  timeout or takeover. The focused Chromium Lab now supplies one actual connected
+  DataChannel transcript to the batch evaluator; background gossip/discovery remains
   unimplemented.
 - This prevents one controller key from declaring failure, but does not prove honest
   observer timers or independent actors. One administrator may control multiple
@@ -691,13 +708,106 @@ The revision must identify the new trust assumption, affected invariant, failure
 - Literal count/byte cap-plus-one and terminal-cleanup regressions pass in the
   focused Node and actual Chromium gates. The prior `8,076.826s` complete
   runtime/test/workflow PASS predates the current WebRTC runtime/test/security
-  remediation. The frozen current runtime/test/workflow candidate passes the fresh
-  `8,631,790ms` suite through final `verify:s4`; covered files remained unchanged and
-  docs pass separate spec/link/diff. Exact-SHA governance remains external.
+  remediation. The merged base later passed `8,631,790ms` through final `verify:s4`.
+  The liveness-policy delta now passes uninterrupted `npm test` in `7,476,222ms`
+  through final `verify:s4`; exact-SHA governance remains external for this source.
 
-The next root P0 is a provider-signed lease-bound liveness policy plus independent
-provider possession response and an effect-time exactly-once repair executor.
-Lineage-governed
-admission/failure-domain accounting with explicit trust roots follows. Self-asserted
-topology labels must not count as independent domains; admission and diversity
-claims require evidence rooted outside the admitted actor.
+The policy/window, provider-only sampled response, one-shard effect/completion,
+provider-domain sequential restart recovery, and internal multi-action fresh-evidence
+batch slices are implemented. No-replace claims exclude cross-process first provider
+and Continuity execution. Proof-import recovery fills an unresolved result only after
+outer verification of an exact signed placement or successor commit; invalid or absent
+proof remains fail-closed with no timeout/takeover. The origin-cut Chromium Lab now
+connects the range adapter to an actual DataChannel and proves late-response/disconnect
+zero-call behavior. The `10,000`-seed signed-evidence schedule corpus is focused PASS;
+the sample is not continuous custody. Lineage-governed logical admission is now
+focused PASS: custody-signed epochs bind issuer roots and dual-signed subject-control
+challenges, retain cumulative root/key history, collapse
+operator aliases, count one observer per logical domain, preserve adjacent-epoch
+intersection, and halt valid siblings. This prevents one declared operator/domain
+from being counted repeatedly; it does not make the declarations externally true.
+A policy-locked loopback ceremony now separates issuer/subject key capabilities and
+prevents the coordinator from changing their configured root/policy or reusing one
+challenge slot for conflicting evidence. It is still one-PC, one-coordinator evidence.
+Optional local authority files created with requested mode `0600` on supporting
+filesystems preserve keys and sign-once tuples across process races and restart, but
+are neither HSM custody, hostile-disk protection, nor evidence of Windows/NTFS ACL
+enforcement.
+A private-key-free coordinator can now call HTTPS (or test-only loopback HTTP)
+endpoints and emit an offline-verifiable bundle. Challenge `/2` explicitly carries
+both origin/key pairs under a generated 512-byte ceiling, and each signer service
+compares its role-specific origin/key against a local advertised-origin policy before
+private-key use. A coordinator therefore cannot turn `127.0.0.1` into `localhost`, nor
+can a bundle editor change the endpoint declaration by recomputing only the public
+bundle hash. Separate durable authority files preserve this verdict across restart.
+Each signer may terminate TLS natively from bounded administrator-local certificate and
+private-key files. Incomplete, oversized, or mismatched TLS inputs reject before an
+absent signing authority is created; TLS uses a bounded handshake and version 1.2 or
+newer. Native mode also requires a second possession-only token distinct from the
+admission bearer. Readiness reports only the listener protocol/mode and proof capability.
+The native focused path performs validated TLS role calls and records the resulting peer
+certificate/public-key digests without emitting TLS key, admission bearer, or possession
+token bytes. A private-HTTP listener behind a
+separate administrator-controlled terminator remains supported and explicitly reported.
+This proves key agreement to the declaration,
+not that DNS, TLS certificate, host, account, administrator, region, network, or power
+domain is independent. Both bearer types are transport access and never admission
+authority.
+A copied `/identity` response was not fresh key-possession evidence: a replacement
+server could replay it while controlling only a trusted TLS certificate. Native
+observation `/2` now sends a canonical ceremony/role/origin/key/nonce/time challenge,
+derives a TLS exporter with those exact bytes as context on both ends of the same
+connection, and requires the configured role key to sign its exporter digest. A replay
+server using the same certificate and an earlier valid proof fails because the new TLS
+connection derives another exporter. The proof endpoint is separately token-gated to
+avoid turning unauthenticated traffic into an unbounded durable signing journal.
+That per-connection freshness also means a combined observer cannot recreate exact
+observation bytes by reconnecting after it has consumed the plan-scoped observer signing
+slot. The operator CLI now hard-links a bounded no-replace observation journal before
+calling that signer. A retry restores the exact journal, revalidates its role proofs and
+plan assignment, and can reproduce the attestation with both signer endpoints stopped
+and no possession tokens. A different same-plan connection collides before observer
+signing; this closes the observation-to-attestation publication crash window under the
+same local-directory custody and non-power-loss durability assumptions as other
+no-replace artifacts.
+A fresh deployment observer records the bounded proof, platform-trusted peer
+certificate/public-key digests, exporter digest, and socket address.
+Its self-hash prevents accidental mutation but not fabrication by the observer; offline
+restore explicitly marks the live observation unverified. Distinct addresses or TLS
+keys or role-key possession proofs are therefore observations from one configured trust
+store, not proof of separate
+administration or failure domains. A content-addressed deployment plan now fixes the
+complete observer roster, unique nonce per key, declared digests, ceremony, and bounded
+logical window before the conforming combined runs, so a collector cannot silently
+drop an assigned observer or substitute a post-hoc nonce, vantage, plan, or window.
+Each roster key now signs one
+acceptance before observation using a ceremony-scoped durable sign-once slot; the
+  complete acceptance set activates the plan. Membership binding `/2` then requires a
+  complete supplied candidate chain that converges without fork at the current Capsule,
+  commits its sorted candidate IDs and selected epoch, and requires the exact ceremony
+  subject evidence plus that epoch's complete observer membership. Every plan key and
+  declared operator/failure-domain digest must match its admitted member, and roots/
+  domains must be distinct. Attestation `/5` embeds that exact binding and candidate-view
+  ID. Exact acceptance retry is recoverable while a second plan under the same
+  ceremony/key halts. The attestation signer separately reserves one plan-scoped slot:
+  exact attestation retry is recoverable, but another membership view, observation, or
+  attestation instant under that plan halts. Because plan acceptance is ceremony-scoped,
+  epoch rotation requires a fresh ceremony and plan.
+  This closes same-roster multi-plan and same-plan multi-view selection and raw disjoint
+  **unadmitted** rosters in the conforming flow. The plan/activation remain coordination
+  evidence, and membership authority is only as honest and complete as configured issuer
+  roots, custody, and supplied current-view bytes. Candidates omitted from every
+  observer's inventory, false issuer
+  claims, use of a nonconforming path, pre-import observation, clock honesty,
+  administrator separation, and physical topology remain unproved. A malicious or commonly administered
+observer can still lie about its declared vantage, trust store, host, account, network,
+region, or failure domain. Multiple distinct observer keys therefore improve
+attribution and selection accountability, not Sybil resistance or physical
+independence.
+The compact attestation-view manifest adds no new authority: it stores only content-
+addressed IDs and a derived summary, not signature sidecars. Its offline restore proves
+only self-hash integrity. A verifier must receive the complete exact attestation roster
+and reproduce the manifest before treating `attestations_verified:true` as supplied-
+evidence verification; hidden sidecars or actors remain unknowable.
+The next root P0 is operating those services under external administration and measured
+independent-host topology. Diversity claims still require evidence rooted outside the admitted actor.
