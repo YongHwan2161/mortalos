@@ -212,10 +212,14 @@ test("resource placement artifacts are bounded untrusted carriers, not verdicts"
   assert.equal(artifact.request_id, "placement-1");
   assert.equal(JSON.stringify(artifact.payload), JSON.stringify({ evidence: "transported", proved: false }));
   for (const artifactKind of [
+    "continuity-handoff-proposal",
+    "continuity-handoff-request",
     "failure-certificate",
     "liveness-challenge",
     "liveness-observation",
-    "liveness-response"
+    "liveness-response",
+    "webrtc-answer",
+    "webrtc-offer"
   ]) {
     const liveness = createResourcePlacementArtifactMessage({
       artifactKind,

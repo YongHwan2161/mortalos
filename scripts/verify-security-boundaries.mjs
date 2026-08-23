@@ -278,7 +278,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/state/recovery.mjs": "eb60562e036990845963b762a33c9f83e32ac09af139ce0876dbc972a5a90715",
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
-  "src/transport/protocol.mjs": "d9d2f925b5f2753a1e0e927b4a6ae3ee2a471d728a3710a9810a9ef51ef8ab0b",
+  "src/transport/protocol.mjs": "d0633fdd1c6790746d2dd3fcf16bac0c44b34d8b9984ddb4b23495af1ee1fa28",
   "lab/transport/webrtc-peer.mjs": "26321761c8c98d909ff79a80f2373662a075a18d5d07b595a0686795b4691292"
 });
 

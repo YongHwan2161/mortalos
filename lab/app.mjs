@@ -18,16 +18,21 @@ import { RELAY_RATE_POLICY } from "../src/transport/relay-policy.mjs";
 import {
   createRelayControlMessage,
   createRelayMessage,
-  decodeRelayFrame
+  createResourcePlacementArtifactMessage,
+  decodeRelayFrame,
+  openResourcePlacementArtifact
 } from "../src/transport/protocol.mjs";
 import { runReferenceProof } from "./reference-engine.mjs";
 import { installProductContinuityHarness } from "./product-continuity.mjs";
+import "./p2p-placement.mjs";
 import { scenarioApiUrl } from "./runtime-endpoints.mjs";
 import { createCuratedScenarioProposal, SCENARIO_REQUEST_FORMAT } from "./scenario-contract.mjs";
 import { compileScenario, runCompiledScenario } from "./scenario-compiler.mjs";
 
 const byId = (id) => document.getElementById(id);
 installProductContinuityHarness();
+const productContinuity = globalThis.__MORTALOS_PRODUCT_CONTINUITY__;
+const p2pPlacement = globalThis.__MORTALOS_P2P_PLACEMENT__;
 let currentLocale = documentLocale();
 let t = createTranslator(currentLocale);
 const liveStatus = byId("live-status");
@@ -68,6 +73,22 @@ let continuityProposal = null;
 let continuityJoinUrl = null;
 let continuityPresence = [];
 const continuityProcessed = new Set();
+const FILE_MAX_BYTES = 128 * 1024;
+let continuityFile = null;
+let continuityFileMaterial = null;
+let continuityFileRecovered = null;
+let continuityFileHandoffRequest = null;
+let continuityFileProposal = null;
+let continuityFileAccepted = null;
+let continuityFileDownloadUrl = null;
+let continuityP2pReady = false;
+const continuityFileProgress = {
+  selected: false,
+  transferred: false,
+  handoff: false,
+  recovered: false,
+  continued: false
+};
 const continuityProgress = {
   create: false,
   join: false,
@@ -141,6 +162,82 @@ function verdict(result) {
 function shorten(value, start = 16, end = 8) {
   if (!value || value.length <= start + end + 1) return value ?? "—";
   return `${value.slice(0, start)}…${value.slice(-end)}`;
+}
+
+function encodeCanonicalDocument(value) {
+  return encodeBase64Url(canonicalBytes(value));
+}
+
+function decodeCanonicalDocument(value) {
+  const bytes = decodeBase64Url(value);
+  let parsed;
+  try {
+    parsed = JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new Error("FILE_CONTINUITY_DOCUMENT: invalid canonical JSON");
+  }
+  if (encodeCanonicalDocument(parsed) !== value) {
+    throw new Error("FILE_CONTINUITY_DOCUMENT: non-canonical JSON");
+  }
+  return parsed;
+}
+
+function continuityArtifactBytes(artifactKind, requestId, value) {
+  return canonicalBytes(createResourcePlacementArtifactMessage({
+    artifactKind,
+    payloadBytes: canonicalBytes(value),
+    requestId
+  }));
+}
+
+function continuityArtifact(opened) {
+  return opened.control?.kind === "resource-placement-artifact"
+    ? openResourcePlacementArtifact(opened.control)
+    : null;
+}
+
+function fileRequestId(suffix) {
+  if (!continuityRoomId) throw new Error("FILE_CONTINUITY_ROOM: room unavailable");
+  return `${suffix}:${continuityRoomId}`;
+}
+
+function safeVisibleFileName(value) {
+  const sanitized = value.replace(/[\u0000-\u001f\u007f-\u009f<>:"/\\|?*]/gu, "_").trim();
+  return sanitized.slice(0, 180) || "mortalos-file.bin";
+}
+
+function materializeContinuityFile(created, file) {
+  return Object.freeze({
+    capsule: created.capsule,
+    file_name: safeVisibleFileName(file.name),
+    media_type: file.type.slice(0, 120) || "application/octet-stream",
+    format: "mortalos-visible-file-continuity/1",
+    head_hash: created.head_hash,
+    organism_id: created.organism_id,
+    resource_root: created.resource_root,
+    resource_size: created.resource_size,
+    sequence: created.sequence
+  });
+}
+
+function validateContinuityFileMaterial(value) {
+  const expected = [
+    "capsule", "file_name", "format", "head_hash", "media_type",
+    "organism_id", "resource_root", "resource_size", "sequence"
+  ];
+  if (
+    !value || typeof value !== "object" || Array.isArray(value) ||
+    Object.keys(value).sort().join("|") !== expected.sort().join("|") ||
+    value.format !== "mortalos-visible-file-continuity/1" ||
+    typeof value.file_name !== "string" || value.file_name !== safeVisibleFileName(value.file_name) ||
+    typeof value.media_type !== "string" || value.media_type.length < 1 || value.media_type.length > 120 ||
+    !Number.isSafeInteger(value.resource_size) || value.resource_size < 1 || value.resource_size > FILE_MAX_BYTES
+  ) throw new Error("FILE_CONTINUITY_MATERIAL: invalid or out of bounds");
+  return value;
+}
+
+function startFileTask(task) {
+  task.catch(renderContinuityFailure);
 }
 
 function setStatus(element, text, state = "neutral") {
@@ -234,6 +331,7 @@ function renderContinuityFailure(error) {
 
 function renderContinuity(message = null, stateKind = "neutral") {
   const state = continuityParticipant?.publicState ?? null;
+  const fileMaterial = continuityFileMaterial;
   byId("continuity-role").textContent = continuityRole === "A" ? t("continuityRoleA") : t("continuityRoleB");
   byId("continuity-identity").textContent = state?.organism_id ? shorten(state.organism_id, 20, 10) : t("continuityNoIdentity");
   byId("continuity-identity").title = state?.organism_id ?? "";
@@ -248,6 +346,30 @@ function renderContinuity(message = null, stateKind = "neutral") {
   byId("continuity-full-identity").textContent = state?.organism_id ?? "—";
   byId("continuity-head").textContent = state?.head_hash ?? "—";
   byId("continuity-state-root").textContent = state?.state_root ?? "—";
+  byId("continuity-file-label").hidden = continuityJoinMode;
+  byId("continuity-file-name").textContent = fileMaterial
+    ? `${fileMaterial.file_name} · ${fileMaterial.resource_size.toLocaleString()} bytes`
+    : continuityFile
+      ? `${continuityFile.name} · ${continuityFile.size.toLocaleString()} bytes`
+      : t("continuityFileNone");
+  byId("continuity-file-proof").textContent = continuityFileProgress.continued
+    ? t("continuityFileContinued")
+    : continuityFileProgress.recovered
+      ? t("continuityFileRecovered")
+      : continuityFileProgress.transferred
+        ? t("continuityFileTransferred")
+        : continuityFileProgress.selected
+          ? t("continuityFileSelected")
+          : continuityJoinMode ? t("continuityFileWaiting") : t("continuityFileLocal");
+  byId("continuity-file-integrity").textContent = continuityFileProgress.continued
+    ? t("continuityFileExact")
+    : continuityFileProgress.recovered
+      ? t("continuityFileQuorum")
+      : fileMaterial?.resource_root ? shorten(fileMaterial.resource_root, 12, 7) : t("continuityFileAwaiting");
+  byId("continuity-file-integrity").title = fileMaterial?.resource_root ?? "";
+  byId("continuity-byte-path").textContent = continuityP2pReady
+    ? t("continuityFileDirect")
+    : t("continuityFileLocalOnly");
   byId("continuity-stage").textContent = continuityProgress.continue
     ? t("continuityStageContinued")
     : continuityProgress.stalled
@@ -271,12 +393,12 @@ function renderContinuity(message = null, stateKind = "neutral") {
   }
   byId("continuity-create").hidden = continuityJoinMode;
   byId("continuity-join").hidden = !continuityJoinMode;
-  byId("continuity-create").disabled = Boolean(continuityParticipant);
+  byId("continuity-create").disabled = Boolean(continuityParticipant) || !continuityFile;
   byId("continuity-join").disabled = Boolean(continuityParticipant) || !/^[A-Za-z0-9_-]{22}$/.test(continuityRoomId ?? "");
-  byId("continuity-approve").disabled = continuityRole !== "A" || !continuityJoinRequest || continuityProgress.handoff;
-  byId("continuity-accept").disabled = continuityRole !== "B" || !continuityProposal || continuityProgress.handoff;
+  byId("continuity-approve").disabled = continuityRole !== "A" || !continuityJoinRequest || !continuityFileHandoffRequest || continuityProgress.handoff;
+  byId("continuity-accept").disabled = continuityRole !== "B" || !continuityProposal || !continuityFileProposal || continuityProgress.handoff;
   const continueButton = byId("continuity-continue");
-  continueButton.disabled = continuityRole !== "B" || !continuityProgress.handoff || !continuityProgress.offline || continuityProgress.continue;
+  continueButton.disabled = continuityRole !== "B" || !continuityProgress.handoff || !continuityFileProgress.handoff || !continuityProgress.offline || continuityProgress.continue;
   continueButton.className = continueButton.disabled ? "button" : "button primary";
   byId("continuity-remove-a").disabled = continuityRole !== "A" || !continuityProgress.handoff || continuityProgress.offline;
   byId("continuity-join-panel").hidden = !continuityJoinUrl;
@@ -303,10 +425,74 @@ function relayControlBytes(kind, content) {
   return canonicalBytes(createRelayControlMessage(kind, content));
 }
 
+async function waitForFileHandoffRequest() {
+  const received = await p2pPlacement.waitArtifact(
+    "continuity-handoff-request",
+    fileRequestId("file-handoff-request"),
+    600_000
+  );
+  continuityFileHandoffRequest = received.payload;
+  continuityFileProgress.transferred = true;
+  renderContinuity(t("continuityFileRequestObserved"), "busy");
+}
+
+async function waitForFileHandoffProposal() {
+  const received = await p2pPlacement.waitArtifact(
+    "continuity-handoff-proposal",
+    fileRequestId("file-handoff-proposal"),
+    600_000
+  );
+  continuityFileProposal = received.payload;
+  renderContinuity(t("continuityFileProposalObserved"), "busy");
+}
+
+async function completeFileOffer(answerSignal) {
+  if (continuityP2pReady) return;
+  await p2pPlacement.completeAnswer(answerSignal);
+  continuityP2pReady = true;
+  await p2pPlacement.publishResource(
+    encodeCanonicalDocument(continuityFileMaterial),
+    fileRequestId("file-material")
+  );
+  startFileTask(waitForFileHandoffRequest());
+  renderContinuity(t("continuityFileDirectReady"), "busy");
+}
+
+async function recoverTransferredFile() {
+  const received = await p2pPlacement.recoverResource(fileRequestId("file-material"), 120_000);
+  continuityFileMaterial = validateContinuityFileMaterial(
+    decodeCanonicalDocument(received.resource_base64url)
+  );
+  const inspected = productContinuity.inspect(continuityFileMaterial.capsule);
+  if (
+    inspected.resource_root !== continuityFileMaterial.resource_root ||
+    inspected.resource_size !== continuityFileMaterial.resource_size ||
+    inspected.head_hash !== continuityFileMaterial.head_hash ||
+    inspected.organism_id !== continuityFileMaterial.organism_id
+  ) throw new Error("FILE_CONTINUITY_RECOVERY: initial transfer mismatch");
+  continuityFileRecovered = Object.freeze({ capsule: continuityFileMaterial.capsule });
+  continuityFileHandoffRequest = await productContinuity.handoffRequest(continuityFileMaterial.capsule);
+  await p2pPlacement.publishArtifact(
+    "continuity-handoff-request",
+    fileRequestId("file-handoff-request"),
+    encodeCanonicalDocument(continuityFileHandoffRequest)
+  );
+  continuityFileProgress.transferred = true;
+  startFileTask(waitForFileHandoffProposal());
+  renderContinuity(t("continuityFileTransferred"), "accept");
+}
+
 async function observeContinuityFrame(frame) {
   const opened = decodeRelayFrame(frame);
   if (continuityProcessed.has(opened.message_id)) return;
-  if (opened.control?.kind === "join-request" && continuityRole === "A") {
+  const artifact = continuityArtifact(opened);
+  if (
+    artifact?.artifact_kind === "webrtc-answer" &&
+    artifact.request_id === fileRequestId("webrtc") &&
+    continuityRole === "A"
+  ) {
+    await completeFileOffer(artifact.payload.signal);
+  } else if (opened.control?.kind === "join-request" && continuityRole === "A") {
     if (opened.control.content.organism_id !== continuityParticipant?.publicState.organism_id) return;
     continuityJoinRequest = opened.control.content;
     continuityProgress.join = true;
@@ -355,16 +541,49 @@ function startContinuitySubscription(startAfter = 0) {
   }
 }
 
+byId("continuity-file").addEventListener("change", (event) => {
+  const [file] = event.currentTarget.files ?? [];
+  if (!file) {
+    continuityFile = null;
+    continuityFileProgress.selected = false;
+  } else if (file.size < 1 || file.size > FILE_MAX_BYTES) {
+    event.currentTarget.value = "";
+    continuityFile = null;
+    continuityFileProgress.selected = false;
+    renderContinuityFailure(new Error("FILE_CONTINUITY_SIZE: select 1 to 131072 bytes"));
+    return;
+  } else {
+    continuityFile = file;
+    continuityFileProgress.selected = true;
+    renderContinuity(t("continuityFileSelected"), "accept");
+  }
+  renderContinuity();
+});
+
 byId("continuity-create").addEventListener("click", async () => {
   const button = byId("continuity-create");
   buttonBusy(button, true, t("continuityCreating"));
   try {
+    if (!continuityFile) throw new Error("FILE_CONTINUITY_FILE: select a bounded file first");
     continuityRoomId = createRoomId();
+    await productContinuity.initialize();
+    continuityFileMaterial = materializeContinuityFile(
+      await productContinuity.createFromFile(continuityFile),
+      continuityFile
+    );
+    await p2pPlacement.initialize("consumer");
+    const directOffer = await p2pPlacement.startOffer(continuityEndpointId);
     continuityParticipant = new LiveEndpointParticipant(continuityEndpointId);
     const genesis = await continuityParticipant.create();
     continuityTransport = new HttpRelayTransport({ endpointId: continuityEndpointId, roomId: continuityRoomId });
     const published = await continuityTransport.publish(relayRecordBytes(genesis));
     continuityProcessed.add(published.frame.message_id);
+    const offered = await continuityTransport.publish(continuityArtifactBytes(
+      "webrtc-offer",
+      fileRequestId("webrtc"),
+      { format: "mortalos-webrtc-relay-signal/1", signal: directOffer }
+    ));
+    continuityProcessed.add(offered.frame.message_id);
     await continuityTransport.touchPresence();
     startContinuitySubscription();
     const join = new URL(currentLocale === "ko" ? "/ko/" : "/", globalThis.location.origin);
@@ -388,13 +607,31 @@ byId("continuity-join").addEventListener("click", async () => {
   try {
     continuityTransport = new HttpRelayTransport({ endpointId: continuityEndpointId, roomId: continuityRoomId });
     const frames = await continuityTransport.fetchRange(0);
-    const genesisFrame = frames.map(decodeRelayFrame).find((opened) => opened.record?.envelope?.kind === "mortalos.genesis");
+    const openedFrames = frames.map(decodeRelayFrame);
+    const genesisFrame = openedFrames.find((opened) => opened.record?.envelope?.kind === "mortalos.genesis");
     if (!genesisFrame) throw new Error("room has no canonical Genesis evidence");
+    const offerArtifact = openedFrames.map(continuityArtifact).find((artifact) =>
+      artifact?.artifact_kind === "webrtc-offer" && artifact.request_id === fileRequestId("webrtc"));
+    if (!offerArtifact || offerArtifact.payload.format !== "mortalos-webrtc-relay-signal/1") {
+      throw new Error("FILE_CONTINUITY_SIGNAL: bounded WebRTC offer unavailable");
+    }
+    await productContinuity.initialize();
+    await p2pPlacement.initialize("provider");
+    const directAnswer = await p2pPlacement.acceptOffer(continuityEndpointId, offerArtifact.payload.signal);
     continuityParticipant = new LiveEndpointParticipant(continuityEndpointId);
     continuityJoinRequest = await continuityParticipant.join(genesisFrame.record);
     continuityProcessed.add(genesisFrame.message_id);
     const published = await continuityTransport.publish(relayControlBytes("join-request", continuityJoinRequest));
     continuityProcessed.add(published.frame.message_id);
+    const answered = await continuityTransport.publish(continuityArtifactBytes(
+      "webrtc-answer",
+      fileRequestId("webrtc"),
+      { format: "mortalos-webrtc-relay-signal/1", signal: directAnswer }
+    ));
+    continuityProcessed.add(answered.frame.message_id);
+    await p2pPlacement.ready();
+    continuityP2pReady = true;
+    await recoverTransferredFile();
     await continuityTransport.touchPresence();
     startContinuitySubscription();
     continuityProgress.create = true;
@@ -410,6 +647,15 @@ byId("continuity-join").addEventListener("click", async () => {
 
 byId("continuity-approve").addEventListener("click", async () => {
   try {
+    continuityFileProposal = await productContinuity.handoffPropose(
+      continuityFileMaterial.capsule,
+      continuityFileHandoffRequest
+    );
+    await p2pPlacement.publishArtifact(
+      "continuity-handoff-proposal",
+      fileRequestId("file-handoff-proposal"),
+      encodeCanonicalDocument(continuityFileProposal)
+    );
     continuityProposal = await continuityParticipant.proposeHandoff(continuityJoinRequest);
     const published = await continuityTransport.publish(relayControlBytes("handoff-proposal", continuityProposal));
     continuityProcessed.add(published.frame.message_id);
@@ -421,6 +667,16 @@ byId("continuity-approve").addEventListener("click", async () => {
 
 byId("continuity-accept").addEventListener("click", async () => {
   try {
+    continuityFileAccepted = await productContinuity.handoffAccept(
+      continuityFileRecovered.capsule,
+      continuityFileProposal
+    );
+    if (
+      continuityFileAccepted.organism_id !== continuityFileMaterial.organism_id ||
+      continuityFileAccepted.resource_root !== continuityFileMaterial.resource_root ||
+      continuityFileAccepted.sequence !== "2"
+    ) throw new Error("FILE_CONTINUITY_HANDOFF: accepted material mismatch");
+    continuityFileProgress.handoff = true;
     const evidence = await continuityParticipant.acceptHandoff(continuityProposal);
     const published = await continuityTransport.publish(relayRecordBytes(evidence));
     continuityProcessed.add(published.frame.message_id);
@@ -433,6 +689,9 @@ byId("continuity-accept").addEventListener("click", async () => {
 
 byId("continuity-remove-a").addEventListener("click", () => {
   continuityParticipant.removeAuthority();
+  productContinuity.terminate();
+  p2pPlacement.destroy();
+  continuityP2pReady = false;
   continuityTransport.close();
   continuityTransport = null;
   if (continuityPresenceTimer) clearInterval(continuityPresenceTimer);
@@ -443,6 +702,42 @@ byId("continuity-remove-a").addEventListener("click", () => {
 
 byId("continuity-continue").addEventListener("click", async () => {
   try {
+    const corruptCopies = [...continuityFileAccepted.copies];
+    const corrupt = decodeBase64Url(corruptCopies[0]);
+    corrupt[Math.min(11, corrupt.byteLength - 1)] ^= 1;
+    corruptCopies[0] = encodeBase64Url(corrupt);
+    const recovered = productContinuity.recover(
+      corruptCopies,
+      continuityFileAccepted.head_hash,
+      continuityFileAccepted.organism_id
+    );
+    if (
+      recovered.valid_copies !== 2 || recovered.rejected_copies.length !== 1 ||
+      recovered.resource_root !== continuityFileMaterial.resource_root
+    ) throw new Error("FILE_CONTINUITY_QUORUM: corrupt-copy falsification failed");
+    const continued = await productContinuity.continue(
+      recovered.capsule,
+      recovered.head_hash,
+      recovered.resource
+    );
+    if (
+      continued.sequence !== "3" ||
+      continued.organism_id !== continuityFileMaterial.organism_id ||
+      continued.resource_root !== continuityFileMaterial.resource_root
+    ) throw new Error("FILE_CONTINUITY_CONTINUE: successor mismatch");
+    const recoveredBytes = decodeBase64Url(recovered.resource);
+    if (continuityFileDownloadUrl) URL.revokeObjectURL(continuityFileDownloadUrl);
+    continuityFileDownloadUrl = URL.createObjectURL(new Blob(
+      [recoveredBytes],
+      { type: continuityFileMaterial.media_type }
+    ));
+    const download = byId("continuity-download");
+    download.href = continuityFileDownloadUrl;
+    download.download = continuityFileMaterial.file_name;
+    download.hidden = false;
+    continuityFileRecovered = recovered;
+    continuityFileProgress.recovered = true;
+    continuityFileProgress.continued = true;
     const evidence = await continuityParticipant.nurture();
     const published = await continuityTransport.publish(relayRecordBytes(evidence));
     continuityProcessed.add(published.frame.message_id);
@@ -1123,6 +1418,9 @@ globalThis.addEventListener("pagehide", () => {
   durableParticipant.close();
   continuityUnsubscribe?.();
   continuityTransport?.close();
+  p2pPlacement.destroy();
+  productContinuity.terminate();
+  if (continuityFileDownloadUrl) URL.revokeObjectURL(continuityFileDownloadUrl);
   if (continuityPresenceTimer) clearInterval(continuityPresenceTimer);
 });
 globalThis.addEventListener("pageshow", (event) => {
@@ -1139,6 +1437,14 @@ globalThis.__MORTALOS_LAB__ = Object.freeze({
       export_bundle: lastBundle,
       imported_proof: importedProof,
       continuity: {
+        file: {
+          file_name: continuityFileMaterial?.file_name ?? continuityFile?.name ?? null,
+          private_material_exposed: false,
+          progress: { ...continuityFileProgress },
+          resource_root: continuityFileMaterial?.resource_root ?? null,
+          resource_size: continuityFileMaterial?.resource_size ?? continuityFile?.size ?? 0,
+          transport: p2pPlacement.snapshot()
+        },
         participant: continuityParticipant?.publicState ?? null,
         presence: [...continuityPresence],
         progress: { ...continuityProgress },

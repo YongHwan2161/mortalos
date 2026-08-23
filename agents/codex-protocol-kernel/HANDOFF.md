@@ -5,9 +5,45 @@ not active locks.
 
 ## Active intent
 
-Status: **TLS-CHANNEL-BOUND ROLE-KEY POSSESSION AND CRASH-RECOVERABLE COMPLETE PUBLIC-CHAIN REPLAY; PREDECESSOR COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN PENDING; EXACT-SHA EXTERNAL; SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
+Status: **VISIBLE EN/KO REAL-FILE CONTINUITY SOURCE/RUNTIME/TEST PASS; EXACT-SHA REVIEW/CI AND EXTERNAL MULTI-HOST PROMOTION REMAIN HOLD**
 
-### RELEASE INTENT — branch-active, main-historical
+### ACTIVE INTENT — visible real-file continuity journey
+
+- Branch: `agent/codex-protocol-kernel--visible-file-continuity-journey`
+- Base: `9fedd6ce733fad9b5eae61490667adef1193ab18` (`origin/main` after fresh fetch)
+- Worktree: `work/mortalos-worktrees/codex-protocol-kernel--visible-file-continuity-journey`
+- Shared paths declared for this task: `README.md`,
+  `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/MEMORY.md`,
+  `agents/codex-protocol-kernel/WORKLOG.md`, `docs/CLAIM_MATRIX.md`,
+  `docs/IMPLEMENTATION_PLAN.md`, `lab/app.mjs`, `lab/index.html`,
+  `lab/i18n/en.mjs`, `lab/i18n/ko.mjs`, `lab/p2p-placement.mjs`,
+  `lab/styles.css`, `package.json`, `src/transport/protocol.mjs`,
+  `test/webrtc-transport.test.mjs`,
+  `scripts/verify-lab.mjs`, `scripts/verify-persistent-handoff.mjs`,
+  `scripts/verify-security-boundaries.mjs`,
+  `scripts/verify-ux.mjs`, and a focused new browser
+  verifier under `scripts/`.
+- Goal: expose the already implemented real-file Continuity Capsule flow as one
+  visible Browser A to Browser B journey: bounded native file selection, distinct
+  non-extractable endpoint keys, exact custody handoff, A authority destruction,
+  2-of-3 recovery with one corrupt copy rejected, byte-exact download, and one
+  successor transition from B.
+- Claim boundary: this is a product/UX and browser-evidence composition. It does not
+  promote independent host, network, administrator, provider, arbitrary-NAT,
+  global-availability, or XSS-resistant signer claims. The separately administered
+  multi-host run remains the next external P0.
+- Local evidence: focused Chromium passes at 6,016 and 131,072 exact bytes with no
+  plaintext, full base64url, or encoded-prefix file bytes in captured HTTP POST
+  bodies; B rejects one corrupt copy, recovers exact 2-of-3 bytes, downloads them,
+  and commits product sequence 3. Integrated UX passes stable EN/KO success, stall,
+  and fork states under 90 seconds. Persistent profiles pass 20/20 A→B handoffs with
+  measured relay cadence 38 operations/12s and zero local 429s. Continuity `10/10`,
+  WebRTC `15/15`, multi-browser `7/7` plus quorum, Lab `23/23`, security `26/26`,
+  spec, links, build, i18n, and persistent handoff gates pass. The full ordered P2P
+  suite and exact-head governance have not yet run on the final commit.
+
+### HISTORICAL — PR #59 release intent
 
 On a task branch this declaration is active. On `main` it is historical; exact-SHA
 governance and deployment status comes from the PR, required checks, merge record,

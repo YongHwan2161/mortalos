@@ -40,7 +40,7 @@
           </div>
           <span id="continuity-status" class="status neutral" role="status" aria-live="polite" data-state="idle">Ready to create in Browser A</span>
         </div>
-        <p class="section-copy">Browser B creates its own non-extractable key. Browser A authorizes one canonical custody handoff; no private key crosses the relay.</p>
+        <p class="section-copy">Choose a real file in Browser A. Its file-bearing Capsule crosses only a direct WebRTC data channel; the relay carries public evidence and connection signals, never the file. Browser B creates recovery copies only after accepting custody.</p>
 
         <div class="continuity-layout">
           <article class="continuity-life-card" aria-label="Cross-browser Life Card">
@@ -50,12 +50,24 @@
               <strong id="continuity-identity">No organism yet</strong>
               <p id="continuity-stage">Create one state-bearing organism to generate a private 128-bit room link.</p>
             </div>
+            <div class="continuity-file-card">
+              <label id="continuity-file-label" for="continuity-file">Choose a file (maximum 128 KiB)
+                <input id="continuity-file" type="file">
+              </label>
+              <div>
+                <strong id="continuity-file-name">No file selected</strong>
+                <p id="continuity-file-proof">File bytes have not entered any transport.</p>
+              </div>
+              <a id="continuity-download" class="button" download hidden>Download recovered bytes</a>
+            </div>
             <dl class="continuity-metrics">
               <div><dt>Sequence</dt><dd id="continuity-sequence">—</dd></div>
               <div><dt>State</dt><dd id="continuity-state">Pulse count 0</dd></div>
               <div><dt>Quorum</dt><dd id="continuity-quorum">1 of 1</dd></div>
               <div><dt>Custody</dt><dd id="continuity-custody">Not assigned</dd></div>
               <div><dt>Endpoint health</dt><dd id="continuity-health">A ready · B absent</dd></div>
+              <div><dt>File integrity</dt><dd id="continuity-file-integrity">Awaiting selection</dd></div>
+              <div><dt>Byte path</dt><dd id="continuity-byte-path">Local only</dd></div>
             </dl>
           </article>
 
@@ -101,7 +113,7 @@
           <summary>Technical error code</summary>
           <code id="continuity-error-code">—</code>
         </details>
-        <p class="warning"><strong>Authority boundary:</strong> The relay stores and forwards public canonical messages. Each browser verifies locally; relay sequence and presence are never a validity verdict.</p>
+        <p class="warning"><strong>Authority boundary:</strong> The relay stores and forwards public canonical messages and WebRTC connection signals, but not file bytes. Each browser verifies locally; relay sequence and presence are never a validity verdict. This demo proves two browser contexts, not independent hosts or arbitrary-NAT reachability.</p>
       </section>
 
       <details class="proof-boundary">
@@ -109,7 +121,7 @@
         <div class="boundary-grid">
           <article>
             <h3>It proves</h3>
-            <p>Two separate browser contexts use different non-extractable keys to authorize one canonical handoff. After A closes, B advances the same identity and deterministic state.</p>
+            <p>Two separate browser contexts use different non-extractable keys to authorize one canonical handoff. A real selected file moves directly, one corrupt recovery copy is rejected, and after A closes B downloads the exact bytes and advances the same identity.</p>
           </article>
           <article>
             <h3>It does not prove</h3>

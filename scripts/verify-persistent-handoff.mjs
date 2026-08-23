@@ -49,6 +49,11 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, relayMetr
     attachFailureCapture(pageB, `run-${run}-B`, errors);
     const route = locale === "ko" ? "/ko/#continuity-proof" : "/#continuity-proof";
     await pageA.goto(new URL(route, serverUrl).href, { waitUntil: "networkidle" });
+    await pageA.locator("#continuity-file").setInputFiles({
+      buffer: Buffer.from(`MortalOS persistent handoff ${run}\n`.repeat(16)),
+      mimeType: "text/plain",
+      name: `persistent-handoff-${run}.txt`
+    });
     await pageA.click("#continuity-create");
     await pageA.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.create);
     const origin = await pageA.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);

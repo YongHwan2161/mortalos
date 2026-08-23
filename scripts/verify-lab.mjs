@@ -843,6 +843,11 @@ async function runTwoBrowserContinuityProof(browser, serverUrl, locale) {
   try {
     const route = locale === "ko" ? "/ko/#continuity-proof" : "/#continuity-proof";
     await pageA.goto(new URL(route, serverUrl).href, { waitUntil: "networkidle" });
+    await pageA.locator("#continuity-file").setInputFiles({
+      buffer: Buffer.from("MortalOS Lab visible file proof\n".repeat(256)),
+      mimeType: "text/plain",
+      name: "lab-continuity-proof.txt"
+    });
     await pageA.click("#continuity-create");
     await pageA.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.create);
     const origin = await pageA.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);

@@ -945,6 +945,22 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   authority, or external mutation occurred. Full-suite, exact-SHA governance, and the
   real separately administered multi-host pilot remain HOLD.
 
+## 2026-08-24 visible real-file continuity journey candidate
+
+- The default EN/KO Lab journey now composes the existing participant handoff,
+  product Continuity Capsule, HTTP relay, and manual WebRTC transport. HTTP carries
+  only public canonical evidence and bounded offer/answer signals; the file-bearing
+  Capsule crosses the ordered direct DataChannel.
+- B accepts custody, creates three signed recovery copies locally, rejects one
+  deliberately corrupt copy, reconstructs exact bytes from 2-of-3, exposes a real
+  download, and commits product sequence 3 after A authority and transport close.
+- Focused Chromium passes at 6,016 bytes and the exact 131,072-byte UI ceiling with
+  neither plaintext nor base64url file bytes observed in HTTP POST bodies. Integrated
+  EN/KO UX, visual stability, under-90-second path, and premature-A-loss read-only
+  stall pass locally. Persistent browser profiles also pass 20/20 A→B handoffs at
+  38 admitted relay operations/12s and zero local 429s. These are candidate source/runtime/test facts, not exact-SHA
+  promotion, independent-host, administrator, network, or arbitrary-NAT evidence.
+
 ## Memory maintenance
 
 - Store merged facts or explicitly labeled candidate evidence only.

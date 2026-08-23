@@ -802,8 +802,9 @@ Strict pass criteria:
   fails closed;
 - no internal `src/` authority module is imported by the product surface; public
   SDK boundaries are used throughout;
-- the programmatic Lab harness completes without a model call. A visible EN/KO
-  product journey and ten-run UX timing remain P1, not a hidden P0 claim.
+- the programmatic Lab harness completes without a model call. The visible EN/KO
+  product journey is now implemented and separately browser-verified; multi-host
+  topology remains an external gate rather than an inferred browser claim.
 
 ### Completed P0 — Complete the public package surface
 
@@ -818,7 +819,7 @@ then immutable review, App attestation, native approval, expected-head merge, an
 exact-main Verify/Deploy completed. Public package-registry publication remains a
 separate unclaimed distribution step.
 
-### P1 — Make the Lab a product demonstration
+### Completed P1 in source/runtime/test — Make the Lab a product demonstration
 
 - reduce the default journey to **Create resource → Move custody → Recover and
   continue**;
@@ -829,6 +830,13 @@ separate unclaimed distribution step.
 Pass when a first-time user can complete the flow from visible instructions alone,
 and automated accessibility, mobile layout, two-profile Chromium, and failure-path
 tests remain green.
+
+Current evidence: the focused Chromium verifier passes both 6,016 bytes and the
+131,072-byte UI ceiling with no plaintext or base64url file bytes in HTTP relay
+requests, exact post-handoff download, one corrupt copy rejected, 2-of-3 recovery,
+and sequence 3. The integrated EN/KO UX gate passes stable states, an under-90-second
+two-browser path, and honest read-only stall when A disappears before handoff.
+Exact-SHA review/CI and independent multi-host operation remain separate gates.
 
 ### P1 — Promote only the integrated result
 
