@@ -1,6 +1,6 @@
 # Lineage-governed placement admission and logical failure domains
 
-Status: **PUBLIC-CHAIN PILOT RECEIPT COMPLETE-SUITE PASS; EXACT-SHA GATES EXTERNAL**
+Status: **PUBLIC-CHAIN PILOT RECEIPT PREDECESSOR COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN PENDING; EXACT-SHA GATES EXTERNAL**
 
 Last synchronized: **2026-08-22 KST**
 
@@ -347,9 +347,11 @@ test's same-PC administrators or physical domains are independent.
   `70/70` through final `verify:s4`. One same-source ordered run on this delta passed
   every preceding stage and emitted P2P tests through `51` without a failure, but its
   final PTY output/exit receipt was lost after the last worker exited. It is therefore
-  retained as historical incomplete evidence. A later receipt-complete current-source
-  run passed all 48 configured stages and `458/458` TAP tests through final `verify:s4`
-  with zero failures, cancellations, or skips.
+  retained as historical incomplete evidence. A later receipt-complete predecessor run
+  at `4b0ff0d290626318f68e4479d4b35d586a936822` passed all 48 configured stages and
+  `458/458` TAP tests through final `verify:s4` with zero failures, cancellations, or
+  skips. The current repair-hardening successor passes focused executor `1/1`; its
+  complete-suite rerun remains pending.
 - The exact multi-action late-response case passes `1/1` in `166,487.7185ms`.
 - The exact A-to-B lineage case, including missing/duplicate sidecar rejection and
   current/historical Capsule binding, passes `1/1` in `534,301.6707ms`.

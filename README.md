@@ -304,8 +304,10 @@ regressions pass `7/7` in `10,071.95ms`; those two concurrently run receipts cov
 `11/11`. One same-source ordered run passed all
 preceding stages and emitted P2P tests through `51` without a failure, but its final
 PTY output/exit receipt was lost after worker exit and remains historical incomplete
-evidence. A later receipt-complete current-source run passed all 48 configured stages,
-`458/458` TAP tests, and final `verify:s4` with zero failures, cancellations, or skips.
+evidence. A later receipt-complete predecessor run at `4b0ff0d290626318f68e4479d4b35d586a936822`
+passed all 48 configured stages, `458/458` TAP tests, and final `verify:s4` with zero
+failures, cancellations, or skips. The current repair-hardening successor passes its
+focused executor regression `1/1`; its complete-suite rerun remains pending.
 This removes raw disjoint
 **unadmitted** rosters and same-roster
 multi-plan selection in the conforming flow. It does not make locally supplied times or
@@ -317,8 +319,9 @@ signers on one PC; explicit proxy `/1` compatibility is tested separately. Real
 separately administered vantage operation is the next gate.
 
 Current status is **TLS-CHANNEL-BOUND, CRASH-RECOVERABLE, ROLE-KEY-ATTESTED,
-COORDINATOR-NON-AUTHORITY, ALL-ROLE-KEYS-RATIFIED PUBLIC-CHAIN PILOT COMPLETE-SUITE
-PASS; EXACT-SHA GATES EXTERNAL; SEPARATELY
+COORDINATOR-NON-AUTHORITY, ALL-ROLE-KEYS-RATIFIED PUBLIC-CHAIN PILOT; PREDECESSOR
+COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN
+PENDING; EXACT-SHA GATES EXTERNAL; SEPARATELY
 ADMINISTERED MULTI-HOST OPERATION NEXT**.
 The production evidence-session corpus runs `10,000` deterministic schedules with
 eight response/certificate/order/partition/disconnect/restart events each. Node and a

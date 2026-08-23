@@ -5,7 +5,7 @@ not active locks.
 
 ## Active intent
 
-Status: **TLS-CHANNEL-BOUND ROLE-KEY POSSESSION AND CRASH-RECOVERABLE COMPLETE PUBLIC-CHAIN REPLAY COMPLETE-SUITE PASS; EXACT-SHA EXTERNAL; SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
+Status: **TLS-CHANNEL-BOUND ROLE-KEY POSSESSION AND CRASH-RECOVERABLE COMPLETE PUBLIC-CHAIN REPLAY; PREDECESSOR COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN PENDING; EXACT-SHA EXTERNAL; SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
 
 ### RELEASE INTENT — branch-active, main-historical
 
@@ -329,8 +329,8 @@ post-merge workflows, and deployed asset manifest.
   remains `1,200,000ms`. The unchanged executor and `10,000 × 8` schedule corpora then
   pass serially `2/2` in `2,178,485.7704ms` (`1,345,547.9513ms` and
   `832,008.0928ms`) with zero failures, cancellations, or skips. Those unchanged
-  corpora were subsequently included in the receipt-complete 48-stage `458/458` run
-  recorded in the current status section below.
+  corpora were subsequently included in the receipt-complete 48-stage `458/458`
+  predecessor run recorded in the current status section below.
 - Remaining next P0 is preparing separately custodied observer identities at their
   respective hosts, collecting only their public files, publishing one exact plan,
   collecting every ceremony-scoped acceptance, activating that one plan, and binding it
@@ -701,6 +701,16 @@ post-merge workflows, and deployed asset manifest.
   `7a666332d2453ad95cf895bc035baae66040b97f7d866dc8e7332a08bc319022`.
   The subsequent status synchronization is documentation-only and requires separate
   static gates; exact-SHA CI/review remains external.
+- Independent review of PR-head `4b0ff0d290626318f68e4479d4b35d586a936822`
+  found a single-effect completion-slot bypass: a canonical self-rehashed ignored field
+  changed `result_id`, the completion slot, and the Continuity idempotency key. Dynamic
+  reproduction observed provider calls `1`, Continuity calls `2`, both `committed`, for
+  the same successor generation. The unpublished repair-hardening successor requires
+  exact outer/encoded-placement schemas plus canonical round-trip and keys the slot to
+  immutable repair/prior-commit/manifest/successor-generation identity while retaining
+  `result_id` in candidate content. Its exact focused executor test passes `1/1` in
+  `1,272,562.4408ms`; security passes `26/26`, `22` direct / `145` discovered; complete
+  suite and fresh immutable review remain pending before any push or PR update.
 - Objective global hidden-artifact discovery, copied-key/separate-journal resistance,
   `coordinator_execution_binding`, exact-SHA CI/review, and administrator/account/host/
   network/physical independence remain external. The
