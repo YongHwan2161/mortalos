@@ -28,6 +28,7 @@ export {
   createResourceBandwidthExecutionResult,
   createResourceComputeExecutionResult,
   createResourceContentCommitment,
+  createResourceStoragePossessionProof,
   createResourceStorageExecutionResult,
   evaluateResourceExecutionContract,
   finalizeResourceExecutionChallenge,
@@ -35,6 +36,7 @@ export {
   prepareResourceExecutionChallenge,
   prepareResourceExecutionReceipt,
   verifyResourceExecutionChallenge,
-  verifyResourceExecutionReceipt
+  verifyResourceExecutionReceipt,
+  verifyResourceStoragePossessionProof
 } from "../src/resource-execution.mjs";
 export { derivePeerId } from "../src/crypto.mjs";

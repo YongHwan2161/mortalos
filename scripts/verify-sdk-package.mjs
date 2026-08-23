@@ -81,49 +81,144 @@ try {
     "CONFIDENTIAL_PLACEMENT_JOURNAL_LIMITS",
     "LINEAGE_PLACEMENT_FORMATS",
     "LineagePlacementError",
+    "PLACEMENT_ADMISSION_FORMATS",
+    "PLACEMENT_ADMISSION_LIMITS",
     "PLACEMENT_LIVENESS_FORMATS",
     "PLACEMENT_LIVENESS_LIMITS",
+    "PLACEMENT_LIVENESS_RESPONSE_PROFILES",
+    "PlacementAdmissionError",
     "PlacementLivenessError",
     "STORAGE_PLACEMENT_STATUS",
     "StoragePlacementError",
     "convergeLineagePlacementCommits",
+    "convergePlacementMembershipEpochs",
     "createConfidentialPlacementJournal",
     "createConfidentialPlacementReproofContext",
     "createConfidentialPlacementShardSet",
     "createLineagePlacementGeneration",
+    "createPlacementAdmissionTrustRoot",
     "createPlacementFailureCertificate",
     "deriveCommittedPlacementActionPlan",
     "deriveConfidentialPlacementReproofNonce",
+    "derivePlacementObserverRoster",
+    "derivePlacementObserverRosterFromEpoch",
     "evaluateConfidentialPlacementJournal",
     "evaluateConfidentialPlacementReproof",
     "evaluateConfidentialStoragePlacements",
     "evaluatePlacementLivenessEvidence",
     "evaluateStoragePlacements",
+    "finalizeAdmittedPlacementLivenessPolicy",
+    "finalizePlacementAdmissionEvidence",
     "finalizePlacementLivenessChallenge",
     "finalizePlacementLivenessObservation",
+    "finalizePlacementLivenessPolicy",
+    "finalizePlacementLivenessPolicyChallenge",
+    "finalizePlacementLivenessPossessionResponse",
     "finalizePlacementLivenessResponse",
+    "finalizePlacementMembershipEpoch",
     "planConfidentialStorageRepair",
+    "prepareAdmittedPlacementLivenessPolicy",
+    "preparePlacementAdmissionEvidence",
     "preparePlacementLivenessChallenge",
     "preparePlacementLivenessObservation",
+    "preparePlacementLivenessPolicy",
+    "preparePlacementLivenessPolicyChallenge",
+    "preparePlacementLivenessPossessionResponse",
     "preparePlacementLivenessResponse",
+    "preparePlacementMembershipEpoch",
     "reconstructConfidentialPackage",
     "restoreConfidentialPlacementJournal",
     "restoreConfidentialPlacementReproofContext",
     "restoreLegacyConfidentialPlacementJournal",
     "restoreLineagePlacementGeneration",
+    "restorePlacementMembershipEpoch",
     "verifyLineagePlacementCommit",
+    "verifyPlacementAdmissionEvidence",
+    "verifyPlacementAdmittedLivenessPolicy",
     "verifyPlacementFailureCertificate",
     "verifyPlacementLivenessChallenge",
     "verifyPlacementLivenessObservation",
-    "verifyPlacementLivenessResponse"
+    "verifyPlacementLivenessPolicy",
+    "verifyPlacementLivenessResponse",
+    "verifyPlacementMembershipEpoch",
+    "verifyPlacementMembershipEpochHistory"
   ]);
+  const admissionOutput = run(process.execPath, [
+    "--input-type=module",
+    "--eval",
+    `import { generateKeyPairSync, sign } from "node:crypto";
+     import { derivePeerId } from "@mortal-os/core/resource-contract";
+     import {
+       createPlacementAdmissionTrustRoot,
+       finalizePlacementAdmissionEvidence,
+       preparePlacementAdmissionEvidence,
+       verifyPlacementAdmissionEvidence
+     } from "@mortal-os/core/placement";
+     const actor = () => {
+       const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+       const raw = publicKey.export({ type: "spki", format: "der" }).subarray(-32);
+       const public_key = "ed25519:" + Buffer.from(raw).toString("base64url");
+       return { identity: { key_id: derivePeerId(public_key), public_key }, privateKey };
+     };
+     const signature = (actor, message) =>
+       "ed25519:" + Buffer.from(sign(null, message, actor.privateKey)).toString("base64url");
+     const issuer = actor();
+     const subject = actor();
+     const root = createPlacementAdmissionTrustRoot({
+       authority_id: "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+       issuer: issuer.identity,
+       lineage_organism_id: "mortalos:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+       policy_digest: "sha256:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+       prior_trust_root_id: null,
+       scope_digest: "sha256:DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+       sequence: "1",
+       valid_from_ms: "1000",
+       valid_until_ms: "9000"
+     });
+     const prepared = preparePlacementAdmissionEvidence({
+       body: {
+         attestation_challenge_base64url: Buffer.alloc(16, 7).toString("base64url"),
+         attestation_kind: "operator-domain-membership",
+         failure_domain_id: "sha256:EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+         issued_at_ms: "1200",
+         operator_root_id: "sha256:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+         roles: ["observer"],
+         subject: subject.identity,
+         valid_from_ms: "1100",
+         valid_until_ms: "8000"
+       },
+       trust_root: root
+     });
+     const evidence = finalizePlacementAdmissionEvidence({
+       body: prepared.body,
+       issuer_signature: signature(issuer, prepared.issuer_signing_message),
+       subject_signature: signature(subject, prepared.subject_signing_message),
+       trust_root: root
+     });
+     const verified = verifyPlacementAdmissionEvidence({
+       evaluated_at_ms: "2000",
+       evidence_bytes: evidence,
+       trust_root: root
+     });
+     console.log(JSON.stringify({
+       attestation_kind: verified.body.attestation_kind,
+       status: verified.status,
+       subject_key_id: verified.body.subject.key_id
+     }));`
+  ], { cwd: temporary });
+  const admission = JSON.parse(admissionOutput.trim());
+  assert.equal(admission.attestation_kind, "operator-domain-membership");
+  assert.equal(admission.status, "verified");
+  assert.match(admission.subject_key_id, /^peer:/u);
   const resourceOutput = run(process.execPath, [
     "--input-type=module",
     "--eval",
     `import { generateKeyPairSync, sign } from "node:crypto";
      import {
        createResourceConsumptionAnnouncement,
+       createResourceContentCommitment,
        createResourceComputeExecutionResult,
+       createResourceStoragePossessionProof,
        derivePeerId,
        evaluateResourceContract,
        evaluateResourceExecutionContract,
@@ -139,7 +234,8 @@ try {
        prepareResourceLease,
        prepareResourceOffer,
        prepareResourceUsageReceipt,
-       verifyResourceConsumptionAnnouncement
+       verifyResourceConsumptionAnnouncement,
+       verifyResourceStoragePossessionProof
      } from "@mortal-os/core/resource-contract";
      const actor = () => {
        const { privateKey, publicKey } = generateKeyPairSync("ed25519");
@@ -187,6 +283,20 @@ try {
        body: leaseDraft.body,
        consumer_signature: signature(consumer, leaseDraft.consumer_signing_message),
        provider_signature: signature(provider, leaseDraft.provider_signing_message)
+     });
+     const stored = new Uint8Array(1024).fill(9);
+     const storageWorkload = createResourceContentCommitment(stored);
+     const possessionProof = createResourceStoragePossessionProof({
+       challenge_nonce: "AwMDAwMDAwMDAwMDAwMDAw",
+       lease_id: JSON.parse(new TextDecoder().decode(lease)).lease_id,
+       resource_bytes: stored,
+       workload: storageWorkload
+     });
+     verifyResourceStoragePossessionProof({
+       challenge_nonce: "AwMDAwMDAwMDAwMDAwMDAw",
+       lease_id: JSON.parse(new TextDecoder().decode(lease)).lease_id,
+       proof: possessionProof,
+       workload: storageWorkload
      });
      const announcements = witnessActors.slice(0, 3).map((witness) => {
        const witnessDraft = prepareResourceConsumptionWitness({
@@ -472,6 +582,7 @@ try {
 
   console.log("MortalOS S5 clean package install and continuity CLI: PASS");
   console.log("- public API: create/inspect/handoff/recover/continue");
+  console.log("- placement subpath: external subject + issuer dual-sign one canonical admission challenge PASS");
   console.log("- resource-contract subpath: external offer -> lease -> 3-of-4 witness gossip -> compute receipt proved PASS");
   console.log("- real external file: A handoff -> B 2-of-3 recovery -> B continuation");
 console.log("- one corrupt copy tolerated; one copy, duplicate identity, stale head, and wrong authority rejected");

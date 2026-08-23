@@ -27,6 +27,17 @@
     "responses_per_evaluation": 16,
     "witnesses_per_policy": 16
   },
+  "placement_admission": {
+    "admission_evidence_per_epoch_max": 64,
+    "attestation_challenge_bytes_max": 512,
+    "document_bytes": 262144,
+    "members_per_epoch_max": 64,
+    "membership_epochs_per_generation_max": 64,
+    "observer_roster_max": 16,
+    "trust_root_history_per_epoch_max": 64,
+    "trust_roots_per_epoch_max": 16,
+    "validity_ms_max": "31536000000"
+  },
   "placement_journal": {
     "document_bytes": 2097152,
     "epoch_nonce_bytes": 32,

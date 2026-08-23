@@ -1,8 +1,8 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL; NEXT: PROVIDER-SIGNED LEASE-BOUND LIVENESS POLICY AND EFFECT-TIME EXACTLY-ONCE EXECUTOR; THEN: LINEAGE-GOVERNED ADMISSION**
+Status: **ACTIVE IMPLEMENTATION SSOT — CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING; NEXT: SEPARATELY ADMINISTERED MULTI-HOST OPERATION**
 
-Last synchronized: **2026-08-11 KST**
+Last synchronized: **2026-08-22 KST**
 
 This is the sole current direction, stage ledger, and ordered implementation plan.
 Historical receipts remain valid only for their named commits. Historical
@@ -13,6 +13,19 @@ deployment status are exact-SHA external facts read from the PR, required checks
 merge record, post-merge workflows, and deployed manifest; this document does not
 self-promote its containing revision. No source success manufactures a stage receipt,
 global-availability claim, or physical-independence claim.
+
+Current local verification receipt: the exact 121-path pre-document-sync candidate
+completed all 48 configured `npm test` stages from
+`2026-08-22T17:27:15.2047412+09:00` through
+`2026-08-22T19:46:22.2970708+09:00`, exited `0`, and reached final `verify:s4` in
+`8,347,092ms`. Thirty TAP summaries total `458/458` with zero failures,
+cancellations, or skips; P2P Node is `72/72`. Pre-run, post-run, and fresh pre-sync
+comparison found the same 121 paths byte-stable under entries-only SHA-256
+`7a666332d2453ad95cf895bc035baae66040b97f7d866dc8e7332a08bc319022`.
+The complete log SHA-256 is
+`3f4dc9d2e88a0070727a36b7c3b1df365dcb37b3fce0c3a7b047fb520acdfa18`.
+This post-run documentation synchronization is verified separately and does not
+self-promote the uncommitted candidate to an exact-SHA release.
 
 ## 1. North Star
 
@@ -98,32 +111,73 @@ supplied Capsule already authenticates g3.
 
 This revision closes the raw-local-unavailability gap. The provider-signed offer
 fixes the witness roster while the verified lease consumer signs one exact
-lease/workload/shard/predecessor/sequence challenge and selects its bounded response
-window. A
+  lease/workload/shard/predecessor/sequence challenge that embeds the provider-signed
+  exact offer/lease-bound policy and its fixed response window. A
 3-of-4 non-response certificate contains no global deadline or clock-server fact;
 it records bounded observer-local duration claims. Raw unavailable-provider IDs no
 longer enter lineage generations. A repair plan derives only from a certificate
-committed into Continuity. When supplied by a caller, a late provider response counts
-only with its actual verified dual-signed receipt chain and a certificate/proof
-conflict halts the derived plan. The current Lab/browser harness supplies empty
+committed into Continuity. When supplied by a caller, a late provider response `/2`
+counts only after its exact challenge-bound storage Merkle sample and provider
+signature verify; a certificate/response conflict halts the derived plan. The current Lab/browser harness supplies empty
 late-response/current-placement arrays and does not implement network gossip plus
 execution-time reconciliation.
 
-The immediate root gap is **failure-precommitted liveness semantics and an
-effect-time repair executor**. The consumer currently chooses the response window
-after the lease exists, the provider cannot independently rebut with a possession
-proof that avoids consumer co-signature, and the Lab does not reconcile evidence at
-the point of effect. Even perfectly independent honest observers can therefore sign
-a truthful 1 ms non-response transcript that is unfair as provider-failure evidence.
-Admission cannot repair an underspecified assertion.
+The failure-precommitted policy/window and provider-only sampled-possession slices are implemented: provider policy `/1`
+fixes the exact offer, lease, roster digest, sequence and window before consumer
+challenge `/2`, and lineage rejects legacy `/1` repair authority. The first
+single-shard **effect-time repair executor** slice is implemented. Response `/2` binds the exact challenge,
+lease, storage workload/content root, nonce-selected leaf/path, and provider signature
+without a fresh consumer receipt. Response `/1` remains parseable pointer-only
+compatibility. The one-shard Lab path reconciles supplied current evidence at the
+point of effect. The internal Node batch scheduler now re-reads a private evidence
+session before each action and completion and commits one all-result successor;
+transport gossip remains open. Sequential provider and Continuity restart restore
+durable canonical results without invoking the underlying capabilities again, and
+no-replace claims exclude simultaneous first execution by conforming local processes.
+An unresolved claim now advances only when the outer executor verifies an exact signed
+placement or successor Capsule/commit and imports it through a capability that exposes
+no provider execution or signing method. Missing proof remains fail-closed; there is
+no timeout, takeover, or result discovery.
 
-After that semantic contract is fixed, the next root gap is **lineage-governed
-admission and failure-domain accounting with explicit trust roots**. The protocol
-proves threshold offer-rostered keys signed, but one operator can still control many
-apparently distinct keys. A backend-free network of self-created keys cannot prove
-absolute Sybil resistance. Physical meter honesty, independent credentials and
-administrators, arbitrary Internet reachability, and same-origin signer isolation
-remain separate gates.
+The next root gap has advanced to **externally operated admission and measured
+independent topology**. This revision commits custody-quorum-signed membership epochs
+to the exact Capsule lineage, verifies issuer-rooted admission evidence, deduplicates
+aliases by operator root, counts at most one selected observer per logical failure
+domain, preserves adjacent-epoch quorum intersection, and binds the compact admitted
+policy `/2` to that exact epoch sidecar. These are policy-scoped logical identities,
+not physical facts. A backend-free network of self-created roots still cannot prove
+absolute Sybil resistance. Root rotation/revocation and dual-signed subject/issuer
+challenge evidence are now implemented locally. A bounded process ceremony now keeps
+issuer and subject keys in separate processes, locks both endpoints to one exact root
+and policy, and gives the coordinator only public requests/signatures; conflicting
+same-challenge evidence rejects. Challenge `/2` explicitly binds both origin/key
+    pairs under a generated 512-byte ceiling, and each operator-facing durable service
+    locks its own advertised origin before private-key use and reproduces exact output
+    after restart. The service can terminate native TLS from bounded administrator-local
+    certificate/key files, rejects incomplete/oversized/mismatched TLS before creating
+    an absent signing authority, and explicitly reports native HTTPS versus private-HTTP
+    proxy mode without emitting secrets. Native mode now separates a possession-only
+    token from the admission bearer. A fresh-process deployment observer defaults to
+    `/2`, requires each role key to sign the exact ceremony/origin/role/key/nonce/time and
+    same-connection TLS exporter digest, and records the proof plus peer certificate/
+    public-key/exporter digests and socket addresses while fixing both independence
+verdicts to `unproven`. Captured identity/proof replay under the same certificate fails;
+identity-only `/1` is explicit legacy proxy compatibility only. Because exporter bytes
+change across connections, the combined operational CLI now publishes a no-replace
+token-free observation journal before the plan-scoped observer signature and restores
+that exact journal without network or possession tokens after a crash. Real external
+issuer administration, distinct
+devices/networks/administrators, physical meter honesty,
+arbitrary Internet reachability, and same-origin signer isolation remain separate
+gates.
+
+The observer path now has an attributable but still non-authoritative `/1` wrapper.
+A combined process completes the HTTPS probe before its durable observer key signs
+the exact observation plus declared administration, failure-domain, and vantage
+digests. Deterministic comparison requires distinct observer keys, observation IDs,
+and declared vantage IDs and reports declaration diversity without promoting it to
+topology truth. Current evidence uses two local authority files on one PC; it prepares
+the external multi-host run but does not satisfy it.
 
 ### P0 — Signed bounded participant resource contract (merged)
 
@@ -234,13 +288,15 @@ Source result: the current WebRTC remediation passes focused Node `24/24` in
   commit or delivery before cleanup, and at-most-once native close capability use are
   exercised. The prior
 `8,076.826s` runtime/test/workflow full-suite PASS predates the current WebRTC
-runtime/test/security remediation. The frozen candidate then passed full `npm test`
+runtime/test/security remediation. The merged base then passed full `npm test`
 from `2026-08-11T06:42:38.6738575+09:00` through
 `2026-08-11T09:06:30.4636057+09:00`, exit `0`, wall `8,631,790ms`
 (`143m 51.790s`), through final `verify:s4`. Covered source/runtime/test/workflow
 files remained unchanged; related workload count was zero after excluding the probe.
-Docs separately pass spec/link/diff, so this is not a whole-current-tree exact full-
-suite claim. The historical regression sends
+The lease-bound liveness-policy delta now passes uninterrupted `npm test` from
+`2026-08-21T15:08:09.9777152+09:00` through
+`2026-08-21T17:12:46.1993423+09:00`, exit `0`, wall `7,476,222ms`, through final
+`verify:s4`. The historical regression sends
 plaintext, while the composed controller
 below sends only ciphertext shards. Signaling is manual same-host ICE, availability
 is a local observation. Exact-SHA governance and deployment are external evidence;
@@ -310,9 +366,9 @@ Strict pass criteria:
   signer isolation remain HOLD until separately proven.
 
 Source result: the placement-history exact-ceiling implementation passed its focused
-Node and mixed-runtime Chromium/Lab gates. The prior `8,076.826s` complete suite is
-historical, while the current frozen runtime/test/workflow bytes pass the fresh
-`8,631,790ms` suite through final `verify:s4`; docs pass separate spec/link/diff.
+Node and mixed-runtime Chromium/Lab gates. The pre-attestation liveness-policy source epoch also
+passed uninterrupted `npm test` in `7,476,222ms` through final `verify:s4`; exact-SHA
+governance remains external.
 `test/confidential-placement.test.mjs`
 proves every 2-of-3 combination, exact-age and max+1 behavior, generation-time expiry
 and effective-revocation rejection, duplicate provider/shard rejection, and four
@@ -346,11 +402,12 @@ runtime/test/workflow candidate ran uninterrupted `npm test` starting at
 `2026-08-11 01:06:58.716+09:00`, ended at `03:21:35.542+09:00`, exited `0`, and
 completed every ordered gate through final `verify:s4` in `8,076,826ms`
 (`8,076.826s`; `134m 36.826s`). The WebRTC remediation postdates that run; its frozen
-runtime/test/workflow candidate passed from
+merged runtime/test/workflow candidate passed from
 `2026-08-11T06:42:38.6738575+09:00` to
 `2026-08-11T09:06:30.4636057+09:00`, exit `0`, in `8,631,790ms`, through final
 `verify:s4`. Covered files remained unchanged and post-run related workload count was
-zero after excluding the probe. Independently
+zero after excluding the probe. The liveness-policy delta independently passed
+uninterrupted `npm test` in `7,476,222ms` through final `verify:s4`. Independently
 in-browser journal-kernel parity and independent physical failure domains remain
 unclaimed. Docs pass separate spec/link/diff; this is not a whole-current-tree exact
 full-suite claim. Exact-head CI, review, approval, merge, deployment, and public
@@ -425,38 +482,105 @@ after a real 5,000 ms local duration gate the committed repair. The lineage laye
 rejects a consumer-invented observer roster, raw unavailable-provider input,
 certificate/late-proof conflict when the response and its current placement chain
 are supplied, challenge fork, response fork, and sibling generation fork. The
-current Lab/browser flow does not yet ingest asynchronous late proofs at execution.
+current Chromium flow exercises one selected shard. The internal Node batch path can
+ingest a late proof between actions through its private evidence capability, but an
+actual transport-backed gossip adapter remains pending.
 Historical 17-case and 4,263.6/4,304.1-second baselines and the later `7,065.8s`
 stateful-100 result all predate the current exact-ceiling source and do not transfer.
 The placement-history focused exact-ceiling gates and the `8,076.826s` uninterrupted
-suite remain historical evidence for their preceding runtime/test bytes. The current
-WebRTC-remediated runtime/test/workflow candidate passes focused Node, actual
-Chromium, and the `8,631,790ms` complete suite through final `verify:s4`; docs pass
-separate spec/link/diff. Exact-SHA CI is still the publication authority.
+suite remain historical evidence for their preceding runtime/test bytes. The merged
+WebRTC-remediated base passes focused Node, actual Chromium, and the `8,631,790ms`
+complete suite through final `verify:s4`; the pre-attestation liveness-policy source epoch also
+passes `7,476,222ms` through final `verify:s4`. Exact-SHA CI is still the publication authority.
 See
 [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).
 
-### P0 next — Failure-precommitted liveness policy and effect-time repair executor
+### P0 current — Multi-action fresh-evidence execution and one-successor completion
 
-Goal: make every repair-triggering assertion mutually pre-agreed before failure,
-independently rebuttable by the provider, and revalidated immediately before one
-exactly-once placement effect.
+Goal: revalidate the mutually pre-agreed policy/window and sampled provider response
+immediately before one placement effect, then bind its verified signed result to one
+proved successor generation through a separate durable completion slot.
 
 Strict pass criteria:
 
-- a canonical provider-signed, lease-bound `mortalos-placement-liveness-policy/1`
-  is committed before failure and binds exact offer, lease, workload, provider,
-  consumer, witness-policy digest, response window, challenge rate, outstanding
-  ceiling, provider response-proof format/path, and validity sequence range;
+- completed minimal slice: the public plan is never accepted as input; the internal
+  executor re-verifies original Capsule/generation/commit, current placements,
+  certificates/responses, replacement offer/lease, and shard bytes before one
+  provider call. A replacement-independent durable slot claim and replacement-bound
+  `effect_id` make concurrent candidates fail closed and exact retry idempotent;
+- completed minimal slice: Node covers same-effect concurrency, different replacement,
+  already-repaired, forged Capsule, late sampled response, and a child-process exit
+  after provider storage but before local result commit. Origin-cut Chromium supplies
+  a browser-signed delayed response for zero calls, then executes shard 0 once through
+  the private provider session and verifies retry performs no second provider effect;
+- completed minimal slice: the internal completion coordinator rederives the signed
+  effect result, replaces only that shard, claims a distinct prior/result/generation
+  slot, and delegates one proved successor commit to a private idempotent Continuity
+  session. Concurrent/exact retry, different candidate, forged result, late response,
+  superseded head, and commit-then-failure recovery are focused Node evidence;
+- completed focused slice: the batch scheduler requires exactly one action for every
+  committed repair intent, canonicalizes action order, preflights all effects before
+  provider calls, re-reads private current evidence before every effect and before
+  completion, reuses per-shard durable results after interruption, and commits one
+  proved zero-intent successor through one batch completion slot. Node covers two
+  failed shards, reversed/concurrent scheduling, mid-batch late proof with no later
+  provider or Continuity call, partial-provider retry, and zero duplicate calls;
+- completed focused slice: `PlacementNetworkEvidenceSession` captures a private
+  baseline/range capability, verifies strictly monotonic canonical relay frames, and
+  contributes only owned deduplicated `liveness-response` payload bytes. In the
+  two-shard batch, a response published after shard 0 through the bounded virtual
+  transport stops shard 1 and Continuity with calls `[1,0]` and `0`;
+- completed focused slice: `DurableRepairProviderSession` owns the canonical effect
+  request before suspension, persists an immutable provider-domain request/result,
+  and restores it across a child-process exit between provider and executor commits.
+  A new session returns the exact placement with `0` underlying provider calls;
+- completed focused slice: a predecessor/effect-keyed no-replace claim permits only
+  one conforming local process to invoke the provider first. A two-process release
+  race creates one side effect, while an unresolved winner claim blocks provider
+  retry after process exit. The existing executor integration remains green;
+- completed focused slice: `DurableRepairContinuitySession` persists exact Capsule/
+  generation request and returned Capsule/commit bytes, restores a completed result
+  with `0` underlying calls, and gives one process the first commit claim. The signed
+  completion integration preserves one signing operation after outer failure;
+- completed focused slice: unresolved provider and Continuity claims can import only
+  already-authoritative completion proof. The outer recovery executors rederive the
+  exact effect/successor and verify the signed placement or Capsule/commit before the
+  local recovery capability is invoked. Those capabilities expose no provider or
+  signing method, require the existing exact request and owner claim, and restore with
+  `0` duplicate external calls. Invalid proof publishes no result and missing proof
+  leaves the claim unresolved; this is not timeout, takeover, or result discovery;
+- completed focused slice: the same range adapter reads an actual origin-cut Chromium
+  DataChannel transcript. Exact duplicate publish creates no new frame, two differently
+  wrapped messages carrying the same signed response deduplicate by payload, and the
+  ordered late proof after shard 0 leaves provider calls `[1,0]` and Continuity `0`.
+  A separate mid-batch DataChannel disconnect also leaves every later call at zero;
+- completed focused slice: `10,000` deterministic schedules run eight response/
+  certificate/order/partition/disconnect/restart events through a fresh production
+  evidence session per seed. Node and a fresh process match byte-identically in
+  `733,588.2114ms`; bundled Chromium matches digest
+  `sha256:t0Guc2x3-rrM8G9q7iqYZ1nYNriIj77sgcPort-E5iM`. Verdicts cover completion,
+  liveness halt, order halt, and partition unavailability, while duplicate provider,
+  accounting, and Continuity effect counters remain zero. The ledger is anchored by
+  representative full executor/DataChannel gates and is not 10,000 external writes;
+
+- completed focused slice: canonical provider-signed, lease-bound
+  `mortalos-placement-liveness-policy/1` remains the compatibility contract, while
+  compact admitted policy `/2` additionally binds the exact membership epoch ID,
+  selection digest, evaluation instant, and prior epoch without recursively embedding
+  the epoch sidecar; both bind exact offer/lease and workload,
+  provider, consumer, witness-policy digest, exact response window, response-profile
+  marker, shard, and failure sequence; challenge `/2` binds policy bytes/ID and
+  predecessor; legacy `/1` cannot authorize lineage repair;
 - the same lease cannot acquire two valid policies: sign-once reuse is idempotent and
   conflicting policy bytes halt as equivocation;
 - every challenge binds the exact policy ID; min-1/max+1 window, wrong lease,
   provider, consumer, roster, policy, stale sequence, or rate overflow fails before
   observer signing;
-- a provider can sign an exact challenge-bound possession response without a fresh
+- completed focused slice: a provider signs an exact challenge-bound sampled-storage response without a fresh
   consumer signature; a signed receipt-ID pointer without self-contained possession
-  proof is never classified as authoritative `alive`; certificate plus valid response
-  is `contested` and performs zero repair effects;
+  proof is never classified as authoritative `alive`; response `/2` verifies the
+  nonce-selected leaf/path against the exact lease-bound workload root; certificate
+  plus valid response is `contested` and performs zero repair effects;
 - the public action plan remains `non_capability: true`; a dedicated executor owns
   the private provider/session capability and re-verifies current Capsule/head,
   generation, commit, policy, placement, certificate, and responses immediately
@@ -470,7 +594,7 @@ Strict pass criteria:
   response/certificate/order/partition/restart schedules produce byte-identical
   verdicts or halt with zero duplicate repair or accounting effects.
 
-### P0 following — Lineage-governed admission and failure-domain accounting
+### Completed focused P0 — Lineage-governed logical admission and failure-domain accounting
 
 Goal: ensure that a threshold of valid observer signatures represents policy-scoped,
 independently admitted failure domains rather than many keys controlled by one
@@ -479,28 +603,128 @@ actor, without claiming absolute Sybil resistance from self-created keys.
 Strict pass criteria:
 
 - one signed membership epoch is committed before any challenge and binds provider,
-  observer, domain weights, admission-evidence digests, explicit trust roots,
+  observers, logical domains, exact dual-signed admission evidence, explicit trust roots,
   eligibility, expiry, and the prior membership epoch;
-- observer selection is deterministic from committed membership and challenge
-  material; neither consumer nor controller can choose a favorable roster after
-  seeing failure;
+- observer selection is deterministic from committed membership; neither consumer
+  nor controller can choose a favorable roster after seeing failure;
 - joins, removals, and key rotation preserve quorum intersection across adjacent
   epochs; partitioned controllers cannot create two active memberships;
 - keys, rotations, and aliases under one admission/operator root have aggregate
-  weight one; self-asserted domain labels have independent weight zero or unknown;
-- external account, device, or hardware attestation is valid only under the exact
-  issuer key, policy, expiry, and scope committed in the epoch; a live central API
-  response never becomes validation authority;
-- real trials use distinct devices and networks first, then distinct credentials,
-  administrators, accounts, and regions; induced provider, observer, network, and
-  controller failures retain safety and recover when the declared quorum survives;
-- 10,000 stateful churn/partition/heal schedules plus fresh Node and browser
-  processes converge byte-identically or halt with no duplicate repair/billing;
+  weight one; one selected operator and one logical failure domain contribute at most
+  one roster position;
+- every admission evidence document contains a generated-bounded raw challenge and
+  exact subject/operator/domain/policy/scope/time claims; the subject and issuer sign
+  separate domains over the same evidence ID, so key control and issuer assertion are
+  independently checkable without a live API;
+- roots bind stable authority IDs, direct sequence/predecessor links, explicit
+  revocations, cumulative root/issuer-key history, and retired authorities. Skips,
+  silent removal, root/key rollback, resurrection, and same-parent forks fail closed;
+- a process-separated ceremony gives issuer and subject distinct non-extractable key
+  capabilities, locks each endpoint to the exact trust root and admission policy,
+  rederives the canonical request locally, signs once per challenge slot, and exposes
+  no private capability to the coordinator;
+- optional local-file authority custody preserves issuer/subject identities and the
+  same sign-once tuple across competing processes and restart: one conflicting race
+  has one winner, exact winner retry is byte-identical, and the loser remains rejected;
+- a role-local HTTP client constructs both of its Requests before suspension, rejects
+  redirects and remote plaintext HTTP, bounds every response stream, and receives only
+  that role's bearer value. Issuer and subject administrators publish separate
+  canonical token-free response artifacts. A network- and token-free coordinator
+  verifies both and emits the canonical immutable replay bundle; the combined client
+  remains only a compatibility path. Both signers approve a challenge digest over
+  their exact endpoint origins and key IDs, so origin metadata cannot be rewritten by
+  merely recomputing the bundle's public content hash;
+- same-parent independently valid membership siblings halt deterministically;
+  adjacent reconfiguration requires operator and domain quorum intersection;
+- the membership epoch remains a content-addressed lineage sidecar. Generation and
+  commit verification require the exact current/history sidecars, reject missing,
+  duplicate, extraneous, or mismatched epochs, and never inflate transport ceilings
+  by recursively nesting the epoch in each challenge or certificate;
 - discovery, rendezvous, Cloudflare, and `mortal-os.com` remain replaceable carriers,
   never membership or validation authority;
-- only after this admission gate passes may peer anti-entropy/discovery and then
-  public contribution UX or incentives advance; reversing the order amplifies the
-  Sybil surface.
+- focused Node, external-endpoint-runner, fresh-process, SDK, lineage, batch, and actual
+  Chromium gates pass for this logical boundary; p2p Node test-file concurrency is
+  bounded to `2` so the signed ceiling and repair corpora retain measured CPU budgets.
+  The current source/runtime/test ordered suite includes the membership-bound
+  observer-attribution and compact all-roster view and reaches final `verify:s4`;
+  post-run docs pass separate static gates while exact-SHA release gates remain
+  pending. The runner's current
+  executable evidence is loopback and does
+  not itself establish independent administration or topology.
+
+### Next P0 — Operate the ceremony under independent administration and topology
+
+- first run `scripts/prepare-placement-admission-issuer.mjs` on the issuer host to
+  create or restore its local authority and publish only the canonical public trust
+  root no-replace; transfer that public file, never the authority, to the subject.
+  Run `scripts/prepare-placement-admission-subject.mjs` on the subject host to publish
+  only its canonical public identity, then use
+  `scripts/create-placement-admission-ceremony-request.mjs` at the coordinator to bind
+  those public files, exact policy, both advertised origins, a fresh random nonce, and
+  the bounded validity interval before either service starts. Freeze all three public
+  outputs and reject output reuse;
+- deploy the implemented policy-locked signer service CLI under separately administered
+  issuer and subject credentials using that exact root. Prefer its native HTTPS mode
+  with each administrator's local certificate/private-key files; a separate private-
+  HTTP-to-HTTPS terminator remains an explicit alternative. Run
+  `scripts/run-placement-admission-ceremony-role.mjs` separately at
+  each signer with only its host-local bearer value, transfer the two token-free public
+  responses, and run `scripts/finalize-placement-admission-ceremony.mjs` without bearer
+  values or network access. Publish that exact signed endpoint-bound challenge/evidence
+  bundle for independent replay;
+- run `scripts/prepare-placement-admission-deployment-observer.mjs` at each observer
+  host to create or restore its durable local key and publish only the canonical public
+  identity no-replace; collect at least two such separately custodied public files,
+  without moving private authority files to the coordinator; publish exactly one
+  no-replace plan with
+  `scripts/create-placement-admission-deployment-plan.mjs`, and preserve its exact
+  ceremony, sorted complete roster, unique nonces, declared digests, and bounded logical
+  window before any conforming observation run;
+- return the exact plan to every listed observer host and run
+  `scripts/accept-placement-admission-deployment-plan.mjs` with its durable authority.
+  Exact retry must reproduce the same acceptance while a different plan for the same
+  ceremony/key must halt. Collect the entire roster and publish one no-replace activation
+  with `scripts/activate-placement-admission-deployment-plan.mjs`; missing, duplicate,
+  mixed-plan, invalidly signed, or substituted acceptance must reject. Then run
+  `scripts/bind-placement-admission-deployment-plan-membership.mjs` with the exact
+  current Capsule, complete locally supplied membership-epoch candidate chain, ceremony,
+  and activation. The binding must deterministically converge that candidate view, halt
+  on missing history, sibling fork, cycle, unsafe history/reconfiguration, extraneous or
+  missing current epoch, and commit the sorted candidate IDs plus selected epoch. It must
+  then require the ceremony subject evidence plus the selected epoch's entire 2–8 observer
+  membership, exact member identities and operator/failure-domain digests, pairwise
+  distinct observer roots/domains, and an epoch-contained plan window. Raw disjoint
+  outsider rosters, wrong/stale Capsule, incomplete candidate views, and reordered/
+  self-rehashed bindings must reject;
+- run `scripts/observe-and-attest-placement-admission-deployment.mjs` once for every
+  activated assigned key from separately controlled fresh verifier processes and preserve their
+  no-replace observation journal plus attestation. Each process must derive nonce, timeout, and declared digests
+  only from that current membership binding, record exact live identities, TLS peer certificate/public-key
+  digests, and socket addresses, and sign the exact activation plus observation. The
+  deterministic view must include the whole roster and reject missing/substituted
+  epoch, membership, plan, activation, key, nonce, observation, vantage, or window.
+  Attestation `/5` reports `membership_admitted:true` for configured policy and binds the
+  exact supplied candidate-view commitment. Each durable observer must reserve one
+  plan-scoped attestation slot: an exact retry restores the journal without a new TLS
+  connection and is idempotent, while another candidate view, observation, or
+  attestation instant under that plan must halt. Any membership
+  epoch rotation must begin with a fresh ceremony and plan, complete acceptance roster,
+  activation, and binding before another observation, while the attestation remains
+  `non_authority:true` for physical/topology truth;
+  after collecting the complete roster, publish one no-replace compact manifest with
+  `scripts/create-placement-admission-deployment-attestation-view.mjs`. A separate
+  process must run `scripts/verify-placement-admission-deployment-attestation-view.mjs`
+  with that manifest and every exact observer sidecar. Offline restore must remain
+  `attestations_verified:false`; missing, substituted, extra, or reordered-against-key
+  sidecars must fail rather than becoming a partial deployment view;
+  combine it with account/credential/administrator, clock, and induced-failure evidence
+  rather than treating the non-authoritative plan/activation, signed declarations, addresses, or
+  certificate diversity as proof;
+- run the same admitted membership and liveness contract across independently
+  administered hosts, credentials, networks, and regions, then measure induced
+  provider/observer/network/controller failures;
+- only after those gates pass may weights, capacity/SLA claims, public contribution
+  UX, incentives, or anti-entropy discovery use domain diversity as a real-world fact.
 
 The governing product rule is:
 
@@ -531,10 +755,10 @@ usable and stable.
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 | Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer, exact-head CI/review/App/native approval/merge | Merged local execution claim; physical independence **HOLD** |
-| P2P placement | Direct WebRTC storage, combined 512-message/8,388,608-raw-byte transcript ceiling, outbound/inbound atomicity, idempotent native cleanup, exact receipt gating, provider loss, and new-lease repair | Focused Node `24/24`, actual Chromium literal cap-plus-one/remote-close probe, origin-cut vertical, and full `8,631,790ms` runtime/test/workflow suite through final `verify:s4` | Current runtime/test/workflow full-suite PASS plus separate docs spec/link/diff PASS; exact-SHA governance external; Internet reachability **HOLD** |
+| P2P placement | Direct WebRTC storage, combined 512-message/8,388,608-raw-byte transcript ceiling, outbound/inbound atomicity, idempotent native cleanup, exact receipt gating, provider loss, and new-lease repair | Focused Node `24/24`, actual Chromium literal cap-plus-one/remote-close probe, origin-cut vertical, and current `7,476,222ms` suite | Source/runtime/test full PASS; exact-SHA governance external; Internet reachability **HOLD** |
 | Confidential controller | S4 2-of-3 provider shards, generation-time freshness, prior-head/context-nonce journal v2, cumulative epoch chain high-waters, active `3/3` head barrier, hard-link successor CAS, and successor-authorized operational leases | `test/confidential-placement.test.mjs`, `test/confidential-journal-v2.test.mjs`, `test/confidential-controller-v2.test.mjs`, actual Chromium 98,317-byte file vertical, packed SDK import | Source implementation; exact-revision gates required. Unsigned local evidence only; hostile disk, hidden history, global consensus, custody-identity binding, and physical independence **HOLD** |
 | Lineage placement convergence | Generation/evidence/prior/repair binding, current-descriptor sign-once commit, derived plan, executor revalidation contract, fork halt | Node A→B and adversarial siblings, two fresh verifier processes, 1,000 partition/heal events, actual Chromium origin-cut A→B repair/commit | Source + local evidence; exact-SHA governance external |
-| Quorum liveness certificates | Offer-rostered sequence/predecessor challenge, consumer-selected bounded window, 3-of-4 local-duration observations, canonical failure certificate, generation binding, conditional late-proof conflict | Node threshold/fork corpus, offer-roster negative, fresh-process lineage replay, WebRTC artifact gate, actual Chromium unreachable provider plus four observer processes | Core conditional PASS; provider-agreed liveness SLA, breach/death/settlement evidence, Lab gossip/execution reconciliation, Sybil resistance, and independent failure domains **HOLD** |
+| Quorum liveness certificates | Provider-signed exact offer/lease policy `/1`, consumer policy-bound challenge `/2`, provider-only nonce-selected storage Merkle response `/2`, 3-of-4 local-duration certificate `/2`, pointer/legacy non-authority, generation binding, contested halt, one-shard effect/completion, proof-import unresolved-claim recovery, internal multi-action batch | Focused Node liveness/fresh process/lineage/SDK plus single-effect concurrency/retry/process interruption, provider/Continuity durable restart and cross-process first-execution exclusion, exact signed-result import with zero duplicate calls, two-shard fresh-evidence batch reconciliation, actual connected DataChannel late-proof/disconnect zero-call evidence, Node/fresh-process/Chromium `10,000 × 8` schedule parity, and the current source/runtime/test complete suite | Policy/window/sampled-possession, provider/Continuity restart/exclusion and proof-import recovery, internal batch, connected-WebRTC reconciliation, bounded schedule corpus, membership-bound observer attribution, and compact attestation view pass the local ordered suite. Exact-SHA external. Background gossip/discovery, full continuous custody, provider-fair SLA/breach/death/settlement, Sybil resistance, and independent failure domains **HOLD** |
 
 Stage coordination remains subordinate to this SSOT:
 

@@ -17,6 +17,7 @@ import { CUSTODY_LIMITS, verifyContinuityCopy } from "../src/custody.mjs";
 import { RESOURCE_CONTRACT_LIMITS } from "../src/resource-contract.mjs";
 import { RESOURCE_EXECUTION_LIMITS } from "../src/resource-execution.mjs";
 import { PLACEMENT_LIVENESS_LIMITS } from "../src/placement/liveness.mjs";
+import { PLACEMENT_ADMISSION_LIMITS } from "../src/placement/admission.mjs";
 
 test("canonical protocol profile is the exact generated cross-layer source", async () => {
   const source = JSON.parse(await readFile(
@@ -33,6 +34,30 @@ test("canonical protocol profile is the exact generated cross-layer source", asy
     PLACEMENT_LIVENESS_LIMITS,
     source.placement_liveness,
     "liveness document, quorum, nonce, and local-window ceilings must share one profile"
+  );
+  assert.deepEqual(
+    PLACEMENT_ADMISSION_LIMITS,
+    source.placement_admission,
+    "admission roots, epochs, membership, and roster ceilings must share one profile"
+  );
+  assert.equal(
+    source.placement_admission.observer_roster_max,
+    source.placement_liveness.witnesses_per_policy
+  );
+  assert.ok(
+    source.placement_admission.membership_epochs_per_generation_max >=
+      source.placement_liveness.certificates_per_evaluation +
+        source.placement_liveness.responses_per_evaluation,
+    "a generation must represent every distinct liveness evidence epoch reference"
+  );
+  assert.ok(
+    source.placement_admission.trust_root_history_per_epoch_max >=
+      source.placement_admission.trust_roots_per_epoch_max,
+    "retired trust-root authorities must remain representable across rotation"
+  );
+  assert.ok(
+    source.placement_admission.attestation_challenge_bytes_max >= 16,
+    "subject-control attestation challenges must have a generated bounded envelope"
   );
   assert.equal(
     source.placement_liveness.witnesses_per_policy,

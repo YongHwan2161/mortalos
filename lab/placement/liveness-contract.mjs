@@ -1,13 +1,24 @@
-import { encodeBase64Url } from "../../src/bytes.mjs";
+import { decodeBase64Url, encodeBase64Url } from "../../src/bytes.mjs";
 import { verifyResourceOffer, verifyResourceLease } from "../../src/resource-contract.mjs";
-import { verifyResourceExecutionReceipt } from "../../src/resource-execution.mjs";
+import {
+  createResourceContentCommitment,
+  createResourceStoragePossessionProof,
+  verifyResourceExecutionReceipt
+} from "../../src/resource-execution.mjs";
 import {
   createPlacementFailureCertificate,
-  finalizePlacementLivenessChallenge,
+  finalizeAdmittedPlacementLivenessPolicy,
   finalizePlacementLivenessObservation,
+  finalizePlacementLivenessPossessionResponse,
+  finalizePlacementLivenessPolicy,
+  finalizePlacementLivenessPolicyChallenge,
   finalizePlacementLivenessResponse,
-  preparePlacementLivenessChallenge,
+  PLACEMENT_LIVENESS_RESPONSE_PROFILES,
+  prepareAdmittedPlacementLivenessPolicy,
   preparePlacementLivenessObservation,
+  preparePlacementLivenessPossessionResponse,
+  preparePlacementLivenessPolicy,
+  preparePlacementLivenessPolicyChallenge,
   preparePlacementLivenessResponse
 } from "../../src/placement/liveness.mjs";
 
@@ -37,22 +48,31 @@ function placementContext(source) {
   return Object.freeze({ execution, lease, offer, record });
 }
 
-export async function createPlacementLivenessChallengeFixture({
+export async function createPlacementLivenessPolicyFixture({
   consumer,
   lineage_parent_hash,
   manifest_id,
-  nonce_seed = 91,
+  membership = null,
+  membership_evaluated_at_ms = "1500",
   observers,
   placement,
+  provider,
+  response_proof_profile = PLACEMENT_LIVENESS_RESPONSE_PROFILES.storage_merkle_sample,
   response_window_ms = "5000",
   shard_index
 }) {
-  if (!consumer?.identity || !Array.isArray(observers) || observers.length !== 4) {
-    throw new TypeError("consumer and four observer signers are required");
+  if (
+    !consumer?.identity || !provider?.identity ||
+    !Array.isArray(observers) || observers.length !== 4
+  ) {
+    throw new TypeError("consumer, provider, and four observer signers are required");
   }
   const context = placementContext(placement);
   if (consumer.identity.key_id !== context.lease.body.consumer.key_id) {
     throw new TypeError("consumer signer does not own the placement lease");
+  }
+  if (provider.identity.key_id !== context.offer.body.provider.key_id) {
+    throw new TypeError("provider signer does not own the placement offer");
   }
   const roster = [...observers].sort((left, right) =>
     left.identity.key_id < right.identity.key_id ? -1 : 1);
@@ -61,37 +81,88 @@ export async function createPlacementLivenessChallengeFixture({
     agreedPolicy.max_faulty !== 1 || agreedPolicy.threshold !== 3 ||
     JSON.stringify(roster.map(({ identity }) => identity)) !== JSON.stringify(agreedPolicy.witnesses)
   ) throw new TypeError("liveness observers must equal the provider-signed offer witness policy");
-  const draft = preparePlacementLivenessChallenge({
-    consumer: context.lease.body.consumer,
+  const policyBody = {
     failure_sequence: String(Number(context.execution.challenge.body.challenge_sequence) + 1),
-    lease_id: context.lease.lease_id,
     lineage_parent_hash,
     manifest_id,
-    nonce: nonce(nonce_seed),
-    observer_policy: {
-      max_faulty: agreedPolicy.max_faulty,
-      observers: agreedPolicy.witnesses,
-      threshold: agreedPolicy.threshold
-    },
-    previous_execution_receipt_id: context.execution.receipt_id,
-    provider: context.offer.body.provider,
+    ...(membership === null ? {} : { membership_evaluated_at_ms }),
+    response_proof_profile,
     response_window_ms,
     shard_index,
     workload_id: context.execution.body.workload_id
+  };
+  const draft = membership === null
+    ? preparePlacementLivenessPolicy({
+        offer: context.offer.bytes,
+        lease: context.lease.bytes,
+        body: policyBody
+      })
+    : prepareAdmittedPlacementLivenessPolicy({
+        body: policyBody,
+        capsule: membership.capsule_bytes,
+        lease: context.lease.bytes,
+        membership_epoch: membership.epoch_bytes,
+        offer: context.offer.bytes,
+        prior_membership_epoch: membership.prior_epoch_bytes
+      });
+  const providerSignature = await provider.sign(draft.provider_signing_message);
+  const bytes = membership === null
+    ? finalizePlacementLivenessPolicy({
+        body: draft.body,
+        lease: context.lease.bytes,
+        offer: context.offer.bytes,
+        provider_signature: providerSignature
+      })
+    : finalizeAdmittedPlacementLivenessPolicy({
+        body: draft.body,
+        capsule: membership.capsule_bytes,
+        lease: context.lease.bytes,
+        membership_epoch: membership.epoch_bytes,
+        offer: context.offer.bytes,
+        prior_membership_epoch: membership.prior_epoch_bytes,
+        provider_signature: providerSignature
+      });
+  return Object.freeze({
+    bytes,
+    context,
+    observers: Object.freeze(roster),
+    policy_id: draft.policy_id
   });
-  const bytes = finalizePlacementLivenessChallenge({
-    body: draft.body,
-    consumer_signature: await consumer.sign(draft.consumer_signing_message)
+}
+
+export async function createPlacementLivenessChallengeFixture(options) {
+  const policy = await createPlacementLivenessPolicyFixture(options);
+  const draft = preparePlacementLivenessPolicyChallenge({
+    nonce: nonce(options.nonce_seed ?? 91),
+    policy: policy.bytes,
+    previous_execution_receipt_id: policy.context.execution.receipt_id
   });
-  return Object.freeze({ bytes, context, observers: Object.freeze(roster) });
+  const bytes = finalizePlacementLivenessPolicyChallenge({
+    consumer_signature: await options.consumer.sign(draft.consumer_signing_message),
+    nonce: nonce(options.nonce_seed ?? 91),
+    policy: policy.bytes,
+    previous_execution_receipt_id: policy.context.execution.receipt_id
+  });
+  return Object.freeze({
+    bytes,
+    context: policy.context,
+    observers: policy.observers,
+    policy_bytes: policy.bytes,
+    policy_id: policy.policy_id
+  });
 }
 
 export async function createPlacementFailureCertificateFixture(options) {
   const challenge = await createPlacementLivenessChallengeFixture(options);
-  return createPlacementFailureCertificateFromChallengeFixture({
+  const certificate = await createPlacementFailureCertificateFromChallengeFixture({
     challenge_bytes: challenge.bytes,
     observers: challenge.observers,
     waited_window_ms: options.response_window_ms ?? "5000"
+  });
+  return Object.freeze({
+    ...certificate,
+    policy_bytes: challenge.policy_bytes,
+    policy_id: challenge.policy_id
   });
 }
 
@@ -131,19 +202,46 @@ export async function createPlacementFailureCertificateFromChallengeFixture({
 export async function createPlacementLivenessResponseFixture({
   challenge_bytes,
   placement,
-  provider
+  provider,
+  resource_bytes
 }) {
   if (!provider?.identity) throw new TypeError("provider signer is required");
   const context = placementContext(placement);
-  const draft = preparePlacementLivenessResponse({
-    challenge: challenge_bytes,
-    execution_receipt_id: context.execution.receipt_id,
-    provider: provider.identity
+  if (resource_bytes === undefined) {
+    const draft = preparePlacementLivenessResponse({
+      challenge: challenge_bytes,
+      execution_receipt_id: context.execution.receipt_id,
+      provider: provider.identity
+    });
+    return finalizePlacementLivenessResponse({
+      challenge: challenge_bytes,
+      execution_receipt_id: context.execution.receipt_id,
+      provider: provider.identity,
+      provider_signature: await provider.sign(draft.provider_signing_message)
+    });
+  }
+  const workload = createResourceContentCommitment(resource_bytes);
+  const challenge = JSON.parse(new TextDecoder().decode(challenge_bytes));
+  const policy = JSON.parse(new TextDecoder().decode(decodeBase64Url(
+    challenge.body.policy_base64url
+  )));
+  const proof = createResourceStoragePossessionProof({
+    challenge_nonce: challenge.body.nonce,
+    lease_id: policy.body.lease_id,
+    resource_bytes,
+    workload
   });
-  return finalizePlacementLivenessResponse({
+  const draft = preparePlacementLivenessPossessionResponse({
     challenge: challenge_bytes,
-    execution_receipt_id: context.execution.receipt_id,
+    proof,
     provider: provider.identity,
-    provider_signature: await provider.sign(draft.provider_signing_message)
+    workload
+  });
+  return finalizePlacementLivenessPossessionResponse({
+    challenge: challenge_bytes,
+    proof,
+    provider: provider.identity,
+    provider_signature: await provider.sign(draft.provider_signing_message),
+    workload
   });
 }

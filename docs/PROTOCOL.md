@@ -955,7 +955,83 @@ returns `mortalos-lineage-placement-action-plan/1` with
 deterministic, public, forgeable JSON: it is not a capability or an authority token.
 An executor MUST reverify the original
 Capsule, generation, commit, current placement evidence, and applicable liveness
-evidence before performing effects. The current Continuity descriptor's
+evidence before performing effects. The reference Lab's internal
+`mortalos-lineage-placement-repair-effect/1` descriptor binds the exact current
+commit/generation/manifest, failed policy/challenge/certificates/sequence, shard and
+workload, plus the replacement provider and lease. Its `repair_slot_id` excludes the
+replacement so a no-replace local claim admits only one candidate for the failed
+slot; its `effect_id` includes the replacement and is the mandatory provider
+idempotency key. The descriptor remains `non_capability:true`: only a separately
+held provider session can execute it. A committed result is written only after the
+provider returns a newly verified signed placement receipt. The internal durable
+provider adapter MUST bind `effect_id` as the provider-domain idempotency key, own the
+canonical effect/offer/lease/resource bytes before suspension, publish an immutable
+canonical request, and publish the canonical placement result before returning it to
+the executor. A later session using the same directory and request MUST restore that
+result before invoking the captured provider capability. Exact executor retry returns
+the same result, and a different replacement for the claimed slot fails before provider
+invocation. Same-process concurrent calls MAY coalesce on one in-flight operation.
+Before a first provider invocation, every conforming process MUST compete for one
+predecessor/effect-keyed no-replace claim carrying a fresh owner nonce and the exact
+request ID. Only the link winner may invoke the provider. A loser MAY restore an
+already published canonical result; otherwise it MUST reject without provider
+invocation. If the winner stops after the external effect but before result
+publication, the unresolved claim MUST remain fail-closed: no wall-clock timeout,
+stale-owner inference, or automatic takeover may duplicate the effect. Restoring
+availability therefore requires an already-authoritative exact result, not claim
+deletion. The internal recovery executor MAY import a completed placement only after
+it rederives the original effect and verifies the signed placement receipt against
+the exact generation, replacement provider, lease, workload, shard, and evaluation
+instant. The recovery capability MUST accept no provider execution method, MUST
+require the existing exact request and owner claim, and MUST publish only the
+matching immutable result plus a self-hashed local recovery record. Invalid proof
+MUST cause no recovery publication; absent proof leaves the claim unresolved.
+The request/result/claim directory is unsigned local evidence under conforming same-
+filesystem custody, not hostile-disk or sudden-power-loss proof. The single-effect
+primitive remains deliberately one shard per call and one
+local filesystem journal. The internal successor coordinator MUST
+rederive the same effect and canonical signed result, replace only its shard, require
+a `proved` successor with zero remaining repair intents, and claim a separate slot
+bound to prior commit, result, manifest, and next generation before calling a private
+Continuity session. Exact retry MUST return the immutable successor result without a
+new Continuity call. A different successor candidate for that slot, forged result,
+late conflicting response, or superseded placement head MUST fail before that call.
+The internal durable Continuity adapter MUST own the exact Capsule bytes, generation
+bytes, and completion-bound idempotency key before suspension, publish one immutable
+canonical request, and restore a matching immutable Capsule/commit result before
+invoking the captured Continuity capability. Before the first invocation, every
+conforming process MUST compete for one request-keyed no-replace owner claim. Only the
+winner may invoke Continuity. A loser MAY restore a completed canonical result;
+otherwise it MUST reject without a Continuity call. If the winner stops after the
+Continuity effect but before result publication, the claim MUST remain unresolved and
+fail-closed: there is no timeout, stale-owner inference, deletion, or automatic
+takeover. The adapter does not independently authorize or semantically verify the
+returned Capsule/commit; the outer repair executor MUST verify them against the exact
+generation and current lineage before publishing its successor result. These
+request/result/claim files are unsigned local evidence under conforming same-filesystem
+custody, not hostile-disk or sudden-power-loss proof. An unresolved Continuity claim
+MAY be completed only when the outer recovery executor first rederives the exact
+successor generation and verifies the supplied Capsule/commit as its proved current
+lineage result with zero remaining repair actions. The recovery capability MUST
+accept no Continuity signing method, MUST require the existing exact request and
+claim, and MUST publish only those already-verified bytes plus a self-hashed local
+recovery record. A forged or mismatched commit MUST fail before recovery publication;
+without authoritative result bytes the claim remains unresolved.
+The internal batch scheduler MAY compose two or more committed repair intents only
+when its caller supplies exactly one replacement action for every intent. It MUST
+snapshot all actions and private capabilities before suspension, preflight the exact
+intent/action set before any provider call, and obtain fresh owned current placement
+and liveness evidence before each provider effect and immediately before completion.
+Every effect MUST retain the ordinary replacement-independent slot and replacement-
+bound idempotency key. A partial run MAY leave verified provider results, but exact
+retry MUST reuse them without another provider call. A newly observed conflicting
+response MUST prevent all later provider calls and the Continuity call. Completion
+MUST replace every repaired shard in one proved successor with zero repair intents,
+and MUST use one canonical order-independent batch slot before exactly one private
+idempotent Continuity call. This is local private-capability scheduling and evidence
+reconciliation, not a background gossip service, global currentness, Continuity
+claim recovery, or global consensus.
+The current Continuity descriptor's
 quorum-authorized sign-once transition is the only normal generation-commit
 authority; no controller service,
 domain, relay, UI, or transport state participates in validity.
@@ -971,18 +1047,277 @@ broken link, or different organism MUST halt with no selected winner. This
 serializes authority. See
 [Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md).
 
+### Lineage-governed placement-admission extension
+
+`mortalos-placement-admission-evidence/1` MUST be a canonical self-contained
+attestation signed independently by both the subject key and an issuer whose exact
+trust-root document is committed by policy. The evidence MUST bind a bounded raw
+challenge, attestation kind, subject key, eligible roles, operator root, logical
+failure-domain label, scope, issuer policy, issue instant, and validity interval.
+The subject signature proves control of the admitted key for this exact challenge;
+the issuer signature records the exact operator/domain assertion. Neither proves
+that the issuer is honest or that the named domain is physically independent.
+
+Every trust root MUST bind a stable authority ID, positive sequence, and exact prior
+root ID. Genesis roots MUST have sequence 1 and no prior. A direct rotation MUST
+increment the sequence and name the immediately active predecessor. An epoch that
+removes an active root MUST explicitly revoke it. Each epoch MUST carry the cumulative
+root/issuer-key history and retired authority IDs; a revoked authority, old root ID,
+or non-immediate issuer key MUST NOT reappear. The history and active-root ceilings
+MUST come from the generated profile. A same-parent competing rotation remains a
+membership fork and MUST select no winner.
+
+An operational service claiming a policy-locked admission ceremony MUST accept only
+canonical bounded `mortalos-placement-admission-signing-request/1` bytes, rederive the
+evidence ID locally, and bind its private signer to one exact trust root, role,
+attestation kind, operator root, failure domain, and role set. The canonical
+configured-policy digest MUST equal the trust root's `policy_digest`. It MUST sign only the
+issuer or subject domain-separated message for its local identity. One
+root/subject/challenge/role slot MUST be sign-once: exact retry MAY return the same
+canonical `mortalos-placement-admission-signature/1`, while a different evidence ID
+MUST reject. Transport authentication MAY restrict endpoint access but MUST NOT become
+evidence authority; the finalized dual-signed admission document remains the portable
+verification input.
+
+A service claiming restart-safe sign-once behavior MUST persist the exact local
+identity and deterministic challenge-slot tuple before returning a signature. Two
+conforming processes sharing that authority MUST serialize conflicting messages to
+one winner; after restart, exact winner retry MUST reproduce the same canonical
+signature response and the loser MUST remain rejected. Local encrypted key files or
+files created with requested mode `0600` on supporting filesystems MAY implement that
+custody but MUST NOT be described as HSM, hostile-disk-resistant, independently
+administered, or as proving Windows/NTFS ACL enforcement without separate evidence.
+
+An operational coordinator publishing
+`mortalos-placement-admission-ceremony-bundle/1` MUST possess neither private signer
+capability. Before requesting a signature it MUST verify the public role identity and
+MUST require the admission evidence's bounded challenge to be canonical
+`mortalos-placement-admission-external-ceremony-challenge/2`. That challenge MUST fit
+the generated 512-byte ceiling and contain a 32-byte nonce, the exact issuer origin
+and key ID, the exact subject origin and key ID, and a domain-separated digest over
+that explicit binding. A conforming signer endpoint MUST be configured with its own
+canonical advertised origin and MUST reject before private-key use when the challenge's
+role-specific origin or key ID differs. Both role responses MUST name the request's
+same evidence ID and exact discovered identities. The bundle MUST contain the exact
+canonical request, both canonical signature responses, final verified admission
+evidence, trust root, evaluation instant, and endpoint origins; it MUST contain no
+bearer token or private key. Offline replay MUST rederive the challenge binding,
+verify both signatures and the finalized evidence, and verify the bundle ID.
+
+The HTTP adapter MUST deny redirects, MUST reject plaintext non-loopback origins,
+MUST bound time and streamed response bytes, and MUST construct or snapshot every
+request, URL, authorization string, and body before its first suspension. An existing
+output MUST reject before network effects, and publication MUST be no-replace. These
+rules prove exact key agreement to endpoint declarations and deterministic replay;
+they MUST NOT be described as proof of endpoint administration, DNS or certificate
+custody, independent hosts, regions, networks, or physical failure domains.
+An operator-facing signer process MAY terminate HTTPS itself using locally supplied
+bounded certificate and private-key bytes, or MAY listen on a private IP behind a TLS
+terminator. Native TLS configuration MUST be a complete pair, MUST be validated before
+creating an absent durable signing authority, and MUST require an HTTPS advertised
+origin. Its configured advertised origin remains an exact signed policy input rather
+than an inference from forwarding headers. Its bearer token MUST enter through a private
+runtime channel rather than arguments or public readiness output; canonical policy,
+root, authority state, and TLS inputs MUST remain bounded and restart-stable. Native
+TLS readiness MAY disclose only the selected transport mode, not TLS private-key or
+bearer material. Certificate custody, reverse-proxy configuration, OS ACLs, and distinct
+administration require separate operational evidence.
+
+A native-TLS signer claiming live role-key possession MUST expose a separately
+authorized bounded proof operation. Its possession token MUST differ from the admission
+bearer and grants no admission-signature route. For one canonical
+`mortalos-placement-admission-deployment-possession-challenge/1`, the service MUST derive
+32 bytes with TLS exporter label
+`EXPORTER-MortalOS-placement-admission-deployment-v1` and the exact challenge bytes as
+exporter context on that request's TLS connection. The configured role key MUST sign a
+domain-separated proof binding the ceremony bundle ID, signed endpoint origin, role,
+key ID, observer nonce, observation instant, and exporter digest. The proof body and
+authorization remain bounded; the token MUST NOT enter public readiness or evidence.
+
+A fresh deployment observer MAY publish
+`mortalos-placement-admission-deployment-observation/2` after restoring a verified
+ceremony bundle. It MUST require both signed origins to be HTTPS, contact exactly those
+origins through the observer process trust store, derive the same exporter on each exact
+proof request, require the corresponding role-key signature, and record the bounded
+proof, exporter digest, peer certificate digest, peer public-key digest, negotiated TLS
+protocol, and socket remote address. A copied public identity or previously valid proof
+served under the same certificate on a new TLS connection MUST fail.
+Because the exporter is connection-specific, a new connection for the same canonical
+challenge MUST be treated as a new observation rather than a deterministic retry. An
+operational observe-and-attest adapter MUST publish the exact bounded observation to a
+no-replace journal before invoking the observer's plan-scoped durable signer. If that
+journal already exists, recovery MUST restore and fully verify its canonical bytes,
+ceremony, role-key proofs, assigned nonce, observation instant, plan membership, and
+possession mode, and MUST use those exact bytes without endpoint access. A conflicting
+journal MUST fail before observer signing. This journal is token-free evidence, not a
+signing or admission capability.
+The artifact MUST embed the exact ceremony bundle, a 32-byte observer nonce, an
+observer-declared instant, and derived booleans for distinct origins, addresses,
+certificates, and TLS public keys. Those booleans MUST be rederived during restore.
+The historical `/1` identity-only observation remains parseable and MAY be created only
+through an explicit `legacy-identity-only` operator choice for a TLS terminator that
+cannot expose the end-to-end exporter. It MUST report `identity-only-legacy` and MUST NOT
+be treated as fresh role-key-possession evidence; absence of proof authorization MUST
+never silently downgrade `/2` to `/1`.
+
+The observation is a self-hashed local transcript, not an authority statement. It MUST
+carry `non_authority:true`, `independent_administration:"unproven"`,
+`independent_failure_domains:"unproven"`,
+`requires_fresh_live_observation:true`, and
+`tls_verification:"observer-process-trust-store"`. Restore verifies only canonical
+integrity, the embedded signed ceremony, and any recorded role-key possession
+signatures; it MUST still return that the historical network observation itself is
+unverified because the exporter cannot be recomputed offline. Different addresses,
+certificates, or valid role-key proofs MUST NOT be promoted to
+independent administration, account custody, region, network, power, or physical
+failure-domain truth. Publication MUST be no-replace, and an existing output MUST fail
+before any endpoint contact.
+
+Before observer execution, a coordinator MAY publish the non-authoritative
+`mortalos-placement-admission-deployment-plan/1`. The plan MUST bind one ceremony
+bundle ID, an issued/not-before/expires interval, one bounded HTTPS timeout, and a
+canonical two-through-eight observer roster. Every roster entry MUST bind the exact
+observer public identity, a unique 32-byte nonce, and declared administration,
+failure-domain, and vantage digests. Observer keys, nonces, and vantage digests MUST
+be distinct, the roster MUST be key-sorted, the timeout MUST fit wholly inside the
+bounded plan interval, and its content-addressed ID MUST cover the complete plan.
+The conforming operational flow MUST prepare each durable observer key at its observer
+host and export only canonical `key_id` and `public_key` bytes before plan publication;
+private observer key material MUST NOT enter the plan coordinator.
+The plan is coordination evidence rather than clock, roster, topology, or admission
+authority; its times are locally supplied logical instants.
+
+Before any conforming live observation, every planned observer MUST sign one
+`mortalos-placement-admission-deployment-plan-acceptance/1` over the exact plan ID,
+ceremony bundle ID, and observer identity. A durable observer MUST use one
+ceremony-scoped sign-once tuple: exact-plan retry MUST reproduce the same acceptance,
+while a second plan for that ceremony MUST halt as equivocation. A coordinator MUST
+construct `mortalos-placement-admission-deployment-plan-activation/1` only from the
+complete planned roster's valid acceptances. Activation MUST embed the exact plan and
+key-sorted acceptance bytes, MUST reject missing, duplicate, mixed-plan, substituted,
+or invalidly signed entries, and MUST content-address the complete artifact. Acceptance
+and activation MUST retain `non_authority:true`: they prove that the listed keys agreed
+to one exact plan, not that the roster, declarations, time, or topology are truthful.
+Before a conforming endpoint probe, a coordinator MUST create
+`mortalos-placement-admission-deployment-plan-membership/2`. It MUST embed the exact
+activation, ceremony bundle, selected custody-quorum-signed membership epoch, sorted
+unique candidate epoch IDs, and a domain-separated candidate-view commitment. Creation
+MUST own the bounded supplied candidate bytes and run membership convergence against the
+supplied current Capsule. A missing prior, valid sibling, cycle, unsafe reconfiguration,
+unsafe root history, extraneous candidate, or missing current epoch MUST halt without a
+binding. Duplicate exact candidates MAY collapse without consuming another identity in
+the commitment. The embedded selected epoch and candidate IDs MUST exactly match the
+converged result. The ceremony's exact subject evidence MUST be a member of that selected
+epoch. The plan roster MUST equal the epoch's complete two-through-eight observer
+membership: no subset or extra key is allowed. Each planned key and public key MUST match
+its admitted member, its declared administration/failure-domain digests MUST equal that
+member's operator root/failure domain, and observer operator roots and failure domains
+MUST be pairwise distinct and distinct from the ceremony subject. The plan interval MUST
+fit wholly inside the epoch validity interval. Restore alone proves the embedded selected
+epoch, canonical candidate-ID commitment, and signatures but MUST report membership and
+candidate-view currentness as false. A currentness verifier MUST receive the explicit
+Capsule plus the complete supplied candidate sidecars, rerun convergence, and require the
+same selected bytes, IDs, and view commitment. This removes raw disjoint unadmitted
+rosters and known sibling/incomplete candidate views from the conforming path. A valid
+candidate omitted from every observer's supplied inventory, dishonest configured issuer,
+or false real-world domain claim remains outside the artifact's knowledge.
+
+An observer process MAY wrap one verified observation in
+`mortalos-placement-admission-deployment-attestation/5`. The attestation MUST embed
+the exact membership-binding bytes and ID, its activation and plan IDs, membership epoch
+ID, membership candidate-view ID, exact observation bytes and ID, observer Ed25519
+identity, and an attestation instant.
+The observation ceremony,
+observer identity, nonce,
+declared digests, timeout window, and attestation interval MUST match the observer's
+membership-bound activated assignment. Its ID MUST domain-separate the complete unsigned
+content and its observer signature MUST cover that ID through a separate signing
+domain. A durable observer MUST use one sign-once tuple scoped to the accepted plan ID.
+An exact attestation retry MAY reproduce the same signature, but a different membership
+binding or candidate view, observation, or attestation instant under that plan MUST halt
+as equivocation. Because acceptance permits only one plan per ceremony/key, a membership-
+epoch change therefore requires a fresh ceremony and newly accepted plan before another
+conforming attestation. Restore MUST recompute the membership, activation, plan, observation, and
+attestation IDs, derive the observer key ID, revalidate the complete admitted assignment,
+and verify the exact signature. A combined observe-and-attest operation MUST own the
+membership artifact, current Capsule, complete supplied membership-candidate sidecars,
+and observer capability before suspension; rerun convergence and reject an incomplete,
+forked, stale, wrong, or artifact-mismatched view, ceremony, roster, or window before
+endpoint contact; use only the assigned nonce and timeout; finish the HTTPS probe; and
+publish the exact observation to its no-replace journal before invoking the captured
+observer signer. A retry under that plan MUST reuse the exact verified journal instead
+of opening another TLS connection.
+
+Neither the signature nor a distinct declared digest is topology authority. Every
+attestation, activation, and plan MUST retain `non_authority:true` for real-world topology
+and both independence verdicts as `"unproven"`; attestation `/5` MUST separately report
+`membership_admitted:true` for the configured policy scope. A deterministic view MUST
+contain the complete membership-bound plan roster, MUST use exactly one membership epoch,
+candidate-view commitment, plan, activation, and ceremony, and MUST reject a missing,
+duplicate, or substituted observer, observation, nonce, vantage, epoch, candidate view,
+membership, plan, or activation. It MAY report whether
+all declared administration and failure-domain IDs differ, but MUST NOT convert that
+comparison into proven administration, network, region, power, or physical
+independence. Offline attestation of an existing observation attributes exact bytes
+to a key; only the combined trusted-process path orders probe, no-replace observation
+journal publication, and then signature, and
+neither path proves that the supplied logical times or topology declarations are true.
+
+A coordinator MAY create
+`mortalos-placement-admission-deployment-attestation-view/1` only from the complete
+verified attestation roster described above. The manifest MUST contain the exact
+attestation count, key-sorted observer IDs, corresponding attestation, observation, and
+vantage IDs, the exact ceremony/plan/activation/membership/epoch/candidate-view IDs,
+derived distinct-declaration booleans, and the fixed non-authority verdicts. Its
+domain-separated view ID MUST cover the complete canonical manifest. It MUST NOT nest
+the attestation signature sidecars. Restore alone proves only canonical self-hash and
+MUST report `attestations_verified:false`. Explicit verification MUST receive every
+bounded attestation sidecar, rerun signature, roster, membership, and consistency
+evaluation, recreate byte-identical manifest bytes, and only then report
+`attestations_verified:true`. Missing, extra, duplicate, substituted, or reordered-
+against-key sidecars MUST fail closed. No manifest field may promote declared domain
+diversity to physical or administrative authority.
+
+`mortalos-placement-membership-epoch/1` MUST be custody-quorum signed and MUST bind
+the exact Capsule ID, lineage head, organism, custody descriptor, provider identity,
+trust roots, verified evidence set, validity instant, and prior membership epoch.
+Every verifier MUST derive the observer roster deterministically. Alias keys under
+one operator root MUST count at most once; one logical failure domain MUST contribute
+at most one selected observer; the challenged provider's root and domain MUST be
+excluded. Selection MUST use the canonical maximum matching and MUST produce the
+committed selection digest. Adjacent epochs MUST retain both operator-root and
+failure-domain quorum intersection. Two independently valid same-parent successors
+MUST halt without choosing a winner.
+
+The full epoch document is a content-addressed lineage sidecar. A placement
+generation MUST list the exact epoch sidecars referenced by its liveness evidence,
+including required prior epochs. Missing, duplicate, extraneous, noncanonical,
+Capsule-mismatched, or history-inconsistent sidecars MUST fail closed. Current
+creation MUST verify the current Capsule; commit, action derivation, reconciliation,
+and effect-time execution MUST reverify the sidecars against the authenticated
+historical Capsule descriptor for that generation. A transport artifact MUST bind
+the epoch ID and selection digest; it MUST NOT recursively embed the epoch sidecar.
+See [Lineage-governed placement admission](LINEAGE_GOVERNED_PLACEMENT_ADMISSION.md).
+
 ### Quorum-observed liveness extension
 
 Lineage generations MUST NOT accept a caller-supplied unavailable-provider list.
 A placement may be treated as unavailable for redundant continuity scheduling only
-by a verified
-`mortalos-placement-failure-certificate/1`. Its embedded consumer-signed challenge
-MUST bind the exact Continuity parent, confidential manifest, lease, workload,
-provider, shard, last execution receipt, next sequence, nonce, bounded response
-window, and observer policy. That policy MUST equal the Byzantine witness policy in
-the provider-signed offer after `witnesses`/`observers` field normalization.
-The lease consumer selects the response window inside the generated profile bound;
-the offer signature does not pre-agree that duration or establish a liveness SLA.
+by a verified `mortalos-placement-failure-certificate/2`. Its embedded
+`mortalos-placement-liveness-challenge/2` MUST contain a verified
+`mortalos-placement-liveness-policy/2`. The provider-signed admitted policy MUST
+embed and verify the exact offer and mutual lease and bind their IDs, provider and
+consumer, Continuity parent, confidential manifest, workload, shard, next failure
+sequence, exact bounded response window, response-proof profile, membership epoch
+ID, prior epoch ID, membership evaluation instant, and deterministic selection
+digest. Every repair verifier MUST resolve and verify the referenced membership
+sidecars before accepting the policy roster. Compatibility policy `/1` remains
+parseable outside repair-authoritative lineage. Repair-authoritative lineage MUST require
+`storage-merkle-sample/1`; `execution-receipt-pointer/1` is compatibility-only.
+The consumer-signed challenge MUST bind the exact policy ID and bytes,
+predecessor execution receipt, and nonce. It MUST NOT accept a caller-selected window
+override. Legacy challenge/certificate `/1` bytes MAY verify for compatibility but
+MUST NOT authorize lineage repair.
 
 Each `mortalos-placement-liveness-observation/1` MUST be signed by one distinct
 rostered observer and bind `no-response` plus the exact local response-window
@@ -993,16 +1328,30 @@ timers or independent failure domains.
 The certificate MUST NOT be interpreted as provider death, breach, lease
 termination, penalty, settlement, or invalidation of an already verified receipt.
 
-A `mortalos-placement-liveness-response/1` binds the same challenge to a provider-
-signed execution receipt ID. Before it can affect repair eligibility, the named
-receipt MUST be present in a fully verified current offer/lease/usage/execution
-chain. A valid response and failure certificate for the same predecessor tuple,
-different valid challenges for that tuple, or multiple response receipt IDs for one
-challenge MUST halt with no repair winner. The committed repair intent MUST carry
+A `mortalos-placement-liveness-response/2` MUST embed the exact policy-bound challenge
+bytes and be signed by that challenge's provider. It MUST bind the exact provider,
+lease, storage workload/content root, challenge nonce, nonce-selected leaf bytes, and
+Merkle authentication path. The path MUST verify with the same storage-execution
+Merkle algorithm. No new usage/execution receipt or post-challenge consumer signature
+is required. Response `/1` MAY remain parseable as a signed receipt-ID pointer but
+MUST project no independent sampled-possession or lineage repair authority.
+
+A valid sampled response and failure certificate for the same predecessor tuple, two
+provider-signed policies for the same offer/lease/workload/shard/failure-sequence
+tuple, different valid challenges for one policy/predecessor tuple, or multiple
+valid sampled response IDs for one challenge MUST halt with no repair winner. The committed repair intent MUST carry
 the challenge and certificate IDs. The core API conditionally rejects a late-proof
 conflict when a caller supplies newly observed responses with corresponding current
-placement evidence. The current Lab/browser harness supplies empty late-response
-and current-placement arrays and does not yet implement a network gossip plus
-execution-time reconciliation loop. A production executor MUST add that loop rather
+placement evidence. The Chromium vertical supplies the current placement set to the
+single-shard executor: a delayed sampled response produces zero provider calls,
+while the certificate-only provider-loss path commits one effect and an exact retry
+commits none. The internal Node batch scheduler additionally re-reads a private
+evidence session before every action and completion; a late response after one
+provider result prevents the remaining provider and Continuity calls, and retry
+reuses the durable result. This is not an implemented transport gossip service.
+One sampled leaf/path MUST NOT be interpreted as
+proof of every byte, continuous custody, future availability, independent hardware,
+death, breach, termination, penalty, or settlement. A production executor MUST add
+the reconciliation loop rather
 than cache a derived plan indefinitely. See
 [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md).

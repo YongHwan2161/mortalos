@@ -4,7 +4,10 @@ import {
   encodeBase64Url
 } from "../src/index.mjs";
 import { PROTOCOL_PROFILE } from "../src/generated/protocol-profile.mjs";
-import { createResourceStorageExecutionResult } from "../src/resource-execution.mjs";
+import {
+  createResourceStorageExecutionResult,
+  createResourceStoragePossessionProof
+} from "../src/resource-execution.mjs";
 import {
   publishStatePackageChunks,
   RelayChunkRecoveryAdapter
@@ -144,6 +147,10 @@ export function installP2pPlacementHarness() {
       }
       throw new Error(`P2P_ARTIFACT_TIMEOUT: ${artifactKind}/${requestId}`);
     },
+    async readTransportRange(after, limit) {
+      if (!transport) throw new Error("P2P_TRANSPORT: no connected transport");
+      return materialize(await transport.fetchRange(after, limit));
+    },
     async publishFile(file, requestId) {
       if (!fileArrayBuffer || !(file instanceof File)) throw new TypeError("native File required");
       const buffer = await reflectApply(fileArrayBuffer, file, []);
@@ -192,6 +199,15 @@ export function installP2pPlacementHarness() {
         usage_receipts: usage_receipts.map(documentBytes),
         challenge: documentBytes(challenge),
         resource_bytes: resource
+      });
+    },
+    createStoragePossessionProof({ challenge_nonce, lease_id, workload }) {
+      if (!resource) throw new Error("P2P_RESOURCE: provider has no stored resource");
+      return createResourceStoragePossessionProof({
+        challenge_nonce,
+        lease_id,
+        resource_bytes: resource,
+        workload
       });
     },
     corruptStoredResource(offset = 0) {

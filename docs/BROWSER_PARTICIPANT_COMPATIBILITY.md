@@ -1,7 +1,7 @@
 # Browser participant compatibility
 
-Status: **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF
-PASS; EXACT-SHA EXTERNAL**. Production support still requires exact deployed-commit
+Status: **SIGNED-EVIDENCE REPAIR SCHEDULE CORPUS + CURRENT SOURCE/RUNTIME/TEST
+COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING**. Production support still requires exact deployed-commit
 evidence.
 
 MortalOS exposes two deliberately different browser modes.
@@ -108,8 +108,8 @@ bytes. Neither A's consumer key nor B's custodian private key crosses browsers.
 
 The core lineage API can conditionally reject a late liveness response when the
 caller supplies that response and its verified current placement evidence. The
-current Lab/browser harness supplies empty late-response/current-placement arrays;
-it does not yet gossip late proofs or revalidate them at effect execution. Likewise,
+single-shard Chromium path now supplies both at effect execution and proves zero
+provider calls; it still does not gossip late proofs or schedule multiple actions. Likewise,
 the returned derived action plan is public, forgeable JSON rather than a capability,
 so any executor must reverify the original Capsule, generation, commit, placement,
 and liveness evidence before performing placement effects.
@@ -128,19 +128,47 @@ passes in `50,086ms`. Focused Node transport tests pass `24/24` in `31,241ms`.
 The virtual transport applies the same exact decoded raw-byte boundary. The relay
 edge uses a conservative base64 estimate that may reject slightly earlier; this is
 not byte-identical accounting, only the same upper ceiling and fail-closed result.
-The prior `8,076.826s` full-suite PASS predates the current WebRTC remediation. The
-frozen runtime/test/workflow candidate passes the fresh `8,631,790ms` suite through
-final `verify:s4`; covered files remained unchanged and docs pass separate spec/link/
-diff. This is not a whole-current-tree exact full-suite claim.
+The prior `8,076.826s` full-suite PASS predates the WebRTC remediation. The merged
+base later passed `8,631,790ms` through final `verify:s4`. The lease-bound
+liveness-policy delta now passes both its actual-Chromium path and uninterrupted
+`npm test` in `7,476,222ms`; exact-SHA gates remain external for this source.
 
 This focused gate is Chromium-only. Firefox and WebKit have not passed this complete
 P2P data-plane scenario. Manual same-host ICE does not prove arbitrary NAT traversal
 or Internet reachability, and all processes still share one machine and
 administrator. The complete confidential path has not yet passed Firefox or WebKit.
 
-The next root P0 is a provider-signed lease-bound liveness policy plus independent
-provider possession response and an effect-time exactly-once repair executor.
-Lineage-governed
-admission/failure-domain accounting follows. Browser profiles and self-asserted
-identity metadata do not prove independent accounts, devices, networks, credentials,
-or administrators.
+The policy/window, provider-only sampled response `/2`, and one-shard effect-time
+executor pass the actual browser path. The multi-action fresh-evidence batch now also
+reads an actual connected Chromium DataChannel range after provider 0: exact duplicate
+frames are free, rewrapped response payloads deduplicate, a late response leaves calls
+at `[1,0]` providers and `0` Continuity, and mid-batch disconnect leaves the same later-
+call zeros. The signed-evidence schedule corpus is now byte-identical in Node, a fresh process,
+and separately bundled Chromium. The actual Chromium path also creates and verifies
+a custody-signed membership epoch, admitted policy `/2`, failure certificate, and
+compact relay artifacts without exposing private material. This is a same-PC logical
+admission result. Separate durable Node signer services lock issuer/subject keys to one
+root/policy and each service's configured advertised origin, and a Node coordinator
+binds their explicit origins/key IDs into replayable challenge `/2` without receiving
+private keys. They can terminate native HTTPS with bounded role-local certificate/key
+inputs or remain private HTTP services behind TLS terminators. Both modes remain
+same-PC tests;
+the new HTTPS deployment observer is Node-only and non-authoritative, not browser
+topology parity. Native `/2` requires role-key signatures over the exact observer
+challenge and same-connection TLS exporter digest, rejecting captured identity/proof
+replay; explicit proxy `/1` remains identity-only legacy. It records TLS/socket facts while leaving both independence verdicts
+`unproven`; its non-authoritative precommitted plan, all-roster signed acceptance/
+  activation `/1`, supplied-view-converged membership binding `/2`, durable observer
+  attestation `/5`, and combined current-candidate-view-assigned probe-journal-before-sign path
+  are also Node operational evidence. The durable attestation key has one plan-scoped
+  choice: exact journal-backed retry is idempotent without reconnecting, while a
+  different connection/view/observation/instant under
+  that plan halts. Ceremony-scoped acceptance means epoch rotation requires a fresh
+  ceremony and accepted plan. Compact attestation-view `/1` creation and sidecar
+  verification are Node operational evidence, not browser parity. They are not
+browser topology parity, clock truth, or proof that declared administration/
+failure-domain/vantage digests are true.
+independently in-browser ceremony coordination is not claimed. The next root P0 is
+operating those services under external administration plus measured multi-host topology;
+browser profiles and self-asserted identity metadata do not prove independent
+accounts, devices, networks, credentials, or administrators.

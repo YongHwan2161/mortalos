@@ -8,13 +8,13 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   createPlacementSigner,
-  createStoragePlacementFixture,
-  refreshStoragePlacementFixture
+  createStoragePlacementFixture
 } from "../lab/placement/storage-contract.mjs";
 import {
   createPlacementFailureCertificateFixture,
   createPlacementLivenessResponseFixture
 } from "../lab/placement/liveness-contract.mjs";
+import { createPlacementMembershipFixture } from "../lab/placement/admission-contract.mjs";
 import { encodeBase64Url, equalBytes } from "../src/bytes.mjs";
 import { canonicalBytes } from "../src/codec.mjs";
 import { domainHash } from "../src/confidential/format.mjs";
@@ -60,11 +60,31 @@ function generationOptions(fixture, capsuleBytes, placements, evidence = {}, pri
     liveness_responses: evidence.liveness_responses ?? [],
     manifest_bytes: fixture.shardSet.manifest_bytes,
     max_proof_age_ms: "500",
+    membership_epochs: evidence.membership_epochs ?? [],
     placements,
     prior_commit_bytes: prior?.commit_bytes ?? null,
     prior_generation_bytes: prior?.generation_bytes ?? null,
     quorum: 2,
     target_shards: 3
+  };
+}
+
+function legacyChallengeBody(challenge, overrides = {}) {
+  const body = challenge.body;
+  return {
+    consumer: body.consumer,
+    failure_sequence: body.failure_sequence,
+    lease_id: body.lease_id,
+    lineage_parent_hash: body.lineage_parent_hash,
+    manifest_id: body.manifest_id,
+    nonce: body.nonce,
+    observer_policy: body.observer_policy,
+    previous_execution_receipt_id: body.previous_execution_receipt_id,
+    provider: body.provider,
+    response_window_ms: body.response_window_ms,
+    shard_index: body.shard_index,
+    workload_id: body.workload_id,
+    ...overrides
   };
 }
 
@@ -215,6 +235,12 @@ test("current custodian commits a repair plan, successor repairs, and stale orig
     transitionId: "placement-organism-create"
   });
   const initialRecords = storage.initial.map(record);
+  const membership = await createPlacementMembershipFixture({
+    authority: authorityA,
+    capsule_bytes: created.capsule_bytes,
+    observers: storage.witnesses,
+    providers: storage.providers
+  });
   assert.throws(() => createLineagePlacementGeneration(generationOptions(
     storage,
     created.capsule_bytes,
@@ -224,115 +250,86 @@ test("current custodian commits a repair plan, successor repairs, and stale orig
     consumer: storage.consumer,
     lineage_parent_hash: created.head_hash,
     manifest_id: storage.shardSet.manifest.manifest_id,
+    membership,
     observers: storage.witnesses,
     placement: storage.initial[0],
+    provider: storage.providers[0],
     response_window_ms: "5000",
     shard_index: 0
   });
-  const rogueObservers = await Promise.all(Array.from({ length: 4 }, () => createPlacementSigner()));
   const originalChallenge = verifyPlacementLivenessChallenge(failure.challenge_bytes);
-  const rogueDraft = preparePlacementLivenessChallenge({
-    ...originalChallenge.body,
-    nonce: encodeBase64Url(new Uint8Array(16).fill(111)),
-    observer_policy: {
-      max_faulty: 1,
-      observers: rogueObservers.map(({ identity }) => identity),
-      threshold: 3
-    }
+  const legacyDraft = preparePlacementLivenessChallenge(legacyChallengeBody(originalChallenge, {
+    nonce: encodeBase64Url(new Uint8Array(16).fill(111))
+  }));
+  const legacyChallenge = finalizePlacementLivenessChallenge({
+    body: legacyDraft.body,
+    consumer_signature: await storage.consumer.sign(legacyDraft.consumer_signing_message)
   });
-  const rogueChallenge = finalizePlacementLivenessChallenge({
-    body: rogueDraft.body,
-    consumer_signature: await storage.consumer.sign(rogueDraft.consumer_signing_message)
-  });
-  const rogueObservations = [];
-  for (const observer of [...rogueObservers]
-    .sort((left, right) => left.identity.key_id < right.identity.key_id ? -1 : 1)
-    .slice(0, 3)) {
-    const observationDraft = preparePlacementLivenessObservation({
-      challenge: rogueChallenge,
-      observer: observer.identity,
-      waited_window_ms: "5000"
-    });
-    rogueObservations.push(finalizePlacementLivenessObservation({
-      challenge: rogueChallenge,
-      observer: observer.identity,
-      observer_signature: await observer.sign(observationDraft.observer_signing_message),
-      waited_window_ms: "5000"
-    }));
-  }
-  const rogueCertificate = createPlacementFailureCertificate({
-    challenge: rogueChallenge,
-    observations: rogueObservations
-  });
-  assert.throws(() => createLineagePlacementGeneration(generationOptions(
-    storage,
-    created.capsule_bytes,
-    initialRecords,
-    { failure_certificates: [rogueCertificate.bytes] }
-  )), /offer-witness-roster-binding/u);
-  const rogueConsumer = await createPlacementSigner();
-  const rogueConsumerDraft = preparePlacementLivenessChallenge({
-    ...originalChallenge.body,
-    consumer: rogueConsumer.identity,
-    nonce: encodeBase64Url(new Uint8Array(16).fill(112))
-  });
-  const rogueConsumerChallenge = finalizePlacementLivenessChallenge({
-    body: rogueConsumerDraft.body,
-    consumer_signature: await rogueConsumer.sign(rogueConsumerDraft.consumer_signing_message)
-  });
-  const rogueConsumerObservations = [];
+  const legacyObservations = [];
   for (const observer of [...storage.witnesses]
     .sort((left, right) => left.identity.key_id < right.identity.key_id ? -1 : 1)
     .slice(0, 3)) {
     const observationDraft = preparePlacementLivenessObservation({
-      challenge: rogueConsumerChallenge,
+      challenge: legacyChallenge,
       observer: observer.identity,
       waited_window_ms: "5000"
     });
-    rogueConsumerObservations.push(finalizePlacementLivenessObservation({
-      challenge: rogueConsumerChallenge,
+    legacyObservations.push(finalizePlacementLivenessObservation({
+      challenge: legacyChallenge,
       observer: observer.identity,
       observer_signature: await observer.sign(observationDraft.observer_signing_message),
       waited_window_ms: "5000"
     }));
   }
-  const rogueConsumerCertificate = createPlacementFailureCertificate({
-    challenge: rogueConsumerChallenge,
-    observations: rogueConsumerObservations
+  const legacyCertificate = createPlacementFailureCertificate({
+    challenge: legacyChallenge,
+    observations: legacyObservations
   });
   assert.throws(() => createLineagePlacementGeneration(generationOptions(
     storage,
     created.capsule_bytes,
     initialRecords,
-    { failure_certificates: [rogueConsumerCertificate.bytes] }
-  )), /lease-consumer-binding/u);
-  const latePlacement = await refreshStoragePlacementFixture({
-    consumer: storage.consumer,
-    fixture: storage.initial[0],
-    issuedAtMs: 1400,
-    provider: storage.providers[0],
-    resourceBytes: storage.shardSet.shards[0].bytes,
-    seed: 95
-  });
+    { failure_certificates: [legacyCertificate.bytes] }
+  )), /policy-bound-authority-required/u);
   const lateResponse = await createPlacementLivenessResponseFixture({
     challenge_bytes: failure.challenge_bytes,
-    placement: latePlacement,
-    provider: storage.providers[0]
+    placement: storage.initial[0],
+    provider: storage.providers[0],
+    resource_bytes: storage.shardSet.shards[0].bytes
   });
   assert.throws(() => createLineagePlacementGeneration(generationOptions(
     storage,
     created.capsule_bytes,
-    [record(latePlacement, 0), initialRecords[1], initialRecords[2]],
+    initialRecords,
     {
       failure_certificates: [failure.certificate_bytes],
-      liveness_responses: [lateResponse]
+      liveness_responses: [lateResponse],
+      membership_epochs: [membership.epoch_bytes]
     }
   )), /E_LINEAGE_PLACEMENT_LIVENESS/u);
+  assert.throws(() => createLineagePlacementGeneration(generationOptions(
+    storage,
+    created.capsule_bytes,
+    initialRecords,
+    { failure_certificates: [failure.certificate_bytes], membership_epochs: [] }
+  )), /membership-epoch-sidecar-missing/u);
+  assert.throws(() => createLineagePlacementGeneration(generationOptions(
+    storage,
+    created.capsule_bytes,
+    initialRecords,
+    {
+      failure_certificates: [failure.certificate_bytes],
+      membership_epochs: [membership.epoch_bytes, membership.epoch_bytes]
+    }
+  )), /membership-epoch-duplicate/u);
   const generation1 = createLineagePlacementGeneration(generationOptions(
     storage,
     created.capsule_bytes,
     initialRecords,
-    { failure_certificates: [failure.certificate_bytes] }
+    {
+      failure_certificates: [failure.certificate_bytes],
+      membership_epochs: [membership.epoch_bytes]
+    }
   ));
   assert.equal(generation1.generation, "1");
   assert.equal(generation1.value.status, "repairing");
@@ -367,7 +364,7 @@ test("current custodian commits a repair plan, successor repairs, and stale orig
     {
       observed_at_ms: "1800",
       observed_liveness_responses: [lateResponse],
-      observed_placements: [record(latePlacement, 0), initialRecords[1], initialRecords[2]]
+      observed_placements: initialRecords
     }
   )), /late-proof-conflict/u);
 
@@ -610,35 +607,51 @@ test("same-parent divergent valid generation commits halt instead of being auto-
     transitionId: "fork-fixture-create"
   });
   const records = storage.initial.map(record);
+  const membership = await createPlacementMembershipFixture({
+    authority,
+    capsule_bytes: created.capsule_bytes,
+    observers: storage.witnesses,
+    providers: storage.providers
+  });
   const leftFailure = await createPlacementFailureCertificateFixture({
     consumer: storage.consumer,
     lineage_parent_hash: created.head_hash,
     manifest_id: storage.shardSet.manifest.manifest_id,
+    membership,
     nonce_seed: 101,
     observers: storage.witnesses,
     placement: storage.initial[0],
+    provider: storage.providers[0],
     shard_index: 0
   });
   const rightFailure = await createPlacementFailureCertificateFixture({
     consumer: storage.consumer,
     lineage_parent_hash: created.head_hash,
     manifest_id: storage.shardSet.manifest.manifest_id,
+    membership,
     nonce_seed: 102,
     observers: storage.witnesses,
     placement: storage.initial[1],
+    provider: storage.providers[1],
     shard_index: 1
   });
   const left = createLineagePlacementGeneration(generationOptions(
     storage,
     created.capsule_bytes,
     records,
-    { failure_certificates: [leftFailure.certificate_bytes] }
+    {
+      failure_certificates: [leftFailure.certificate_bytes],
+      membership_epochs: [membership.epoch_bytes]
+    }
   ));
   const right = createLineagePlacementGeneration(generationOptions(
     storage,
     created.capsule_bytes,
     records,
-    { failure_certificates: [rightFailure.certificate_bytes] }
+    {
+      failure_certificates: [rightFailure.certificate_bytes],
+      membership_epochs: [membership.epoch_bytes]
+    }
   ));
   const leftCommit = await commitLineagePlacementGeneration({
     authority,

@@ -83,13 +83,19 @@ evidence. The A→B sign-once handoff transfers no key, identical evidence conve
 byte-identically, and valid siblings halt instead of selecting a winner. Raw local
 unavailability no longer qualifies a lineage repair plan by itself: 3-of-4 keys
 from the provider-signed offer's fixed witness roster sign one predecessor-linked,
-consumer-selected bounded-duration non-response
+provider-signed, consumer-accepted bounded-duration non-response
 challenge with no global clock. The certificate is committed into the generation.
 It is a continuity-scheduling transcript, not proof of provider death, breach,
-lease termination, penalty, or settlement; the response window is not provider-agreed.
+lease termination, penalty, or settlement; agreed duration is not honest-timer or SLA-breach proof.
 When a caller supplies a late verified provider receipt and its current placement
-chain, the core conditionally halts the derived plan. The current Lab/browser harness
-does not yet gossip or reconcile late evidence at effect execution. This is source plus local evidence; it does
+chain, the core conditionally halts the derived plan. The internal Node batch now
+reads an existing bounded transport transcript between effects: it verifies canonical
+frames and contributes only deduplicated `liveness-response` payload bytes to the
+core verifier. The origin-cut Chromium harness now binds that same session to an actual
+connected DataChannel range: one exact duplicate consumes no frame, a rewrapped copy
+deduplicates by response bytes, the late response stops provider 1 and Continuity, and
+a mid-batch disconnect also stops every later call. Transport metadata is never proof
+authority. This is source plus local evidence; it does
 not self-assert stage promotion, a globally live participant network, arbitrary
 Internet reachability, Sybil resistance, or physical independence. See
 [P2P placement and repair](docs/P2P_PLACEMENT_AND_REPAIR.md),
@@ -126,11 +132,205 @@ proof.
 | S5/S6 product continuity — portable use | The default SDK remains verification-only; `@mortal-os/core/continuity` and the CLI expose create/inspect/handoff/recover/continue through explicit authority capabilities. A canonical Capsule binds lineage plus exact resource bytes, and clean-package Node plus built-Lab Chromium complete A→B recovery and continuation. The product Capsule is not a confidentiality claim. |
 | S7/S8 merged implementation — replicated custody | Three process-isolated HTTP CAS replicas tolerate one loss and repair after disk restart; 2-of-3 signed Capsule-copy custody tolerates one corrupt/lost copy and rejects duplicate copy identity and a valid fork. This is not evidence of independent providers or administrators. |
 | Resource execution — bounded contribution and verified work | Canonical offers, mutual single-use leases, threshold gossip, chained usage, and revocation are merged with lease-bound storage, bandwidth, and deterministic-compute challenge receipts. Actual child-process loss and new-lease reassignment pass, but this is not proof of honest meters or independent hardware, accounts, witnesses, or administrators. |
-| Confidential lineage-bound P2P placement source | A native 98,317-byte file becomes an S4 package for B and three distinct 2-of-3 ciphertext shards cross direct DataChannels. Journal v2 binds every reproof to the exact prior head, next generation, manifest/policy, and an epoch nonce; challenge nonces also bind receipt-chain identity, sequence, and predecessor. Only a module-private branded active `3/3` set can create a head. The journal retains cumulative chain high-waters across provider replacement, so A/B/C history remains after later providers become active and an old receipt cannot re-enter as a new chain. The Node exact-ceiling gate performs 128 sequential signed transitions with 381 genuine replacements and reaches generation 129 with exactly 384 provider/lease/chain high-waters, 128 per shard, plus 387 distinct execution receipts. A separately signed generation-130 `3/3` candidate is valid evidence, but committing its 385th total and 129th shard-0 chain fails closed without changing the generation-129 bytes. A mixed-runtime Chromium/Lab gate starts from generation 2 and performs 127 more cycles with actual browser-held non-extractable provider keys creating the storage results and signatures; it reaches the identical generation-129 ceiling and proves the same signed plus-one rejection after serialized reload and oldest-receipt replay. The portable journal controller remains Node-orchestrated, so this is not independently in-browser journal-kernel parity. A no-replace hard-link successor claim gives conforming same-filesystem writers one winner per prior head. V1 can migrate only through a fresh rotated epoch and new context-bound `3/3` receipts. Generated caps are 4,096 head transitions, 128 chains per shard, 384 total chains, a 2 MiB journal, a 32-byte epoch nonce, and a 16-byte derived reproof nonce; overflow fails closed without pruning. Resource status and proof age share the generation instant. Three of four offer-rostered observers can certify one predecessor-bound non-response window, but this is not provider death, breach, or settlement evidence. A commits, hands custody to B without key transfer, exits, and B repairs under successor-authorized leases. WebRTC publication remains failure-atomic and capability-contained, enforces one combined 512-message/8,388,608-raw-byte transcript, invokes each native close capability at most once, and closes a still-live peer when its remote channel terminates. These ceiling runs are same-PC cryptographic evidence, not independent machines, transfers, administrators, or failure domains. The journal, contexts, and transition claims are unsigned local evidence: they do not prove hostile-disk integrity, completely hidden receipt history, cross-host consensus, physical independence, arbitrary NAT reachability, or Sybil resistance. Exact-SHA governance remains external. |
+| Confidential lineage-bound P2P placement source | A native 98,317-byte file becomes an S4 package for B and three distinct 2-of-3 ciphertext shards cross direct DataChannels. Journal v2 binds every reproof to the exact prior head, next generation, manifest/policy, and an epoch nonce; challenge nonces also bind receipt-chain identity, sequence, and predecessor. Only a module-private branded active `3/3` set can create a head. The journal retains cumulative chain high-waters across provider replacement. The exact-ceiling Node and mixed-runtime Chromium gates reach generation 129 with 384 chains (`128/128/128`) and reject a signed plus-one candidate without changing bytes. A custody-quorum-signed membership epoch sidecar commits issuer roots, subject+issuer dual-signed challenge evidence, operator roots, logical failure domains, validity, prior epoch, cumulative root/key history, and the exact Capsule/head. Direct rotation, explicit revocation, old root/key rollback, retired-authority resurrection, and fork rules are fail-closed. Deterministic selection deduplicates aliases and counts at most one observer per operator/domain; adjacent epochs preserve quorum intersection and valid siblings halt. Compact admitted liveness policy `/2` binds the epoch ID and selection digest without recursively nesting the sidecar; compatibility policy `/1` remains parseable. Consumer challenge `/2` binds exact policy bytes/ID and predecessor. Provider response `/2` signs a nonce-selected storage Merkle leaf/path from stored bytes without a fresh consumer receipt; response-only is sampled `alive`, while response plus a 3-of-4 certificate halts. Receipt-pointer response `/1` and legacy challenge/certificate `/1` remain parseable but cannot authorize lineage repair. The internal single-shard executor ignores the forgeable public plan, re-verifies the original Capsule/generation/commit/current placement and liveness bytes, claims one failure slot durably, and passes a deterministic replacement-bound `effect_id` to a private provider session. That provider-domain adapter persists the exact canonical request and placement result before returning: a focused child exits after the provider result but before the executor result, and a new session restores it with `0` underlying provider calls. A predecessor/effect-keyed no-replace execution claim permits only one conforming local process to invoke the provider first. A second internal coordinator rederives the signed result, rejects any non-exact outer or encoded-placement schema, and replaces only that shard. Its durable completion slot is bound to the immutable repair slot, prior commit, manifest, and successor generation, while the exact result ID remains candidate content; a self-rehashed ignored-field variant therefore cannot reach a second private Continuity call. Its durable adapter persists exact Capsule/generation request and returned Capsule/commit bytes, excludes cross-process first commit, and restores a completed result with `0` underlying signing calls after outer failure. The internal multi-action scheduler requires the complete intent set, re-reads evidence before every effect and completion, reuses durable partial results, and commits one all-result proved successor. Its bounded network evidence session captures a private baseline/range capability, verifies a monotonic canonical transcript, and contributes only deduplicated response payload bytes. An actual origin-cut Chromium DataChannel range proves a late response after shard 0 leaves provider calls `[1,0]` and Continuity calls `0`; an exact duplicate consumes no extra frame, a differently wrapped identical payload deduplicates, a non-response artifact is ignored, and disconnect before the next read also leaves every later call at zero. A separate provider-interruption gate proves reversed concurrent retry converges without repeating shard 0. If a provider or Continuity winner crashes before durable result publication, a separate recovery executor can now import only an already-authoritative signed placement or verified successor Capsule/commit. Recovery accepts no provider or signing capability, requires the exact existing request and no-replace claim, and performs `0` duplicate external calls. Invalid proof changes no result; without proof the claim stays unresolved, with no timeout or stale-claim takeover. The connected evidence is a manually signaled same-host direct WebRTC pair. Admission proves policy-scoped logical diversity and subject key control, not external issuer honesty, physical/admin independence, arbitrary-NAT reachability, Sybil resistance, death, breach, termination, penalty, or settlement. Externally operated issuers and measured independent topology remain the next P0. |
 | Honest failure | Closing A before the handoff leaves B read-only and stalled. A single remaining `2-of-3` endpoint is insufficient, not “dead.” |
 
-Current status is **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS
-SPEC/LINK/DIFF PASS; EXACT-SHA EXTERNAL**. The Node placement-history ceiling
+The admission path now also has a bounded loopback ceremony in which issuer and
+subject keys live in separate Node processes. Each endpoint is locked to one exact
+trust root and admission policy, rederives the canonical request locally, exposes no
+private capability, and rejects a conflicting reuse of the same challenge slot. An
+optional local authority file, created with requested mode `0600` on supporting
+filesystems, preserves the identity and sign-once tuple
+across competing processes and restart: one conflicting race has one winner, exact
+retry is byte-identical, and the loser remains rejected. This proves process/key and
+local crash/restart separation on one PC; it is not HSM custody, does not prove
+Windows/NTFS ACL enforcement, and does not prove separate administrators, hosts,
+networks, or physical failure domains.
+
+A private-key-free HTTP ceremony runner now accepts only a prebuilt canonical request
+and two policy-locked endpoint capabilities. It constructs all identity/signature
+requests before its first suspension, refuses redirects and non-loopback plaintext
+HTTP, bounds streamed responses, and emits one immutable token-free replay bundle.
+The `/2` challenge explicitly carries both endpoint origins/key IDs under a generated
+512-byte ceiling and binds a digest over them. Each operator-facing signer service is
+configured with its own advertised origin and rejects an alias before private-key use;
+`scripts/prepare-placement-admission-issuer.mjs` first creates/restores the issuer's
+host-local authority and publishes only its canonical public trust root no-replace, so
+the subject host need not receive its private authority.
+`scripts/prepare-placement-admission-subject.mjs` similarly publishes only the
+subject's canonical public identity, and
+`scripts/create-placement-admission-ceremony-request.mjs` combines those two public
+files, the exact policy, both origins, bounded validity, and a fresh local random nonce
+into one no-replace request before either service starts. The coordinator therefore
+does not parse either long-running readiness stream or custody a signing key. Durable
+authority files reproduce the exact bundle after process restart. For independently
+administered operation, each signer host now runs a role-local client with only its own
+generic bearer environment value and publishes a canonical token-free response. A
+network-free finalizer consumes the request plus those two public responses; the public
+pilot verifier repeats that finalization and requires byte-identical bundle output.
+The signer CLI can now terminate TLS natively from administrator-local bounded
+certificate/private-key files, requires an HTTPS advertised origin and TLS 1.2+, and
+rejects an incomplete, oversized, or mismatched pair before creating an absent signing
+authority. Native mode requires a separate possession-only token distinct from the
+admission bearer. Readiness identifies native `https` versus private `http` proxy mode
+and the proof capability without emitting any secret. The direct native-HTTPS test
+verifies both roles, offline finalization, live peer certificate/public-key observation,
+TLS-exporter-bound role-key possession, captured-proof replay rejection, and byte-identical
+admission-response restart.
+The older combined client remains compatible but is not the strict multi-administrator
+path because it receives both bearer values. Changing an
+origin and recomputing the public bundle ID therefore still rejects. The bundle proves that
+both keys signed that exact endpoint declaration; it does not prove who administers
+those endpoints or where they physically run. Current tests use loopback services.
+
+A fresh-process deployment observer now restores that signed bundle, requires both
+origins to be HTTPS, and by default requires each configured role key to sign a bounded
+ceremony/origin/role/key/nonce/time proof carrying the digest of a TLS exporter derived
+on that same request connection. It records the proof and platform-verified peer
+certificate/public-key digests plus the actual socket remote address. Replaying the same
+public identity or a captured valid proof under the same certificate on a new TLS
+connection fails. Identity-only `/1` remains available only through explicit
+`legacy-identity-only` mode for terminator compatibility and is not fresh key-possession
+evidence. Because a TLS exporter is connection-specific, repeating the same logical probe
+on a new connection intentionally produces another observation ID. The combined
+observer/attester CLI therefore requires a no-replace observation-journal path, publishes
+the exact token-free observation there before invoking the durable observer signer, and
+reuses that journal without possession tokens or endpoint access after a crash. A new
+connection is never mistaken for an exact plan-scoped retry. The immutable
+artifact fixes `non_authority:true` and both independence verdicts to `"unproven"`;
+different IPs or certificates remain measurements, never administrator or physical-
+domain authority. The executable regressions cover both native-direct `/2` and explicit
+proxy legacy `/1`, while both still use one PC/address and deliberately avoid promoting
+topology.
+
+Membership publication now has an operator path instead of assuming pre-existing
+epoch files. The coordinator gives
+`scripts/create-placement-membership-epoch-request.mjs` only the current Capsule,
+logical policy/window, optional exact predecessor, and verified ceremony bundles for
+the provider and every observer. The CLI derives the evidence/root set and publishes
+one no-replace request; it accepts no free-form membership body. Each current Capsule
+custodian independently runs `scripts/approve-placement-membership-epoch.mjs` with an
+existing local authority. Non-custodians reject before signing, while the exact request
+uses the durable membership sign-once tuple. The coordinator supplies threshold
+approval sidecars to `scripts/finalize-placement-membership-epoch.mjs`; mixed requests,
+insufficient quorum, wrong Capsule/predecessor, and duplicate approval ordering fail,
+while approval input permutations finalize byte-identically. The deployment regression
+no longer constructs observer evidence with raw private authorities: both durable
+observer keys act as subjects in separate policy-locked issuer/subject ceremonies and
+the same keys later accept the plan and attest.
+
+A new non-authoritative deployment plan precommits one ceremony, a bounded logical
+window/timeout, and a complete two-through-eight observer roster with one unique nonce
+and declared administration/failure-domain/vantage digest set per durable Ed25519 key.
+Each observer host first uses the public-identity preparation CLI to create or restore
+its durable local key and publish only canonical `key_id`/`public_key` bytes no-replace;
+the coordinator collects those public files before constructing the plan and never
+receives observer private material. Every roster key must then publish a signed
+acceptance. Its durable ceremony-scoped sign-once slot permits an exact retry but
+rejects a different plan for the same ceremony. Only the complete sorted acceptance
+set creates activation `/1`. A membership-binding `/2` then embeds that activation, the
+exact ceremony bundle, the selected custody-quorum-signed current membership epoch, and
+a canonical commitment to the complete supplied epoch-candidate view. It exists only
+when that view forms one complete fork-free chain converging at the supplied current
+Capsule, the ceremony subject evidence is in the selected epoch, and the plan roster is
+exactly the epoch's complete two-through-eight observer membership, with each declared
+administration/failure-domain digest matching its admitted member and remaining distinct
+from the subject and every peer. Attestation `/5` signs the exact membership binding,
+candidate-view commitment, and observation only after the combined operational CLI
+re-verifies the current Capsule against the same complete supplied candidate sidecars,
+derives the assigned nonce/window from the admitted activation, and completes the HTTPS
+probe. Each durable observer uses one plan-scoped attestation sign-once slot: exact
+retry is byte-identical, while a different membership view, observation, or attestation
+instant under the same plan halts. Because plan acceptance is itself ceremony-scoped,
+a later membership epoch requires a fresh ceremony, plan, complete acceptance set,
+activation, and binding. The deterministic view requires the whole membership-bound roster and
+rejects post-hoc observer, nonce, vantage, window, ceremony, plan, activation, epoch, or
+membership substitution. A compact
+`mortalos-placement-admission-deployment-attestation-view/1` manifest now commits the
+key-sorted attestation/observer/observation IDs and complete derived roster summary
+without nesting signature sidecars. Offline restore is self-hash-only; explicit
+verification must receive every exact attestation sidecar and reproduce the manifest.
+No-replace create and read-only verify CLIs make that all-roster result portable to a
+fresh process. A second non-normative pilot receipt closes the wider public-file
+chain. `scripts/create-placement-admission-pilot-evidence.mjs` consumes one canonical,
+public-root-contained index and rechecks the exact trust-root/subject-identity/request/
+bundle files for every ceremony, every request-bound custodian approval and finalized
+epoch predecessor, the separately published plan/acceptances/activation, current-
+Capsule membership convergence, all attestations, and the compact view. The independent
+`scripts/verify-placement-admission-pilot-evidence.mjs` recreates the receipt from all
+sidecars; offline receipt restore remains `public_chain_verified:false`. Unordered
+bundle/approval/acceptance/attestation inputs are byte-deterministic, while missing or
+substituted sidecars and public-root path escape reject. The receipt records the
+expected Git commit but explicitly labels execution binding `recorded-only`; clean
+exact-SHA execution and review remain external gates. A separate role-local layer now
+narrows that gap without changing the public-chain receipt. The conforming
+`attest-placement-admission-role-execution.mjs` path checks an exact Git `HEAD` and a
+clean tracked/untracked/submodule worktree before the artifact's own authority signs a
+canonical source/artifact receipt. `create-placement-admission-pilot-source-attestation.mjs`
+then requires exactly one valid receipt for every ceremony role response, custody
+approval, plan acceptance, and deployment attestation in the reverified pilot chain.
+Its deterministic result reports
+`source_commit_execution_binding:"role-key-attested-artifacts"`, while unsigned
+coordinator execution, topology, and both independence claims stay `unproven`.
+The final non-normative
+`mortalos-placement-admission-pilot-source-verdict/1` does not add a coordinator key.
+It first recreates that complete chain and receipt aggregate, then inventories every
+remaining unsigned protocol artifact. An artifact is accepted only when participant
+signatures endorse its exact digest or the verifier deterministically recreates it from
+authenticated sidecars. The current fixture classifies all 21 such artifacts (12
+participant-endorsed and 9 deterministically replayed), alongside 12 role-source
+artifacts across 7 keys and the signature-verified Continuity Capsule. Only full
+sidecar verification reports all three verification flags true and
+`coordinator_protocol_authority:"not-required-for-verification"`; offline restore
+reports them false. Coordinator execution itself remains explicitly `unproven`.
+The participant-closure layer now narrows the remaining public-inventory ambiguity for
+one deployment plan. Every unique key represented by those exact role receipts signs
+the same source-verdict digest and ID under a durable sign-once tuple keyed by the
+exact `deployment_plan_id`. The aggregate accepts no partial set and sorts the complete
+key/role/ratification inventory. In the conforming durable-authority path, the same
+role key cannot ratify a second verdict for that plan, so a coordinator cannot produce
+two fully participant-closed final inventories. The current fixture requires all 7/7
+role keys and reports `inventory_closure:"all-role-keys-ratified"`. This is
+participant-ratified closure for that plan, not proof of artifacts hidden from every
+honest participant or of copied-key/journal independence.
+This is attributable operator testimony under the conforming CLI, not proof against a
+dishonest operator or a replacement build process; exact-SHA CI and immutable review
+remain separate. The current native `/2`, journal-
+recovery, role-response-complete affected integration passes `1/1` in
+`207,089.5934ms` (runner `207,282.5833ms`, exit `0`) with the complete 34-artifact
+verdict and 7/7 participant closure verified. The signer-service file passes
+`4/4` in `20,655.0405ms`, including direct native HTTPS, while adjacent ceremony/session
+regressions pass `7/7` in `10,071.95ms`; those two concurrently run receipts cover
+`11/11`. One same-source ordered run passed all
+preceding stages and emitted P2P tests through `51` without a failure, but its final
+PTY output/exit receipt was lost after worker exit and remains historical incomplete
+evidence. A later receipt-complete predecessor run at `4b0ff0d290626318f68e4479d4b35d586a936822`
+passed all 48 configured stages, `458/458` TAP tests, and final `verify:s4` with zero
+failures, cancellations, or skips. The current repair-hardening successor passes its
+focused executor regression `1/1`; its complete-suite rerun remains pending.
+This removes raw disjoint
+**unadmitted** rosters and same-roster
+multi-plan selection in the conforming flow. It does not make locally supplied times or
+topology measurements authoritative: admission is policy-scoped under configured issuer
+roots and lineage custody, while issuer honesty, physical independence, and absolute
+Sybil resistance remain unproven. A candidate omitted from every observer's supplied
+view is still unknowable. The focused public-chain test uses native role-local TLS
+signers on one PC; explicit proxy `/1` compatibility is tested separately. Real
+separately administered vantage operation is the next gate.
+
+Current status is **TLS-CHANNEL-BOUND, CRASH-RECOVERABLE, ROLE-KEY-ATTESTED,
+COORDINATOR-NON-AUTHORITY, ALL-ROLE-KEYS-RATIFIED PUBLIC-CHAIN PILOT; PREDECESSOR
+COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN
+PENDING; EXACT-SHA GATES EXTERNAL; SEPARATELY
+ADMINISTERED MULTI-HOST OPERATION NEXT**.
+The production evidence-session corpus runs `10,000` deterministic schedules with
+eight response/certificate/order/partition/disconnect/restart events each. Node and a
+fresh process match byte-for-byte in `733,588.2114ms`; a separately bundled Chromium
+run matches digest `sha256:t0Guc2x3-rrM8G9q7iqYZ1nYNriIj77sgcPort-E5iM`, with verdicts
+`2749` completed, `2489` liveness-halted, `2044` order-halted, and `2718` partition-
+unavailable, and zero duplicate provider/accounting/Continuity effects. The corpus is
+anchored by the full executor and actual connected DataChannel focused gates; it is
+not 10,000 real provider writes or independent-network trials. The Node placement-history ceiling
 gate passed in `2,841,685.4279ms` test-body time
 (`2,842,481.1467ms` runner; `2,842,596ms` shell), and the mixed-runtime Chromium/Lab
 ceiling passed in `2,549,195ms` dynamic time (`2,666,619ms` total). The Chromium
@@ -144,15 +344,30 @@ history ceiling tests. A later uninterrupted `npm test` ran from
 the current WebRTC runtime/test/security remediation and is historical only. The
 current candidate passes the literal count/byte cap-plus-one and native-close Node
 gate `24/24` in `31,241ms` and the actual Chromium boundary/cleanup probe in
-`50,086ms`. A fresh hidden-wrapper `npm test` then ran uninterrupted from
+`50,086ms`. On the merged base before this liveness-policy delta, a hidden-wrapper
+`npm test` ran uninterrupted from
 `2026-08-11T06:42:38.6738575+09:00` to
 `2026-08-11T09:06:30.4636057+09:00`, exited `0` after `8,631,790ms`
 (`143m 51.790s`), and completed every ordered stage through final `verify:s4`.
 The covered source/runtime/test/workflow files remained unchanged afterward and a
 fresh process inventory found zero related workloads after excluding the inventory
-command itself. This documentation revision separately passes spec, link, and diff
-checks; it is not a whole-current-tree exact full-suite claim. Exact-head CI,
-immutable review, approval, merge, deployment, and public readback remain external.
+command itself. That historical PASS does not transfer to the current policy source.
+The current branch passed uninterrupted `npm test` from
+`2026-08-21T15:08:09.9777152+09:00` through
+`2026-08-21T17:12:46.1993423+09:00`, exit `0`, wall `7,476,222ms`
+(`124m 36.222s`), through final `verify:s4`. Evidence documents changed afterward
+only to record that result and are checked separately by spec, links, and diff gates.
+After the membership-bound observer-attestation/view delta was added, a fresh ordered
+`npm test` call issued at `2026-08-21T20:48:19.650+09:00` reached final
+`verify:s4` PASS at `2026-08-21T23:11:26.544+09:00`. The command did not emit its own
+wrapper wall-time marker, so those timestamps are an observed execution window rather
+than a claimed exact duration. Every earlier `&&` stage completed, including the
+observer test, the 68-test P2P group, actual Chromium P2P and confidential-placement
+verticals, the 10,000-schedule corpus, SDK/package/relay/browser/Lab gates, and S0-S4.
+Only evidence documents changed afterward; current docs pass separate spec, link, and
+diff checks.
+Exact-head CI, immutable review, approval, merge, deployment, and public readback
+remain external.
 
 Actual Chromium gates use isolated browser profiles and real non-extractable WebCrypto
 keys. They prove browser/profile isolation and protocol behavior, not that three

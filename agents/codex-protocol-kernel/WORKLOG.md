@@ -2591,3 +2591,1511 @@ result, and reproducible verification.
   and machine user `ant713900-web` native latest-head approval are separate required
   gates. None substitutes for another, and exact-head governance remains external
   until all are re-issued for the final immutable candidate.
+
+## 2026-08-13 — Lease-bound liveness policy focused slice
+
+- Fresh base: `285ccbae01011a7c69e16016dc1bdd1d8d2e1203` (`origin/main` after fetch),
+  branch `agent/codex-protocol-kernel--lease-bound-liveness-policy`.
+- Added provider-signed `mortalos-placement-liveness-policy/1`, consumer-signed
+  `mortalos-placement-liveness-challenge/2`, and policy-bound
+  `mortalos-placement-failure-certificate/2`. The policy embeds exact verified offer
+  and lease bytes and binds provider, consumer, roster digest, lineage, manifest,
+  workload, shard, next sequence, exact window, and the limited
+  `execution-receipt-pointer/1` profile. Legacy `/1` stays parseable but projects no
+  lineage repair authority; observed conflicting provider policies halt.
+- Focused PASS: `test/placement-liveness.test.mjs` `7/7` including fresh process and
+  binding/window/fork/shared-memory negatives; lineage repair `1/1` in `630,717ms`;
+  SDK `5/5`; async security `26/26` (`22/128`); actual Chromium P2P `61.1s` with
+  browser-held non-extractable provider/consumer/observer keys and the existing
+  transport/resource/origin-cut checks. Relevant lineage child count was zero after
+  completion.
+- One earlier lineage wrapper expired at 10 minutes while the CPU-active child kept
+  running and then exited naturally; it was not counted as PASS. The exact-current
+  rerun above completed with exit `0` under a 20-minute bound.
+- Complete `npm test`, exact-head review/CI, merge, deploy, and public readback remain
+  pending. Independent possession response and effect-time exactly-once execution are
+  still the next P0; no provider-death/SLA/penalty/settlement or independence claim.
+
+## 2026-08-13 — Exact policy-byte binding and final focused rerun
+
+- Tightened challenge `/2` so the consumer-signed canonical body contains the exact
+  provider policy bytes as well as its policy ID, predecessor receipt, and nonce.
+  This removes the gap between semantic policy-ID binding and the documented exact-
+  bytes claim.
+- The first final liveness run was **not** counted as PASS: `6/7` completed and the
+  new legacy-compatibility case exposed a missing test import. After adding only that
+  import, the fresh rerun passed `7/7` in `36,640.729ms`.
+- Exact-current follow-up PASS: SDK `5/5`; clean packed SDK consumer; security
+  boundaries `26/26` (`22` direct / `128` discovered); generated profile; spec
+  (`115` rejection codes, `102` relative links); links (`58` local, `11` HTTPS
+  syntax-only); actual Chromium P2P in `61.6s`; lineage repair `1/1` in
+  `632,324.675ms` runner time (`634.8s` command).
+- The final relevant process inventory was `0`. Complete `npm test` and every
+  exact-SHA governance/deployment gate remain pending for this source.
+- A final test-only strengthening recomputed both a tampered provider policy ID and a
+  swapped-policy challenge ID, proving that neither the provider nor consumer
+  signature can be replayed over the rehashed document. The resulting exact test
+  source passes liveness `7/7` in `36,750.888ms`; runtime source bytes did not change.
+
+## 2026-08-17 — Provider-only sampled storage possession response
+
+- Added canonical `mortalos-placement-liveness-response/2` with the
+  `storage-merkle-sample/1` profile. The provider derives a nonce-selected leaf/path
+  from its stored resource bytes and signs the exact challenge, lease, workload,
+  content root, and proof without obtaining a fresh consumer execution receipt or
+  consumer signature after the challenge.
+- Resource execution now exposes the same lease/workload/nonce-bound Merkle proof
+  primitive used by storage execution and liveness, avoiding a second proof
+  definition. Sampled response-only evidence evaluates as `alive`; a valid failure
+  certificate plus sampled response is `contested` and halts. Receipt-pointer `/1`
+  remains parseable compatibility evidence but cannot authorize lineage repair.
+- Exact-current focused evidence: combined resource execution/process, liveness, and
+  SDK tests `21/21` PASS in `29,184.6727ms` (including liveness `8/8` and fresh
+  process); lineage repair `1/1` PASS in `364,882.0793ms`; clean packed SDK consumer;
+  async security boundaries `26/26` (`22` direct / `128` discovered); actual Chromium
+  P2P PASS with browser-held stored bytes and a non-extractable provider key.
+- One challenged Merkle sample is not full or continuous custody, provider death,
+  breach, termination, penalty, settlement, honest timing, independent topology, or
+  Sybil evidence. The next P0 remains effect-time reconciliation and exactly-once
+  repair execution. Complete `npm test` and all exact-SHA review/deployment gates are
+  still pending for this source.
+
+## 2026-08-18 — Sampled-possession uninterrupted full-suite PASS
+
+- Frozen source/runtime/test/docs-at-start `npm test` began at
+  `2026-08-17T23:24:27.2533400+09:00`, ended at
+  `2026-08-18T00:54:08.8156896+09:00`, exited `0`, and completed every ordered stage
+  through final `verify:s4` in `5,381,562ms` (`89m 41.562s`).
+- Material coverage included liveness response `/2`, resource possession helpers,
+  lineage repair and fork halt, journal-v2 `128` signed replacement transitions to
+  `384` chains plus-one rejection, `127/127` live-browser cycles to the same ceiling,
+  browser-held stored-byte possession response, origin/relay cut, SDK/packed consumer,
+  transport ceilings, security boundaries, governance, and final stage receipts.
+- All related test child processes terminated naturally; the post-run relevant
+  process inventory was zero. Evidence documents changed afterward only to record
+  this result and are validated separately by spec, links, profile, security, and
+  diff gates. The bounded claim is current source/runtime/test full-suite PASS plus
+  post-run docs static PASS, not an exact-SHA review, merge, deployment, or public
+  promotion receipt.
+
+## 2026-08-18 — Single-shard effect-time repair executor focused slice
+
+- Added `deriveCommittedPlacementRepairEffect`, which consumes original Capsule,
+  generation and commit bytes plus current placement/liveness evidence. It never
+  consumes the public action plan. The descriptor binds the failure policy,
+  challenge, certificate IDs, sequence, shard/workload, replacement provider/lease,
+  and a replacement-independent repair slot.
+- Added the internal durable executor. A no-replace hard-link claim selects one
+  replacement per failure slot. The replacement-bound `effect_id` is passed as the
+  private provider session's idempotency key; a signed placement result is verified
+  before immutable local commit.
+- Final focused Node PASS: `test/placement-repair-executor.test.mjs` `1/1` in
+  `209,083.6219ms`, including concurrent same-effect convergence, retry, different
+  replacement, forged/contested/already-repaired zero-call paths, and process exit
+  after provider storage before local result commit followed by exact-key recovery.
+- Final exact-source origin-cut Chromium PASS: delayed sampled
+  response caused zero provider calls; certificate-only provider loss executed shard
+  0 once and retry did not call the provider again. The existing 127-cycle corpus
+  reached generation 129, exact 384 chains (`128/128/128`) and 387 receipts in
+  `1,542,995ms`, rejected the signed plus-one candidate without changing bytes,
+  reloaded, and rejected the oldest replay.
+- Security boundary inventory PASS at `22` direct / `129` discovered. Fresh complete
+  suite and exact-SHA governance remain pending. This is one local-filesystem action
+  with a conforming idempotent provider session, not multi-action scheduling, global
+  gossip/consensus, independent provider restart durability, or admission evidence.
+- Final lineage focused regression PASS: `test/lineage-placement.test.mjs` `3/3`
+  in `819,941.0788ms`, including generation-time resource rejection, A-to-B repair,
+  fresh-process/schedule convergence, and same-parent fork halt.
+
+## 2026-08-19 — Single-effect successor completion focused slice
+
+- Added an internal completion coordinator beside the effect executor. It rederives
+  the committed failure/effect and signed provider result, builds one proved successor
+  placement generation, claims a replacement-result-bound completion slot, and calls
+  only a private idempotent Continuity session.
+- Focused Node `test/placement-repair-executor.test.mjs`: PASS `1/1`; body
+  `700,895.2506ms`, runner `701,056.7907ms`. Coverage includes concurrent one-call
+  completion, zero-call exact retry, different candidate, forged result, late response,
+  superseded head, and commit-then-failure recovery with one signing operation.
+- Actual origin-cut Chromium confidential-placement verifier: PASS. The executor
+  performs shard 0 once, the coordinator commits proved generation 2 once, retry adds
+  neither provider nor Continuity call, and the existing `127/127` provider-history
+  corpus reaches generation 129 / 384 chains (`128/128/128`) with a `1,596,239ms`
+  dynamic segment. Signed plus-one, reload/replay, private-material, and post-cut
+  request-zero assertions remain PASS.
+- Async security boundary verifier PASS `26/26`, `22` direct / `130` discovered;
+  specification PASS (`115` rejection codes, `102` relative links), link check PASS
+  (`58` local, `11` HTTPS syntax-only), and `git diff --check` PASS.
+- No complete `npm test`, exact-SHA CI/review, commit, push, merge, or deployment was
+  performed for this slice. Multi-action/network reconciliation remains HOLD.
+
+## 2026-08-20 — Multi-action fresh-evidence batch focused slice
+
+- Added the internal `executeAndCompleteLineagePlacementRepairBatch` entrypoint. It
+  snapshots the complete action/capability set, requires one replacement for every
+  committed repair intent, canonicalizes shard order, preflights before provider
+  effects, and re-reads a private evidence session before every effect and completion.
+- The batch reuses each single-effect durable slot and result. It creates one canonical
+  batch completion slot from all repair/result IDs and commits one proved successor
+  containing every replacement. Public plans and results remain non-capabilities.
+- Late-proof/concurrency focused PASS: `1/1`, body `554,644.4665ms`, runner
+  `554,891.4078ms`. A late response after shard 0 produced zero shard-1 and Continuity
+  calls; stable retry reused shard 0; reversed concurrent action lists converged with
+  provider calls `[1,1]`, one Continuity call, proved generation 2, and zero intents.
+- Partial-provider focused PASS: `1/1`, body `285,382.863ms`, runner
+  `285,659.9977ms`. The first run left shard 0 committed and shard 1 interrupted;
+  retry kept shard 0 at one call, retried shard 1 only, and committed one successor.
+- Security boundary verifier PASS `26/26`, `22` direct / `131` discovered; the new
+  entrypoint and complete module are digest-pinned. Syntax and `git diff --check`
+  PASS. The batch test is included in `test:p2p-placement`.
+- This is local private-capability reconciliation, not a transport gossip service.
+  Fresh complete suite, actual network adapter, provider/Continuity restart durability
+  independent of their idempotency stores, exact-SHA governance, and deployment remain
+  pending.
+
+### Frozen-source batch rerun after Promise-boundary hardening
+
+- Replaced dynamic Promise `.then/.finally` continuation in the batch completion path
+  with an internal `try/finally` async boundary, then refreshed the reviewed module and
+  entrypoint digests.
+- Exact final `node --test test/placement-repair-batch.test.mjs` PASS `2/2`, total
+  `826,423.4941ms`; late-proof/concurrency `547,889.2043ms`, partial-provider retry
+  `278,277.6054ms`. No source/test edits followed that run.
+
+## 2026-08-20 — Transport-backed effect-time evidence focused PASS
+
+- Added `lab/placement/network-evidence-session.mjs`. The factory returns the exact
+  plain own-data capability required by the batch executor while retaining a private
+  monotonic cursor and deduplicated payload set. Every fetched frame is decoded and
+  canonicalized by the portable relay verifier; only `liveness-response` payload
+  bytes enter the evidence snapshot. Relay sequence, request ID, and message metadata
+  confer no placement authority.
+- Reworked the existing two-fixture batch gate without adding another expensive
+  cryptographic setup. In the first target provider 0 publishes the shard-1 late
+  response through `VirtualTransportNetwork`; the next read rejects before provider 1
+  and Continuity, leaving calls `[1,0]` and `0`. It passes `1/1` in
+  `109,791.7103ms` after adding differently wrapped duplicate-payload and ignored-
+  artifact coverage. In the second target a provider interruption followed by reversed
+  concurrent retries converges on one completion without repeating shard 0; it passes
+  `1/1` in `533,175.9844ms` with provider calls `[1,2]` and Continuity calls `1`.
+- The async security registry and whole-module/function pins now include the session;
+  the audit passes `26/26` with `22` direct / `132` auto-discovered entrypoints.
+- This is focused local source evidence only. Fresh complete suite, actual connected
+  WebRTC/relay binding, provider/Continuity restart durability, exact-SHA CI/review,
+  merge, deploy, and public readback remain external or HOLD.
+
+## 2026-08-20 — Provider-domain sequential restart recovery focused PASS
+
+- Added `lab/placement/durable-repair-provider-session.mjs`. Before suspension it
+  owns the canonical effect, replacement offer/lease, and resource bytes; the
+  replacement-bound `effect_id` is the provider-domain idempotency key. It publishes
+  immutable canonical request and placement-result files through same-filesystem
+  no-replace links and restores an existing result before invoking the captured
+  provider capability. Same-process concurrent calls coalesce on one in-flight
+  operation.
+- Strengthened the executor crash target. A fresh child commits the provider-domain
+  result and exits `86` before the executor can commit its own local result. A new
+  parent session uses the same directory with an underlying provider that would throw;
+  recovery returns `committed`, exact retry returns `already-committed`, and the
+  underlying provider call count remains exactly `0` for both.
+- Final focused `node --test test/placement-repair-executor.test.mjs` PASS: `1/1`,
+  body `698,797.1523ms`, runner `698,964.4042ms`. The first attempt failed only because
+  the child test projected executor-only `shard_index` into the seven-field provider
+  placement; the fixture projection was narrowed and the final frozen-source rerun
+  passed.
+- The async security registry now covers the durable session entrypoint; the reviewed
+  whole-module and function digests are pinned. The inventory is `22` direct / `133`
+  auto-discovered entrypoints. This entry does not promote unsigned local files to
+  authority.
+- Scope remains narrow. Sequential restart after a durable provider result is proved,
+  but two distinct processes racing the first provider call are not serialized by a
+  cross-process execution lease. Continuity-session restart, actual connected
+  WebRTC/relay binding, bounded schedule corpus, fresh complete suite, and exact-SHA
+  governance remain HOLD or external.
+
+## 2026-08-20 — Cross-process first-provider execution exclusion focused PASS
+
+- Replaced the request-file-as-claim convention with a canonical
+  `mortalos-durable-repair-provider-claim/1` carrying the exact request ID and a fresh
+  32-byte owner nonce. Each process publishes a unique temporary claim and competes
+  for one predecessor/effect-keyed hard link. Only the link winner may invoke the
+  provider; a loser restores a completed result or rejects
+  `E_PLACEMENT_PROVIDER_SESSION_CLAIMED` before the provider call.
+- Added `test/durable-repair-provider-session.test.mjs` and its child harness. Two
+  processes wait behind one release barrier, then race the same exact effect. The gate
+  passes `2/2` in `968.7452ms`: exactly one side-effect file is created and a restarted
+  session restores the result with `0` underlying provider calls.
+- A separate child exits `87` after its provider side effect but before durable result
+  publication. The surviving claim prevents a restarted session from calling the
+  provider again; it rejects `E_PLACEMENT_PROVIDER_SESSION_CLAIMED` with call count
+  `0`. This is intentional safety-over-availability: no timer, stale-owner inference,
+  claim deletion, or automatic takeover is implemented.
+- Existing integration remains compatible: final
+  `node --test test/placement-repair-executor.test.mjs` PASS `1/1`, body
+  `636,184.7358ms`, runner `636,460.3782ms`. The security verifier passes `26/26`
+  with `22` direct / `133` discovered after refreshing the whole-module digest.
+- Remaining P0: Continuity-session restart, a governed recovery artifact for an
+  unresolved provider claim without duplicate external effect, actual connected
+  WebRTC/relay binding, bounded schedules, fresh complete suite, and exact-SHA gates.
+
+## 2026-08-20 — Continuity-domain durable restart and exclusion focused PASS
+
+- Added `lab/placement/durable-repair-continuity-session.mjs`. It owns the exact
+  Capsule/generation/completion-idempotency request before suspension, publishes
+  immutable canonical request and Capsule/commit result files, restores a completed
+  result before the captured Continuity call, and uses one request-keyed owner-nonce
+  hard-link claim for cross-process first execution.
+- Added `test/durable-repair-continuity-session.test.mjs` and its child harness. Final
+  focused evidence passes `2/2` in `1,191.3289ms`: a two-process release race produces
+  exactly one side effect and a restarted session restores with `0` underlying calls.
+  A separate child exits `88` after its side effect but before result publication; the
+  unresolved claim makes restart reject `E_PLACEMENT_CONTINUITY_SESSION_CLAIMED` with
+  `0` underlying calls. No timeout, stale-owner inference, deletion, or takeover exists.
+- Strengthened the signed executor recovery target. The durable Continuity result is
+  published before a synthetic outer failure; a fresh session recovers the exact
+  Capsule/commit and exact retry remains `already-committed`. Final
+  `node --test test/placement-repair-executor.test.mjs` passes `1/1`, body
+  `632,007.0601ms`, runner `632,431.3446ms`, with exactly one signing operation and
+  `0` restarted underlying Continuity calls.
+- The async registry and reviewed module/function pins now include the Continuity
+  session; the security audit passes `26/26` with `22` direct / `134` discovered
+  entrypoints. `test:p2p-placement` includes the direct durable-session gate.
+- Scope remains unsigned conforming same-filesystem execution evidence. The adapter
+  does not independently authorize returned Continuity bytes. Governed recovery for
+  unresolved provider/Continuity claims, actual connected WebRTC/relay binding, fresh
+  complete suite, exact-SHA CI/review, merge, and deployment remain HOLD or external.
+
+## 2026-08-21 — Proof-import unresolved-claim recovery focused PASS
+
+- Added separate provider and Continuity result-recovery capabilities. They require
+  the exact already-published canonical request and no-replace owner claim, write one
+  immutable result plus a self-hashed recovery record, and expose no provider
+  execution or Continuity signing method. The recovery record is local provenance,
+  not authority.
+- Added outer executor recovery APIs. Provider recovery rederives the original effect
+  and verifies the signed placement receipt against the exact generation/provider/
+  lease/workload/shard before import. Continuity recovery reconstructs the exact
+  proved successor and verifies the supplied Capsule/commit before import. Invalid
+  proof is rejected before durable result publication; absent proof keeps the claim
+  unresolved with no timeout, deletion, or takeover.
+- `node --test test/durable-repair-provider-session.test.mjs
+  test/durable-repair-continuity-session.test.mjs` passes `4/4` in `504.1263ms`.
+  Crash exits `87`/`88` leave unresolved claims, valid proof restores the exact result,
+  and fresh sessions invoke the captured underlying capability `0` times.
+- `node --test test/placement-repair-executor.test.mjs` passes `1/1`, body
+  `912,102.634ms`, runner `912,307.6841ms`. Two earlier runs were non-PASS evidence:
+  one test assertion incorrectly used unsigned placement `observed_at_ms` as a forged
+  authority field, and one complete matrix exceeded the former `900,000ms` harness
+  deadline. The final test uses a corrupted signed execution receipt and a forged
+  Continuity commit, retains the full existing matrix, and raises only the explicit
+  test timeout to `1,200,000ms`.
+- `npm run verify:security-boundaries` passes `26/26` with `22` direct / `134`
+  discovered entrypoints; the three changed module digests are pinned. Fresh complete
+  suite and exact-SHA gates remain external. The next P0 is the connected WebRTC/relay
+  batch evidence adapter plus a bounded schedule corpus, then trust-rooted admission.
+
+## 2026-08-21 — Connected WebRTC batch reconciliation focused PASS
+
+- Added one harness-only `readTransportRange(after, limit)` surface to the participant
+  Lab. It returns detached frames from an already-connected transport and performs no
+  evidence classification, lineage decision, provider call, or signing operation.
+  The existing private `PlacementNetworkEvidenceSession` remains the trust boundary:
+  it re-decodes canonical frames, verifies monotonic sequence, ignores non-response
+  artifacts, and deduplicates exact response payload bytes.
+- Extracted the signed two-action batch setup into
+  `test/placement-repair-batch-fixture.mjs` so the Node and actual Chromium gates use
+  the same canonical Capsule, generation, liveness, provider-session, and Continuity
+  setup. The complete Node batch file passes `2/2`: late-proof/concurrency plus
+  interruption/reversed retry, runner `755,752.0478ms`.
+- Extended `scripts/verify-p2p-placement-chromium.mjs` after origin cut. Two actual
+  browser endpoints connect directly, publish one liveness response twice, rewrap the
+  identical payload under another message ID, and publish an ignored challenge. The
+  receiver range is exactly sequences `[1,2,3]`; the duplicate consumes no frame and
+  the two response wrappers contribute one deduplicated response.
+- Publishing the response after provider 0 leaves provider calls `[1,0]` and
+  Continuity calls `0`. A separate reconnect followed by receiver disconnect makes
+  the next range read reject before provider 1, again leaving every later provider and
+  Continuity call at zero. The actual Chromium verifier passes with all pre-existing
+  file, receipt, repair, transport-capacity, cleanup, primordial, and origin-cut gates.
+  Its exact wall time was not captured and is intentionally not claimed.
+- `npm run verify:security-boundaries` remains PASS `26/26`, `22` direct / `134`
+  discovered; the harness range surface required no new authority pin. This is a
+  manually signaled same-host direct WebRTC transcript, not background gossip,
+  relay-service binding, arbitrary-NAT reachability, or independent topology.
+  Fresh complete suite and exact-SHA gates remain external. The next P0 is a fixed-seed
+  bounded response/certificate/order/partition/disconnect/restart schedule corpus.
+
+## 2026-08-21 — Signed-evidence repair schedule corpus focused PASS
+
+- Added `test/placement-repair-schedule-corpus.mjs`. Each of `10,000` seeds creates a
+  fresh production `PlacementNetworkEvidenceSession` and applies eight deterministic
+  response/certificate/order/partition/disconnect/restart events over the exact signed
+  failure certificates and sampled-possession responses from the shared two-action
+  fixture. The schedule follows the executor's three evidence checkpoints rather than
+  repeatedly ticking a planner.
+- The driver distinguishes raw provider invocation from a committed repair/accounting
+  effect. Before-effect interruption may retry an invocation, while durable provider
+  and Continuity results survive restart and their effect IDs can enter each ledger at
+  most once. Exact duplicate frames consume no transcript entry, differently wrapped
+  responses deduplicate by payload, certificate artifacts do not widen the committed
+  generation, corrupt order halts, and an unavailable partition performs no later call.
+- `node --test test/placement-repair-schedule.test.mjs` passes `1/1`, body
+  `736,437.8624ms`, runner `736,594.7467ms`. The parent and a separately generated
+  fresh child process return byte-identical canonical results despite distinct
+  WebCrypto key material.
+- `node scripts/verify-placement-repair-schedules.mjs` passes in separately bundled
+  Chromium. The committed Node/fresh-process/Chromium digest is
+  `sha256:t0Guc2x3-rrM8G9q7iqYZ1nYNriIj77sgcPort-E5iM`; verdicts are `2749` completed,
+  `2489` liveness-halted, `2044` order-halted, and `2718` partition-unavailable.
+  Duplicate provider/accounting/Continuity effects are exactly `0/0/0`.
+- Added the Node and Chromium schedule gates to `test:p2p-placement`. The corpus uses
+  production evidence parsing and signed bytes but its effect ledger is an oracle
+  anchored by the existing full executor and actual DataChannel focused tests; it is
+  not 10,000 external writes, billing settlements, or independent-network trials.
+  Fresh complete suite and exact-SHA gates remain external. The next P0 is lineage-
+  governed admission/failure-domain accounting with explicit trust roots.
+
+## 2026-08-21 — Exact-source schedule corpus revalidation
+
+- After pinning the golden digest, exact verdict distribution, provider invocation-
+  versus-effect assertion, and a 600-second child timeout, the current exact test file
+  was rerun. `node --test test/placement-repair-schedule.test.mjs` passes `1/1`, body
+  `733,441.2098ms`, runner `733,588.2114ms`, with no fail/cancel/skip.
+- The separately bundled Chromium golden-digest gate also passes on its final optimized
+  source. It recomputes all `10,000 × 8` schedules in Chromium without first rerunning
+  the Node corpus in the same command, and still matches the committed digest and
+  `2749/2489/2044/2718` verdicts with duplicate effects `0/0/0`.
+
+## 2026-08-21 — Lineage-governed logical admission focused PASS
+
+- Added bounded placement-admission trust roots, issuer-signed evidence, and custody-
+  quorum-signed membership epoch `/1`. The epoch binds the exact Capsule/head,
+  provider exclusion, evidence set, validity, prior epoch, and deterministic roster.
+  Alias keys collapse by operator root; canonical matching selects at most one observer
+  per operator root and logical failure domain. Adjacent epochs preserve operator/domain
+  quorum intersection, while independently valid same-parent epochs halt.
+- The initial nested design crossed the generated 65,536-byte relay-message ceiling.
+  The final architecture keeps each epoch as a content-addressed lineage generation
+  sidecar and makes admitted liveness policy `/2` bind only epoch ID, prior ID,
+  evaluation instant, and selection digest. The transport ceiling was preserved.
+- Lineage creation verifies sidecars against the current Capsule. Commit, action,
+  reconciliation, and effect-time paths reverify against the authenticated historical
+  Capsule descriptor. Missing, duplicate, extraneous, noncanonical, or history-
+  mismatched sidecars fail closed.
+- Exact focused results: admission/liveness/profile/SDK `21/21` in `31,918.614ms`;
+  late-response batch `1/1` in `166,487.7185ms`; main lineage with missing/duplicate
+  sidecar negatives `1/1` in `534,301.6707ms`; packed SDK PASS; actual Chromium
+  P2P/admission/repair PASS; security `26/26`, `22` direct / `134` discovered.
+- This establishes policy-scoped logical diversity only. Trust-root/evidence labels are
+  not external truth, and the same-PC fixtures do not prove distinct devices, networks,
+  credentials, administrators, regions, physical capacity, or Sybil resistance. Fresh
+  complete-suite and exact-SHA gates remain pending. The next P0 is external issuer
+  root rotation/revocation plus evidence-byte verification, followed by measured
+  independently administered topology.
+
+## 2026-08-21 — Dual-signed attestation and trust-root rollback closure
+
+- Replaced the opaque admission-evidence digest with a self-contained canonical
+  challenge statement. The subject and issuer sign distinct domains over the same
+  evidence ID. Verification now proves exact subject-key control and the issuer's
+  operator/domain assertion without consulting a live API. Exact generated maximum
+  challenge bytes pass; max+1, issuer/subject overlap, and subject-signature tamper
+  fail closed.
+- Trust roots now bind a stable authority ID, positive sequence, and exact predecessor.
+  Membership epochs require direct rotation, explicit removal-by-revocation,
+  cumulative root/issuer-key history, and cumulative retired-authority state. Skipped
+  rotation, stale-root revocation, silent removal, root-ID reuse, prior issuer-key
+  rollback, and retired-authority resurrection reject before membership publication.
+- Focused admission tests pass `5/5` in `27,452.9363ms`. The combined admission,
+  liveness, profile, and SDK group passes `22/22` in `32,804.4758ms`, including a
+  separately spawned liveness process. The existing actual Chromium P2P verifier
+  passes with browser WebCrypto subject+issuer evidence signatures while retaining
+  WebRTC, origin-cut, liveness, placement, and batch reconciliation checks.
+- Generated profile, clean packed SDK, diff-check, and security-boundary audit pass;
+  security remains `26/26`, `22` direct / `134` discovered. The reviewed admission
+  module hash is `3d394b4ee33d58fa947d241849066d326d31904d78ec98d49177bede8cc1aba4`.
+- This closes local lifecycle replay and exact evidence-byte verification, not issuer
+  honesty or physical independence. The next P0 is to operate these exact artifacts
+  with independently administered issuer credentials and measure induced failures
+  across distinct hosts, networks, and administrative domains.
+
+## 2026-08-21 — Policy-locked process admission ceremony
+
+- Added `lab/placement/admission-signer-session.mjs`. It accepts only a bounded
+  canonical placement-admission request, locally rederives the evidence ID, locks the
+  signer to one exact trust root and attestation policy, verifies that the local
+  public identity occupies the configured issuer/subject role, and delegates only
+  that role's domain-separated message to a constructor-captured private signer.
+- One root/subject/challenge/role slot is sign-once. Exact retries return the same
+  canonical response; a different evidence ID in the same slot rejects. A signer
+  failure releases the slot rather than publishing a partial response.
+- Added a bounded loopback HTTP child and process test. Issuer, subject, and negative
+  control keys are generated as non-extractable WebCrypto keys in distinct children.
+  The coordinator receives public identities, the public trust root, canonical
+  request, and two signature responses only. Wrong root, policy, identity, bearer
+  token, conflicting challenge reuse, and request max+1 reject before signing; issuer
+  termination leaves the subject endpoint usable.
+- The ceremony test passes `1/1` in `953.7608ms`. The combined ceremony/admission/
+  liveness/profile/SDK gate passes `23/23` in `32,610.1841ms`. The new test and the
+  existing admission test are now part of `test:p2p-placement`, closing their prior
+  omission from the complete-suite path.
+- The signer session is now an audited async export. Security passes `26/26` with
+  `22` direct / `135` discovered entries; its module digest is
+  `1821b85e73f0b712ccefec48fc204f481604a749e303900ff8f7f9e715194230`.
+- This is a real process/key-capability boundary but remains one-PC loopback under one
+  test coordinator. It does not prove separate administrators, hosts, networks,
+  power domains, or honest failure-domain labels. Fresh complete-suite, actual
+  multi-host operation, exact-SHA governance, commit, push, and deployment remain
+  pending.
+- Added a direct signer-session containment regression after the initial process
+  gate. It mutates the caller request immediately after the async call, injects one
+  private-signer failure, retries the same slot, and verifies the resulting subject
+  signature; it also proves an accessor-backed `sign` capability is rejected with
+  zero getter calls. The direct session plus process ceremony pass `2/2` in
+  `990.193ms`.
+- With that regression included, the exact combined ceremony/admission/liveness/
+  profile/SDK command passes `24/24` in `33,406.2827ms`.
+- Finalized the portable policy connection after that run: the canonical configured
+  signer policy digest must equal the trust root's `policy_digest`; an unrelated
+  self-consistent root policy is rejected at session construction. The exact current
+  direct process/session gate passes `2/2` in `905.4801ms`, and the exact current
+  combined ceremony/admission/liveness/profile/SDK gate passes `24/24` in
+  `33,082.783ms`.
+- After the policy-digest binding, the reviewed signer-session module digest is
+  `2d0778d564eb5571fbfafd174ffbb88468e2570cd77501b0ebea56d4fc73084c`;
+  async security again passes `26/26`, `22` direct / `135` discovered.
+- Added optional durable custody through the existing local Node authority. The signer
+  session now delegates an owned role message plus deterministic challenge-slot tuple;
+  the authority's mode-0600 identity file, atomic sign-once journal, and process lock
+  preserve both the key identity and decision across restart.
+- The durable process test starts two issuer services over one authority path and races
+  different evidence for the same slot. Exactly one returns `200` and one `409`.
+  After issuer and subject restart, both identities and the root are unchanged, exact
+  winner responses are byte-identical, and both loser requests still return `409`.
+  The complete direct ceremony/session file pair passes `3/3` in `2,111.8895ms`.
+- A first `25`-test combined attempt correctly remained FAIL because its public-
+  transcript assertion searched random base64 values for English words such as
+  `secret`; one public key happened to match. The regression now inspects recursive
+  field names, which is the actual private-material boundary, rather than random
+  public values. That failed run is not promoted.
+- Fresh exact-current ceremony/admission/liveness/profile/SDK passes `25/25` in
+  `33,355.2228ms`. Security passes `26/26`, `22` direct / `135` discovered. The
+  reviewed signer-session module/function digests are
+  `d8211b006422f68aedbda3ce97174b863414c57fed3f4eb97a4329867cf1a34d` and
+  `2e1fdb096beeff20e876fdb6434d05bb8f957b04b4e4e25e1dcabb9e9a53d1af`.
+- Durable local PKCS8 custody is explicitly not HSM/non-extractable, hostile-disk, or
+  independent-administrator evidence. Complete-suite, multi-host operation,
+  exact-SHA governance, commit, push, and deployment remain pending.
+- Evidence-scope correction: the local authority requests file mode `0600` where the
+  filesystem supports it. That request is not evidence that Windows/NTFS ACLs enforce
+  POSIX mode bits; the established result is process-race and restart durability on
+  one PC, not OS-level key isolation.
+
+## 2026-08-21 KST — Private-key-free endpoint ceremony replay
+
+- Added `mortalos-placement-admission-external-ceremony-challenge/1`: its 32-byte
+  nonce accompanies a domain-separated digest over exact issuer origin/key ID and
+  subject origin/key ID. Both signers approve those bytes through the existing
+  dual-signed evidence ID. Recomputing the public bundle hash after an origin edit
+  therefore still fails offline replay.
+- Added a private-key-free HTTP coordinator and CLI. It owns the canonical request,
+  endpoints, bearer strings, timeout, and all four captured Request objects before
+  suspension; refuses redirects and non-loopback plaintext HTTP; bounds every response
+  stream; verifies role identities, responses, and final evidence; and publishes one
+  token-free bundle by no-replace hard link. An existing output rejects before network
+  access and pending files are cleaned.
+- A first post-import capability-poison test correctly exposed that capturing only
+  `fetch` was shallow: Undici consulted ambient `URL` when starting the second request.
+  That failed run is not promoted. Constructing all four Request objects before the
+  first await closes the transitive dependency; hostile ambient `fetch`, `URL`, and
+  reader methods record zero calls.
+- Focused external ceremony `3/3` passes in `2,629.6625ms`; the exact-current combined
+  admission/ceremony/liveness/profile/SDK gate passes `28/28` in `33,419.5179ms`.
+  Security passes `26/26`, `22` direct / `136` discovered. The reviewed ceremony-client
+  module/function digests are `8a31adac1cfddb239905caba3b9e14ddaef8c3198675dbae9bf5778dbf18a625`
+  and `3d7cfd7d1eed8980e344da0f26d9ca360490ed47a58b6d299ad80d2184e0fa02`.
+- All executable endpoints remain loopback on one PC. The bundle proves exact key
+  agreement to endpoint declarations and deterministic replay, not independent
+  administrators, DNS/TLS custody, hosts, networks, regions, or physical domains.
+  Fresh complete suite, exact-SHA governance, live multi-host operation, commit, push,
+  and deployment remain pending.
+
+## 2026-08-21 KST — Origin-locked durable signer services
+
+- The preceding offline bundle correctly detected a rewritten advertised origin, but
+  that was not yet signer-local authorization: a service could still sign a request
+  whose origin declaration differed from the endpoint it was configured to operate.
+  Challenge format `/2` now carries both exact canonical origins and key IDs plus their
+  domain-separated binding digest, and each signer checks its role-specific origin
+  before claiming a slot or invoking private-key authority.
+- The explicit two-origin challenge did not fit the old generated 256-byte ceiling. A
+  first exact `/2` run therefore rejected all three external cases at `challenge-bytes`;
+  that failed run is not promoted. The protocol profile now sets the still-bounded
+  challenge ceiling to 512 bytes, with the existing exact-max/max-plus-one gates.
+- Added the bounded operator-facing HTTP service and signer CLI. Bearer credentials are
+  environment-only, readiness exposes public identity/configuration only, bodies and
+  concurrency are bounded, redirects and remote plaintext coordinator requests remain
+  forbidden, and the final replay bundle contains no bearer or private material. Both
+  issuer and subject reject a `127.0.0.1` to `localhost` alias before key use.
+- A second-order restart gap then became visible: durable private-key and sign-once state
+  did not durably bind endpoint policy. Added self-hashed signer profile `/1` and one
+  same-directory no-replace hard-link lock over identity key ID, role, trust root ID,
+  policy digest, and canonical endpoint origin. Two processes racing different origins
+  against one profile path have exactly one winner; exact retry restores byte-identical
+  state, the losing origin remains `E_PLACEMENT_ADMISSION_SIGNER_PROFILE_CONFLICT`, and
+  crash-left pending files are never selected.
+- `test/placement-admission-signer-service.test.mjs` passes `2/2` in
+  `2,457.7781ms`. The exact signer-profile/service plus ceremony/admission/liveness/
+  profile/SDK group passes `30/30` in `33,864.4836ms`. Security passes `26/26`,
+  `22` direct / `137` discovered; generated profile check passes.
+- Frozen module SHA-256 values are binding `5a9e22411376852642d782c5bb0655c055d8cc0ff387cdde17ceb0ef801443b6`,
+  client `af145a5f2b48b46059ec1026df3a0227264cb478e125654934d5d34cbd00f92f`,
+  signer session `f58cc1a1a8f0e44025e21e697bb810c9f8170e8b66ae5753423cfcb64161432c`,
+  HTTP service `7b7b9278602a53e321e6a37f10b00b01d8da2408eedb612717eac4f11b865f45`,
+  and durable profile `8af79356e5c81ca94fa2258c37eb43ebba11a6d830393753be43f59a7c6940c7`.
+- The durable profile is unsigned local state under trusted directory custody. Loopback
+  services do not prove DNS/TLS certificate custody, independent administrators, hosts,
+  networks, regions, or physical failure domains. Fresh complete-suite, exact-SHA
+  governance, live multi-host operation, commit, push, and deployment remain pending.
+
+## 2026-08-21 KST — Fresh HTTPS deployment observation without topology promotion
+
+- Added `mortalos-placement-admission-deployment-observation/1` and an operator CLI.
+  A fresh process restores the exact dual-signed ceremony, requires both declared
+  origins to be HTTPS, verifies bounded live `/identity` role/key responses through
+  its process trust store, and records TLS protocol, ALPN, peer certificate/public-key
+  digests, and socket remote addresses.
+- The central boundary is intentionally negative: a certificate, address, or live key
+  match is an observation, not administrative or failure-domain authority. Every valid
+  artifact fixes `non_authority:true`, `independent_administration:"unproven"`,
+  `independent_failure_domains:"unproven"`, and
+  `requires_fresh_live_observation:true`; offline restore reports integrity only.
+- The focused regression uses two distinct self-signed TLS roots and keys behind two
+  local HTTPS reverse proxies sharing one loopback address. It therefore proves that
+  distinct origins/certificates/keys can coexist with
+  `remote_addresses_distinct:false` and must not be promoted to topology truth.
+  Swapping one live identity rejects before output; self-rehashed observation or
+  authority promotion rejects; an existing no-replace output rejects before dead
+  endpoints are contacted. An early canonical-parse call and an invalid generic
+  `KeyObject.prototype.export` capture were corrected before evidence collection and
+  are not promoted as PASS runs.
+- Focused observer `1/1` passes in `2,153.6788ms`. The exact-current deployment-
+  observer plus signer-profile/service, ceremony/admission/liveness/profile/SDK group
+  passes `31/31` in `33,492.5431ms`. Security passes `26/26`, `22` direct / `138`
+  discovered. Frozen observer module/function SHA-256 values are
+  `56a525add073cd61bf5a9e47ec66a870bd361159b09827607460f08d9265be8b` and
+  `ea3d2bc27cbd79e3583a19bddb2f64850b0cabc14de1e0254ac0fdad7cfd5a79`.
+- TLS trust-store configuration, DNS/account custody, independent operators, hosts,
+  networks, regions, and physical failure domains remain external evidence. Fresh
+  complete-suite, exact-SHA governance, live multi-host operation, commit, push, and
+  deployment remain pending.
+
+## 2026-08-21 KST — Bounded p2p test-file concurrency after timeout-only full attempt
+
+- The first cumulative `npm test` attempt started at `07:36:16.2725370+09:00` and
+  ended nonzero at `08:33:12.9786832+09:00`, wall `3,416,706ms`. There were no
+  protocol assertion failures. Default Node test-file fan-out made the genuine signed
+  128-cycle journal ceiling compete with batch, executor, and 10,000-schedule CPU
+  corpora; those three tests were cancelled only at their `900,000ms`, `1,200,000ms`,
+  and `900,000ms` wall limits. This run is not promoted as PASS evidence.
+- The three cancelled files then ran with `--test-concurrency=1` and passed `4/4` in
+  `2,894,352.8904ms`: provider-interruption batch `826,790.9508ms`, executor
+  `1,163,858.3671ms`, and schedule `734,196.6988ms`. The first two consumed 91.9%
+  and 97.0% of their old limits, proving that both unbounded fan-out and inadequate
+  variance margin contributed.
+- `test:p2p-placement` now fixes Node test-file concurrency at `2`. Only the measured
+  provider-interruption batch timeout changes `900,000→1,200,000ms`, and executor
+  `1,200,000→1,500,000ms`; the schedule limit and every assertion remain unchanged.
+- The exact worst-case four-file group—journal v2 plus batch, executor, and schedule—
+  passes `13/13` in `2,650,963.2847ms`. Under bounded concurrency the signed ceiling
+  passes in `1,753,841.0621ms`, batch interruption in `871,815.9221ms` (72.7% of
+  budget), executor in `1,211,615.595ms` (80.8%), and schedule in
+  `780,052.3548ms` (86.7%). A fresh complete suite after this source freeze is still
+  required; exact-SHA governance, commit, push, deployment, and live multi-host
+  evidence remain pending.
+
+## 2026-08-21 KST — Full-suite authority and portable-boundary failure epochs
+
+- Full attempt 2 started at `10:10:35.2403813+09:00` and ended nonzero at
+  `11:38:31.5138692+09:00`, wall `5,276,273ms`. Its bounded Node P2P corpus passed
+  `68/68`, including the formerly cancelled batch/executor/schedule files, and the
+  schedule differential plus actual P2P Chromium vertical passed. The confidential
+  Chromium vertical then correctly rejected generation creation as
+  `E_LINEAGE_PLACEMENT_LIVENESS: policy-bound-authority-required`: its provider-signed
+  policy lacked an admitted membership epoch sidecar. This run is not PASS evidence.
+- The Lab controller now exposes only a high-level browser-held Continuity capability
+  that prepares, custody-approves, and finalizes the exact membership epoch. The
+  admission fixture uses that capability without exposing a raw signing oracle. The
+  confidential Chromium verifier admits the exact provider/observer roster, binds the
+  liveness challenge to that epoch, and passes the epoch bytes into generation 1.
+  Focused admission/liveness passes `13/13`; the final high-level confidential
+  Chromium vertical passes in `1,945,182ms`, including membership-bound failure,
+  durable repair, generation 129/384-chain ceiling, and signed plus-one rejection.
+- Full attempt 3 started at `12:51:23.6288990+09:00` and ended nonzero at
+  `14:58:53.4014434+09:00`, wall `7,649,773ms`. It passed every core, security,
+  receipt, P2P Node, schedule differential, actual P2P Chromium, confidential
+  Chromium, transport, SDK, continuity, relay, multi-browser, Lab, cost, R1, build,
+  and UX gate. Near the end, `verify:portable` rejected the local variable spelling
+  `document` in `src/placement/admission.mjs` as a DOM dependency. This run is not
+  PASS evidence.
+- The portable correction is intentionally mechanical: two local `document`
+  variables became `capsuleDocument`; behavior and serialized bytes are unchanged.
+  The admission module security pin is synchronized to
+  `dbed9fd15611f4fc6fcba0c79b663d779aedef0b9f23ef1b36b84ce9dd3b0283`.
+  The direct recovery gate passes `verify:portable`, security boundaries `26/26`,
+  admission/liveness `13/13`, syntax, and diff checking.
+
+## 2026-08-21 KST — First complete policy-bound admission/liveness/repair suite PASS
+
+- Frozen runtime/test bytes ran uninterrupted `npm test` from
+  `2026-08-21T15:08:09.9777152+09:00` through
+  `2026-08-21T17:12:46.1993423+09:00`, exit `0`, wall `7,476,222ms`
+  (`124m 36.222s`). The ordered chain reached final `verify:s4`; this is the first
+  complete-suite PASS that includes bounded P2P concurrency, lineage-governed
+  membership, provider-signed lease-bound liveness, independent possession response,
+  durable effect-time repair, and the portable admission module together.
+- Node P2P passed `68/68` in `3,105,337.3217ms`. The genuine signed replacement corpus
+  passed in `1,604,917.5764ms`; batch interruption in `777,672.3232ms`; the single-
+  shard executor in `1,087,799.2389ms`; the 10,000-schedule corpus in
+  `671,882.6544ms`. No test was cancelled or timed out.
+- The schedule differential passed `10,000 × 8` events with digest
+  `sha256:t0Guc2x3-rrM8G9q7iqYZ1nYNriIj77sgcPort-E5iM` and zero duplicate provider,
+  accounting, or Continuity effects. Actual P2P Chromium passed direct File transfer,
+  browser-held policy and sampled possession response, provider-loss/new-lease repair,
+  origin/relay cut, WebRTC ceilings, and terminal cleanup.
+- Confidential Chromium passed the high-level browser-held membership authority and
+  liveness/repair path, then `127/127` live-browser replacement cycles in
+  `1,433,739ms`, reaching generation 129 and 384 chains (`128/128/128`) with 387
+  receipts. The browser-signed generation-130 `3/3` candidate proved, while its 385th
+  total/129th shard-0 chain failed without changing the ceiling journal; serialized
+  reload rejected the oldest replay.
+- `verify:portable` passed 38 modules, a 180,337-byte browser bundle, byte-identical
+  committed/Node/browser results, and `10,000/10,000` adversarial rejections. Final
+  S3 and S4 promotion receipts both passed. A post-run process inventory found
+  `RELEVANT_LIVE_COUNT=0`.
+- Evidence documents were updated only after the run and are checked separately by
+  specification, link, security, generated-profile, syntax, and diff gates. Exact-SHA
+  CI, immutable review, approval, merge, deployment, public readback, and separately
+  administered multi-host operation remain external. No commit, push, or deployment
+  was performed in this evidence epoch.
+
+## 2026-08-21 KST — Observer-attributed deployment evidence boundary
+
+- Added `mortalos-placement-admission-deployment-attestation/1`, which embeds exact
+  deployment observation bytes/ID, a derived Ed25519 observer identity, attestation
+  time, and signed declared administration, failure-domain, and vantage digests. Its
+  content ID and signature use separate domains. Restore recomputes both the embedded
+  observation and attestation before verifying the observer signature.
+- The high-level `observeAndAttestPlacementAdmissionDeployment` path snapshots all
+  inputs, completes the HTTPS identity/TLS probe, and only then invokes the durable
+  observer key. `scripts/observe-and-attest-placement-admission-deployment.mjs`
+  publishes that self-contained artifact no-replace. The separate low-level API can
+  co-sign an existing observation but is explicitly not proof that its signer
+  performed the historical probe.
+- A deterministic view accepts `2..8` attestations for exactly one ceremony and
+  requires distinct observer keys, observation IDs, and declared vantage IDs. It
+  reports declaration diversity while fixing `non_authority:true`,
+  `independent_administration:"unproven"`, and
+  `independent_failure_domains:"unproven"`.
+- Focused deployment test: `1/1` PASS, `9,730.372ms`. The fixture uses two fresh
+  persistent local observer authority files and distinct fresh observations; reversed
+  order is byte-deterministic. Signature/key swaps, duplicate observer/vantage,
+  accessor/shared/sparse/max+1 input, mutation after async invocation, and existing
+  output all fail closed.
+- Async security: `26/26` PASS, `22` direct / `140` auto-discovered, with exact module,
+  async-function, restored-observation, and Ed25519-verifier provenance pins. This is
+  focused source/runtime/test evidence only. The prior complete suite does not include
+  this delta; a fresh complete suite and exact-SHA gates remain pending. Both local
+  observer keys and TLS endpoints still share one PC, so independent administration
+  and physical topology remain HOLD. No commit, push, or deployment was performed.
+- After adding the explicit reversed-input byte-determinism assertion, the frozen
+  deployment-observer test reran `1/1` PASS in `6,293.8438ms`. Security, spec, links,
+  syntax, JSON parsing, and diff checks all passed on that same source/document state.
+
+## 2026-08-21 KST — Precommitted deployment plan and public observer provisioning
+
+- Replaced the unmerged observer attestation format with
+  `mortalos-placement-admission-deployment-attestation/2` and added
+  `mortalos-placement-admission-deployment-plan/1`. The plan content-addresses one
+  ceremony, a bounded issued/not-before/expires window and timeout, and the complete
+  sorted `2..8` observer roster. Every assignment fixes the exact public key, unique
+  32-byte nonce, and declared administration/failure-domain/vantage digests.
+- Added `scripts/prepare-placement-admission-deployment-observer.mjs`. Each observer
+  host can create or restore its durable local authority and publish only canonical
+  `key_id`/`public_key` bytes through a no-replace pending-file/hard-link flow. The
+  coordinator can therefore construct the plan from public files without receiving
+  private observer material. An existing output rejects before a new authority is
+  created.
+- The combined observe-and-attest path now accepts only a precommitted plan assignment,
+  rejects wrong ceremony/observer/window before endpoint access, derives nonce,
+  timeout, and declarations from the plan, completes the live HTTPS probe, and only
+  then invokes the durable signer. The deterministic view requires every planned
+  observer and rejects missing or substituted plan/key/nonce/observation/vantage.
+- Final focused ceremony/deployment evidence is `3/3` PASS in `9,226.0736ms`; the
+  deployment subtest is `1/1` PASS in `9,017.1127ms`. It covers public identity
+  preparation without private bytes, output-exists-before-authority-create, public
+  plan creation/no-replace, reversed plan/view determinism, self-rehashed reorder,
+  signature/key/plan substitution, incomplete roster, wrong nonce/window, duplicate
+  key/nonce/vantage, accessor/shared/sparse/max+1 input, caller mutation, and output
+  reuse. Async security passes `22` direct / `140` discovered.
+- This closes conforming-flow post-hoc observer, nonce, and window selection. It does
+  not prove that the unsigned plan's times or declarations are true, that the operator
+  followed the combined API, or that keys, hosts, networks, administrators, regions,
+  power, and physical failure domains are independent. The fixture remains one PC;
+  fresh complete-suite and exact-SHA release gates remain pending. No commit, push,
+  deployment, or live multi-host mutation was performed.
+
+## 2026-08-21 KST — All-roster activated deployment plan
+
+- A second-order selection attack remained after the unsigned draft-plan slice: the
+  durable observer's attestation sign-once tuple included the final attestation ID, so
+  one key could sign observations under multiple plans for the same ceremony and a
+  coordinator could retain only the favorable complete view.
+- Added `mortalos-placement-admission-deployment-plan-acceptance/1` and
+  `mortalos-placement-admission-deployment-plan-activation/1`. Every planned observer
+  signs the exact plan ID, ceremony ID, and identity through one ceremony-scoped
+  durable sign-once tuple. Exact-plan retry reproduces byte-identical acceptance;
+  a different plan for the same ceremony/key returns `E_CONTINUITY_EQUIVOCATION`.
+  Activation requires the complete key-sorted roster of valid acceptances and rejects
+  missing, duplicate, mixed-plan, reordered/self-rehashed, substituted, or invalidly
+  signed entries.
+- Added no-replace observer-side acceptance and coordinator-side activation CLIs.
+  `mortalos-placement-admission-deployment-attestation/3` now embeds the exact
+  activation plus observation, and the combined path refuses an unsigned draft plan.
+  The deterministic view requires one activation and its whole roster.
+- Focused ceremony/deployment tests pass `3/3` in `11,968.9394ms`; the deployment
+  subtest is `1/1` PASS in `11,778.6381ms`. The new corpus covers exact acceptance
+  recovery, same-key conflicting-plan halt with zero output, reversed acceptance
+  convergence, incomplete/duplicate/mixed acceptance rejection, activation no-replace,
+  self-rehashed activation reorder, activation substitution, and all prior identity,
+  plan, observation, window, ownership, and bounded-input attacks.
+- Async security adds the plan-acceptance boundary and passes `22` direct / `141`
+  auto-discovered exports and methods with exact module, function, activation restore/
+  selection, plan restore/selection, and Ed25519 provenance pins.
+- This closes same-roster multi-plan choice only inside the conforming flow. It does
+  not authenticate roster admission, stop disjoint Sybil rosters, prove acceptance
+  time, prevent pre-import observations, establish independent administration or
+  topology, or prove use of the combined API. The activation remains
+  `non_authority:true`; fresh complete-suite, exact-SHA, multi-host operation, commit,
+  push, and deployment remain pending.
+
+## 2026-08-21 KST — Custody-membership-bound deployment roster
+
+- Added `mortalos-placement-admission-deployment-plan-membership/1` and a bounded
+  no-replace binding CLI. Creation verifies the custody-quorum membership epoch against
+  the exact current Capsule and prior epoch, binds the exact ceremony subject evidence,
+  and requires the activated plan roster to equal the epoch's complete `2..8` observer
+  membership. Observer key, operator-root, and failure-domain declarations must match
+  the admitted members, and observer roots/domains must be pairwise distinct and
+  distinct from the ceremony subject.
+- Upgraded the still-unmerged observer attestation from `/3` to `/4`. Each attestation
+  embeds the complete membership binding plus the live observation; the operational
+  CLI accepts current Capsule, optional prior epoch, and membership bytes rather than
+  a raw activation. The combined path re-verifies current membership before endpoint
+  access, probes only the admitted assignment, and invokes the durable observer key
+  only after observation succeeds. Historical restore remains separate from explicit
+  current-membership verification.
+- The focused HTTPS deployment test passes `1/1` in `20,484.066ms`. It covers exact
+  binding no-replace, raw disjoint outsider activation rejection, wrong Capsule/prior,
+  self-rehashed observer reorder, incomplete/duplicate/mixed acceptances, signature,
+  plan, activation, membership, nonce, window, realm, shared-memory, sparse, max+1,
+  post-call mutation, and output-reuse attacks. Async security passes `26/26`, `22`
+  direct / `141` discovered exports and methods with exact module/function/provenance
+  pins.
+- This closes raw unadmitted roster selection only under the configured lineage and
+  issuer policy. It does not prove issuer honesty, global epoch uniqueness, trusted
+  clock time, separate administrators, accounts, hosts, networks, regions, power, or
+  physical failure domains. A hidden independently admitted competing epoch remains
+  unknowable without convergence evidence. The test is same-PC; fresh complete-suite,
+  exact-SHA, commit, push, deployment, and multi-host evidence remain pending.
+
+- Evidence refresh after adding direct post-call mutation coverage for the membership
+  bytes: the same focused file passes `1/1` in `22,026.3952ms`, superseding the
+  `20,484.066ms` measurement in the immediately preceding entry. No source semantics
+  or claim boundary changed.
+
+- A follow-up ownership audit found that the combined observe-and-attest path reused
+  caller Capsule/prior byte references after its HTTPS suspension. Both low-level and
+  combined paths now synchronously own bounded Capsule, optional prior-epoch,
+  membership, and observation bytes. A direct Capsule post-call mutation regression
+  was added. The refreshed focused file passes `1/1` in `23,463.9947ms`; async
+  security re-pinned the reviewed functions/module and passes `22` direct / `141`
+  discovered exports and methods.
+
+## 2026-08-21 KST — Observer-signed supplied membership convergence view
+
+- Replaced the still-unmerged deployment membership format with `/2` and attestation
+  with `/5`. Membership binding now owns a bounded set of custody-signed epoch
+  candidates, invokes the existing deterministic convergence algorithm against the
+  supplied current Capsule, embeds the selected epoch, and commits the sorted unique
+  candidate epoch IDs through a separate candidate-view ID. Missing prior/current,
+  sibling fork, cycle, unsafe root history/reconfiguration, and extraneous candidates
+  halt before roster binding.
+- Restore intentionally proves only the selected signed epoch and integrity of the
+  candidate-ID commitment. Explicit verification and both attestation entrypoints must
+  receive the full supplied candidate sidecars, rerun convergence, and reproduce the
+  exact selected bytes, IDs, and view commitment. Each observer `/5` signature therefore
+  attributes the exact candidate view it used, rather than an unsigned coordinator's
+  bare claim that one epoch was current.
+- The no-replace binding and observe-and-attest CLIs now accept repeated
+  `--membership-epoch` inputs. The focused test builds a real two-epoch direct chain,
+  proves reversed candidate order is byte-deterministic, rejects the valid child when
+  its signed prior is omitted, rejects a wrong current Capsule and self-rehashed
+  candidate reorder, and owns Capsule/membership/candidate/observation bytes before
+  suspension. It passes `1/1` in `31,365.1946ms`; async security passes `26/26`, `22`
+  direct / `141` discovered exports and methods.
+- This closes known incomplete or forked candidate views only when an honest observer
+  supplies its complete local inventory. A valid epoch withheld from every observer,
+  global inventory completeness, issuer honesty, independent administration, clocks,
+  networks, regions, power, and physical failure domains remain unproved. Fresh
+  complete-suite, exact-SHA, multi-host operation, commit, push, and deployment remain
+  pending.
+
+## 2026-08-21 KST — Plan-scoped observer attestation choice
+
+- A follow-up selection audit found that attestation `/5` bound the candidate-view ID
+  in signed bytes but used the final attestation ID as its durable sign-once tuple. One
+  conforming durable observer could therefore sign multiple membership views,
+  observations, or instants under the same already accepted plan, allowing a
+  coordinator to collect and retain a favorable complete view.
+- The attestation signer now reserves one durable tuple derived from the accepted plan
+  ID. Exact retry returns byte-identical attestation bytes. A different membership
+  binding/view, observation, or attestation instant under that plan returns
+  `E_CONTINUITY_EQUIVOCATION`; a membership-epoch rotation must begin with a fresh
+  accepted plan and activation.
+- The focused test adds a real third custody-signed membership epoch, proves its rotated
+  candidate view differs, rejects a same-plan signature for that view, and proves the
+  original attestation remains byte-identically retryable both before and after the
+  conflict. The exact file passes `1/1` in `36,592.033ms`.
+- This closes conforming durable-key same-plan multi-view choice. It does not reveal an
+  epoch withheld from every observer, prove issuer or clock honesty, establish physical
+  or administrative independence, or harden a signer implementation that ignores the
+  supplied sign-once tuple. Fresh complete-suite, exact-SHA, multi-host operation,
+  commit, push, and deployment remain pending.
+
+- Evidence refresh after adding a direct changed-attestation-instant conflict: the same
+  exact focused file passes `1/1` in `37,932.5299ms`, superseding the `36,592.033ms`
+  measurement in the immediately preceding entry. No product-source semantics changed.
+
+- Final short gates pass: async security `26/26` with `22` direct / `141` discovered,
+  specification verification with `115` rejection codes and `104` relative links,
+  release links `59` local / `11` HTTPS syntax-only, generated protocol profile,
+  syntax, JSON parse, and `git diff --check`. Source/test SHA-256 values are
+  `bfd6d0894d437f2072927afd8bc81016bf2831fe6564ebdfc57682572168e5fb` and
+  `93646fa469040fc16fa1bc81c697d29dc97ff2722a57a80c9b0dad5fa621b39a`;
+  relevant Node workload count is zero after verification.
+
+## 2026-08-21 KST — Compact all-roster attestation view and ceremony lifecycle correction
+
+- The preceding plan-scoped choice entry described epoch rotation as requiring a
+  fresh accepted plan. That wording was incomplete: plan acceptance itself uses a
+  ceremony-scoped durable sign-once tuple, so the same observer cannot accept another
+  plan for the same ceremony. The conforming rotation unit is therefore a fresh
+  ceremony followed by a fresh plan, complete acceptance/activation roster, membership
+  binding, observation, and attestation. Active protocol and handoff documents now use
+  that boundary; the historical entry above remains unchanged.
+- Added `mortalos-placement-admission-deployment-attestation-view/1`, a compact
+  content-addressed manifest over the complete key-sorted `2..8` attestation sidecars.
+  It commits the exact attestation, observer, observation, vantage, ceremony, plan,
+  activation, membership, selected epoch, and candidate-view IDs plus the derived
+  roster summary without nesting Ed25519 signature bytes. Offline restore proves only
+  canonical shape and self-hash and returns `attestations_verified:false`; explicit
+  verification reruns every sidecar signature and membership constraint and must
+  recreate byte-identical manifest bytes.
+- Added fresh-process no-replace creation and read-only verification CLIs. Reversed
+  sidecar input order is deterministic. A self-rehashed manifest substitution,
+  one/missing/duplicate/extra sidecars, output reuse, or sidecar/view mismatch fails
+  closed. The direct evaluator and creator now share the same explicit `2..8` roster
+  bound, preventing a public API from producing a view that its restorer would reject.
+- Final focused evidence on the resulting source/test bytes is `1/1` PASS in
+  `46,573.5002ms`. Async security passes `26/26` with `22` direct / `141` discovered;
+  the generated profile, syntax, and `git diff --check` pass. Source/test/create-CLI/
+  verify-CLI SHA-256 values are respectively
+  `4d82e9990fa021a453bcfde75ebd0bd31fa342079d1a7a7032a532560eda9892`,
+  `45315df0ad7c347ffe5447135ed6359875269ab327613fe7ef1c6701b7b7c61b`,
+  `abb91c2293cfd7ae7782d847f7ab3d3e041342cf4d68fcdf38910076bee12cc4`,
+  and `9a7feff4f1330ecc26e4e957723c632cbcffc7dbb5e8c915ad35bb1f32fd9b66`.
+- This is portable evidence packaging, not proof of global inventory, honest issuers,
+  trusted time, Sybil resistance, or independent accounts, administrators, hosts,
+  networks, regions, power, or physical failure domains. The fixture remains same-PC.
+  Fresh complete-suite, exact-SHA, genuine multi-host operation, commit, push, review,
+  merge, and deployment remain pending.
+
+## 2026-08-21 KST — Observer-attestation current-source complete-suite PASS
+
+- A fresh ordered `npm test` call was issued at
+  `2026-08-21T20:48:19.650+09:00` on the compact all-roster attestation-view source.
+  The final `verify:s4` PASS output was emitted at
+  `2026-08-21T23:11:26.544+09:00`. The command did not print its own wrapper start/end
+  markers, so these timestamps are an observed execution window rather than an exact
+  wall-time claim. Because the package script is one ordered `&&` chain and reached
+  its final S4 command, every preceding stage completed successfully.
+- The full P2P Node group passed `68/68` in `3,894,776.8885ms`. The observer-
+  attestation file itself passed in `59,251.0818ms` under that integrated load. The
+  run also completed the generated 4,096-head journal boundary, the signed 128-cycle
+  384-chain ceiling and signed plus-one rejection, the `10,000 × 8` repair-schedule
+  corpus, actual Chromium P2P/WebRTC, and the actual Chromium confidential 127-cycle
+  provider-history path. The latter reported `1,514,737ms` dynamic time and retained
+  generation 129 with 384 chains before its signed plus-one rejection.
+- SDK, clean packed consumer, relay, Chromium/Firefox capability probes, Lab build,
+  portable verification, governance/security/profile checks, and S0-S4 all remained
+  in the ordered chain; the last observed output was `MortalOS S4 confidentiality
+  receipt: PASS`.
+- Only evidence/status documents were changed after the run. Therefore the complete-
+  suite result is attributed to the unchanged source/runtime/test/workflow bytes;
+  current documentation is verified separately by spec, link, and diff checks rather
+  than called a whole-current-tree complete-suite run.
+- This closes the local complete-suite gate for the observer-attribution/view delta.
+  It does not close exact-SHA CI, immutable review, commit/push/merge/deploy, hidden-
+  inventory completeness, issuer or clock honesty, Sybil resistance, or independently
+  administered accounts, hosts, networks, regions, power, and physical domains.
+- Final post-run static gates pass on the current evidence-document bytes:
+  `verify:spec` covers 115 rejection codes and 104 relative links;
+  `verify:links` covers 59 local and 11 HTTPS syntax-only targets;
+  async security passes `26/26` with `22` direct / `141` discovered; generated profile,
+  syntax, security-module pin, and `git diff --check` pass. The attestation module hash
+  remains `4d82e9990fa021a453bcfde75ebd0bd31fa342079d1a7a7032a532560eda9892`,
+  and the relevant Node workload count is zero.
+
+## 2026-08-22 KST — Public signer bootstrap and current-source complete-suite PASS
+
+- A multi-host runbook audit found a real bootstrap dependency that the same-process
+  tests had hidden: a ceremony request binds the subject public key and both endpoint
+  origins, but the only way to obtain the subject key was to start its long-running
+  signer and parse readiness stdout. The draft runbook also attempted to freeze the
+  trust root and request before fresh authorities existed, which was impossible.
+- Added `scripts/prepare-placement-admission-subject.mjs`. It creates or restores only
+  the subject host's durable authority, publishes its canonical public identity by a
+  same-directory no-replace hard-link, verifies readback, exposes no private material,
+  and rejects an existing output before creating an unrequested authority.
+- Added `scripts/create-placement-admission-ceremony-request.mjs`. It accepts only the
+  canonical public trust root, subject identity, exact policy, two endpoint origins,
+  and bounded logical times; verifies the root-policy digest, generates a fresh local
+  32-byte nonce, creates the endpoint-bound challenge and signing request, and
+  publishes the canonical request no-replace. It requires neither signer service nor
+  either private authority.
+- The signer-service and HTTPS deployment-observer tests now execute the operator
+  sequence `issuer trust root -> subject public identity -> request -> services ->
+  ceremony` instead of constructing the request from service readiness. Focused
+  evidence passes signer service `3/3` in `4,052.6003ms` and HTTPS ceremony-to-observer
+  `1/1` in `47,987.2761ms`. Collision tests prove occupied issuer/subject/request
+  outputs are not replaced and occupied public identity outputs do not create the
+  corresponding authority.
+- A fresh ordered `npm test` ran from
+  `2026-08-22T00:10:31.9611979+09:00` through
+  `2026-08-22T02:21:20.3185492+09:00` and exited zero after exactly
+  `7,848.357s`. The P2P Node group passed `69/69` in `3,452,293.3145ms`; under
+  integrated load the HTTPS deployment-observer path passed in `49,972.145ms` and
+  signer-service restart path in `2,554.1807ms`. The run reached final `verify:s4`
+  after actual Chromium DataChannel, `10,000 x 8` repair schedules with duplicate
+  provider/accounting/Continuity effects `0/0/0`, the Node 384-chain ceiling, and the
+  Chromium 127-cycle generation-129/384-chain ceiling plus signed plus-one rejection.
+- Source/runtime/test/workflow bytes did not change during that suite. Only status and
+  evidence documents changed afterward and are covered by separate current static
+  gates. SHA-256 values for issuer prep, subject prep, request creation, signer runner,
+  ceremony runner, signer-service test, and observer integration test are respectively
+  `70a6185043649436766c4469afa390004239934383d00a688aed9cb5954da2e2`,
+  `c38d09729ada6291935eddd5388d43d8eb4d7b026dfe9b812171348e70d9fefa`,
+  `2192396c367f46898df72e0d2d43c532d42df86e3c59a79abe69433ff0a73b2f`,
+  `b68436d579d751eb10e383c981289a0cbfdebbd4ff470e57ac3b1de8aa7daf15`,
+  `5e07b588e5bf6c0ee213ce3a2ba718487f753d9ae0a4b30a3e8ac9db8d9c2f0b`,
+  `ae2d900496fc05094f6f056ce4fb475c942dfaa71910838f19875f75ca725095`,
+  and `2ea3bec58db268f6b543b84c638665a6082d9d48bf8da94693e0835703aae089`.
+- This closes the private-key-free public-file bootstrap needed to make a four-context
+  pilot operable. It does not execute that pilot or prove independent accounts,
+  administrators, hosts, networks, regions, power domains, issuer honesty, trusted
+  time, global inventory, or Sybil resistance. Exact-SHA CI/review, commit, push,
+  merge, deployment, and all external mutation remain pending.
+- Final post-run document/static gates pass on the current bytes: specification
+  verification covers `115` rejection codes and `104` relative links; release links
+  cover `59` local and `11` HTTPS syntax-only targets; async security passes `26/26`
+  with `22` direct / `141` discovered exports and methods; generated protocol profile,
+  syntax, and `git diff --check` pass. Repository-related Node workload count is zero.
+
+## 2026-08-22 KST — Custody-approved membership ceremony and 70/70 complete-suite PASS
+
+- A second runbook audit found that the pilot still assumed pre-existing membership
+  epochs even though those epochs can only be created after the observer admission
+  ceremonies. The only test path created them by calling the portable core with raw
+  private authorities, so a coordinator could not operate the documented workflow
+  without collapsing custody boundaries.
+- Added the non-normative operator envelopes
+  `mortalos-placement-membership-epoch-request/1` and
+  `mortalos-placement-membership-epoch-approval/1`. A request accepts no free-form
+  epoch body: it derives the candidate from verified ceremony bundles, the current
+  Capsule, bounded observer policy/window, and an optional exact predecessor. Each
+  current custodian independently signs the rederived core custody message with an
+  existing durable authority. Finalization sorts approvals by code-unit key order,
+  enforces the current Capsule quorum, and publishes only the existing canonical
+  membership epoch `/1` bytes.
+- Added no-replace request, approval, and finalize CLIs. Output collision and a
+  non-custodian reject before signing; the approval path never creates an authority.
+  Exact retry is byte-identical, one approval is insufficient for a 2-of-3 Capsule,
+  reversed threshold approval inputs produce identical epoch bytes, mixed requests
+  reject, and a conflicting reuse of the same sign-once tuple halts without changing
+  the authority file.
+- Reworked the deployment regression so that every observer durable plan/attestation
+  key is also the subject of its own policy-locked issuer/subject HTTP ceremony. The
+  same admitted key accepts the plan and signs the observation. Epochs 1 through 3
+  now flow through request, current-custodian approval, threshold finalization, and
+  exact predecessor chaining; the raw private-authority admission-evidence shortcut
+  is gone.
+- Focused evidence passes the new epoch ceremony `1/1` in `12,405.8186ms`, the
+  integrated deployment path `1/1` in `56,774.1555ms`, and both together `2/2` in
+  `57,055.0734ms`. Async security passes `26/26` with `22` direct / `141` discovered;
+  specification verification covers `115` rejection codes and `104` relative links;
+  release-link verification covers `59` local and `11` HTTPS syntax-only targets.
+- A fresh ordered `npm test` on unchanged source/runtime/test/workflow bytes exited
+  zero after final `verify:s4`. P2P Node passed `70/70` in `3,529,502.2144ms`, including
+  the new membership ceremony in `12,715.6333ms` and integrated deployment path in
+  `59,835.4188ms`. The run also passed the actual Chromium WebRTC path, the
+  `10,000 x 8` repair corpus with digest
+  `sha256:t0Guc2x3-rrM8G9q7iqYZ1nYNriIj77sgcPort-E5iM` and duplicate external effects
+  `0/0/0`, the Node 128-cycle/384-chain ceiling, and the Chromium 127-cycle
+  generation-129/384-chain ceiling plus signed plus-one rejection. No exact wrapper
+  timestamps were captured, so no wall-time claim is made.
+- SHA-256 values for the ceremony module, request CLI, approval CLI, finalize CLI,
+  focused ceremony test, integrated deployment test, and updated runbook are
+  respectively
+  `f8ce4287e37f7d6476aec976709e4de79f21236308c27c80ca727295172819b0`,
+  `173c8893986a90a054de1016ffbdba851ee6333beb2d120fea36ca65061d1c5d`,
+  `cf95ce6546e5fac7ce5444361ad9c3eedb84def56e837f0118796640a2288c31`,
+  `28fec0c3412dc4a722acf17c0b58be37da9592f8c7bdc424366e9789482b8d72`,
+  `49d9135132bb8be8620e760d4aa4e580de91904feba6796ec69091cfa517d40a`,
+  `7a7f257a507a7b1150bcf52a4aedc4f094449c51e234f54d44003e91c3437979`,
+  and `a2bc9915678b0edea9390f92e88c0c98677c070b651e6b7e14703fedcbcbf02a`.
+- The relevant Node workload count was zero after the run. No commit, push, merge,
+  deployment, live authority, or external mutation occurred. This removes the last
+  known local operator workflow gap before a real pilot; it does not prove issuer or
+  clock honesty, hidden-inventory completeness, Sybil resistance, or independent
+  administrators, credentials, accounts, hosts, networks, regions, power, and
+  physical failure domains. Exact-SHA governance and real multi-host operation remain
+  HOLD.
+
+## 2026-08-22 KST — Complete public pilot-chain replay receipt; focused PASS, ordered final-receipt HOLD
+
+- A second Phase 9 audit found that the compact attestation-view verifier covered only
+  the view and attestation sidecars. It did not independently replay the separately
+  published ceremony trust roots, subject identities and requests, membership request/
+  approval/finalized predecessor chain, plan/acceptances/activation, current membership
+  convergence, or the exact primary ceremony. The executable evidence was therefore
+  weaker than the runbook's complete-public-chain promotion criterion.
+- Added non-normative receipt `mortalos-placement-admission-pilot-evidence/1`, its
+  canonical public-root-confined index `/1`, a no-replace creation CLI, and a read-only
+  verification CLI. Creation and verification replay every separately published
+  ceremony input and bundle, rederive each membership request, verify current-custodian
+  approvals and the chronological finalized chain, recreate activation, rerun current-
+  Capsule membership convergence, and verify all attestations plus the compact view.
+  The receipt contains only authenticated IDs and public SHA-256 digests. Restore is
+  deliberately self-hash-only with `public_chain_verified:false`; only full sidecar
+  replay can return true.
+- The index rejects absolute paths, lexical `..` escape, and symlinks resolving outside
+  its public evidence root. Unordered ceremony, bundle, approval, acceptance, and
+  attestation sets are deterministic. The integration rejects omitted predecessor
+  history, swapped ceremony roots, self-rehashed manifest substitution, expected-commit
+  mismatch, output reuse, accessors, shared buffers, sparse/max+1 epoch inputs, and
+  private-material leakage. The expected commit is explicitly `recorded-only`; this is
+  not clean exact-SHA execution evidence.
+- The final affected integration rerun ran from
+  `2026-08-22T12:39:38.5332432+09:00` through
+  `2026-08-22T12:41:16.3329643+09:00`, exited `0`, and passed `1/1` in
+  `97,722.7414ms` (`97.800s` shell). The unchanged membership-epoch ceremony also has
+  focused `1/1` PASS evidence in `11,673.7641ms` runner time.
+- A same-source ordered `npm test` started at
+  `2026-08-22T11:20:59.6179276+09:00`. Every preceding stage passed, including
+  conformance `76/76`, 10,000-case properties/state/recovery, confidentiality `26/26`
+  with one million allocations and zero IV duplication, actual Chromium S4 vectors,
+  protocol/resource `23/23`, and security `26/26` with `22` direct / `141`
+  auto-discovered surfaces. The P2P group emitted successful tests through `51`,
+  including the 384-chain ceiling, the `872,566.7433ms` interruption/resume batch, and
+  the `1,209,841.2291ms` single-shard executor. The final PTY output and wrapper exit
+  receipt were lost after the last worker exited. No failure was observed and all
+  related processes ended, but process disappearance is not an exit-zero receipt;
+  this attempt is preserved as incomplete evidence and is not called a current
+  complete-suite PASS.
+- SHA-256 values for the receipt module, index loader, create CLI, verify CLI,
+  integrated test, and runbook are respectively
+  `fcc4c7502f1978066f2f50b6c1563f37a683c342fa0b1cefac7457391f0d2ed6`,
+  `2ab8a3f05085d11f9af60833eb440f344f507a17e2f2eed5d3245622d9a48e07`,
+  `cee29dbd12752a82ff40ae880249880758da6241992d588c0dc0cf4e7008e9f1`,
+  `f907aafca2682d73b111947be4a62958f0c8509bc2ac09d80b73ede5dffe22ff`,
+  `ca267985fe34647825b01be79ced0b67c546cf8d335f26d047aca5e0809358d5`,
+  and `65e136ee5bfa939dae7e1ca1ffb2c72d2675894132ca810870662415ae8f7093`.
+- No commit, push, merge, deployment, authority use, live multi-host operation, or
+  external mutation occurred. The next meaningful gate is a separately administered
+  pilot whose exact public index reproduces this receipt contract; exact-SHA execution,
+  issuer/clock honesty, hidden-inventory completeness, Sybil resistance, and physical/
+  administrative failure-domain independence remain HOLD.
+- Final post-document gates ran from `2026-08-22T12:44:10.3658988+09:00` through
+  `2026-08-22T12:44:13.7361020+09:00` and exited `0`: specification covers `115`
+  rejection codes and `104` relative links; release links cover `59` local and `11`
+  HTTPS syntax-only targets; async security passes `26/26` with `22` direct / `141`
+  auto-discovered surfaces; generated protocol profile, all four new-file syntax
+  checks, and `git diff --check` pass. The relevant Node/cmd workload count is zero.
+
+## 2026-08-22 KST — Role-local bearer custody and response-complete public replay
+
+- An operator-runbook audit found a direct contradiction: the strict target prohibited
+  bearer tokens from crossing role custody, while Phase 3 instructed the coordinator to
+  receive both tokens. This was a real administrative-separation defect even though the
+  combined runner never persisted the tokens or placed them in bundle bytes.
+- Added canonical public role-response `/1` artifacts and a role-local HTTP client. Each
+  invocation owns one request, endpoint, role, timeout, and bearer before suspension;
+  validates the configured origin and live role/key; constructs both Requests before
+  the first await; and can call only one signer. The operator CLI reads only
+  `MORTALOS_ADMISSION_SIGNER_TOKEN` and publishes one response no-replace.
+- Added a synchronous/network-free finalizer and CLI. It receives the request plus
+  issuer/subject public responses, checks roles, identities, origin challenge binding,
+  evidence IDs and signatures, then recreates the existing ceremony bundle `/1`.
+  Existing output paths reject before input reads. The compatibility combined runner
+  delegates to the same finalizer and produces byte-identical output.
+- Extended the pilot index so every ceremony must carry both role responses. Receipt
+  creation re-finalizes those sidecars at the bundle's recorded evaluation instant and
+  requires exact bundle-byte equality. The compact receipt records public response
+  SHA-256 digests and authenticated response IDs. The integrated negative control swaps
+  an issuer response between two ceremonies and fails at `finalization-identity` with no
+  evidence output.
+- `node --test test/placement-admission-external-ceremony.test.mjs` exits `0`, `4/4`, in
+  `5,143.0523ms`. It covers one-local-token-per-role operation, accessor/shared-memory
+  rejection, caller-mutation ownership, poisoned token variables at offline finalization,
+  exact compatibility bytes, wrong role/origin, swapped responses, output collisions,
+  dead endpoints, no pending residue, and token-free artifacts/transcripts.
+- `node --test test/placement-admission-deployment-observer.test.mjs` exits `0`, `1/1`,
+  with subtest `101,967.6271ms` and runner `102,159.8635ms`. The full same-PC HTTPS path
+  now uses role-local CLIs for the provider and both observer ceremonies, then replays
+  all response/request/bundle, two membership epochs, plan/acceptance/activation,
+  membership convergence, observation/attestation, compact view, and final public
+  receipt sidecars.
+- Post-change gates exit `0`: specification (`115` rejection codes, `104` relative
+  links), release links (`59` local, `11` HTTPS syntax-only), generated protocol
+  profile, async security (`26/26`, `22` direct / `142` auto-discovered), syntax checks,
+  and `git diff --check`.
+- Key SHA-256 receipts are: ceremony client
+  `90099fe5be6096ce34c2dc3c317c9d470c6990cbd93f1a048b51964b49d93f40`; role CLI
+  `0f849b9ea18edf511f3d2ea754eeb66ebc3ec25dd9966d53e5ce4bed6e5c1019`; finalizer CLI
+  `7592f480993528a6ae892cc092e50835567e18eee3514af7c553ab042f420834`;
+  pilot evidence module
+  `91d1923942898f3962248a668474ae4b77f3aa9f1964db1eaa51566d4f5c64bf`; index loader
+  `dd67c0579158ef3b85d5d7c6f8831ac9e5b1d8ee32406fc67e46be456b6c359d`;
+  external test `24259861fd1b01a27035340b4a5b3799370164d9c16cb8fb0af72a9935385902`;
+  integrated test `6e3fd95c924f01e14ca538af408459214857ac22ab8a53f64386c525d1e2498f`;
+  runbook `2555d051f3e367f7c14a36ed30f7b138eef580554e17489f922e2b81504ea9b2`.
+- HEAD and `origin/main` remain
+  `285ccbae01011a7c69e16016dc1bdd1d8d2e1203`. The cumulative dirty worktree is `109`
+  paths (`43` modified, `66` untracked); unrelated and prior task bytes were preserved.
+  No commit, push, merge, deployment, real signer authority, or external mutation
+  occurred. Current complete-suite and exact-SHA governance remain pending; external
+  issuer/clock honesty, hidden-inventory completeness, Sybil resistance, and real
+  administrative/host/network/region/power/physical independence remain HOLD.
+
+## 2026-08-22 KST — Native HTTPS under role-local signer custody
+
+- The next operational audit found that every supposedly independent signer still
+  required an out-of-process TLS terminator. That left certificate/private-key custody
+  and the direct executable path outside the signer role even though the coordinator and
+  bearer boundaries were already separated.
+- Added optional native HTTPS to the operator-facing service. TLS certificate bytes are
+  bounded to 1 MiB, private-key bytes to 256 KiB, both are copied into owned non-shared
+  storage, the listener requires TLS 1.2 or newer, and its handshake is bounded by the
+  existing 10-second header deadline. Omitting TLS preserves private HTTP reverse-proxy
+  mode. Public service state exposes only `protocol`.
+- The runner adds paired `--tls-certificate` and `--tls-private-key` inputs, bounded
+  regular-file reads with changed-size detection, an HTTPS advertised-origin
+  requirement, and secure-context preflight before policy loading or absent durable
+  authority creation. Readiness adds only `listen_protocol` and `tls_enabled`; it never
+  emits certificate/private-key bytes or `MORTALOS_ADMISSION_SIGNER_TOKEN`.
+- The new direct-path regression proves that incomplete TLS arguments, a max+1 private
+  key, and a mismatched pair fail before authority creation. It starts two native HTTPS
+  role signers with distinct certificates, runs one-token-per-role clients, performs
+  network-free finalization with poisoned token variables, restores the exact bundle,
+  and observes both endpoints through a trusted CA set. The observation records distinct
+  peer certificate/public-key digests and `remote_addresses_distinct:false`; offline
+  restore reports `live_observation_verified:false`. Restart reproduces byte-identical
+  issuer/subject responses, no pending residue remains, and public artifacts/transcripts
+  contain neither bearer nor private-key material.
+- `node --test test/placement-admission-signer-service.test.mjs` exits `0`, `4/4`, with
+  native HTTPS subtest `4,468.9245ms` and runner `9,327.4944ms`.
+- `node --test test/placement-admission-deployment-observer.test.mjs` exits `0`, `1/1`,
+  with subtest `100,274.1801ms` and runner `100,504.5843ms`. This confirms that the
+  existing proxy-backed admission/deployment/public-chain integration remains intact.
+- Related signer/ceremony regressions pass `7/7` in `6,014.1666ms`. Post-change gates
+  exit `0`: async security `26/26` with `22` direct / `142` auto-discovered surfaces;
+  specification verification with `115` rejection codes and `104` relative links;
+  release links with `59` local and `11` HTTPS syntax-only targets; generated protocol
+  profile; syntax checks; and `git diff --check`.
+- Key SHA-256 receipts are: native signer service
+  `bbc111766fadd66dfdb438e6e983ebdd1acd19eafee0f2a4c7ac270750b58274`; signer runner
+  `56253860e998eae77beafad1e11a191d8d5fa6fb777742b155588765bf398455`; signer-service
+  test `016345d3e63dc7984141086d45642d0a671e683c4d1b5b8ddf9bf1d3f10e4988`; operator
+  runbook `34562d75cdc6149758ea3733060eee75ae80776a1bd2f68d68bd4ff55285e5ef`.
+- HEAD and freshly verified `origin/main` remain
+  `285ccbae01011a7c69e16016dc1bdd1d8d2e1203`. The cumulative dirty worktree remains
+  `109` paths (`43` modified, `66` untracked); unrelated and earlier task bytes were
+  preserved. No commit, push, merge, deployment, real signer authority, external
+  mutation, or live multi-host operation occurred.
+- This removes the external TLS-proxy dependency from the directly executable pilot
+  path. It is still same-PC evidence: distinct certificates do not prove independent
+  certificate authority, accounts, administrators, hosts, addresses, networks, regions,
+  power, or physical failure domains. The current complete-suite, exact-SHA review, and
+  separately administered multi-host pilot remain HOLD.
+
+## 2026-08-22 KST — TLS-channel role-key proof and crash-recoverable observation journal
+
+- Auditing the newly native HTTPS boundary found that the deployment observer still
+  called only public `/identity`. A server holding the trusted certificate but not the
+  ceremony role key could replay those bytes and satisfy the old freshness claim.
+- Added canonical possession challenge/proof `/1`. The challenge binds ceremony bundle,
+  exact signed origin, role, key ID, observer nonce, and observation instant. Client and
+  signer derive 32 bytes from
+  `EXPORTER-MortalOS-placement-admission-deployment-v1` with the exact challenge bytes as
+  TLS exporter context on that request connection; the configured role key signs the
+  exporter digest. Observation `/2` verifies the bundle key signature and records the
+  bounded proof, exporter digest, certificate/public-key digests, TLS protocol, and
+  socket facts. A fake HTTPS server using the same test certificate and captured proof
+  fails on a new connection's exporter.
+- Native signer startup now requires
+  `MORTALOS_ADMISSION_SIGNER_POSSESSION_TOKEN`, distinct from the admission bearer. The
+  proof route cannot call admission signing. Default observer and combined-attester CLIs
+  require distinct issuer/subject possession tokens and never downgrade; explicit
+  `legacy-identity-only` produces parseable observation `/1` only. Missing/reused tokens
+  fail before input/network or absent authority creation as applicable. Both token
+  classes and private-key bytes are absent from readiness, public artifacts, journals,
+  and transcripts.
+- TLS exporter freshness exposed a second bug: reconnecting with the same logical
+  nonce/time necessarily creates another observation ID, so a crash after durable
+  observer signing but before attestation publication could not reproduce the
+  plan-scoped sign-once message. The combined CLI now requires
+  `--observation-journal`. Its captured journal capability hard-links and reads back the
+  exact bounded token-free observation before the observer signer is invoked. If the
+  journal exists, a retry restores and fully revalidates its mode, time, ceremony,
+  proofs, nonce, membership, and plan assignment and performs no endpoint request. A
+  conflict fails before signing.
+- The final integrated regression exits `0`, `1/1`, with subtest `109,399.7366ms` and
+  runner `109,718.1904ms`. It exercises two native role signers, live `/2` proofs,
+  captured-proof replay rejection, two-epoch membership/deployment/attestation/public-
+  chain replay, journal secret scans, then stops both signers and removes all possession
+  tokens before a fresh process reproduces the byte-identical attestation from the
+  journal. Reusing that journal with a different observation instant fails with no
+  output.
+- The current signer-service file exits `0`, `4/4`, in `20,655.0405ms`; adjacent
+  ceremony/external-ceremony/signer-session files exit `0`, `7/7`, in `10,071.95ms`.
+  Those concurrent receipts cover `11/11`. Final async security exits `0`, `26/26`,
+  with audit `22` direct / `143` auto-discovered entrypoints. Specification verification
+  passes with `115` rejection codes and `104` relative links; release links pass `59`
+  local / `11` HTTPS syntax-only; generated protocol profile, relevant syntax checks,
+  and `git diff --check` also exit `0`.
+- Key SHA-256 receipts are: signer session
+  `2abf102e1082a6326a8dd7f0be674735dcfc2c516fd71fe6ba0fed7e511350d2`; native signer
+  service `d78a0e84bdb245edede4a6d3ddb2418434a8ad7a96de01ddbec9de1931d843b1`;
+  observer `18717c7c0f49a494e1641bc39a4e584a8df2a48d1f8f90e42060aad0c6b2c425`;
+  attestation/journal boundary
+  `0044ce0d591390ab839c4b7009d56c05c7f1a641e6cbca6617f7cee44c914ccb`;
+  signer runner `317edcc12a86f5c0d64b5e9166e107a5d15b82d9868b8f5992a07f0108f218ee`;
+  observer CLI `3f2f702e2dd549174f4ffe70eec3e828f04d503cd7baf1304435e964a07b0273`;
+  combined CLI `79eb559442a3a09c126d5791fdf75203390b033b27d98d3b0a8ae0f9c3ec786c`;
+  signer-service test `bae190dc4bf05de3a0309446c406b8ada843cc0107bf23024e3bd923462def02`;
+  integrated test `96025101066a450b53b7b17bf8761061b1f7ea16208778781efab71607d3fcd9`;
+  runbook `7cae8bae7350879f2a3d530af404e59656efb3d640fe046a9932d44299f26e14`.
+- HEAD and freshly verified `origin/main` remain
+  `285ccbae01011a7c69e16016dc1bdd1d8d2e1203`. The cumulative dirty worktree remains
+  `109` paths (`43` modified, `66` untracked); prior and unrelated bytes were preserved.
+  No commit, push, merge, deployment, live signer authority, or external mutation
+  occurred. Journal durability is local-directory/no-replace scoped, not hostile-disk or
+  power-loss proof. All current endpoints still share one PC/address; certificate-
+  authority, account, administrator, host, network, region, power, and physical-domain
+  independence, current complete-suite, exact-SHA review, and the real multi-host pilot
+  remain HOLD.
+
+## 2026-08-22 KST — Role-key-attributed pilot source artifacts; focused PASS
+
+- A current-state audit found one remaining local operational gap before the real
+  multi-host pilot: `pilot-evidence/1` recorded one expected commit but no role key
+  attested which source checkout produced each signed public artifact. The receipt was
+  correctly labeled `recorded-only`, so this delta adds a separate layer rather than
+  silently changing that claim or format.
+- Added `mortalos-placement-admission-role-execution-receipt/1`. It binds exact artifact
+  bytes by SHA-256, authenticated artifact ID/kind, fixed role, public signer identity,
+  source commit, and `checkout_state:"clean"`. All caller bytes/scalars and the signer
+  capability are snapshotted before suspension. The durable sign-once tuple is keyed by
+  artifact kind plus authenticated ID: exact retry returns the same bytes, while a
+  different source/digest assertion for the same artifact identity returns
+  `E_CONTINUITY_EQUIVOCATION`.
+- Added the role-local operational CLI. Before private-key use it resolves the supplied
+  Git top level, requires exact `HEAD`, and requires empty tracked/untracked/submodule
+  porcelain status. It then signs and hard-link-publishes the receipt no-replace.
+  Wrong HEAD and an untracked marker both reject with no output.
+- Added `mortalos-placement-admission-pilot-source-attestation/1` plus no-replace create
+  and read-only verify CLIs. Creation first replays the exact existing public pilot
+  receipt and sidecars, derives the expected key and artifact for every ceremony role
+  response, membership approval, plan acceptance, and deployment attestation, and
+  requires exactly one matching signed receipt. Receipt input order is canonicalized.
+  Offline restore sets `receipts_verified:false`; full replay sets it true and reports
+  `source_commit_execution_binding:"role-key-attested-artifacts"`. Unsigned coordinator
+  execution, topology, and both independence verdicts remain `unproven`.
+- Final native `/2` HTTPS/membership/deployment/public-chain/source integration is
+  `1/1` PASS in `165,590.5383ms` (`165,777.909ms` runner). The fixture binds 12 signed
+  artifacts across 7 role keys and covers clean real-Git CLI success, exact retry,
+  artifact-keyed conflicting-SHA halt, dirty checkout, wrong HEAD, modified receipt,
+  missing receipt, reversed input byte equality, self-hash-only restore, no secret
+  leakage, and no-replace output.
+- Async security includes the new suspension boundary and passes `26/26` with `22`
+  direct / `144` auto-discovered functions. Specification passes with `115` rejection
+  codes and `104` relative links; release links pass `59` local / `11` HTTPS syntax-
+  only; generated profile and syntax/diff checks pass.
+- Key SHA-256 receipts: role receipt module
+  `12fce022814d511104531b05fbdcaa751dc16889206d0c6b914b304408ca7002`;
+  aggregate module
+  `a60f351ee1e39c277cdf519eaa8c3c28cae6974152b45877ad2a8ea02e857201`;
+  role CLI `bd317ad06ab3f6deb5ac62b1f0f2c8e5fc8ab7703e2133e3a90de85c62003110`;
+  aggregate create/verify CLIs
+  `3da818097e691215b49306cbd14db61bf626f5c8a5e9d34e27105c9daa0a902a` /
+  `890534af7ccbaee27a299d69656cc1ffb0f23b61ea5280576e34cab9066be36a`;
+  integrated test
+  `9d577fb54865458130f1a6ce9f71baeb413f16838c684cc5b614fdb0fc202ee5`;
+  security registry/verifier
+  `dcc74c953057402484e6c96b2e6de993d737a075a8e0bae03c39540f5852de33` /
+  `f020b39cd9b583d28441a35b40ee6b41acb263db1c51db221610a60ac641d1eb`;
+  operator runbook
+  `4d5edfdd7065d52e60da6c149e2dcf49c4a2d06b3cf30ff1f88c4a57859b22de`.
+- This result is attributable role-key testimony under the conforming CLI, not proof
+  against a dishonest operator or proof that unsigned coordinator artifacts ran from
+  the claimed source. HEAD and `origin/main` remain
+  `285ccbae01011a7c69e16016dc1bdd1d8d2e1203`; the cumulative dirty worktree is `114`
+  paths (`43` modified, `71` untracked). No commit, push, merge, deployment, live role
+  authority, or external mutation occurred. Current complete-suite, exact-SHA
+  governance, and a separately administered multi-host pilot remain HOLD.
+
+## 2026-08-22 KST — Coordinator-non-authority source verdict; focused PASS
+
+- Audited the remaining `unsigned_coordinator_execution_binding:"unproven"` boundary.
+  Adding a coordinator key would have promoted the orchestrator into a new trust actor,
+  contrary to the participant-authority North Star. Implemented a bounded final verdict
+  that retains coordinator execution as unproven while proving it is unnecessary as a
+  verification authority.
+- Added `mortalos-placement-admission-pilot-source-verdict/1`. Full creation first
+  recreates the complete pilot public chain and exact role-source aggregate, then
+  derives a sorted digest inventory of every unsigned protocol artifact. Trust roots,
+  subject identities, ceremony requests, membership requests, and the deployment plan
+  must be endorsed by participant signatures. Ceremony bundles, finalized epochs,
+  activation, membership binding, attestation view, and pilot evidence must be
+  deterministically replayed or revalidated. The Capsule is a separately authenticated
+  input. No coordinator key or signature exists.
+- Added no-replace create and read-only verify CLIs. Offline restore is self-hash-only
+  and sets `participant_receipts_verified`, `public_chain_verified`, and
+  `unsigned_protocol_artifacts_verified` false. Full verification recreates exact
+  verdict bytes from every public sidecar and receipt before setting all three true.
+- Final native `/2` HTTPS/membership/deployment/public-chain/source/verdict integration
+  is `1/1` PASS in `178,826.3298ms` (`179,032.6269ms` runner). The exact current fixture
+  closes 34 evidence artifacts: 12 role-source artifacts across 7 keys, 21 unsigned
+  artifacts (12 participant-endorsed and 9 deterministically replayed), and one
+  signature-verified Continuity Capsule.
+- Async security exits `0`, `26/26`, with `22` direct / `144` auto-discovered exports
+  and class methods. Specification exits `0` with `115` rejection codes and `104`
+  relative links; release links exit `0` with `59` local / `11` HTTPS syntax-only;
+  generated protocol profile, relevant syntax, and `git diff --check` pass.
+- Key SHA-256 receipts: verdict module
+  `b0127b0356ec0e086ce7b8ffaa1ad9b6d5873994fcd51463b3c742c62761b9ab`;
+  create/verify CLIs
+  `045a8ffd19a2df8bbb5c9c2252ebb5cf1064391785348327f7e87bb063802d2f` /
+  `2dd6c7b28f869bb4c584a765b2748b5d23f112431fde3741796198a60183e432`;
+  integrated test
+  `146ce919e57e759dd0790f7885b67110c284d2b9e61036904a0afb0bb691debd`;
+  runbook
+  `220c0f9fa7410ef6bbca1d9bdd5c693f68dd20fa6ee3d96d0128013253312a70`;
+  claim matrix
+  `18aac72a20f3dc5a2fd1e5b059713de43906b21d08a7a82e3dbd88c8e59dcbb1`;
+  traceability
+  `60b32bfde383621f9fa15a660e27113dbefd390536e72840e97ac0d20201a943`.
+- The result reports
+  `coordinator_protocol_authority:"not-required-for-verification"` and deliberately
+  retains `coordinator_execution_binding:"unproven"`. It is not exact-SHA CI/review,
+  public inventory completeness, issuer/clock honesty, or independent administrator,
+  account, host, network, power, or physical-domain evidence. HEAD and `origin/main`
+  remain `285ccbae01011a7c69e16016dc1bdd1d8d2e1203`; the cumulative worktree is `117`
+  paths (`43` modified, `74` untracked). No commit, push, merge, deployment, live
+  authority, or external mutation occurred. Full-suite, exact-SHA governance, and real
+  separately administered multi-host operation remain HOLD.
+
+## 2026-08-22 KST — All-role-key participant inventory closure; focused PASS
+
+- Audited the remaining `public inventory completeness` limitation. Objective global
+  completeness is unknowable from supplied sidecars, but a coordinator can be denied
+  the ability to complete two different final inventories for one deployment plan by
+  requiring every participating role key to make one durable plan-keyed choice.
+- Added `mortalos-placement-admission-pilot-inventory-ratification/1`. It binds exact
+  source-verdict ID and byte digest, pilot evidence ID, source commit, deployment-plan
+  ID, and signer identity. The async boundary owns/restores all bytes and snapshots the
+  signer before suspension; the plan-keyed sign-once tuple gives byte-identical exact
+  retry and rejects another verdict under the same conforming durable authority.
+- Added `mortalos-placement-admission-pilot-inventory-closure/1` plus role-local ratify,
+  no-replace aggregate-create, and read-only aggregate-verify CLIs. Closure creation
+  fully recreates the source verdict, derives the unique key/role set from its exact
+  verified execution receipts, binds the plan to pilot evidence, and requires one
+  ratification from every key. Restore is sidecar-unverified; full replay reports
+  `inventory_closure:"all-role-keys-ratified"`.
+- Final native `/2` integration is `1/1` PASS in `207,089.5934ms`
+  (`207,282.5833ms` runner). The fixture closes 7/7 unique role keys. It proves exact
+  retry, plan-keyed conflicting-verdict equivocation, reversed-input determinism,
+  missing 6/7 early failure with no output, secret-free public bytes, and fresh-process
+  exact closure verification.
+- Async security exits `0`, `26/26`, with `22` direct / `145` auto-discovered exports
+  and class methods. Specification exits `0` with `115` rejection codes and `104`
+  relative links; release links exit `0` with `59` local / `11` HTTPS syntax-only;
+  generated protocol profile, relevant syntax, registry JSON, and `git diff --check`
+  pass.
+- Key SHA-256 receipts: closure/ratification module
+  `a7108b54330bca9b55cdd32601ec9f97a089840aaabbc89c7b1339bce30eb828`;
+  ratify/create/verify CLIs
+  `6a806cacb907ac9e11a1c8195afe2df706d4189cc0189e8946f705ef87f2152c` /
+  `275afed702c9a27ab7106c805cadc41667e988539981cc16238867f897ba8a24` /
+  `f269037b342c1596a291b81c50e52cacfa1c167105384dcd4cfc5c927f298754`;
+  integrated test
+  `30dc414bad76d3a6b49bc95f069f65ea5ef681943169098cc6e8a4c4fda6ec86`;
+  security registry/verifier
+  `f25f44f75145368e33cd5fcb39190e1d3fe67e4ece0bcf1ea20f3e5711b9fcf3` /
+  `1b0509eb7fdbd524c625d52e40119cf741450b69952e0a5873a117f661f5a2d3`;
+  operator runbook
+  `491a783801b58313fcbd61b06b04853928afbbb4aff88ef340ac3f9a32f995c4`;
+  claim matrix
+  `26f61aa9c57d2991703cd69372e232a77aabbe28bd04f59a2f9f9ba0d6290c45`;
+  traceability
+  `05f3e6406e31229f01b18f6b9bea8074d25855c70d6c970a5dfa904abcef639a`.
+- This is participant-ratified plan finality, not global hidden-artifact discovery.
+  Copied keys/separate journals, dishonest operators, issuer/clock honesty, independent
+  administrators/accounts/hosts/networks/power/physical domains, and Sybil resistance
+  remain unproven. HEAD and `origin/main` remain
+  `285ccbae01011a7c69e16016dc1bdd1d8d2e1203`; the cumulative worktree is `121` paths
+  (`43` modified, `78` untracked). No commit, push, merge, deployment, live authority,
+  or external mutation occurred. Full suite, exact-SHA governance, and real separately
+  administered multi-host execution remain HOLD.
+
+## 2026-08-23 — Exact-SHA flake discovery and serial P2P orchestration remediation
+
+- Committed the approved 121-path candidate as `116207b2ffb453ed70e2d9fb0a4bfc311e9a0094`
+  with exact tree `f483ff3780722c0edbb4fed9ce54af3eb38172cd`; branch and actual index were clean.
+  A fresh detached worktree and `npm ci` completed with exit `0`, 95 audited packages,
+  and zero vulnerabilities.
+- The first exact-SHA suite stopped at `test:protocol-profile` because the storage
+  possession test assumed two arbitrary nonces always select different Merkle leaves.
+  With three leaves, distinct nonces can validly collide on one challenge-selected
+  leaf. The test now searches for a nonce that actually selects another leaf before
+  requiring the original proof to reject. The focused case passes independently
+  `20/20`; the full protocol-profile group passes `23/23`. The fix is commit
+  `894661b107e4490883ec30c1b03bd889d5fdd1f8`.
+- Fresh detached execution on `894661b1...` passed every preceding stage and P2P Node
+  assertions, but ended nonzero after `6,598,172ms`: P2P summary was `70` pass / `2`
+  timeout cancellations / zero assertion failures. Executor crossed its
+  `1,500,000ms` limit; the `10,000 × 8` schedule crossed `900,000ms` by `55.4977ms`.
+  Complete log SHA-256 is
+  `76a639889b2f74e4ce30c9b79cb549b8e3f56dbeb11be1e4822e3e01123f8700`.
+- Serial replay proved concurrency `1` necessary but not sufficient: executor still
+  timed out at `1,538,640.1267ms`, while schedule passed in `846,722.895ms`. The package
+  gate now serializes P2P Node test files. Executor and schedule limits are
+  `2,000,000ms` and `1,200,000ms`; batch interruption remains `1,200,000ms`. No corpus,
+  seed, assertion, or product source changed.
+- The remediated executor/schedule pair passes serially `2/2`, with zero failure,
+  cancellation, or skip, in `2,178,485.7704ms`: executor `1,345,547.9513ms`, schedule
+  `832,008.0928ms`. Log SHA-256 is
+  `143cd1f2021075142086ff68e3e8b8fe711ba1b10dcca0404d1c650d53632f91`.
+  Fresh full-suite evidence on the successor exact SHA remains pending; no push, PR,
+  merge, deployment, or live authority mutation occurred.

@@ -6,8 +6,9 @@ import {
 import { canonicalBytes, isCanonical, parseJsonBytes } from "../codec.mjs";
 import { verifyContinuityCapsule } from "../capsule.mjs";
 import { continueContinuity, inspectContinuity } from "../continuity.mjs";
-import { derivePulseHash } from "../crypto.mjs";
+import { derivePulseHash, deriveResourceExecutionWorkloadId } from "../crypto.mjs";
 import { domainHash } from "../confidential/format.mjs";
+import { createResourceContentCommitment } from "../resource-execution.mjs";
 import { verifyResourceLease, verifyResourceOffer } from "../resource-contract.mjs";
 import {
   copyOwnDataArray,
@@ -18,19 +19,33 @@ import {
   snapshotOwnDataRecord
 } from "../primordials.mjs";
 import { evaluateConfidentialStoragePlacements } from "./confidential.mjs";
-import { evaluatePlacementLivenessEvidence } from "./liveness.mjs";
+import {
+  derivePlacementObserverRoster,
+  derivePlacementObserverRosterFromEpoch,
+  PLACEMENT_ADMISSION_LIMITS,
+  restorePlacementMembershipEpoch,
+  verifyPlacementMembershipEpoch,
+  verifyPlacementMembershipEpochHistory
+} from "./admission.mjs";
+import {
+  evaluatePlacementLivenessEvidence,
+  PLACEMENT_LIVENESS_FORMATS,
+  PLACEMENT_LIVENESS_RESPONSE_PROFILES
+} from "./liveness.mjs";
 
 export const LINEAGE_PLACEMENT_FORMATS = Object.freeze({
   action_plan: "mortalos-lineage-placement-action-plan/1",
   commit: "mortalos-lineage-placement-commit/1",
   convergence: "mortalos-lineage-placement-convergence/1",
-  generation: "mortalos-lineage-placement-generation/1"
+  generation: "mortalos-lineage-placement-generation/1",
+  repair_effect: "mortalos-lineage-placement-repair-effect/1"
 });
 
 const DOMAINS = Object.freeze({
   commit: "MortalOS lineage placement commit v1",
   convergence: "MortalOS lineage placement convergence v1",
-  generation: "MortalOS lineage placement generation v1"
+  generation: "MortalOS lineage placement generation v1",
+  repairEffect: "MortalOS lineage placement repair effect v1"
 });
 const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 const DIGEST = /^sha256:[A-Za-z0-9_-]{43}$/u;
@@ -66,6 +81,7 @@ const GENERATION_KEYS = Object.freeze([
   "manifest_base64url",
   "manifest_id",
   "max_proof_age_ms",
+  "membership_epochs_base64url",
   "organism_id",
   "placements",
   "prior_commit_head_hash",
@@ -214,6 +230,53 @@ function decodeLivenessEvidence(values, label) {
   return Object.freeze(values.map((value, index) => decodeBytes(value, `${label}-${index}`)));
 }
 
+function encodeMembershipEpochs(values) {
+  const epochs = copiedArray(
+    values,
+    "membership-epochs",
+    PLACEMENT_ADMISSION_LIMITS.membership_epochs_per_generation_max
+  ).map((value, index) => {
+    try {
+      return restorePlacementMembershipEpoch(value);
+    } catch (error) {
+      fail("E_LINEAGE_PLACEMENT_LIVENESS", error?.code ?? `membership-epoch-${index}`);
+    }
+  });
+  const ids = new Set(epochs.map(({ epoch_id: id }) => id));
+  if (ids.size !== epochs.length) {
+    fail("E_LINEAGE_PLACEMENT_LIVENESS", "membership-epoch-duplicate");
+  }
+  return Object.freeze(epochs
+    .sort((left, right) => left.epoch_id < right.epoch_id ? -1 : 1)
+    .map(({ bytes }) => encodeBase64Url(bytes)));
+}
+
+function decodeMembershipEpochs(values) {
+  values = copiedArray(
+    values,
+    "membership-epochs",
+    PLACEMENT_ADMISSION_LIMITS.membership_epochs_per_generation_max
+  );
+  const epochs = values.map((value, index) => {
+    if (typeof value !== "string") {
+      fail("E_LINEAGE_PLACEMENT_FORMAT", `membership-epoch-${index}`);
+    }
+    const bytes = decodeBase64Url(value);
+    if (!bytes) fail("E_LINEAGE_PLACEMENT_FORMAT", `membership-epoch-${index}`);
+    try {
+      return restorePlacementMembershipEpoch(bytes);
+    } catch (error) {
+      fail("E_LINEAGE_PLACEMENT_LIVENESS", error?.code ?? `membership-epoch-${index}`);
+    }
+  });
+  const sortedIds = epochs.map(({ epoch_id: id }) => id).sort();
+  if (
+    new Set(sortedIds).size !== sortedIds.length ||
+    epochs.some(({ epoch_id: id }, index) => id !== sortedIds[index])
+  ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "membership-epoch-canonical-order");
+  return Object.freeze(epochs);
+}
+
 function encodePlacement(value, index) {
   value = exactKeys(value, SOURCE_RECORD_KEYS, `placement-${index}`);
   if (!Number.isSafeInteger(value.shard_index) || value.shard_index < 0 || value.shard_index > 2) {
@@ -302,14 +365,42 @@ function repairSummary(evaluation, manifest, liveness) {
 }
 
 function livenessSummary(liveness) {
-  return liveness.cases.map((entry) => Object.freeze({ ...entry }));
+  return liveness.cases.map((entry) => Object.freeze({
+    certificate_ids: entry.certificate_ids,
+    challenge_id: entry.challenge_id,
+    consumer: entry.consumer,
+    execution_receipt_ids: entry.execution_receipt_ids,
+    failure_sequence: entry.failure_sequence,
+    lease_id: entry.lease_id,
+    lineage_parent_hash: entry.lineage_parent_hash,
+    manifest_id: entry.manifest_id,
+    membership_admitted: entry.membership_admitted,
+    membership_epoch_id: entry.membership_epoch_id,
+    membership_evaluated_at_ms: entry.membership_evaluated_at_ms,
+    membership_reference: entry.membership_reference,
+    membership_selection_digest: entry.membership_selection_digest,
+    observer_policy: entry.observer_policy,
+    possession_response_ids: entry.possession_response_ids,
+    previous_execution_receipt_id: entry.previous_execution_receipt_id,
+    provider_id: entry.provider_id,
+    prior_membership_epoch_id: entry.prior_membership_epoch_id,
+    response_window_ms: entry.response_window_ms,
+    sampled_possession: entry.sampled_possession,
+    shard_index: entry.shard_index,
+    status: entry.status,
+    tuple: entry.tuple,
+    workload_id: entry.workload_id
+  }));
 }
 
 function evaluateBoundLiveness({
   baseline,
+  capsuleBytes = null,
   certificates,
   lineageParentHash,
   manifestId,
+  membershipMode = "current",
+  membershipEpochs,
   placements,
   responses
 }) {
@@ -322,7 +413,78 @@ function evaluateBoundLiveness({
   if (liveness.status === "halted") {
     fail("E_LINEAGE_PLACEMENT_LIVENESS", "contested-or-forked-evidence");
   }
+  const epochsById = new Map(membershipEpochs.map((entry) => [entry.epoch_id, entry]));
+  const referencedEpochIds = new Set();
+  const admittedCases = [];
   for (const item of liveness.cases) {
+    if (
+      item.challenge_format !== PLACEMENT_LIVENESS_FORMATS.challenge_policy ||
+      item.repair_authority !== true ||
+      item.membership_admitted !== false ||
+      item.membership_reference !== true ||
+      item.membership_epoch_id === null ||
+      item.membership_evaluated_at_ms === null ||
+      item.membership_selection_digest === null ||
+      item.policy_id === null ||
+      item.response_proof_profile !==
+        PLACEMENT_LIVENESS_RESPONSE_PROFILES.storage_merkle_sample
+    ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "policy-bound-authority-required");
+    try {
+      const epoch = epochsById.get(item.membership_epoch_id);
+      if (!epoch) fail("E_LINEAGE_PLACEMENT_LIVENESS", "membership-epoch-sidecar-missing");
+      referencedEpochIds.add(item.membership_epoch_id);
+      const prior = item.prior_membership_epoch_id === null
+        ? null
+        : epochsById.get(item.prior_membership_epoch_id);
+      if (item.prior_membership_epoch_id !== null && !prior) {
+        fail("E_LINEAGE_PLACEMENT_LIVENESS", "membership-prior-sidecar-missing");
+      }
+      if (item.prior_membership_epoch_id !== null) {
+        referencedEpochIds.add(item.prior_membership_epoch_id);
+      }
+      if (epoch.body.prior_epoch_id !== item.prior_membership_epoch_id) {
+        fail("E_LINEAGE_PLACEMENT_LIVENESS", "membership-prior-reference");
+      }
+      const admitted = capsuleBytes === null
+        ? epoch
+        : (membershipMode === "history"
+          ? verifyPlacementMembershipEpochHistory
+          : verifyPlacementMembershipEpoch)({
+            capsule_bytes: capsuleBytes,
+            epoch_bytes: epoch.bytes,
+            prior_epoch_bytes: prior?.bytes ?? null
+          });
+      const selection = {
+        consumer_key_id: item.consumer.key_id,
+        failure_sequence: item.failure_sequence,
+        lineage_parent_hash: item.lineage_parent_hash,
+        manifest_id: item.manifest_id,
+        provider_key_id: item.provider_id,
+        shard_index: item.shard_index,
+        workload_id: item.workload_id
+      };
+      const roster = capsuleBytes !== null && membershipMode === "current"
+        ? derivePlacementObserverRoster({
+            capsule_bytes: capsuleBytes,
+            epoch_bytes: admitted.bytes,
+            evaluated_at_ms: item.membership_evaluated_at_ms,
+            prior_epoch_bytes: prior?.bytes ?? null,
+            selection
+          })
+        : derivePlacementObserverRosterFromEpoch({
+            epoch_bytes: admitted.bytes,
+            evaluated_at_ms: item.membership_evaluated_at_ms,
+            selection
+          });
+      if (
+        admitted.epoch_id !== item.membership_epoch_id ||
+        roster.selection_digest !== item.membership_selection_digest ||
+        !sameBytes(roster.observer_policy, item.observer_policy)
+      ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "membership-roster-binding");
+    } catch (error) {
+      if (error instanceof LineagePlacementError) throw error;
+      fail("E_LINEAGE_PLACEMENT_LIVENESS", error?.code ?? "membership-invalid");
+    }
     if (
       item.lineage_parent_hash !== lineageParentHash ||
       item.manifest_id !== manifestId
@@ -341,6 +503,9 @@ function evaluateBoundLiveness({
       lease: placements[placementIndex].lease,
       offer: placements[placementIndex].offer
     });
+    if (item.offer_id !== offer.offer_id || item.lease_id !== lease.lease_id) {
+      fail("E_LINEAGE_PLACEMENT_LIVENESS", "policy-resource-binding");
+    }
     if (!sameBytes(item.consumer, lease.body.consumer)) {
       fail("E_LINEAGE_PLACEMENT_LIVENESS", "lease-consumer-binding");
     }
@@ -360,16 +525,21 @@ function evaluateBoundLiveness({
       ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "failure-predecessor-binding");
     } else if (item.status === "alive") {
       if (
-        item.execution_receipt_ids.length !== 1 ||
-        item.execution_receipt_ids[0] !== placement.receipt_id ||
-        item.previous_execution_receipt_id !== placement.previous_execution_receipt_id ||
-        item.failure_sequence !== placement.challenge_sequence
-      ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "response-receipt-binding");
+        item.execution_receipt_ids.length !== 0 ||
+        item.possession_response_ids.length !== 1 ||
+        item.sampled_possession !== true ||
+        item.previous_execution_receipt_id !== placement.receipt_id ||
+        Number(item.failure_sequence) !== Number(placement.challenge_sequence) + 1
+      ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "response-possession-binding");
     } else {
       fail("E_LINEAGE_PLACEMENT_LIVENESS", "unsupported-case-status");
     }
+    admittedCases.push(Object.freeze({ ...item, membership_admitted: true }));
   }
-  return liveness;
+  if (referencedEpochIds.size !== epochsById.size) {
+    fail("E_LINEAGE_PLACEMENT_LIVENESS", "membership-epoch-sidecar-extraneous");
+  }
+  return Object.freeze({ ...liveness, cases: Object.freeze(admittedCases) });
 }
 
 function sameBytes(left, right) {
@@ -543,11 +713,13 @@ export function restoreLineagePlacementGeneration(generationBytes) {
     value.liveness_responses_base64url,
     "liveness-responses"
   );
+  const membershipEpochs = decodeMembershipEpochs(value.membership_epochs_base64url);
   const liveness = evaluateBoundLiveness({
     baseline,
     certificates,
     lineageParentHash: value.lineage_parent_hash,
     manifestId: baseline.manifest_id,
+    membershipEpochs,
     placements,
     responses
   });
@@ -576,6 +748,7 @@ export function restoreLineagePlacementGeneration(generationBytes) {
     lineage_parent_hash: value.lineage_parent_hash,
     liveness,
     manifest_bytes: manifestBytes,
+    membership_epochs: membershipEpochs,
     organism_id: value.organism_id,
     placements: Object.freeze(placements),
     prior_commit_head_hash: value.prior_commit_head_hash,
@@ -592,6 +765,7 @@ export function createLineagePlacementGeneration(options) {
     "evaluated_at_ms",
     "manifest_bytes",
     "max_proof_age_ms",
+    "membership_epochs",
     "placements",
     "prior_commit_bytes",
     "prior_generation_bytes",
@@ -613,6 +787,8 @@ export function createLineagePlacementGeneration(options) {
     options.liveness_responses,
     "liveness-responses"
   );
+  const encodedMembershipEpochs = encodeMembershipEpochs(options.membership_epochs);
+  const membershipEpochs = decodeMembershipEpochs(encodedMembershipEpochs);
   const certificates = decodeLivenessEvidence(encodedCertificates, "failure-certificates");
   const responses = decodeLivenessEvidence(encodedResponses, "liveness-responses");
   const baseline = evaluateConfidentialStoragePlacements({
@@ -627,9 +803,11 @@ export function createLineagePlacementGeneration(options) {
   const manifest = parseManifest(manifestBytes);
   const liveness = evaluateBoundLiveness({
     baseline,
+    capsuleBytes,
     certificates,
     lineageParentHash: continuity.head_hash,
     manifestId: baseline.manifest_id,
+    membershipEpochs,
     placements: encodedPlacements.map(decodePlacement),
     responses
   });
@@ -686,6 +864,7 @@ export function createLineagePlacementGeneration(options) {
     manifest_base64url: encodeBase64Url(manifestBytes),
     manifest_id: evaluation.manifest_id,
     max_proof_age_ms: options.max_proof_age_ms,
+    membership_epochs_base64url: encodedMembershipEpochs,
     organism_id: continuity.organism_id,
     placements: encodedPlacements,
     prior_commit_head_hash: priorCommitHeadHash,
@@ -840,6 +1019,32 @@ export function verifyLineagePlacementCommit(options) {
   } catch (error) {
     fail("E_LINEAGE_PLACEMENT_COMMIT", error?.detail ?? "stale-prior-generation");
   }
+  const baseline = evaluateConfidentialStoragePlacements({
+    evaluated_at_ms: generation.value.evaluated_at_ms,
+    manifest_bytes: generation.manifest_bytes,
+    max_proof_age_ms: generation.value.max_proof_age_ms,
+    placements: generation.placements,
+    quorum: generation.value.quorum,
+    target_shards: generation.value.target_shards,
+    unavailable_provider_ids: []
+  });
+  evaluateBoundLiveness({
+    baseline,
+    capsuleBytes,
+    certificates: decodeLivenessEvidence(
+      generation.value.failure_certificates_base64url,
+      "failure-certificates"
+    ),
+    lineageParentHash: generation.lineage_parent_hash,
+    manifestId: generation.value.manifest_id,
+    membershipMode: "history",
+    membershipEpochs: generation.membership_epochs,
+    placements: generation.placements,
+    responses: decodeLivenessEvidence(
+      generation.value.liveness_responses_base64url,
+      "liveness-responses"
+    )
+  });
   return Object.freeze({
     bytes: commit.bytes,
     commit_id: value.commit_id,
@@ -897,9 +1102,12 @@ export function deriveCommittedPlacementActionPlan(options) {
     });
     evaluateBoundLiveness({
       baseline: currentBaseline,
+      capsuleBytes: options.capsule_bytes,
       certificates: [],
       lineageParentHash: generation.lineage_parent_hash,
       manifestId: generation.value.manifest_id,
+      membershipMode: "history",
+      membershipEpochs: generation.membership_epochs,
       placements: currentPlacements,
       responses
     });
@@ -936,6 +1144,129 @@ export function deriveCommittedPlacementActionPlan(options) {
       generation.proofs.map(({ receipt_id: id }) => id).sort()
     )
   });
+}
+
+export function deriveCommittedPlacementRepairEffect(options) {
+  options = exactKeys(options, [
+    "capsule_bytes",
+    "commit_bytes",
+    "generation_bytes",
+    "observed_at_ms",
+    "observed_liveness_responses",
+    "observed_placements",
+    "replacement_lease_bytes",
+    "replacement_offer_bytes",
+    "resource_bytes",
+    "shard_index"
+  ], "repair-effect-options");
+  if (!Number.isSafeInteger(options.shard_index) || options.shard_index < 0) {
+    fail("E_LINEAGE_PLACEMENT_FORMAT", "repair-effect-shard-index");
+  }
+  const shardIndex = options.shard_index;
+  const generation = restoreLineagePlacementGeneration(options.generation_bytes);
+  const commit = verifyLineagePlacementCommit({
+    capsule_bytes: options.capsule_bytes,
+    commit_bytes: options.commit_bytes,
+    generation_bytes: options.generation_bytes
+  });
+  assertCurrentPlacementCommit(options.capsule_bytes, generation, commit);
+  const observedAt = decimal(options.observed_at_ms, "repair-effect-observed-at-ms");
+  const currentPlacements = copiedArray(options.observed_placements, "observed-placements", 64)
+    .map(encodePlacement)
+    .map(decodePlacement);
+  const baseline = evaluateConfidentialStoragePlacements({
+    evaluated_at_ms: String(observedAt),
+    manifest_bytes: generation.manifest_bytes,
+    max_proof_age_ms: generation.value.max_proof_age_ms,
+    placements: currentPlacements,
+    quorum: generation.value.quorum,
+    target_shards: generation.value.target_shards,
+    unavailable_provider_ids: []
+  });
+  const certificates = decodeLivenessEvidence(
+    generation.value.failure_certificates_base64url,
+    "failure-certificates"
+  );
+  const responses = decodeLivenessEvidence(encodeLivenessEvidence(
+    options.observed_liveness_responses,
+    "observed-liveness-responses"
+  ), "observed-liveness-responses");
+  const reconciled = evaluateBoundLiveness({
+    baseline,
+    capsuleBytes: options.capsule_bytes,
+    certificates,
+    lineageParentHash: generation.lineage_parent_hash,
+    manifestId: generation.value.manifest_id,
+    membershipMode: "history",
+    membershipEpochs: generation.membership_epochs,
+    placements: currentPlacements,
+    responses
+  });
+  const intent = generation.repair_intents.find((candidate) =>
+    candidate.shard_index === shardIndex);
+  const failure = reconciled.cases.find((candidate) =>
+    candidate.shard_index === shardIndex && candidate.status === "failed");
+  const currentShardPlacements = baseline.placements.filter((candidate) =>
+    candidate.shard_index === shardIndex && candidate.status === "proved");
+  if (!intent || !failure || reconciled.status !== "failed") {
+    fail("E_LINEAGE_PLACEMENT_LIVENESS", "repair-effect-not-currently-failed");
+  }
+  if (
+    currentShardPlacements.length !== 1 ||
+    currentShardPlacements[0].provider_id !== failure.provider_id
+  ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "repair-effect-current-placement");
+  if (
+    intent.failed_provider_id !== failure.provider_id ||
+    !sameBytes(intent.failure_certificate_ids, failure.certificate_ids)
+  ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "repair-effect-failure-binding");
+
+  const offer = verifyResourceOffer(options.replacement_offer_bytes);
+  const lease = verifyResourceLease({
+    lease: options.replacement_lease_bytes,
+    offer: options.replacement_offer_bytes
+  });
+  if (
+    offer.body.provider.key_id === failure.provider_id ||
+    observedAt < decimal(lease.body.starts_at_ms, "replacement-lease-start") ||
+    observedAt > decimal(lease.body.ends_at_ms, "replacement-lease-end")
+  ) fail("E_LINEAGE_PLACEMENT_LIVENESS", "replacement-lease-binding");
+  const resource = ownedBytes(options.resource_bytes, "repair-effect-resource", 2 * 1024 * 1024);
+  const workloadId = deriveResourceExecutionWorkloadId({
+    kind: "storage",
+    workload: createResourceContentCommitment(resource)
+  });
+  if (workloadId !== intent.workload_id || workloadId !== failure.workload_id) {
+    fail("E_LINEAGE_PLACEMENT_LIVENESS", "replacement-workload-binding");
+  }
+  const slotBasis = Object.freeze({
+    commit_id: commit.commit_id,
+    failure_certificate_ids: failure.certificate_ids,
+    failure_challenge_id: failure.challenge_id,
+    failure_sequence: failure.failure_sequence,
+    generation_id: generation.generation_id,
+    manifest_id: generation.value.manifest_id,
+    policy_id: failure.policy_id,
+    shard_index: shardIndex,
+    workload_id: workloadId
+  });
+  const repairSlotId = domainHash(
+    "MortalOS lineage placement repair slot v1",
+    canonicalBytes(slotBasis)
+  );
+  const basis = Object.freeze({
+    ...slotBasis,
+    format: LINEAGE_PLACEMENT_FORMATS.repair_effect,
+    lease_id: lease.lease_id,
+    provider_id: offer.body.provider.key_id,
+    repair_slot_id: repairSlotId
+  });
+  const value = Object.freeze({
+    ...basis,
+    effect_id: domainHash(DOMAINS.repairEffect, canonicalBytes(basis)),
+    non_capability: true,
+    requires_private_provider_capability: true
+  });
+  return Object.freeze({ bytes: canonicalBytes(value), value });
 }
 
 export function convergeLineagePlacementCommits(options) {

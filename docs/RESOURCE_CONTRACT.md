@@ -305,17 +305,30 @@ The focused gate proves:
   ID; and no private material in exchanged evidence;
 - one-to-one usage/execution enforcement, deterministic output, Merkle proof,
   replay/fork/cross-lease/tamper rejection, exact maxima, and max + 1 rejection.
+- the same storage Merkle algorithm exported as a nonce/lease/workload-bound sampled
+  possession helper for provider-only liveness response `/2`.
 
 This proves a signed logical contract plus verifiable lease-bound execution in a
 local multi-process topology under the offer's declared witness-fault assumption.
 It does **not** prove witness/provider identities are independently administered,
 the declared fault bound is true, cumulative metering is physically honest, the
 process ran on a distinct machine or region, or Sybil resistance/economic settlement.
-The next architecture gate is a provider-signed lease-bound liveness policy,
-independent possession response, and effect-time exactly-once repair executor.
-Lineage-governed admission/failure-domain accounting with explicit trust roots
-follows. Provider-neutral transport exists in the source, but self-asserted topology
-labels do not establish independent domains.
+The provider-signed lease-bound policy/window, sampled response, one-shard effect/
+completion, provider-domain sequential restart recovery, and internal multi-action
+fresh-evidence batch slices are implemented. Cross-process first provider and
+Continuity execution is now excluded by no-replace claims. An unresolved winner can be
+completed only by importing an already-authoritative signed placement or verified
+successor commit after outer semantic verification; absent proof remains fail-closed
+and no timeout/takeover exists. The Chromium Lab now binds the range adapter to an
+actual origin-cut DataChannel and proves late-response/disconnect zero-call behavior.
+The bounded signed-evidence schedule corpus and lineage-governed logical admission are
+focused PASS. A private-key-free coordinator now produces a signer-approved endpoint-
+bound replay bundle on loopback. Operator-facing signer services explicitly lock their
+own challenge `/2` origin before key use and retain identity/sign-once state across
+restart. The next architecture gate operates that exact
+signer/coordinator contract under external administration and measures multi-host
+failure-domain evidence. Provider-neutral transport exists in the source, but signed
+endpoint declarations and self-asserted topology labels do not establish independent domains.
 
 ## 13. Receipt-gated storage placement policy
 
@@ -377,8 +390,9 @@ provider counts as failed only when the provider-signed offer's witness policy s
 a predecessor/sequence-bound non-response certificate. A late provider response
 must name an actual verified dual-signed execution receipt. The core conditionally
 halts on conflict when a caller supplies that response and current placement
-evidence; the current Lab/browser harness supplies empty late-response/current-
-placement arrays and has no network gossip plus execution-time reconciliation loop.
+evidence; the one-shard Lab/browser executor supplies both immediately before effect.
+The internal Node batch re-reads a private evidence session, but has no transport
+gossip adapter.
 This proves threshold key assertions, not honest
 timers, Sybil resistance, honest metering, consensus, or independent failure domains. See
 [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) and

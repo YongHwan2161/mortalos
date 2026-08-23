@@ -1,6 +1,6 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-11 KST**
+Last synchronized: **2026-08-21 KST**
 
 ## Read first
 
@@ -16,8 +16,11 @@ Last synchronized: **2026-08-11 KST**
 - [Lineage-bound placement convergence](LINEAGE_PLACEMENT_CONVERGENCE.md) — current-
   descriptor generation commit, derived placement action plan, deterministic
   convergence, and fork halt.
+- [Lineage-governed placement admission](LINEAGE_GOVERNED_PLACEMENT_ADMISSION.md)
+  — trust-root evidence, custody-approved membership epochs, deterministic logical
+  operator/failure-domain rosters, compact sidecars, and physical-independence HOLD.
 - [Quorum-observed liveness and repair certificates](QUORUM_LIVENESS_AND_REPAIR_CERTIFICATES.md)
-  — offer-rostered observations, consumer-selected bounded window, global-clock-free evidence, committed
+  — provider-signed lease policy, consumer policy-bound challenge, offer-rostered observations, global-clock-free evidence, committed
   repair-plan derivation, conditional late-proof conflict, and the next
   membership-truth gap.
 
@@ -57,8 +60,8 @@ discovery, signaling, Cloudflare, and GPT decide none of those results.
 
 ## Current boundary
 
-Status: **CURRENT RUNTIME/TEST/WORKFLOW FULL SUITE PASS; CURRENT DOCS SPEC/LINK/DIFF
-PASS; EXACT-SHA EXTERNAL**
+Status: **CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC
+PASS; EXACT-SHA PENDING; SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
 
 Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
 continuity and local resource-execution verticals. This revision adds direct WebRTC
@@ -96,14 +99,17 @@ delivery before fail-close cleanup clears subscriptions, and local/remote termin
 paths close native capabilities at most once.
 The relay edge conservatively estimates decoded bytes from base64 and may reject
 slightly earlier, so only the same upper ceiling and fail-closed result are shared.
-The current candidate passes focused Node `24/24` in `31,241ms` and actual Chromium
-in `50,086ms`. A hidden-wrapper full `npm test` ran from
+The merged WebRTC candidate passed focused Node `24/24` in `31,241ms` and actual
+Chromium in `50,086ms`. On that merged base, a hidden-wrapper full `npm test` ran from
 `2026-08-11T06:42:38.6738575+09:00` through
 `2026-08-11T09:06:30.4636057+09:00`, exited `0` in `8,631,790ms`
 (`143m 51.790s`), and reached final `verify:s4`. Its source/runtime/test/workflow
 files remained unchanged after the run and the related-workload inventory was zero
-after excluding the probe itself. The docs separately pass spec/link/diff, so this
-is not a whole-current-tree exact full-suite claim. Three persistent Chromium pages
+after excluding the probe itself. The lease-bound liveness-policy delta now passes
+uninterrupted `npm test` in `7,476,222ms` through final `verify:s4`. The subsequent
+membership-bound observer-attestation/view source also reaches final `verify:s4` in
+a fresh ordered complete suite; post-run docs pass separate static gates. Exact-SHA
+evidence remains external. Three persistent Chromium pages
 hold non-extractable provider keys and
 produce storage results/signatures while Node orchestrates the portable journal;
 neither independent in-browser journal-kernel parity nor independent failure domains
@@ -115,12 +121,68 @@ remains HOLD.
 
 This worktree additionally removes raw unavailability from lineage generation:
 offer-rostered 3-of-4 observer certificates bind exact predecessor/sequence and
-local duration without a global clock. The core conditionally halts a derived plan
-when supplied a late verified proof and current placement evidence; the current Lab
-does not gossip or reconcile that evidence at effect execution. Derived plans are
+  provider-signed exact local duration without a global clock. The core conditionally halts a derived plan
+when supplied a late verified sampled response and current placement evidence; the
+one-shard Lab executor reconciles supplied evidence at effect execution but does not
+gossip or schedule multiple actions. Derived plans are
 forgeable data, so executors must reverify the original signed and committed inputs.
-The next P0 is failure-precommitted liveness policy plus independent provider
-response and effect-time exactly-once repair reconciliation. Lineage-governed
-admission/failure-domain accounting with explicit trust roots follows. Absolute
+The policy/window, provider-only sampled response `/2`, one-shard effect/completion,
+provider-domain sequential restart recovery, and internal multi-action fresh-evidence
+batch slices are implemented. No-replace claims now exclude cross-process first
+provider and Continuity execution. An unresolved claim can be completed only by an
+already-authoritative signed placement or verified successor Capsule/commit, checked
+by the outer executor before a capability with no provider/signing method imports the
+exact result. Invalid or absent proof remains fail-closed; there is no timeout,
+takeover, or proof discovery. The origin-cut Chromium Lab now feeds that range adapter
+from an actual DataChannel and proves late-response/disconnect zero-call behavior. The
+bounded `10,000`-seed schedule corpus is now byte-identical across Node, a fresh
+process, and bundled Chromium. Custody-signed membership epochs now bind explicit
+trust roots, subject+issuer dual-signed challenge evidence, operator roots, logical
+failure domains, validity, direct rotation/revocation, cumulative root/key history,
+and lineage history; compact admitted policy `/2` references that sidecar
+without crossing transport ceilings. A bounded process ceremony now locks separate
+issuer/subject key services to one exact root and policy, with no coordinator private
+capability and sign-once challenge slots. Optional local authority custody preserves
+the identity and tuple across process races/restart. A private-key-free Node runner
+binds both declared endpoint origins/key IDs explicitly into challenge `/2` under the
+generated 512-byte ceiling and emits an offline token-free replay bundle. Each
+operator-facing signer locks its own advertised origin before private-key use and
+reproduces the same bundle after restart. The signer can terminate native TLS from
+bounded administrator-local certificate/private-key files; malformed pairs reject
+before absent authority creation, and readiness reports the transport mode without
+secrets. Native mode additionally separates a possession-only token from the admission
+bearer. The focused `/2` path requires each role key to sign its exact observer challenge
+and same-connection TLS exporter digest, so a copied identity or captured proof fails on
+a replacement TLS connection. A fresh-process observer records that proof plus peer
+certificate/public-key/exporter and socket-address facts in a no-replace artifact whose
+independence verdicts are fixed to `unproven`; explicit identity-only `/1` remains only
+for legacy proxy compatibility, and both fixtures still share one PC/address. This is logical policy and
+same-PC process diversity only. The next P0 is operating that
+exact signer/coordinator contract under separately administered
+credentials plus measured multi-host topology. Absolute
 Sybil resistance cannot be inferred from self-created keys; manual same-host ICE and
 one-PC administration remain explicit boundaries.
+
+The deployment evidence path now also has a content-addressed non-authoritative plan,
+roster-signed acceptance/activation `/1`, custody-epoch membership binding `/2`, observer
+wrapper `/5`, and combined observe-
+then-attest CLI. The plan fixes one ceremony, bounded logical window/timeout, complete
+observer roster, and unique nonce plus declared administration/failure-domain/vantage
+digests per key before observation. Every key uses a ceremony-scoped durable sign-once
+slot to accept exactly one plan; the complete sorted set activates it. The membership
+binding `/2` accepts only a complete fork-free supplied epoch-candidate chain converging
+at the current Capsule, exact ceremony subject evidence, and the selected epoch's entire
+2–8 observer membership with matching distinct operator/failure-domain IDs. Each
+attestation binds that artifact, candidate-view commitment, and observation through one
+plan-scoped durable sign-once slot. The combined CLI journals the exact token-free
+TLS-exporter observation no-replace before signer use, so an exact retry is idempotent
+without reconnecting; a different connection, view, observation, or instant under the
+same plan halts. Since acceptance is ceremony-scoped,
+epoch rotation requires a fresh ceremony and accepted plan. Deterministic comparison
+rejects post-hoc epoch, membership, plan, activation, observer, nonce, window,
+observation, or vantage substitution. Attestation-view manifest `/1` records only the
+compact all-roster IDs and derived summary; restore is self-hash-only, while explicit
+verification reruns every exact attestation sidecar. No-replace create and read-only
+verify CLIs support fresh-process replay without nesting signatures. This is configured-policy roster admission, not
+issuer-honesty, clock, Sybil, or independent-topology authority; current tests still use
+local authority files and one loopback machine.

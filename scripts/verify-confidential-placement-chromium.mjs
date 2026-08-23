@@ -16,13 +16,21 @@ import {
   restoreConfidentialPlacementJournal
 } from "../src/placement/confidential.mjs";
 import {
+  executePreparedStoragePlacementFixture,
+  prepareStoragePlacementFixture,
   createStoragePlacementFixture,
   refreshStoragePlacementFixture
 } from "../lab/placement/storage-contract.mjs";
 import {
+  completeLineagePlacementRepairEffect,
+  executeLineagePlacementRepairEffect
+} from "../lab/placement/repair-executor.mjs";
+import {
   createPlacementFailureCertificateFromChallengeFixture,
-  createPlacementLivenessChallengeFixture
+  createPlacementLivenessChallengeFixture,
+  createPlacementLivenessResponseFixture
 } from "../lab/placement/liveness-contract.mjs";
+import { createPlacementMembershipFixture } from "../lab/placement/admission-contract.mjs";
 import { buildLab } from "./build-lab.mjs";
 import { startLabServer } from "./serve-lab.mjs";
 
@@ -385,12 +393,39 @@ try {
 
   const lostProviderId = providers[0].identity.key_id;
   const livenessObservers = providerWitnesses(0);
+  const membershipAuthority = Object.freeze({
+    custodian: Object.freeze({ ...controllerCreated.custodian }),
+    async createMembershipEpoch({ capsule_bytes, parameters, prior_epoch_bytes }) {
+      const created = await consumerA.page.evaluate((values) =>
+        globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createPlacementMembershipEpoch(values), {
+        capsule_base64url: encodeBase64Url(capsule_bytes),
+        parameters: {
+          ...parameters,
+          admission_evidence_base64url: parameters.admission_evidence.map(encodeBase64Url),
+          admission_evidence: undefined
+        },
+        prior_epoch_base64url: prior_epoch_bytes === null
+          ? null
+          : encodeBase64Url(prior_epoch_bytes)
+      });
+      assert.equal(created.private_material_exposed, false);
+      return decodeBase64Url(created.epoch_base64url);
+    }
+  });
+  const livenessMembership = await createPlacementMembershipFixture({
+    authority: membershipAuthority,
+    capsule_bytes: decodeBase64Url(controllerCreated.capsule_base64url),
+    observers: livenessObservers,
+    providers: [signer(providers[0])]
+  });
   const livenessChallenge = await createPlacementLivenessChallengeFixture({
     consumer: signer(consumerA),
     lineage_parent_hash: controllerCreated.head_hash,
     manifest_id: shardSet.manifest_id,
+    membership: livenessMembership,
     observers: livenessObservers,
     placement: initial[0],
+    provider: signer(providers[0]),
     response_window_ms: "5000",
     shard_index: 0
   });
@@ -401,6 +436,12 @@ try {
     livenessChallenge.bytes,
     "failed-provider-liveness-challenge"
   );
+  const delayedPossessionResponse = await createPlacementLivenessResponseFixture({
+    challenge_bytes: livenessChallenge.bytes,
+    placement: initial[0],
+    provider: signer(providers[0]),
+    resource_bytes: decodeBase64Url(shardSet.shards[0].bytes_base64url)
+  });
   for (const endpoint of [consumerB, providers[1], providers[2], providers[3]]) {
     await deliverArtifact(
       consumerA,
@@ -435,6 +476,7 @@ try {
     liveness_responses_base64url: [],
     manifest_base64url: shardSet.manifest_base64url,
     max_proof_age_ms: "500",
+    membership_epochs_base64url: [encodeBase64Url(livenessMembership.epoch_bytes)],
     placements: initial.map((fixture, index) => browserRecord(fixture, index)),
     prior_commit_base64url: null,
     prior_generation_base64url: null,
@@ -493,14 +535,127 @@ try {
   const bWitnesses = await witnesses(consumerB);
   const successorProviders = [providers[3], providers[4], providers[5]];
   const successor = [];
+  let completedRepair = null;
   for (let index = 0; index < 3; index += 1) {
-    successor.push(await createStoragePlacementFixture({
+    const fixtureOptions = {
       challengeNonceFactory: reproofNonce(context2, index),
       consumer: signer(consumerB),
       provider: providerAdapter(consumerB, successorProviders[index]),
       resourceBytes: Buffer.from(successorSet.shards[index].bytes_base64url, "base64url"),
       seed: 80 + index * 4,
       witnesses: bWitnesses
+    };
+    if (index !== 0) {
+      successor.push(await createStoragePlacementFixture(fixtureOptions));
+      continue;
+    }
+    const prepared = await prepareStoragePlacementFixture(fixtureOptions);
+    let providerEffects = 0;
+    const privateProviderSession = Object.freeze({
+      async executeRepairEffect({ idempotency_key: idempotencyKey }) {
+        assert.match(idempotencyKey, /^sha256:[A-Za-z0-9_-]{43}$/u);
+        providerEffects += 1;
+        const executed = await executePreparedStoragePlacementFixture({
+          challengeNonceFactory: fixtureOptions.challengeNonceFactory,
+          prepared
+        });
+        return { placement: executed.placement };
+      }
+    });
+    const effectOptions = {
+      capsule_bytes: decodeBase64Url(committed1.capsule_base64url),
+      commit_bytes: decodeBase64Url(committed1.commit_base64url),
+      directory: resolve(temporaryRoot, "repair-effects"),
+      generation_bytes: decodeBase64Url(generation1.generation_base64url),
+      observed_at_ms: "1800",
+      observed_liveness_responses: [],
+      observed_placements: initialRecords,
+      provider: privateProviderSession,
+      replacement_lease_bytes: prepared.lease,
+      replacement_offer_bytes: prepared.offer,
+      resource_bytes: fixtureOptions.resourceBytes,
+      shard_index: 0
+    };
+    let contestedProviderCalls = 0;
+    await assert.rejects(() => executeLineagePlacementRepairEffect({
+      ...effectOptions,
+      directory: resolve(temporaryRoot, "repair-effects-contested"),
+      observed_liveness_responses: [delayedPossessionResponse],
+      provider: Object.freeze({
+        async executeRepairEffect() {
+          contestedProviderCalls += 1;
+          throw new Error("contested evidence reached provider");
+        }
+      })
+    }), /contested-or-forked-evidence/u);
+    assert.equal(contestedProviderCalls, 0);
+    const executed = await executeLineagePlacementRepairEffect(effectOptions);
+    assert.equal(executed.status, "committed");
+    assert.equal(executed.value.shard_index, 0);
+    assert.equal(executed.value.provider_id, successorProviders[0].identity.key_id);
+    assert.equal(providerEffects, 1);
+    const retried = await executeLineagePlacementRepairEffect(effectOptions);
+    assert.equal(retried.status, "already-committed");
+    assert.equal(retried.value.result_id, executed.value.result_id);
+    assert.equal(providerEffects, 1);
+    let continuityCommits = 0;
+    let cachedCompletion = null;
+    const privateContinuitySession = Object.freeze({
+      async commitPlacementGeneration({
+        capsule_bytes: capsuleBytes,
+        generation_bytes: generationBytes,
+        idempotency_key: idempotencyKey
+      }) {
+        assert.match(idempotencyKey, /^sha256:[A-Za-z0-9_-]{43}$/u);
+        if (!cachedCompletion) {
+          continuityCommits += 1;
+          cachedCompletion = await consumerB.page.evaluate(({ capsule, generation }) =>
+            globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.commitPlacementGeneration(
+              capsule,
+              generation
+            ), {
+            capsule: encodeBase64Url(capsuleBytes),
+            generation: encodeBase64Url(generationBytes)
+          });
+        }
+        return {
+          capsule_bytes: decodeBase64Url(cachedCompletion.capsule_base64url),
+          commit_bytes: decodeBase64Url(cachedCompletion.commit_base64url)
+        };
+      }
+    });
+    const completionOptions = {
+      capsule_bytes: decodeBase64Url(controllerHanded.capsule_base64url),
+      commit_bytes: decodeBase64Url(committed1.commit_base64url),
+      continuity: privateContinuitySession,
+      directory: resolve(temporaryRoot, "repair-completions"),
+      effect_result_bytes: executed.bytes,
+      generation_bytes: decodeBase64Url(generation1.generation_base64url),
+      observed_at_ms: "1800",
+      observed_liveness_responses: [],
+      observed_placements: initialRecords,
+      replacement_lease_bytes: prepared.lease,
+      replacement_offer_bytes: prepared.offer,
+      resource_bytes: fixtureOptions.resourceBytes,
+      shard_index: 0
+    };
+    completedRepair = await completeLineagePlacementRepairEffect(completionOptions);
+    assert.equal(completedRepair.status, "committed");
+    assert.equal(completedRepair.generation.generation, "2");
+    assert.equal(completedRepair.generation.value.status, "proved");
+    assert.equal(completedRepair.generation.repair_intents.length, 0);
+    assert.equal(continuityCommits, 1);
+    const completionRetry = await completeLineagePlacementRepairEffect(completionOptions);
+    assert.equal(completionRetry.status, "already-committed");
+    assert.equal(completionRetry.value.completion_result_id,
+      completedRepair.value.completion_result_id);
+    assert.equal(continuityCommits, 1);
+    successor.push(Object.freeze({
+      expected_workload_id: successorSet.shards[index].workload_id,
+      placement: executed.placement,
+      provider_id: executed.value.provider_id,
+      resource: successorSet.shards[index].bytes_base64url,
+      resource_bytes: fixtureOptions.resourceBytes
     }));
   }
   const successorRecords = successor.map((fixture, index) => record(fixture, index));
@@ -942,26 +1097,25 @@ try {
   const dynamicReplacementElapsedMs = Date.now() - dynamicReplacementStartedAt;
   assert.ok(dynamicReplacementElapsedMs <= dynamicReplacementDeadlineMs);
 
-  const generation2 = await consumerB.page.evaluate((options) =>
-    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.createPlacementGeneration(options), {
-    capsule_base64url: controllerHanded.capsule_base64url,
-    evaluated_at_ms: "1800",
-    failure_certificates_base64url: [],
-    liveness_responses_base64url: [],
-    manifest_base64url: successorSet.manifest_base64url,
-    max_proof_age_ms: "500",
-    placements: successor.map((fixture, index) => browserRecord(fixture, index)),
-    prior_commit_base64url: committed1.commit_base64url,
-    prior_generation_base64url: generation1.generation_base64url,
-    quorum: 2,
-    target_shards: 3
+  assert.ok(completedRepair);
+  const generation2 = Object.freeze({
+    generation: completedRepair.generation.generation,
+    generation_base64url: encodeBase64Url(completedRepair.generation.bytes),
+    generation_id: completedRepair.generation.generation_id,
+    repair_shard_indexes: completedRepair.generation.repair_intents.map(
+      ({ shard_index: shardIndex }) => shardIndex
+    ),
+    status: completedRepair.generation.value.status
   });
   assert.equal(generation2.generation, "2");
   assert.equal(generation2.status, "proved");
-  const committed2 = await consumerB.page.evaluate(({ capsule, generation }) =>
-    globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.commitPlacementGeneration(capsule, generation), {
-    capsule: controllerHanded.capsule_base64url,
-    generation: generation2.generation_base64url
+  const committed2 = Object.freeze({
+    capsule_base64url: encodeBase64Url(completedRepair.capsule_bytes),
+    commit_base64url: encodeBase64Url(completedRepair.commit_bytes),
+    commit_id: completedRepair.commit.commit_id,
+    generation_id: completedRepair.commit.generation_id,
+    head_hash: completedRepair.commit.lineage_head_hash,
+    private_material_exposed: false
   });
   const actionPlan2 = await consumerB.page.evaluate((value) =>
     globalThis.__MORTALOS_CONFIDENTIAL_PLACEMENT__.derivePlacementActionPlan(value),
@@ -1041,7 +1195,7 @@ try {
   console.log("- every next-context current/displaced view and the exact old A/B/C replay after serialized-state reload produced zero proved shards");
   console.log("- local provider-process termination plus a quorum certificate qualified a deterministic repair scheduling plan; browser B renewed all leases under its own non-transferred key");
   console.log("- one failed provider and four separate browser observers received the same challenge over WebRTC; 3-of-4 signed the bounded local no-response window without a global clock");
-  console.log("- A committed the degraded generation before the Lab performed replacement placement; this Lab does not yet execute repair through an effect-time, current-evidence-gated action-plan executor");
+  console.log("- A committed the degraded generation before B re-verified current evidence and executed shard 0 once through the durable effect-time executor; multi-action automation remains HOLD");
   console.log("- independently ordered generation evidence converged byte-identically without private-key transfer");
   console.log("- after browser A exited, B reconstructed and decrypted exact bytes from 2-of-3; one corrupted shard was rejected");
   console.log("- origin/HTTP/relay requests stayed at zero after the network cut; physical/admin independence remains HOLD");

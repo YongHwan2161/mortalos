@@ -8,8 +8,27 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import {
   canonicalBytes,
+  createPlacementFailureCertificate,
+  domainHash,
   encodeBase64Url
 } from "../src/index.mjs";
+import {
+  evaluatePlacementLivenessEvidence,
+  finalizePlacementLivenessObservation,
+  finalizePlacementLivenessPossessionResponse,
+  finalizePlacementLivenessPolicy,
+  finalizePlacementLivenessPolicyChallenge,
+  PLACEMENT_LIVENESS_FORMATS,
+  PLACEMENT_LIVENESS_RESPONSE_PROFILES,
+  preparePlacementLivenessObservation,
+  preparePlacementLivenessPolicy,
+  preparePlacementLivenessPolicyChallenge,
+  preparePlacementLivenessPossessionResponse,
+  verifyPlacementFailureCertificate,
+  verifyPlacementLivenessChallenge,
+  verifyPlacementLivenessPolicy,
+  verifyPlacementLivenessResponse
+} from "../src/placement/liveness.mjs";
 import {
   deriveResourceExecutionWorkloadId
 } from "../src/crypto.mjs";
@@ -34,6 +53,19 @@ import {
   verifyResourceExecutionReceipt
 } from "../src/resource-execution.mjs";
 import { evaluateStoragePlacements } from "../src/placement/storage.mjs";
+import {
+  executeAndCompleteLineagePlacementRepairBatch
+} from "../lab/placement/repair-executor.mjs";
+import {
+  createPlacementNetworkEvidenceSession
+} from "../lab/placement/network-evidence-session.mjs";
+import {
+  placementRepairBatchOptions,
+  placementRepairContinuitySession,
+  placementRepairProviderSessions,
+  setupPlacementRepairBatchFixture,
+  stablePlacementRepairBatchEvidence
+} from "../test/placement-repair-batch-fixture.mjs";
 import { buildLab } from "./build-lab.mjs";
 import { startLabServer } from "./serve-lab.mjs";
 
@@ -53,6 +85,19 @@ await build({
   logLevel: "silent",
   minify: true,
   outfile: resolve(labDirectory, "webrtc-primordials.js"),
+  platform: "browser",
+  sourcemap: false,
+  target: ["chrome120"]
+});
+await build({
+  absWorkingDir: repositoryRoot,
+  bundle: true,
+  entryPoints: ["test/placement-admission-browser-entry.mjs"],
+  format: "esm",
+  legalComments: "none",
+  logLevel: "silent",
+  minify: true,
+  outfile: resolve(labDirectory, "placement-admission.js"),
   platform: "browser",
   sourcemap: false,
   target: ["chrome120"]
@@ -122,6 +167,30 @@ async function verifyWebRtcPrimordials() {
       scheduler_poison_calls: 0,
       set_poison_calls: 0
     });
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
+  }
+}
+
+async function verifyPlacementAdmission() {
+  const browser = await chromium.launch(launchOptions);
+  try {
+    const page = await browser.newPage();
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(server.url, { waitUntil: "domcontentloaded" });
+    const result = await page.evaluate(async () => {
+      const probe = await import("/placement-admission.js");
+      return probe.runPlacementAdmissionBrowserProbe();
+    });
+    assert.equal(result.admitted, true);
+    assert.equal(result.reference, true);
+    assert.equal(result.evaluated_status, "failed");
+    assert.match(result.epoch_id, /^sha256:[A-Za-z0-9_-]{43}$/u);
+    assert.match(result.policy_id, /^sha256:[A-Za-z0-9_-]{43}$/u);
+    assert.equal(result.private_material_exposed, false);
+    assert.equal(result.maximum_message_bytes <= result.transport_message_ceiling, true);
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
@@ -231,11 +300,157 @@ async function send(sender, receiver, kind, requestId, payload) {
   return received.payload;
 }
 
+function browserRangeTransport(endpoint) {
+  return Object.freeze({
+    async readRange(after, limit) {
+      return endpoint.page.evaluate(
+        ({ cursor, pageLimit }) =>
+          globalThis.__MORTALOS_P2P_PLACEMENT__.readTransportRange(cursor, pageLimit),
+        { cursor: after, pageLimit: limit }
+      );
+    }
+  });
+}
+
+function auditedNetworkEvidence(session, counts) {
+  return Object.freeze({
+    async readCurrentEvidence() {
+      const evidence = await session.readCurrentEvidence();
+      counts.push(evidence.observed_liveness_responses.length);
+      return evidence;
+    }
+  });
+}
+
+async function publishBatchLateEvidence(publisher, reader, responseBytes) {
+  const payload = encodeBase64Url(responseBytes);
+  const messageIds = await publisher.page.evaluate(async (value) => {
+    const api = globalThis.__MORTALOS_P2P_PLACEMENT__;
+    return [
+      await api.publishArtifact("liveness-response", "batch-late-response-1", value),
+      await api.publishArtifact("liveness-response", "batch-late-response-1", value),
+      await api.publishArtifact("liveness-response", "batch-late-response-2", value),
+      await api.publishArtifact("challenge", "batch-ignored-challenge", value)
+    ];
+  }, payload);
+  assert.equal(messageIds[0], messageIds[1]);
+  assert.notEqual(messageIds[0], messageIds[2]);
+  await Promise.all([
+    reader.page.evaluate(() =>
+      globalThis.__MORTALOS_P2P_PLACEMENT__.waitArtifact(
+        "liveness-response",
+        "batch-late-response-1"
+      )),
+    reader.page.evaluate(() =>
+      globalThis.__MORTALOS_P2P_PLACEMENT__.waitArtifact(
+        "liveness-response",
+        "batch-late-response-2"
+      )),
+    reader.page.evaluate(() =>
+      globalThis.__MORTALOS_P2P_PLACEMENT__.waitArtifact(
+        "challenge",
+        "batch-ignored-challenge"
+      ))
+  ]);
+  const frames = await reader.page.evaluate(() =>
+    globalThis.__MORTALOS_P2P_PLACEMENT__.readTransportRange(0, 16));
+  assert.deepEqual(frames.map(({ sequence }) => sequence), [1, 2, 3]);
+  assert.equal(new Set(frames.map(({ message_id: id }) => id)).size, 3);
+}
+
+async function verifyConnectedRepairBatchEvidence({
+  publisher,
+  reader
+}) {
+  await connect(publisher, reader, "repair-batch-late");
+  const fixture = await setupPlacementRepairBatchFixture();
+
+  const lateDirectory = resolve(temporaryRoot, "repair-batch-webrtc-late");
+  const lateCalls = [0, 0];
+  const lateContinuityState = { calls: 0, committed: null };
+  const lateCounts = [];
+  const lateSession = createPlacementNetworkEvidenceSession({
+    evidence: Object.freeze({
+      async readCurrentEvidence() {
+        return stablePlacementRepairBatchEvidence(fixture);
+      }
+    }),
+    transport: browserRangeTransport(reader)
+  });
+  const lateProviders = placementRepairProviderSessions(
+    fixture,
+    lateCalls,
+    null,
+    async (shardIndex) => {
+      if (shardIndex === 0) {
+        await publishBatchLateEvidence(publisher, reader, fixture.lateResponses[1]);
+      }
+    }
+  );
+  const lateContinuity = placementRepairContinuitySession(fixture, lateContinuityState);
+  await assert.rejects(() => executeAndCompleteLineagePlacementRepairBatch(
+    placementRepairBatchOptions(
+      fixture,
+      lateDirectory,
+      lateProviders,
+      lateContinuity,
+      auditedNetworkEvidence(lateSession, lateCounts)
+    )
+  ), /contested-or-forked-evidence|late-proof-conflict/u);
+  assert.deepEqual(lateCalls, [1, 0]);
+  assert.equal(lateContinuityState.calls, 0);
+  assert.deepEqual(lateCounts, [0, 0, 1]);
+
+  await connect(publisher, reader, "repair-batch-disconnect");
+  const disconnectDirectory = resolve(temporaryRoot, "repair-batch-webrtc-disconnect");
+  const disconnectCalls = [0, 0];
+  const disconnectContinuityState = { calls: 0, committed: null };
+  const disconnectCounts = [];
+  const disconnectSession = createPlacementNetworkEvidenceSession({
+    evidence: Object.freeze({
+      async readCurrentEvidence() {
+        return stablePlacementRepairBatchEvidence(fixture);
+      }
+    }),
+    transport: browserRangeTransport(reader)
+  });
+  const disconnectProviders = placementRepairProviderSessions(
+    fixture,
+    disconnectCalls,
+    null,
+    async (shardIndex) => {
+      if (shardIndex === 0) {
+        await reader.page.evaluate(() =>
+          globalThis.__MORTALOS_P2P_PLACEMENT__.closeTransport());
+      }
+    }
+  );
+  const disconnectContinuity = placementRepairContinuitySession(
+    fixture,
+    disconnectContinuityState
+  );
+  await assert.rejects(() => executeAndCompleteLineagePlacementRepairBatch(
+    placementRepairBatchOptions(
+      fixture,
+      disconnectDirectory,
+      disconnectProviders,
+      disconnectContinuity,
+      auditedNetworkEvidence(disconnectSession, disconnectCounts)
+    )
+  ), /P2P_TRANSPORT: no connected transport/u);
+  assert.deepEqual(disconnectCalls, [1, 0]);
+  assert.equal(disconnectContinuityState.calls, 0);
+  assert.deepEqual(disconnectCounts, [0, 0]);
+  await publisher.page.evaluate(() =>
+    globalThis.__MORTALOS_P2P_PLACEMENT__.closeTransport());
+}
+
 let consumerA;
 let consumerB;
 const providers = [];
 const records = [];
 let workloadId;
+let policyBoundLiveness = null;
 
 async function proveProvider(provider, index) {
   const requestId = `placement-${index}`;
@@ -468,6 +683,130 @@ async function proveProvider(provider, index) {
     receipt: executionReceipt
   });
   assert.equal(verified.body.workload_id, workloadId);
+  if (index === 0) {
+    const policyDraft = preparePlacementLivenessPolicy({
+      offer,
+      lease,
+      body: {
+        failure_sequence: "1",
+        lineage_parent_hash: domainHash("MortalOS P2P liveness lineage", resource),
+        manifest_id: domainHash("MortalOS P2P liveness manifest", resource),
+        response_proof_profile:
+          PLACEMENT_LIVENESS_RESPONSE_PROFILES.storage_merkle_sample,
+        response_window_ms: "5000",
+        shard_index: 0,
+        workload_id: verified.body.workload_id
+      }
+    });
+    const policy = finalizePlacementLivenessPolicy({
+      body: policyDraft.body,
+      lease,
+      offer,
+      provider_signature: await pageSign(
+        provider,
+        "primary",
+        policyDraft.provider_signing_message
+      )
+    });
+    const challengeDraft = preparePlacementLivenessPolicyChallenge({
+      nonce: nonce(117),
+      policy,
+      previous_execution_receipt_id: verified.receipt_id
+    });
+    const livenessChallenge = finalizePlacementLivenessPolicyChallenge({
+      consumer_signature: await pageSign(
+        consumerA,
+        "primary",
+        challengeDraft.consumer_signing_message
+      ),
+      nonce: nonce(117),
+      policy,
+      previous_execution_receipt_id: verified.receipt_id
+    });
+    await send(consumerA, provider, "liveness-challenge", "policy-bound-liveness", {
+      document_base64url: document(livenessChallenge)
+    });
+    const possessionProof = await provider.page.evaluate(({ challenge_nonce, lease_id, workload }) =>
+      globalThis.__MORTALOS_P2P_PLACEMENT__.createStoragePossessionProof({
+        challenge_nonce,
+        lease_id,
+        workload
+      }), {
+      challenge_nonce: nonce(117),
+      lease_id: openedLease.lease_id,
+      workload
+    });
+    const responseDraft = preparePlacementLivenessPossessionResponse({
+      challenge: livenessChallenge,
+      proof: possessionProof,
+      provider: provider.identity,
+      workload
+    });
+    const possessionResponse = finalizePlacementLivenessPossessionResponse({
+      challenge: livenessChallenge,
+      proof: possessionProof,
+      provider: provider.identity,
+      provider_signature: await pageSign(
+        provider,
+        "primary",
+        responseDraft.provider_signing_message
+      ),
+      workload
+    });
+    await send(provider, consumerA, "liveness-response", "policy-bound-liveness", {
+      document_base64url: document(possessionResponse)
+    });
+    const openedResponse = verifyPlacementLivenessResponse(possessionResponse);
+    const alive = evaluatePlacementLivenessEvidence({
+      certificates: [],
+      responses: [openedResponse.bytes]
+    });
+    assert.equal(openedResponse.independent_possession, true);
+    assert.equal(alive.status, "alive");
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 5_000));
+    const observations = [];
+    for (const witness of consumerA.witnesses.slice(0, 3)) {
+      const observationDraft = preparePlacementLivenessObservation({
+        challenge: livenessChallenge,
+        observer: witness.identity,
+        waited_window_ms: "5000"
+      });
+      observations.push(finalizePlacementLivenessObservation({
+        challenge: livenessChallenge,
+        observer: witness.identity,
+        observer_signature: await pageSign(
+          consumerA,
+          witness.name,
+          observationDraft.observer_signing_message
+        ),
+        waited_window_ms: "5000"
+      }));
+    }
+    const certificate = createPlacementFailureCertificate({
+      challenge: livenessChallenge,
+      observations
+    });
+    const openedPolicy = verifyPlacementLivenessPolicy(policy);
+    const openedChallenge = verifyPlacementLivenessChallenge(livenessChallenge);
+    const openedCertificate = verifyPlacementFailureCertificate(certificate.bytes);
+    const evaluated = evaluatePlacementLivenessEvidence({
+      certificates: [openedCertificate.bytes],
+      responses: []
+    });
+    const contested = evaluatePlacementLivenessEvidence({
+      certificates: [openedCertificate.bytes],
+      responses: [openedResponse.bytes]
+    });
+    assert.equal(contested.status, "halted");
+    policyBoundLiveness = Object.freeze({
+      authority: openedChallenge.authority,
+      certificate_format: openedCertificate.certificate_format,
+      policy_id: openedPolicy.policy_id,
+      possession_response: openedResponse.response_format,
+      response_window_ms: openedPolicy.body.response_window_ms,
+      status: evaluated.status
+    });
+  }
   await Promise.all([
     consumerA.page.evaluate(() => globalThis.__MORTALOS_P2P_PLACEMENT__.closeTransport()),
     provider.page.evaluate(() => globalThis.__MORTALOS_P2P_PLACEMENT__.closeTransport())
@@ -509,6 +848,7 @@ async function retrieve(provider, index) {
 
 try {
   await verifyWebRtcPrimordials();
+  await verifyPlacementAdmission();
   consumerA = await openEndpoint("consumer-a", "consumer");
   consumerB = await openEndpoint("consumer-b", "consumer");
   consumerA.witnesses = [];
@@ -523,10 +863,29 @@ try {
   for (let index = 0; index < 4; index += 1) {
     providers.push(await openEndpoint(`provider-${index}`, "provider"));
   }
+  const batchLatePublisher = await openEndpoint("batch-late-publisher", "provider");
+  const batchLateReader = await openEndpoint("batch-late-reader", "consumer");
   const requestCountAtCut = server.requests.length;
   await Promise.all(endpoints.map((endpoint) => endpoint.cut()));
 
+  await verifyConnectedRepairBatchEvidence({
+    publisher: batchLatePublisher,
+    reader: batchLateReader
+  });
+
   for (let index = 0; index < 3; index += 1) records.push(await proveProvider(providers[index], index));
+  assert.equal(policyBoundLiveness?.authority, "policy-bound");
+  assert.equal(
+    policyBoundLiveness?.certificate_format,
+    PLACEMENT_LIVENESS_FORMATS.certificate_policy
+  );
+  assert.match(policyBoundLiveness?.policy_id ?? "", /^sha256:[A-Za-z0-9_-]{43}$/u);
+  assert.equal(
+    policyBoundLiveness?.possession_response,
+    PLACEMENT_LIVENESS_FORMATS.response_possession
+  );
+  assert.equal(policyBoundLiveness?.response_window_ms, "5000");
+  assert.equal(policyBoundLiveness?.status, "failed");
   const initial = evaluate([]);
   assert.equal(initial.status, "proved");
   assert.equal(initial.available_copies, 3);
@@ -577,6 +936,8 @@ try {
   console.log("MortalOS P2P receipt-gated placement/repair: PASS");
   console.log("- one actual runtime-selected file crossed direct DataChannels to three providers");
   console.log("- offer, lease, witness, challenge, usage, and execution evidence crossed the same peer path");
+  console.log("- a browser-held provider key signed an exact lease-bound 5,000ms liveness policy before the policy-bound challenge/certificate");
+  console.log("- that provider answered directly from stored bytes with a nonce-selected Merkle sample and no fresh consumer receipt");
   console.log("- only exact active storage execution receipts counted as placement");
   console.log("- provider process loss degraded 3 to 2; a new provider/new lease repaired to 3");
   console.log("- after consumer A exited, consumer B recovered exact bytes from 2 valid of 3 peer copies");
@@ -585,6 +946,7 @@ try {
   console.log("- actual Chromium DataChannels retained captured transcript, scheduler, and peer capabilities under prototype poison");
   console.log("- actual Chromium enforced generated 512-message/8-MiB outbound and inbound transcript ceilings and closed the peer on remote channel close");
   console.log("- selective artifact-kind Set.has poison could not send or commit a verdict; a challenge still crossed both peers");
+  console.log("- an actual connected WebRTC transcript stopped batch provider 1 and Continuity after provider 0; duplicate/rewrapped evidence deduplicated and disconnect also stopped all later calls");
   console.log("- all browsers shared one host/admin domain; physical independence remains HOLD");
 } finally {
   await Promise.all(endpoints.map(({ browser }) => browser.close().catch(() => {})));
