@@ -184,15 +184,50 @@ function encodePlacement(placement) {
 }
 
 function decodePlacement(value) {
-  const decodeMany = (sources) => Object.freeze(sources.map(decodeBase64Url));
+  const encoded = exactOptions(value, [
+    "consumption_announcements_base64url",
+    "execution_receipts_base64url",
+    "lease_base64url",
+    "observed_at_ms",
+    "offer_base64url",
+    "revocations_base64url",
+    "usage_receipts_base64url"
+  ], "repair-result-placement-encoded");
+  const decodeOne = (source, label) => {
+    const decoded = decodeBase64Url(source);
+    if (!decoded) fail("E_PLACEMENT_REPAIR_FORMAT", label);
+    return decoded;
+  };
+  const decodeMany = (sources, label) => {
+    let length;
+    try {
+      length = ownDataArrayLength(sources, label);
+    } catch {
+      fail("E_PLACEMENT_REPAIR_FORMAT", `${label}-dense-array`);
+    }
+    if (length > 64) fail("E_PLACEMENT_REPAIR_FORMAT", `${label}-length`);
+    let records;
+    try {
+      records = copyBoundedOwnDataArray(sources, length, label);
+    } catch {
+      fail("E_PLACEMENT_REPAIR_FORMAT", `${label}-dense-array`);
+    }
+    return Object.freeze(records.map((source) => decodeOne(source, label)));
+  };
   return Object.freeze({
-    consumption_announcements: decodeMany(value.consumption_announcements_base64url),
-    execution_receipts: decodeMany(value.execution_receipts_base64url),
-    lease: decodeBase64Url(value.lease_base64url),
-    observed_at_ms: value.observed_at_ms,
-    offer: decodeBase64Url(value.offer_base64url),
-    revocations: decodeMany(value.revocations_base64url),
-    usage_receipts: decodeMany(value.usage_receipts_base64url)
+    consumption_announcements: decodeMany(
+      encoded.consumption_announcements_base64url,
+      "repair-result-announcements"
+    ),
+    execution_receipts: decodeMany(
+      encoded.execution_receipts_base64url,
+      "repair-result-receipts"
+    ),
+    lease: decodeOne(encoded.lease_base64url, "repair-result-lease"),
+    observed_at_ms: encoded.observed_at_ms,
+    offer: decodeOne(encoded.offer_base64url, "repair-result-offer"),
+    revocations: decodeMany(encoded.revocations_base64url, "repair-result-revocations"),
+    usage_receipts: decodeMany(encoded.usage_receipts_base64url, "repair-result-usage")
   });
 }
 
@@ -354,16 +389,33 @@ function restoreResult(source, effect) {
   } catch {
     fail("E_PLACEMENT_REPAIR_FORMAT", "repair-result-json");
   }
-  if (!isCanonical(bytes, value) || value?.format !== RESULT_FORMAT) {
+  if (!isCanonical(bytes, value)) {
     fail("E_PLACEMENT_REPAIR_FORMAT", "repair-result-canonical");
   }
+  value = exactOptions(value, [
+    "effect_id",
+    "format",
+    "lease_id",
+    "placement",
+    "provider_id",
+    "receipt_id",
+    "repair_slot_id",
+    "result_id",
+    "shard_index",
+    "workload_id"
+  ], "repair-result");
+  if (value.format !== RESULT_FORMAT) fail("E_PLACEMENT_REPAIR_FORMAT", "repair-result-format");
   const { result_id: ignored, ...basis } = value;
   if (
     domainHash(RESULT_DOMAIN, canonicalBytes(basis)) !== value.result_id ||
     value.effect_id !== effect.value.effect_id ||
     value.repair_slot_id !== effect.value.repair_slot_id
   ) fail("E_PLACEMENT_REPAIR_BINDING", "repair-result-id");
-  return Object.freeze({ bytes, placement: decodePlacement(value.placement), value });
+  const placement = decodePlacement(value.placement);
+  if (!equalBytes(canonicalBytes(encodePlacement(placement)), canonicalBytes(value.placement))) {
+    fail("E_PLACEMENT_REPAIR_FORMAT", "repair-result-placement-canonical");
+  }
+  return Object.freeze({ bytes, placement, value: Object.freeze(value) });
 }
 
 function verifiedRepairResult({ effect, generation, observedAtMs, source }) {
@@ -616,9 +668,9 @@ export function recoverLineagePlacementRepairEffect(options) {
 
 function completionCandidate(effect, result, successor) {
   const slotBasis = Object.freeze({
-    effect_result_id: result.value.result_id,
     manifest_id: successor.value.manifest_id,
     prior_commit_id: effect.value.commit_id,
+    repair_slot_id: effect.value.repair_slot_id,
     successor_generation: successor.generation
   });
   const completionSlotId = domainHash(
@@ -629,6 +681,7 @@ function completionCandidate(effect, result, successor) {
     ...slotBasis,
     completion_slot_id: completionSlotId,
     effect_id: effect.value.effect_id,
+    effect_result_id: result.value.result_id,
     format: COMPLETION_FORMAT,
     successor_generation_id: successor.generation_id
   });

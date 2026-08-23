@@ -31,6 +31,8 @@ import {
 } from "../lab/placement/liveness-contract.mjs";
 import { createPlacementMembershipFixture } from "../lab/placement/admission-contract.mjs";
 import { encodeBase64Url, equalBytes } from "../src/bytes.mjs";
+import { canonicalBytes } from "../src/codec.mjs";
+import { domainHash } from "../src/confidential/format.mjs";
 import { createContinuity, createContinuityAuthority } from "../src/continuity.mjs";
 import { createConfidentialPlacementShardSet } from "../src/placement/confidential.mjs";
 import {
@@ -147,6 +149,17 @@ async function setup() {
     prepared,
     shardSet
   };
+}
+
+function rehashRepairResult(value) {
+  const { result_id: ignoredResultId, ...basis } = value;
+  return canonicalBytes({
+    ...basis,
+    result_id: domainHash(
+      "MortalOS lineage placement repair effect result v1",
+      canonicalBytes(basis)
+    )
+  });
 }
 
 function executorOptions(fixture, directory, provider, prepared = fixture.prepared, overrides = {}) {
@@ -357,6 +370,36 @@ test("single-shard repair re-verifies evidence, commits once, and rejects stale 
         left
       ));
       assert.equal(completedRetry.status, "already-committed");
+      assert.equal(completionCalls, 1);
+
+      const parsedResult = JSON.parse(new TextDecoder().decode(left.bytes));
+      const rehashedOuterExtension = rehashRepairResult({
+        ...parsedResult,
+        extra_metadata: "ignored-by-the-old-decoder"
+      });
+      await assert.rejects(() => completeLineagePlacementRepairEffect(completionOptions(
+        fixture,
+        completionDirectory,
+        continuity,
+        left,
+        { effect_result_bytes: rehashedOuterExtension }
+      )), /repair-result-keys/u);
+      assert.equal(completionCalls, 1);
+
+      const rehashedPlacementExtension = rehashRepairResult({
+        ...parsedResult,
+        placement: {
+          ...parsedResult.placement,
+          extra_metadata: "ignored-by-the-old-decoder"
+        }
+      });
+      await assert.rejects(() => completeLineagePlacementRepairEffect(completionOptions(
+        fixture,
+        completionDirectory,
+        continuity,
+        left,
+        { effect_result_bytes: rehashedPlacementExtension }
+      )), /repair-result-placement-encoded-keys/u);
       assert.equal(completionCalls, 1);
 
       const continuityRecoveryDirectory = await mkdtemp(

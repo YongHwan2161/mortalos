@@ -256,7 +256,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "lab/placement/durable-repair-continuity-session.mjs": "3a87405a479f70af738ade062afebd1db1ec309c54166ef16d46362f8d16be96",
   "lab/placement/durable-repair-provider-session.mjs": "06f1c63a37c0834c806727e2d1195a4186e2b98174f14792060630bc6738ec5b",
   "lab/placement/network-evidence-session.mjs": "23c2786eef4dedab5db907171f95d3d2c21878c9b13377af13497f5cae81e75f",
-  "lab/placement/repair-executor.mjs": "62fecd6d32a227f8e4b668c232d73230c11ddc8ec774b693d8f96fdb9d98de8a",
+  "lab/placement/repair-executor.mjs": "b777762945661f6218fe163e2b1193962740ddb3fb845fbfc2c6dd612b16d6aa",
   "lab/storage/confidential-counter-authority-store.mjs": "48f6bb602af094aaca7a35a8b6c0ba542e1a65d7a4224f101363bd211b4fe244",
   "lab/storage/durable-document.mjs": "6a12494b34d7f94e84e9c85c33ac53292f54421d77b4af48e093db90b1e27a9f",
   "lab/storage/durable-store.mjs": "95356dae9aeb166f1a214a310deb61e22275466bcc7d47c084902c55162c4f39",

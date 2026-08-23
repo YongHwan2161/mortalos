@@ -328,8 +328,9 @@ post-merge workflows, and deployed asset manifest.
   and schedule budgets are `2,000,000ms` and `1,200,000ms`, while batch interruption
   remains `1,200,000ms`. The unchanged executor and `10,000 × 8` schedule corpora then
   pass serially `2/2` in `2,178,485.7704ms` (`1,345,547.9513ms` and
-  `832,008.0928ms`) with zero failures, cancellations, or skips. A fresh complete
-  suite on the successor exact SHA remains required.
+  `832,008.0928ms`) with zero failures, cancellations, or skips. Those unchanged
+  corpora were subsequently included in the receipt-complete 48-stage `458/458` run
+  recorded in the current status section below.
 - Remaining next P0 is preparing separately custodied observer identities at their
   respective hosts, collecting only their public files, publishing one exact plan,
   collecting every ceremony-scoped acceptance, activating that one plan, and binding it
