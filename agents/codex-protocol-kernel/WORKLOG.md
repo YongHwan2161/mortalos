@@ -4150,7 +4150,9 @@ result, and reproducible verification.
   sequence 3 and the same equality. A follow-up independent semantic audit also
   removed the stale “two handoffs” wording and made the displayed Pulse count derive
   only from state-transition records: 1 at create/accept and 2 after continuation,
-  while the lineage sequence remains 1/2/3.
+  while the lineage sequence remains 1/2/3. It also corrected the active README from
+  its prior no-file, deleted-control, sequence-1-to-2 guidance to the exact current
+  file-select/create/join/approve/accept/remove/continue/download flow ending at 3.
 - Local remediation evidence: focused Chromium PASS at 6,016 and 131,072 bytes;
   integrated EN/KO UX PASS with median LCP `149.1ms`, CLS `0.000`, TBT `0.0ms`, and
   DOM interactive `90.3ms`; Continuity `10/10`; WebRTC `15/15`; Lab/API `23/23`;

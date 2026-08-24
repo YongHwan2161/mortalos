@@ -106,13 +106,16 @@ Internet reachability, Sybil resistance, or physical independence. See
 
 ## Guided two-browser proof
 
-1. In Browser A, choose **Create in this browser**.
+1. In Browser A, choose a native file up to 128 KiB, then choose
+   **Create in Browser A**.
 2. Open the locally generated join QR or copied link in a clean Browser B profile.
-3. Browser B creates its own non-extractable key. A and B authorize one canonical
-   custody handoff; no private key crosses the relay.
-4. Close Browser A.
-5. In Browser B, choose **Continue here** and confirm that the same `organism_id`
-   advances from sequence 1 to 2 with a new deterministic state root.
+3. Choose **Join in Browser B**. B creates its own non-extractable key; choose
+   **Approve A → B handoff** in A, then **Accept custody in B**. No private key
+   crosses the relay.
+4. Choose **Remove Browser A authority**, then close Browser A.
+5. In Browser B, choose **Continue in Browser B** and confirm that the same
+   `organism_id` advances from accepted sequence 2 to sequence 3 with a new
+   deterministic state root and an exact recovered-byte download.
 
 The page keeps one organism and one primary journey in view. GPT, the fixed reference
 fixture, corpus replay, raw bytes, durable storage, and protocol diagnostics remain

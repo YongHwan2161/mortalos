@@ -52,7 +52,9 @@ Status: **SINGLE-LINEAGE REAL-FILE CONTINUITY REMEDIATION PASS LOCALLY; NEW EXAC
   Chromium asserts exact `organism_id`, `head_hash`, and `sequence` equality after
   transfer, acceptance, and continuation. The UI now describes one handoff, and its
   Pulse count derives only from accepted state-transition records rather than raw
-  lineage sequence. New exact-SHA CI and independent re-review are required; the
+  lineage sequence. The active README flow now includes bounded file selection,
+  exact current control labels, accepted sequence 2, continuation sequence 3, and
+  exact-byte download. New exact-SHA CI and independent re-review are required; the
   prior CI and BLOCK decision cannot authorize merge.
 
 ### HISTORICAL — PR #59 release intent
