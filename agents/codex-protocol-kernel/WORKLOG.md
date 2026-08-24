@@ -4099,3 +4099,64 @@ result, and reproducible verification.
   `143cd1f2021075142086ff68e3e8b8fe711ba1b10dcca0404d1c650d53632f91`.
   Fresh full-suite evidence on the successor exact SHA remains pending; no push, PR,
   merge, deployment, or live authority mutation occurred.
+
+## 2026-08-24 — Visible EN/KO real-file continuity journey
+
+- Started from freshly fetched `origin/main` at
+  `9fedd6ce733fad9b5eae61490667adef1193ab18` in a dedicated task worktree. The public
+  page had a clear identity/custody A→B proof but no visible file selection, transfer,
+  recovery, or download path.
+- Composed the existing product Continuity and manual WebRTC harnesses into the main
+  five-step journey. A selects 1–131,072 native bytes and creates a Capsule; HTTP
+  relays only public evidence plus bounded canonical WebRTC signals; the file-bearing
+  Capsule crosses the ordered direct DataChannel. B requests and accepts custody with
+  its own non-extractable authority, A destroys its authority and direct transport,
+  and B rejects one corrupt signed copy, recovers exact bytes from 2-of-3, downloads
+  them, and commits product sequence 3.
+- Reduced the direct transfer from three redundant pre-handoff copies to one Capsule;
+  B creates its current signed recovery copies only after acceptance. This cut a
+  34,816-byte UX fixture's direct payload snapshot from about 360,941 bytes to the
+  single-Capsule path while preserving post-handoff corruption recovery.
+- `build:lab`, i18n `2/2`, WebRTC `15/15`, focused 6,016-byte Chromium, exact-ceiling
+  131,072-byte Chromium, and integrated UX all pass. The UX receipt reports median
+  LCP `244.6ms`, CLS `0.000`, TBT `16.0ms`, DOM interactive `154.1ms`; seven stable
+  EN/KO/failure/fork screenshot states; under-90-second success; honest read-only
+  stall on premature A loss. HTTP POST inspection contains neither plaintext nor
+  base64url file bytes. Exact-SHA governance, full suite, deployment, independent
+  hosts/administrators/networks, and arbitrary-NAT reachability remain pending.
+- Adjacent regression closure passes: Continuity `10/10`; relay contract `5/5`,
+  runtime `5/5`, dry-run deploy; multi-browser `7/7` plus isolated Chromium quorum;
+  Lab/API `23/23`; H3A full browser Lab; persistent profiles `20/20` with 38 admitted
+  operations/12s and zero local 429s; security boundary `26/26` over 22 direct and 145
+  discovered async surfaces; spec and links. The security module-closure digest was
+  intentionally refreshed only after the new bounded artifact-kind allowlist passed
+  the focused artifact tests. Full ordered P2P and exact-SHA CI remain pending.
+
+## 2026-08-24 — PR #60 independent-review single-lineage remediation
+
+- Independent immutable review of head
+  `bdc4ace4b12f1c43729de39f3e855184645653b4` returned BLOCK with one P1:
+  the Product Continuity Capsule and visible Life Card each created a different
+  `organism_id`, so the page presented one handoff while executing two lineages.
+- Removed the second `LiveEndpointParticipant` lineage from the visible-file path.
+  The product harness now returns only validated public Genesis/Pulse evidence from
+  the Capsule; a read-only evidence view replays those exact records for the Life
+  Card. Product create, handoff accept, and continuation supply sequence 1, 2, and 3
+  respectively, and their public records are the only lineage evidence sent through
+  HTTP relay. File-bearing Capsule bytes still cross only direct WebRTC.
+- The focused browser snapshot now exposes the active Capsule lineage and asserts
+  exact `organism_id`, `head_hash`, and `sequence` equality with the displayed state
+  after transfer, acceptance, and continuation. The UX gate now requires displayed
+  sequence 3 and the same equality. A follow-up independent semantic audit also
+  removed the stale “two handoffs” wording and made the displayed Pulse count derive
+  only from state-transition records: 1 at create/accept and 2 after continuation,
+  while the lineage sequence remains 1/2/3. It also corrected the active README from
+  its prior no-file, deleted-control, sequence-1-to-2 guidance to the exact current
+  file-select/create/join/approve/accept/remove/continue/download flow ending at 3.
+- Local remediation evidence: focused Chromium PASS at 6,016 and 131,072 bytes;
+  integrated EN/KO UX PASS with median LCP `149.1ms`, CLS `0.000`, TBT `0.0ms`, and
+  DOM interactive `90.3ms`; Continuity `10/10`; WebRTC `15/15`; Lab/API `23/23`;
+  i18n `2/2`; persistent profiles `20/20` with 38 admitted operations/12s and zero
+  local 429s; security `26/26` over 22 direct / 145 discovered surfaces; build and
+  diff checks PASS. New commit, exact-head CI, independent re-review, App/native
+  attestations, merge, and deployment remain pending.

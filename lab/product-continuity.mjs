@@ -9,7 +9,7 @@ import {
   inspectContinuity,
   recoverContinuity
 } from "../sdk/continuity.mjs";
-import { decodeBase64Url, encodeBase64Url } from "../src/index.mjs";
+import { decodeBase64Url, encodeBase64Url, parseJsonBytes } from "../src/index.mjs";
 
 const reflectApply = Reflect.apply;
 const fileArrayBuffer = globalThis.File?.prototype?.arrayBuffer;
@@ -74,6 +74,24 @@ export function installProductContinuityHarness() {
     },
     inspect(capsule) {
       return inspectContinuity({ capsuleBytes: decode(capsule) });
+    },
+    evidence(capsule) {
+      const capsuleBytes = decode(capsule);
+      inspectContinuity({ capsuleBytes });
+      const document = parseJsonBytes(capsuleBytes, {
+        maxBytes: capsuleBytes.byteLength,
+        maxDepth: 64
+      });
+      return Object.freeze(document.records.map((record) => Object.freeze({
+        envelope: parseJsonBytes(decode(record.envelope_base64url), {
+          maxBytes: 64 * 1024,
+          maxDepth: 64
+        }),
+        payload: parseJsonBytes(decode(record.event_payload_base64url), {
+          maxBytes: 64 * 1024,
+          maxDepth: 64
+        })
+      })));
     },
     async handoffRequest(capsule) {
       const endpoint = requireAuthority(authority);

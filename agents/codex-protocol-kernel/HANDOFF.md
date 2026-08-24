@@ -5,9 +5,59 @@ not active locks.
 
 ## Active intent
 
-Status: **TLS-CHANNEL-BOUND ROLE-KEY POSSESSION AND CRASH-RECOVERABLE COMPLETE PUBLIC-CHAIN REPLAY; PREDECESSOR COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN PENDING; EXACT-SHA EXTERNAL; SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
+Status: **SINGLE-LINEAGE REAL-FILE CONTINUITY REMEDIATION PASS LOCALLY; NEW EXACT-SHA CI/REVIEW REMAIN HOLD**
 
-### RELEASE INTENT — branch-active, main-historical
+### ACTIVE INTENT — visible real-file continuity journey
+
+- Branch: `agent/codex-protocol-kernel--visible-file-continuity-journey`
+- Base: `9fedd6ce733fad9b5eae61490667adef1193ab18` (`origin/main` after fresh fetch)
+- Worktree: `work/mortalos-worktrees/codex-protocol-kernel--visible-file-continuity-journey`
+- Shared paths declared for this task: `README.md`,
+  `agents/codex-protocol-kernel/HANDOFF.md`,
+  `agents/codex-protocol-kernel/MEMORY.md`,
+  `agents/codex-protocol-kernel/WORKLOG.md`, `docs/CLAIM_MATRIX.md`,
+  `docs/IMPLEMENTATION_PLAN.md`, `lab/app.mjs`, `lab/index.html`,
+  `lab/i18n/en.mjs`, `lab/i18n/ko.mjs`, `lab/p2p-placement.mjs`,
+  `lab/product-continuity-evidence-view.mjs`, `lab/product-continuity.mjs`,
+  `lab/styles.css`, `package.json`, `src/transport/protocol.mjs`,
+  `test/webrtc-transport.test.mjs`,
+  `scripts/verify-lab.mjs`, `scripts/verify-persistent-handoff.mjs`,
+  `scripts/verify-security-boundaries.mjs`,
+  `scripts/verify-ux.mjs`, and a focused new browser
+  verifier under `scripts/`.
+- Goal: expose the already implemented real-file Continuity Capsule flow as one
+  visible Browser A to Browser B journey: bounded native file selection, distinct
+  non-extractable endpoint keys, exact custody handoff, A authority destruction,
+  2-of-3 recovery with one corrupt copy rejected, byte-exact download, and one
+  successor transition from B.
+- Claim boundary: this is a product/UX and browser-evidence composition. It does not
+  promote independent host, network, administrator, provider, arbitrary-NAT,
+  global-availability, or XSS-resistant signer claims. The separately administered
+  multi-host run remains the next external P0.
+- Local evidence: focused Chromium passes at 6,016 and 131,072 exact bytes with no
+  plaintext, full base64url, or encoded-prefix file bytes in captured HTTP POST
+  bodies; B rejects one corrupt copy, recovers exact 2-of-3 bytes, downloads them,
+  and commits product sequence 3. Integrated UX passes stable EN/KO success, stall,
+  and fork states under 90 seconds. Persistent profiles pass 20/20 A→B handoffs with
+  measured relay cadence 38 operations/12s and zero local 429s. Continuity `10/10`,
+  WebRTC `15/15`, multi-browser `7/7` plus quorum, Lab `23/23`, security `26/26`,
+  spec, links, build, i18n, and persistent handoff gates pass. The full ordered P2P
+  suite and exact-head governance have not yet run on the final commit.
+- Independent review of PR #60 at `bdc4ace4b12f1c43729de39f3e855184645653b4`
+  returned BLOCK because the file Capsule and displayed Life Card were separate
+  organism lineages. The remediation removes the separately generated display
+  lineage: Life Card state now replays the verified public Genesis/Pulse records
+  extracted from the file Capsule, while the successor's actual accepted and
+  continued Capsules remain the source of sequence 2 and 3 evidence. Focused
+  Chromium asserts exact `organism_id`, `head_hash`, and `sequence` equality after
+  transfer, acceptance, and continuation. The UI now describes one handoff, and its
+  Pulse count derives only from accepted state-transition records rather than raw
+  lineage sequence. The active README flow now includes bounded file selection,
+  exact current control labels, accepted sequence 2, continuation sequence 3, and
+  exact-byte download. New exact-SHA CI and independent re-review are required; the
+  prior CI and BLOCK decision cannot authorize merge.
+
+### HISTORICAL — PR #59 release intent
 
 On a task branch this declaration is active. On `main` it is historical; exact-SHA
 governance and deployment status comes from the PR, required checks, merge record,

@@ -29,6 +29,8 @@ const REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
 const RESOURCE_PLACEMENT_ARTIFACT_KINDS = new Set([
   "announcement",
   "challenge",
+  "continuity-handoff-proposal",
+  "continuity-handoff-request",
   "execution-proposal",
   "execution-receipt",
   "failure-certificate",
@@ -40,7 +42,9 @@ const RESOURCE_PLACEMENT_ARTIFACT_KINDS = new Set([
   "offer",
   "resource-descriptors",
   "usage",
-  "usage-proposal"
+  "usage-proposal",
+  "webrtc-answer",
+  "webrtc-offer"
 ]);
 const CHUNK_FRAGMENT_DOMAIN = new TextEncoder().encode("MORTALOS/RELAY/1/CHUNK-FRAGMENT\0");
 

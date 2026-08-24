@@ -813,14 +813,20 @@ async function runDurableProof(browser, serverUrl) {
   }
 }
 
-function assertContinuitySnapshot(snapshot, { role, sequence, signingAuthority }) {
+function assertContinuitySnapshot(snapshot, { pulseCount, role, sequence, signingAuthority }) {
   assert.equal(snapshot.role, role);
   assert.equal(snapshot.participant.status, "accepted");
   assert.equal(snapshot.participant.sequence, sequence);
+  assert.equal(snapshot.participant.pulse_count, pulseCount);
   assert.equal(snapshot.participant.signing_authority, signingAuthority);
   assert.match(snapshot.participant.organism_id, /^mortalos:[A-Za-z0-9_-]{43}$/);
   assert.match(snapshot.participant.head_hash, /^sha256:[A-Za-z0-9_-]{43}$/);
   assert.match(snapshot.participant.state_root, /^sha256:[A-Za-z0-9_-]{43}$/);
+  assert.deepEqual(snapshot.file.lineage, {
+    head_hash: snapshot.participant.head_hash,
+    organism_id: snapshot.participant.organism_id,
+    sequence: snapshot.participant.sequence
+  });
   assert.doesNotMatch(JSON.stringify(snapshot), /private[_-]?key|privateKey|pkcs8|seed[_-]?bytes/i);
 }
 
@@ -843,10 +849,15 @@ async function runTwoBrowserContinuityProof(browser, serverUrl, locale) {
   try {
     const route = locale === "ko" ? "/ko/#continuity-proof" : "/#continuity-proof";
     await pageA.goto(new URL(route, serverUrl).href, { waitUntil: "networkidle" });
+    await pageA.locator("#continuity-file").setInputFiles({
+      buffer: Buffer.from("MortalOS Lab visible file proof\n".repeat(256)),
+      mimeType: "text/plain",
+      name: "lab-continuity-proof.txt"
+    });
     await pageA.click("#continuity-create");
     await pageA.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.create);
     const origin = await pageA.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertContinuitySnapshot(origin, { role: "A", sequence: "0", signingAuthority: true });
+    assertContinuitySnapshot(origin, { pulseCount: 1, role: "A", sequence: "1", signingAuthority: true });
     assert.equal(origin.progress.join, false);
 
     const joinHref = await pageA.locator("#continuity-join-link").getAttribute("href");
@@ -863,7 +874,7 @@ async function runTwoBrowserContinuityProof(browser, serverUrl, locale) {
     await pageB.click("#continuity-join");
     await pageB.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.join);
     const joined = await pageB.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertContinuitySnapshot(joined, { role: "B", sequence: "0", signingAuthority: false });
+    assertContinuitySnapshot(joined, { pulseCount: 1, role: "B", sequence: "1", signingAuthority: false });
     assert.equal(joined.participant.organism_id, origin.participant.organism_id);
     assert.equal(joined.participant.head_hash, origin.participant.head_hash);
 
@@ -873,16 +884,16 @@ async function runTwoBrowserContinuityProof(browser, serverUrl, locale) {
     await pageB.click("#continuity-accept");
     await pageB.waitForFunction(() => {
       const proof = globalThis.__MORTALOS_LAB__.publicSnapshot().continuity;
-      return proof.progress.handoff && proof.participant?.sequence === "1";
+      return proof.progress.handoff && proof.participant?.sequence === "2";
     });
     await pageA.waitForFunction(() => {
       const proof = globalThis.__MORTALOS_LAB__.publicSnapshot().continuity;
-      return proof.progress.handoff && proof.participant?.sequence === "1";
+      return proof.progress.handoff && proof.participant?.sequence === "2";
     }, null, { timeout: 15_000 });
     const afterA = await pageA.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
     const afterB = await pageB.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertContinuitySnapshot(afterA, { role: "A", sequence: "1", signingAuthority: false });
-    assertContinuitySnapshot(afterB, { role: "B", sequence: "1", signingAuthority: true });
+    assertContinuitySnapshot(afterA, { pulseCount: 1, role: "A", sequence: "2", signingAuthority: false });
+    assertContinuitySnapshot(afterB, { pulseCount: 1, role: "B", sequence: "2", signingAuthority: true });
     assert.equal(afterB.participant.organism_id, origin.participant.organism_id);
     assert.equal(afterB.participant.head_hash, afterA.participant.head_hash);
     assert.equal(afterB.participant.state_root, afterA.participant.state_root);
@@ -908,12 +919,12 @@ async function runTwoBrowserContinuityProof(browser, serverUrl, locale) {
     await pageB.click("#continuity-continue");
     await pageB.waitForFunction(() => {
       const proof = globalThis.__MORTALOS_LAB__.publicSnapshot().continuity;
-      return proof.progress.continue && proof.participant?.sequence === "2";
+      return proof.progress.continue && proof.participant?.sequence === "3";
     });
     const continued = await pageB.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertContinuitySnapshot(continued, { role: "B", sequence: "2", signingAuthority: true });
+    assertContinuitySnapshot(continued, { pulseCount: 2, role: "B", sequence: "3", signingAuthority: true });
     assert.equal(continued.participant.organism_id, origin.participant.organism_id);
-    assert.equal(continued.participant.pulse_count, 1);
+    assert.equal(continued.participant.pulse_count, 2);
     assert.notEqual(continued.participant.head_hash, afterB.participant.head_hash);
     assert.notEqual(continued.participant.state_root, afterB.participant.state_root);
     assert.deepEqual(errors, []);
@@ -996,8 +1007,8 @@ try {
   const koreanContinuity = await runTwoBrowserContinuityProof(browser, server.url, "ko");
   for (const proof of [englishContinuity, koreanContinuity]) {
     assert.equal(proof.origin.participant.organism_id, proof.continued.participant.organism_id);
-    assert.equal(proof.continued.participant.sequence, "2");
-    assert.equal(proof.continued.participant.pulse_count, 1);
+    assert.equal(proof.continued.participant.sequence, "3");
+    assert.equal(proof.continued.participant.pulse_count, 2);
   }
 
   if (server.requests) {

@@ -433,7 +433,14 @@ main { display: grid; gap: 1rem; }
 .continuity-life-copy strong { display: block; overflow: hidden; margin-top: 0.5rem; color: var(--acid); text-overflow: ellipsis; white-space: nowrap; }
 .continuity-life-copy p { margin: 0.4rem 0 0; color: var(--muted); }
 .role-chip { display: inline-flex; border: 1px solid var(--cyan); border-radius: 999px; padding: 0.25rem 0.55rem; color: var(--cyan); font-size: 0.7rem; }
-.continuity-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; margin: 0; }
+.continuity-file-card { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 1fr) auto; align-items: end; gap: 0.8rem; border: 1px dashed rgba(100, 240, 208, 0.55); border-radius: 0.75rem; padding: 0.8rem; background: rgba(100, 240, 208, 0.04); }
+.continuity-file-card label { display: inline-flex; align-items: center; min-height: 2.45rem; border: 1px solid var(--line); border-radius: 0.45rem; padding: 0.45rem 0.7rem; background: #202620; color: var(--ink); font-size: 0.72rem; cursor: pointer; }
+.continuity-file-card label:focus-within { outline: 3px solid var(--cyan); outline-offset: 3px; }
+.continuity-file-card input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.continuity-file-card strong { display: block; overflow: hidden; color: var(--acid); text-overflow: ellipsis; white-space: nowrap; }
+.continuity-file-card p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.75rem; }
+.continuity-file-card .button { align-self: center; }
+.continuity-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; margin: 0; }
 .continuity-metrics div { min-width: 0; border-top: 1px solid var(--line); padding-top: 0.65rem; }
 .continuity-metrics dt { color: var(--faint); font-size: 0.68rem; text-transform: uppercase; }
 .continuity-metrics dd { overflow: hidden; margin: 0.2rem 0 0; color: var(--cyan); text-overflow: ellipsis; white-space: nowrap; }
@@ -509,7 +516,7 @@ footer a:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
   .custodian-grid, .verdict-grid, .reference-results, .guided-results, .scenario-inputs { grid-template-columns: 1fr; }
   .imported-life-card dl { grid-template-columns: 1fr; }
   .durable-details { grid-template-columns: 1fr 1fr; }
-  .continuity-layout, .join-panel { grid-template-columns: 1fr; }
+  .continuity-layout, .join-panel, .continuity-file-card { grid-template-columns: 1fr; }
   .join-qr { width: 8rem; }
   .continuity-timeline { grid-template-columns: 1fr; }
   .continuity-metrics { grid-template-columns: 1fr 1fr; }

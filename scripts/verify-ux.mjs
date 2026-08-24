@@ -113,6 +113,11 @@ function pageDelay(page, milliseconds) {
 
 async function createAndJoin(locale = "en") {
   const a = await newPage(locale === "ko" ? "/ko/#continuity-proof" : "/#continuity-proof");
+  await a.page.locator("#continuity-file").setInputFiles({
+    buffer: Buffer.from("MortalOS visible continuity proof\n".repeat(1024)),
+    mimeType: "text/plain",
+    name: "continuity-proof.txt"
+  });
   await a.page.click("#continuity-create");
   await a.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.create);
   assert.equal(await a.page.locator("#continuity-join-link").textContent(), locale === "ko" ? "비공개 참여 링크 준비됨" : "Private join link ready");
@@ -120,7 +125,24 @@ async function createAndJoin(locale = "en") {
   const join = await a.page.locator("#continuity-join-link").getAttribute("href");
   const b = await newPage(new URL(join).pathname + new URL(join).search + new URL(join).hash);
   await b.page.click("#continuity-join");
-  await b.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.join);
+  try {
+    await b.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.join);
+  } catch (error) {
+    const diagnostic = {
+      a: await a.page.evaluate(() => ({
+        code: document.querySelector("#continuity-error-code")?.textContent,
+        snapshot: globalThis.__MORTALOS_LAB__.publicSnapshot().continuity,
+        status: document.querySelector("#continuity-status")?.textContent
+      })),
+      b: await b.page.evaluate(() => ({
+        code: document.querySelector("#continuity-error-code")?.textContent,
+        snapshot: globalThis.__MORTALOS_LAB__.publicSnapshot().continuity,
+        status: document.querySelector("#continuity-status")?.textContent
+      }))
+    };
+    throw new Error(`Browser B join failed: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  await a.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.file.progress.transferred);
   return { a, b };
 }
 
@@ -166,7 +188,12 @@ try {
   await alive.b.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.continue);
   const aliveProof = await alive.b.page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
   assert.equal(aliveProof.participant.organism_id, organismId);
-  assert.equal(aliveProof.participant.sequence, "2");
+  assert.equal(aliveProof.participant.sequence, "3");
+  assert.deepEqual(aliveProof.file.lineage, {
+    head_hash: aliveProof.participant.head_hash,
+    organism_id: aliveProof.participant.organism_id,
+    sequence: aliveProof.participant.sequence
+  });
   assert.ok(performance.now() - judgeStarted < 90_000, "automated judge path exceeded 90 seconds");
   screenshotDigests["en-alive"] = await captureStable("en-alive", alive.b.page, alive.b.page.locator("#continuity-proof"));
   assert.deepEqual(alive.b.errors, []);
@@ -210,5 +237,6 @@ try {
 } finally {
   await browser.close();
   await server.close();
-  await rm(output, { force: true, recursive: true });
+  if (process.env.MORTALOS_KEEP_UX_OUTPUT === "1") console.log(`UX artifacts preserved: ${output}`);
+  else await rm(output, { force: true, recursive: true });
 }

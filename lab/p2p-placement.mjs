@@ -163,8 +163,8 @@ export function installP2pPlacementHarness() {
       if (!resource) throw new Error("P2P_RESOURCE: no stored resource");
       return publishResourceBytes(resource, requestId);
     },
-    async recoverResource(requestId) {
-      const received = await api.waitArtifact("resource-descriptors", requestId);
+    async recoverResource(requestId, timeoutMs = 10_000) {
+      const received = await api.waitArtifact("resource-descriptors", requestId, timeoutMs);
       if (
         received.payload.format !== "mortalos-p2p-resource-descriptors/1" ||
         !Array.isArray(received.payload.descriptors)
