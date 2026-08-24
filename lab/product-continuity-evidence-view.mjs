@@ -3,6 +3,7 @@ import { canonicalBytes, createLineage } from "../src/index.mjs";
 export class ProductContinuityEvidenceView {
   #lineage;
   #localKeyId;
+  #stateTransitionCount = 0;
 
   constructor(endpointId, records, localKeyId) {
     if (!Array.isArray(records) || records.length < 1) {
@@ -23,7 +24,7 @@ export class ProductContinuityEvidenceView {
       endpoint_id: this.endpointId,
       head_hash: head.object_hash,
       organism_id: this.#lineage.genesis.organism_id,
-      pulse_count: Number(head.sequence),
+      pulse_count: this.#stateTransitionCount,
       sequence: head.sequence,
       signing_authority: head.next_custody_descriptor.custodians
         .some((entry) => entry.key_id === this.#localKeyId),
@@ -40,6 +41,7 @@ export class ProductContinuityEvidenceView {
     if (appended.status !== "accept") {
       throw new Error(`FILE_CONTINUITY_EVIDENCE: ${appended.code ?? appended.status}`);
     }
+    if (record.envelope.body.event.kind === "state-transition") this.#stateTransitionCount += 1;
     return this.publicState;
   }
 

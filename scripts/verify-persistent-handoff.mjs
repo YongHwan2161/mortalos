@@ -11,10 +11,11 @@ import { verifyDeployedLab } from "./verify-deployed-lab.mjs";
 const RUNS = Number(process.env.MORTALOS_PERSISTENT_HANDOFF_RUNS ?? "20");
 assert.equal(Number.isSafeInteger(RUNS) && RUNS >= 20, true, "persistent handoff gate requires at least 20 runs");
 
-function assertParticipant(snapshot, { role, sequence, signingAuthority }) {
+function assertParticipant(snapshot, { pulseCount, role, sequence, signingAuthority }) {
   assert.equal(snapshot.role, role);
   assert.equal(snapshot.participant.status, "accepted");
   assert.equal(snapshot.participant.sequence, sequence);
+  assert.equal(snapshot.participant.pulse_count, pulseCount);
   assert.equal(snapshot.participant.signing_authority, signingAuthority);
   assert.match(snapshot.participant.organism_id, /^mortalos:[A-Za-z0-9_-]{43}$/);
   assert.match(snapshot.participant.head_hash, /^sha256:[A-Za-z0-9_-]{43}$/);
@@ -62,7 +63,7 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, relayMetr
     await pageA.click("#continuity-create");
     await pageA.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.create);
     const origin = await pageA.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertParticipant(origin, { role: "A", sequence: "1", signingAuthority: true });
+    assertParticipant(origin, { pulseCount: 1, role: "A", sequence: "1", signingAuthority: true });
 
     const joinHref = await pageA.locator("#continuity-join-link").getAttribute("href");
     assert.ok(joinHref);
@@ -73,7 +74,7 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, relayMetr
     await pageB.click("#continuity-join");
     await pageB.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.join);
     const joined = await pageB.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertParticipant(joined, { role: "B", sequence: "1", signingAuthority: false });
+    assertParticipant(joined, { pulseCount: 1, role: "B", sequence: "1", signingAuthority: false });
     assert.equal(joined.participant.organism_id, origin.participant.organism_id);
     assert.equal(joined.participant.head_hash, origin.participant.head_hash);
 
@@ -111,8 +112,8 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, relayMetr
     }, null, { timeout: 20_000 });
     const afterA = await pageA.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
     const afterB = await pageB.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertParticipant(afterA, { role: "A", sequence: "2", signingAuthority: false });
-    assertParticipant(afterB, { role: "B", sequence: "2", signingAuthority: true });
+    assertParticipant(afterA, { pulseCount: 1, role: "A", sequence: "2", signingAuthority: false });
+    assertParticipant(afterB, { pulseCount: 1, role: "B", sequence: "2", signingAuthority: true });
     assert.equal(afterB.participant.organism_id, origin.participant.organism_id);
     assert.equal(afterB.participant.head_hash, afterA.participant.head_hash);
     assert.equal(afterB.participant.state_root, afterA.participant.state_root);
@@ -141,9 +142,9 @@ async function runHandoff({ launchOptions, locale, profileA, profileB, relayMetr
       return proof.progress.continue && proof.participant?.sequence === "3";
     });
     const continued = await pageB.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
-    assertParticipant(continued, { role: "B", sequence: "3", signingAuthority: true });
+    assertParticipant(continued, { pulseCount: 2, role: "B", sequence: "3", signingAuthority: true });
     assert.equal(continued.participant.organism_id, origin.participant.organism_id);
-    assert.equal(continued.participant.pulse_count, 3);
+    assert.equal(continued.participant.pulse_count, 2);
     assert.notEqual(continued.participant.head_hash, afterB.participant.head_hash);
     assert.notEqual(continued.participant.state_root, afterB.participant.state_root);
     assert.deepEqual(errors, []);

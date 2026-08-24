@@ -4147,10 +4147,13 @@ result, and reproducible verification.
 - The focused browser snapshot now exposes the active Capsule lineage and asserts
   exact `organism_id`, `head_hash`, and `sequence` equality with the displayed state
   after transfer, acceptance, and continuation. The UX gate now requires displayed
-  sequence 3 and the same equality.
+  sequence 3 and the same equality. A follow-up independent semantic audit also
+  removed the stale “two handoffs” wording and made the displayed Pulse count derive
+  only from state-transition records: 1 at create/accept and 2 after continuation,
+  while the lineage sequence remains 1/2/3.
 - Local remediation evidence: focused Chromium PASS at 6,016 and 131,072 bytes;
-  integrated EN/KO UX PASS with median LCP `188.4ms`, CLS `0.000`, TBT `0.0ms`, and
-  DOM interactive `114.9ms`; Continuity `10/10`; WebRTC `15/15`; Lab/API `23/23`;
+  integrated EN/KO UX PASS with median LCP `149.1ms`, CLS `0.000`, TBT `0.0ms`, and
+  DOM interactive `90.3ms`; Continuity `10/10`; WebRTC `15/15`; Lab/API `23/23`;
   i18n `2/2`; persistent profiles `20/20` with 38 admitted operations/12s and zero
   local 429s; security `26/26` over 22 direct / 145 discovered surfaces; build and
   diff checks PASS. New commit, exact-head CI, independent re-review, App/native

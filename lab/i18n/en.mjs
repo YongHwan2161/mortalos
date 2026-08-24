@@ -26,7 +26,7 @@ export const messages = Object.freeze({
   continuityFileProposalObserved: "A's direct file handoff proposal received · B will verify locally before accepting custody",
   continuityFileQuorum: "2 valid · 1 rejected",
   continuityFileRecovered: "One corrupt copy rejected; exact bytes are ready to download.",
-  continuityFileRequestObserved: "Browser B recovered the direct transfer · A may approve both handoffs",
+  continuityFileRequestObserved: "Browser B recovered the direct transfer · A may approve the handoff",
   continuityFileSelected: "Selected locally; bytes remain in Browser A until Browser B joins.",
   continuityFileTransferred: "File-bearing Capsule received and verified over direct WebRTC.",
   continuityFileWaiting: "Waiting for Browser A's direct WebRTC transfer.",

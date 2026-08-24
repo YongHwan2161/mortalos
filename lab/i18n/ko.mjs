@@ -26,7 +26,7 @@ export const messages = Object.freeze({
   continuityFileProposalObserved: "A의 직접 파일 handoff 제안 수신 · B가 보관권 수락 전에 로컬 검증 예정",
   continuityFileQuorum: "유효 2개 · 거부 1개",
   continuityFileRecovered: "손상된 복제본 1개를 거부했습니다. 정확한 바이트를 다운로드할 수 있습니다.",
-  continuityFileRequestObserved: "브라우저 B가 직접 전송을 복구했습니다 · A가 두 handoff를 승인할 수 있습니다",
+  continuityFileRequestObserved: "브라우저 B가 직접 전송을 복구했습니다 · A가 handoff를 승인할 수 있습니다",
   continuityFileSelected: "로컬에서 선택했습니다. B가 참여할 때까지 바이트는 브라우저 A에만 있습니다.",
   continuityFileTransferred: "직접 WebRTC로 파일 포함 Capsule을 받아 검증했습니다.",
   continuityFileWaiting: "브라우저 A의 직접 WebRTC 전송을 기다리는 중입니다.",
