@@ -54,11 +54,24 @@ try {
   } catch (error) {
     throw new Error(`visible file join failed: ${JSON.stringify({ a: await diagnostic(a.page), b: await diagnostic(b.page) })}`, { cause: error });
   }
+  const joinedProof = await diagnostic(b.page);
+  assert.deepEqual(joinedProof.snapshot.file.lineage, {
+    head_hash: joinedProof.snapshot.participant.head_hash,
+    organism_id: joinedProof.snapshot.participant.organism_id,
+    sequence: joinedProof.snapshot.participant.sequence
+  });
   await a.page.locator("#continuity-approve:enabled").waitFor({ timeout: 30_000 });
   await a.page.click("#continuity-approve");
   await b.page.locator("#continuity-accept:enabled").waitFor({ timeout: 30_000 });
   await b.page.click("#continuity-accept");
   await b.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.file.progress.handoff);
+  const acceptedProof = await diagnostic(b.page);
+  assert.deepEqual(acceptedProof.snapshot.file.lineage, {
+    head_hash: acceptedProof.snapshot.participant.head_hash,
+    organism_id: acceptedProof.snapshot.participant.organism_id,
+    sequence: acceptedProof.snapshot.participant.sequence
+  });
+  assert.equal(acceptedProof.snapshot.participant.sequence, "2");
   await a.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.handoff);
   await a.page.click("#continuity-remove-a");
   const removedA = await diagnostic(a.page);
@@ -94,6 +107,12 @@ try {
   assert.equal(proof.snapshot.file.progress.continued, true);
   assert.equal(proof.snapshot.file.private_material_exposed, false);
   assert.equal(proof.snapshot.file.resource_size, source.byteLength);
+  assert.deepEqual(proof.snapshot.file.lineage, {
+    head_hash: proof.snapshot.participant.head_hash,
+    organism_id: proof.snapshot.participant.organism_id,
+    sequence: proof.snapshot.participant.sequence
+  });
+  assert.equal(proof.snapshot.participant.sequence, "3");
   const posted = relayBodies.join("\n");
   assert.ok(relayBodies.length >= 4, "relay inspection captured no meaningful control traffic");
   assert.equal(posted.includes(marker.trim()), false, "relay request exposed plaintext file marker");

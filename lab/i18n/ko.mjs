@@ -23,7 +23,7 @@ export const messages = Object.freeze({
   continuityFileLocal: "파일 바이트는 아직 어떤 전송에도 들어가지 않았습니다.",
   continuityFileLocalOnly: "로컬 전용",
   continuityFileNone: "선택한 파일 없음",
-  continuityFileProposalObserved: "A의 직접 파일 handoff 제안 수신 · 로컬 수락 준비 완료",
+  continuityFileProposalObserved: "A의 직접 파일 handoff 제안 수신 · B가 보관권 수락 전에 로컬 검증 예정",
   continuityFileQuorum: "유효 2개 · 거부 1개",
   continuityFileRecovered: "손상된 복제본 1개를 거부했습니다. 정확한 바이트를 다운로드할 수 있습니다.",
   continuityFileRequestObserved: "브라우저 B가 직접 전송을 복구했습니다 · A가 두 handoff를 승인할 수 있습니다",

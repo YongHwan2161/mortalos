@@ -11,12 +11,10 @@ import { createTranslator, documentLocale } from "./i18n/index.mjs";
 import { staticReplacements } from "./i18n/ko.mjs";
 import { BrowserIncubator } from "./live-incubator.mjs";
 import { DurableParticipant } from "./participant/durable-participant.mjs";
-import { LiveEndpointParticipant } from "./participant/live-endpoint.mjs";
 import { durableStoreExists } from "./storage/durable-store.mjs";
 import { createRoomId, HttpRelayTransport } from "./transport/http-relay.mjs";
 import { RELAY_RATE_POLICY } from "../src/transport/relay-policy.mjs";
 import {
-  createRelayControlMessage,
   createRelayMessage,
   createResourcePlacementArtifactMessage,
   decodeRelayFrame,
@@ -24,6 +22,7 @@ import {
 } from "../src/transport/protocol.mjs";
 import { runReferenceProof } from "./reference-engine.mjs";
 import { installProductContinuityHarness } from "./product-continuity.mjs";
+import { ProductContinuityEvidenceView } from "./product-continuity-evidence-view.mjs";
 import "./p2p-placement.mjs";
 import { scenarioApiUrl } from "./runtime-endpoints.mjs";
 import { createCuratedScenarioProposal, SCENARIO_REQUEST_FORMAT } from "./scenario-contract.mjs";
@@ -80,6 +79,8 @@ let continuityFileRecovered = null;
 let continuityFileHandoffRequest = null;
 let continuityFileProposal = null;
 let continuityFileAccepted = null;
+let continuityFileContinued = null;
+let continuityFileObserved = null;
 let continuityFileDownloadUrl = null;
 let continuityP2pReady = false;
 const continuityFileProgress = {
@@ -218,6 +219,15 @@ function materializeContinuityFile(created, file) {
     resource_size: created.resource_size,
     sequence: created.sequence
   });
+}
+
+function activeContinuityFileLineage() {
+  const active = continuityFileContinued ?? continuityFileAccepted ?? continuityFileObserved ?? continuityFileMaterial;
+  return active ? {
+    head_hash: active.head_hash,
+    organism_id: active.organism_id,
+    sequence: active.sequence
+  } : null;
 }
 
 function validateContinuityFileMaterial(value) {
@@ -421,10 +431,6 @@ function relayRecordBytes(record) {
   return canonicalBytes(createRelayMessage(record));
 }
 
-function relayControlBytes(kind, content) {
-  return canonicalBytes(createRelayControlMessage(kind, content));
-}
-
 async function waitForFileHandoffRequest() {
   const received = await p2pPlacement.waitArtifact(
     "continuity-handoff-request",
@@ -432,7 +438,9 @@ async function waitForFileHandoffRequest() {
     600_000
   );
   continuityFileHandoffRequest = received.payload;
+  continuityJoinRequest = continuityFileHandoffRequest;
   continuityFileProgress.transferred = true;
+  continuityProgress.join = true;
   renderContinuity(t("continuityFileRequestObserved"), "busy");
 }
 
@@ -443,6 +451,7 @@ async function waitForFileHandoffProposal() {
     600_000
   );
   continuityFileProposal = received.payload;
+  continuityProposal = continuityFileProposal;
   renderContinuity(t("continuityFileProposalObserved"), "busy");
 }
 
@@ -470,8 +479,14 @@ async function recoverTransferredFile() {
     inspected.head_hash !== continuityFileMaterial.head_hash ||
     inspected.organism_id !== continuityFileMaterial.organism_id
   ) throw new Error("FILE_CONTINUITY_RECOVERY: initial transfer mismatch");
+  if (
+    inspected.organism_id !== continuityParticipant?.publicState.organism_id ||
+    inspected.head_hash !== continuityParticipant?.publicState.head_hash ||
+    inspected.sequence !== continuityParticipant?.publicState.sequence
+  ) throw new Error("FILE_CONTINUITY_RECOVERY: public evidence mismatch");
   continuityFileRecovered = Object.freeze({ capsule: continuityFileMaterial.capsule });
   continuityFileHandoffRequest = await productContinuity.handoffRequest(continuityFileMaterial.capsule);
+  continuityJoinRequest = continuityFileHandoffRequest;
   await p2pPlacement.publishArtifact(
     "continuity-handoff-request",
     fileRequestId("file-handoff-request"),
@@ -492,19 +507,16 @@ async function observeContinuityFrame(frame) {
     continuityRole === "A"
   ) {
     await completeFileOffer(artifact.payload.signal);
-  } else if (opened.control?.kind === "join-request" && continuityRole === "A") {
-    if (opened.control.content.organism_id !== continuityParticipant?.publicState.organism_id) return;
-    continuityJoinRequest = opened.control.content;
-    continuityProgress.join = true;
-    renderContinuity(t("continuityJoinObserved"), "busy");
-  } else if (opened.control?.kind === "handoff-proposal" && continuityRole === "B") {
-    continuityProposal = opened.control.content;
-    renderContinuity(t("continuityProposalObserved"), "busy");
   } else if (opened.record?.envelope?.kind === "mortalos.pulse" && continuityParticipant) {
     const currentSequence = BigInt(continuityParticipant.publicState.sequence ?? "0");
     const incomingSequence = BigInt(opened.record.envelope.body.sequence);
     if (incomingSequence > currentSequence) {
       continuityParticipant.appendEvidence(opened.record);
+      continuityFileObserved = Object.freeze({
+        head_hash: continuityParticipant.publicState.head_hash,
+        organism_id: continuityParticipant.publicState.organism_id,
+        sequence: continuityParticipant.publicState.sequence
+      });
       if (opened.record.envelope.body.event.kind === "membership-change") {
         continuityProgress.handoff = true;
         renderContinuity(t("continuityHandoffAccepted"), "accept");
@@ -566,18 +578,24 @@ byId("continuity-create").addEventListener("click", async () => {
   try {
     if (!continuityFile) throw new Error("FILE_CONTINUITY_FILE: select a bounded file first");
     continuityRoomId = createRoomId();
-    await productContinuity.initialize();
+    const originAuthority = await productContinuity.initialize();
     continuityFileMaterial = materializeContinuityFile(
       await productContinuity.createFromFile(continuityFile),
       continuityFile
     );
     await p2pPlacement.initialize("consumer");
     const directOffer = await p2pPlacement.startOffer(continuityEndpointId);
-    continuityParticipant = new LiveEndpointParticipant(continuityEndpointId);
-    const genesis = await continuityParticipant.create();
+    const evidence = productContinuity.evidence(continuityFileMaterial.capsule);
+    continuityParticipant = new ProductContinuityEvidenceView(
+      continuityEndpointId,
+      evidence,
+      originAuthority.custodian.key_id
+    );
     continuityTransport = new HttpRelayTransport({ endpointId: continuityEndpointId, roomId: continuityRoomId });
-    const published = await continuityTransport.publish(relayRecordBytes(genesis));
-    continuityProcessed.add(published.frame.message_id);
+    for (const record of evidence) {
+      const published = await continuityTransport.publish(relayRecordBytes(record));
+      continuityProcessed.add(published.frame.message_id);
+    }
     const offered = await continuityTransport.publish(continuityArtifactBytes(
       "webrtc-offer",
       fileRequestId("webrtc"),
@@ -608,6 +626,9 @@ byId("continuity-join").addEventListener("click", async () => {
     continuityTransport = new HttpRelayTransport({ endpointId: continuityEndpointId, roomId: continuityRoomId });
     const frames = await continuityTransport.fetchRange(0);
     const openedFrames = frames.map(decodeRelayFrame);
+    const publicRecords = openedFrames
+      .filter((opened) => opened.record)
+      .map((opened) => opened.record);
     const genesisFrame = openedFrames.find((opened) => opened.record?.envelope?.kind === "mortalos.genesis");
     if (!genesisFrame) throw new Error("room has no canonical Genesis evidence");
     const offerArtifact = openedFrames.map(continuityArtifact).find((artifact) =>
@@ -615,14 +636,15 @@ byId("continuity-join").addEventListener("click", async () => {
     if (!offerArtifact || offerArtifact.payload.format !== "mortalos-webrtc-relay-signal/1") {
       throw new Error("FILE_CONTINUITY_SIGNAL: bounded WebRTC offer unavailable");
     }
-    await productContinuity.initialize();
+    const successorAuthority = await productContinuity.initialize();
     await p2pPlacement.initialize("provider");
     const directAnswer = await p2pPlacement.acceptOffer(continuityEndpointId, offerArtifact.payload.signal);
-    continuityParticipant = new LiveEndpointParticipant(continuityEndpointId);
-    continuityJoinRequest = await continuityParticipant.join(genesisFrame.record);
-    continuityProcessed.add(genesisFrame.message_id);
-    const published = await continuityTransport.publish(relayControlBytes("join-request", continuityJoinRequest));
-    continuityProcessed.add(published.frame.message_id);
+    continuityParticipant = new ProductContinuityEvidenceView(
+      continuityEndpointId,
+      publicRecords,
+      successorAuthority.custodian.key_id
+    );
+    for (const opened of openedFrames) continuityProcessed.add(opened.message_id);
     const answered = await continuityTransport.publish(continuityArtifactBytes(
       "webrtc-answer",
       fileRequestId("webrtc"),
@@ -656,9 +678,7 @@ byId("continuity-approve").addEventListener("click", async () => {
       fileRequestId("file-handoff-proposal"),
       encodeCanonicalDocument(continuityFileProposal)
     );
-    continuityProposal = await continuityParticipant.proposeHandoff(continuityJoinRequest);
-    const published = await continuityTransport.publish(relayControlBytes("handoff-proposal", continuityProposal));
-    continuityProcessed.add(published.frame.message_id);
+    continuityProposal = continuityFileProposal;
     renderContinuity(t("continuityProposalSent"), "busy");
   } catch (error) {
     renderContinuityFailure(error);
@@ -676,8 +696,14 @@ byId("continuity-accept").addEventListener("click", async () => {
       continuityFileAccepted.resource_root !== continuityFileMaterial.resource_root ||
       continuityFileAccepted.sequence !== "2"
     ) throw new Error("FILE_CONTINUITY_HANDOFF: accepted material mismatch");
+    const [evidence] = productContinuity.evidence(continuityFileAccepted.capsule).slice(-1);
+    continuityParticipant.appendEvidence(evidence);
+    if (
+      continuityParticipant.publicState.organism_id !== continuityFileAccepted.organism_id ||
+      continuityParticipant.publicState.head_hash !== continuityFileAccepted.head_hash ||
+      continuityParticipant.publicState.sequence !== continuityFileAccepted.sequence
+    ) throw new Error("FILE_CONTINUITY_HANDOFF: public evidence mismatch");
     continuityFileProgress.handoff = true;
-    const evidence = await continuityParticipant.acceptHandoff(continuityProposal);
     const published = await continuityTransport.publish(relayRecordBytes(evidence));
     continuityProcessed.add(published.frame.message_id);
     continuityProgress.handoff = true;
@@ -725,6 +751,14 @@ byId("continuity-continue").addEventListener("click", async () => {
       continued.organism_id !== continuityFileMaterial.organism_id ||
       continued.resource_root !== continuityFileMaterial.resource_root
     ) throw new Error("FILE_CONTINUITY_CONTINUE: successor mismatch");
+    continuityFileContinued = continued;
+    const [evidence] = productContinuity.evidence(continued.capsule).slice(-1);
+    continuityParticipant.appendEvidence(evidence);
+    if (
+      continuityParticipant.publicState.organism_id !== continued.organism_id ||
+      continuityParticipant.publicState.head_hash !== continued.head_hash ||
+      continuityParticipant.publicState.sequence !== continued.sequence
+    ) throw new Error("FILE_CONTINUITY_CONTINUE: public evidence mismatch");
     const recoveredBytes = decodeBase64Url(recovered.resource);
     if (continuityFileDownloadUrl) URL.revokeObjectURL(continuityFileDownloadUrl);
     continuityFileDownloadUrl = URL.createObjectURL(new Blob(
@@ -738,7 +772,6 @@ byId("continuity-continue").addEventListener("click", async () => {
     continuityFileRecovered = recovered;
     continuityFileProgress.recovered = true;
     continuityFileProgress.continued = true;
-    const evidence = await continuityParticipant.nurture();
     const published = await continuityTransport.publish(relayRecordBytes(evidence));
     continuityProcessed.add(published.frame.message_id);
     continuityProgress.continue = true;
@@ -1439,6 +1472,7 @@ globalThis.__MORTALOS_LAB__ = Object.freeze({
       continuity: {
         file: {
           file_name: continuityFileMaterial?.file_name ?? continuityFile?.name ?? null,
+          lineage: activeContinuityFileLineage(),
           private_material_exposed: false,
           progress: { ...continuityFileProgress },
           resource_root: continuityFileMaterial?.resource_root ?? null,

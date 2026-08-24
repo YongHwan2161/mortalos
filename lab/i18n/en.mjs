@@ -23,7 +23,7 @@ export const messages = Object.freeze({
   continuityFileLocal: "File bytes have not entered any transport.",
   continuityFileLocalOnly: "Local only",
   continuityFileNone: "No file selected",
-  continuityFileProposalObserved: "A's direct file handoff proposal received · ready for local acceptance",
+  continuityFileProposalObserved: "A's direct file handoff proposal received · B will verify locally before accepting custody",
   continuityFileQuorum: "2 valid · 1 rejected",
   continuityFileRecovered: "One corrupt copy rejected; exact bytes are ready to download.",
   continuityFileRequestObserved: "Browser B recovered the direct transfer · A may approve both handoffs",

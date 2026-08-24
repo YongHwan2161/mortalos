@@ -4131,3 +4131,27 @@ result, and reproducible verification.
   discovered async surfaces; spec and links. The security module-closure digest was
   intentionally refreshed only after the new bounded artifact-kind allowlist passed
   the focused artifact tests. Full ordered P2P and exact-SHA CI remain pending.
+
+## 2026-08-24 — PR #60 independent-review single-lineage remediation
+
+- Independent immutable review of head
+  `bdc4ace4b12f1c43729de39f3e855184645653b4` returned BLOCK with one P1:
+  the Product Continuity Capsule and visible Life Card each created a different
+  `organism_id`, so the page presented one handoff while executing two lineages.
+- Removed the second `LiveEndpointParticipant` lineage from the visible-file path.
+  The product harness now returns only validated public Genesis/Pulse evidence from
+  the Capsule; a read-only evidence view replays those exact records for the Life
+  Card. Product create, handoff accept, and continuation supply sequence 1, 2, and 3
+  respectively, and their public records are the only lineage evidence sent through
+  HTTP relay. File-bearing Capsule bytes still cross only direct WebRTC.
+- The focused browser snapshot now exposes the active Capsule lineage and asserts
+  exact `organism_id`, `head_hash`, and `sequence` equality with the displayed state
+  after transfer, acceptance, and continuation. The UX gate now requires displayed
+  sequence 3 and the same equality.
+- Local remediation evidence: focused Chromium PASS at 6,016 and 131,072 bytes;
+  integrated EN/KO UX PASS with median LCP `188.4ms`, CLS `0.000`, TBT `0.0ms`, and
+  DOM interactive `114.9ms`; Continuity `10/10`; WebRTC `15/15`; Lab/API `23/23`;
+  i18n `2/2`; persistent profiles `20/20` with 38 admitted operations/12s and zero
+  local 429s; security `26/26` over 22 direct / 145 discovered surfaces; build and
+  diff checks PASS. New commit, exact-head CI, independent re-review, App/native
+  attestations, merge, and deployment remain pending.

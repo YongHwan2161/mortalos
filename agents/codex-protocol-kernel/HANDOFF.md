@@ -5,7 +5,7 @@ not active locks.
 
 ## Active intent
 
-Status: **VISIBLE EN/KO REAL-FILE CONTINUITY SOURCE/RUNTIME/TEST PASS; EXACT-SHA REVIEW/CI AND EXTERNAL MULTI-HOST PROMOTION REMAIN HOLD**
+Status: **SINGLE-LINEAGE REAL-FILE CONTINUITY REMEDIATION PASS LOCALLY; NEW EXACT-SHA CI/REVIEW REMAIN HOLD**
 
 ### ACTIVE INTENT — visible real-file continuity journey
 
@@ -18,6 +18,7 @@ Status: **VISIBLE EN/KO REAL-FILE CONTINUITY SOURCE/RUNTIME/TEST PASS; EXACT-SHA
   `agents/codex-protocol-kernel/WORKLOG.md`, `docs/CLAIM_MATRIX.md`,
   `docs/IMPLEMENTATION_PLAN.md`, `lab/app.mjs`, `lab/index.html`,
   `lab/i18n/en.mjs`, `lab/i18n/ko.mjs`, `lab/p2p-placement.mjs`,
+  `lab/product-continuity-evidence-view.mjs`, `lab/product-continuity.mjs`,
   `lab/styles.css`, `package.json`, `src/transport/protocol.mjs`,
   `test/webrtc-transport.test.mjs`,
   `scripts/verify-lab.mjs`, `scripts/verify-persistent-handoff.mjs`,
@@ -42,6 +43,15 @@ Status: **VISIBLE EN/KO REAL-FILE CONTINUITY SOURCE/RUNTIME/TEST PASS; EXACT-SHA
   WebRTC `15/15`, multi-browser `7/7` plus quorum, Lab `23/23`, security `26/26`,
   spec, links, build, i18n, and persistent handoff gates pass. The full ordered P2P
   suite and exact-head governance have not yet run on the final commit.
+- Independent review of PR #60 at `bdc4ace4b12f1c43729de39f3e855184645653b4`
+  returned BLOCK because the file Capsule and displayed Life Card were separate
+  organism lineages. The remediation removes the separately generated display
+  lineage: Life Card state now replays the verified public Genesis/Pulse records
+  extracted from the file Capsule, while the successor's actual accepted and
+  continued Capsules remain the source of sequence 2 and 3 evidence. Focused
+  Chromium asserts exact `organism_id`, `head_hash`, and `sequence` equality after
+  transfer, acceptance, and continuation. New exact-SHA CI and independent re-review
+  are required; the prior CI and BLOCK decision cannot authorize merge.
 
 ### HISTORICAL — PR #59 release intent
 

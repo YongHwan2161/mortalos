@@ -188,7 +188,12 @@ try {
   await alive.b.page.waitForFunction(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity.progress.continue);
   const aliveProof = await alive.b.page.evaluate(() => globalThis.__MORTALOS_LAB__.publicSnapshot().continuity);
   assert.equal(aliveProof.participant.organism_id, organismId);
-  assert.equal(aliveProof.participant.sequence, "2");
+  assert.equal(aliveProof.participant.sequence, "3");
+  assert.deepEqual(aliveProof.file.lineage, {
+    head_hash: aliveProof.participant.head_hash,
+    organism_id: aliveProof.participant.organism_id,
+    sequence: aliveProof.participant.sequence
+  });
   assert.ok(performance.now() - judgeStarted < 90_000, "automated judge path exceeded 90 seconds");
   screenshotDigests["en-alive"] = await captureStable("en-alive", alive.b.page, alive.b.page.locator("#continuity-proof"));
   assert.deepEqual(alive.b.errors, []);
