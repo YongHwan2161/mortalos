@@ -128,15 +128,22 @@ test("a GitHub-style pull-request merge verifies its exact tree without masquera
   }
 });
 
-test("Verify and Deploy retain full history and enforce all promoted stage receipts", async () => {
+test("Verify retains stage receipts and Deploy consumes only its promoted artifact", async () => {
   const checkout = /uses: actions\/checkout@[^\r\n]+\r?\n\s+with:\r?\n\s+fetch-depth: 0\r?\n\s+persist-credentials: false/u;
+  const workflows = {};
   for (const workflow of ["verify.yml", "deploy-lab.yml"]) {
     const source = await readFile(new URL(`../.github/workflows/${workflow}`, import.meta.url), "utf8");
     assert.match(source, checkout, `${workflow} checkout must retain receipt history`);
-    for (const stage of ["s2", "s3", "s4"]) {
-      assert.match(source, new RegExp(`npm run verify:${stage}`, "u"));
-    }
+    workflows[workflow] = source;
   }
+  for (const stage of ["s2", "s3", "s4"]) {
+    assert.match(workflows["verify.yml"], new RegExp(`npm run verify:${stage}`, "u"));
+    assert.doesNotMatch(workflows["deploy-lab.yml"], new RegExp(`npm run verify:${stage}`, "u"));
+  }
+  assert.match(workflows["verify.yml"], /needs: \[browser-parity, protocol\]/u);
+  assert.match(workflows["deploy-lab.yml"], /^  workflow_run:\r?\n\s+workflows: \[Verify\]/mu);
+  assert.match(workflows["deploy-lab.yml"], /workflow_run\.conclusion == 'success'/u);
+  assert.match(workflows["deploy-lab.yml"], /run: npm run verify:release-candidate/u);
 });
 
 test("source, base, path inventory, and artifact substitutions fail closed", async () => {

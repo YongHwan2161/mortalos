@@ -4185,3 +4185,16 @@ result, and reproducible verification.
   vulnerabilities; `git diff --check` PASS. Exact-head CI, independent review, App
   attestation, native approval, merge, post-merge artifact transfer, deployment, and
   public readback remain external HOLD gates.
+- PR #61 head `95b139fb03dc88eab5ee4754dd63833d2f29bc9d` passed trusted policy
+  after the PR-body machine format was corrected. Verify `32858919671` then failed
+  in 44 seconds, before any long corpus, because historical
+  `test/s4-receipt.test.mjs` still asserted that both Verify and Deploy directly ran
+  `verify:s2`, `verify:s3`, and `verify:s4`. This was a valid old-architecture guard,
+  not a product/runtime failure. Browser parity was cancelled once the head was
+  known to be invalid; neither job is reusable evidence.
+- The successor S4 workflow contract requires all promoted receipt gates in Verify,
+  forbids their duplicate execution in Deploy, and binds Deploy to successful Verify
+  plus release-candidate verification. Local `test:s4-receipt` passes `12/12`; the
+  complete pre-long-suite chain also passes baseline `12/12`, S1 `12/12`, S2
+  `12/12`, S3 `13/13`, and S4 `12/12`, alongside the prior focused gates. A new
+  commit/push and fresh exact-head policy/Verify remain required.

@@ -37,6 +37,13 @@ Status: **RELEASE ARTIFACT PROMOTION LOCAL FOCUSED PASS; EXACT-HEAD CI/REVIEW RE
   governance `30/30`; S4 receipt, specification, links, YAML structural parse, and
   `git diff --check` PASS; clean `npm ci` audited 95 packages with 0 vulnerabilities.
   Exact-head remote gates and every live mutation remain pending.
+- First PR #61 Verify run `32858919671` correctly failed before the long protocol
+  corpus: the historical S4 test still required Deploy to rerun `verify:s2` through
+  `verify:s4` directly. The successor test now requires those gates in Verify and
+  requires Deploy to consume the successful promoted artifact instead. The complete
+  local pre-long-suite prefix through all S0-S4 receipt tests passes: baseline
+  `12/12`, S1 `12/12`, S2 `12/12`, S3 `13/13`, and S4 `12/12`. A new immutable head
+  and fresh remote policy/Verify are required; the failed/cancelled run is not reused.
 
 ### HISTORICAL — visible real-file continuity journey
 
