@@ -10,6 +10,23 @@ Historical integration base: `25de18d8c1af8b3dfcb5adffb1a07538afa33332`
 Exact-SHA review, CI, merge, deployment, and promotion status is external to this
 rolling source memory; consult immutable GitHub and deployed-manifest records.
 
+## Verify-gated release artifact promotion
+
+- Production release ordering is `protocol + browser-parity Verify PASS` → exact
+  commit-addressed candidate build/upload → successful same-run `workflow_run`
+  download/verification → Cloudflare mutation → public readback. Direct push and
+  manual Deploy triggers are not equivalent and are removed.
+- The canonical candidate receipt binds source commit, Git tree, Lab asset digest,
+  and the exact path/byte-length/SHA-256 tuple for every deployable file. Verification
+  rejects symlinks, extra or changed files, schema drift, non-canonical receipt or
+  manifest bytes, and commit/tree substitution before deployment credentials.
+- `scripts/deploy-lab.mjs` requires and re-verifies the promoted candidate; it does
+  not rebuild production static bytes. The multi-hour repository suite remains one
+  upstream Verify execution rather than running again in Deploy.
+- This source design is not deployment evidence. Exact-head CI/review, expected-head
+  merge, post-merge artifact upload/download, cloud mutation, and canonical public
+  readback must still be observed independently.
+
 ## Network-visible sign-once resource contract
 
 - A provider-signed canonical offer binds finite storage, bandwidth, compute, and

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
-import { buildLab } from "./build-lab.mjs";
+import { verifyReleaseCandidate } from "./release-candidate.mjs";
 
 const execute = promisify(execFile);
 const PAGES_PROJECT_KEYS = Object.freeze([
@@ -129,6 +129,7 @@ export async function deployLab() {
   const database = process.env.MORTALOS_D1_DATABASE ?? "mortalos-lab-rate-limit";
   const branch = "main";
   const commit = process.env.MORTALOS_SOURCE_COMMIT;
+  const candidateDirectory = process.env.MORTALOS_RELEASE_CANDIDATE_DIR;
   const openAiKey = process.env.OPENAI_API_KEY;
   const safetyIdentifierSecret = process.env.SAFETY_IDENTIFIER_SECRET;
   const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
@@ -137,6 +138,9 @@ export async function deployLab() {
 
   if (!commit || !/^[0-9a-f]{40}$/.test(commit)) {
     throw new Error("MORTALOS_SOURCE_COMMIT must name the exact lowercase 40-character commit being deployed");
+  }
+  if (typeof candidateDirectory !== "string" || candidateDirectory.length === 0) {
+    throw new Error("MORTALOS_RELEASE_CANDIDATE_DIR must name the verified candidate being deployed");
   }
   if (!PAGES_PROJECT_NAME.test(project)) {
     throw new Error("MORTALOS_PAGES_PROJECT has an invalid Cloudflare Pages project name");
@@ -178,7 +182,14 @@ export async function deployLab() {
     throw new Error("deployment source has uncommitted files; commit and review the exact artifact source first");
   }
 
-  const { manifest } = await buildLab({ sourceCommit: commit });
+  const sourceTree = (await execute("git", ["rev-parse", "HEAD^{tree}"])).stdout.trim();
+  const candidate = await verifyReleaseCandidate({
+    directory: candidateDirectory,
+    expectedCommit: commit,
+    expectedTree: sourceTree
+  });
+  const { manifest } = candidate;
+  const labDirectory = candidate.labDir ?? candidate.outdir;
   const listed = await executeWrangler({
     args: ["pages", "project", "list", "--json"],
     environment,
@@ -226,7 +237,7 @@ export async function deployLab() {
   }
   const deployment = await executeWrangler({
     args: [
-      "pages", "deploy", "dist/lab",
+      "pages", "deploy", labDirectory,
       "--project-name", project,
       "--branch", branch,
       "--commit-hash", commit,

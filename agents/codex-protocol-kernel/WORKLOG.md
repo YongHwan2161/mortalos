@@ -4160,3 +4160,41 @@ result, and reproducible verification.
   local 429s; security `26/26` over 22 direct / 145 discovered surfaces; build and
   diff checks PASS. New commit, exact-head CI, independent re-review, App/native
   attestations, merge, and deployment remain pending.
+
+## 2026-08-25 — Verify-gated content-addressed release promotion
+
+- Started from freshly fetched `origin/main`
+  `611dd0a2265ee4fb15ed945cc9c00a8fef763c5f` in the dedicated
+  `agent/codex-protocol-kernel--release-artifact-promotion` worktree. The accepted
+  release history showed Deploy and Verify starting independently on the same main
+  push: cloud mutation began before the multi-hour Verify run completed, and Deploy
+  repeated the full `npm test` source suite.
+- Added a canonical release-candidate receipt binding exact commit, Git tree, Lab
+  asset digest, and every deployable path, byte length, and SHA-256 digest. Its
+  verifier fails closed on changed/extra/linked files, receipt or encoding mutation,
+  manifest drift, and wrong commit/tree. Production `deploy:lab` now requires those
+  prebuilt verified bytes and cannot silently rebuild another static artifact.
+- `Verify` now promotes the exact artifact only after both protocol and browser-parity
+  jobs pass on a main push. `Deploy MortalOS Lab` now has only a successful same-repo
+  main-push `workflow_run` trigger, downloads the exact triggering run/SHA artifact,
+  rechecks current main, verifies it before credential admission, then retains cloud
+  deployment and public readback. The duplicate `npm test` and receipt reruns were
+  removed from Deploy; their enforcement remains upstream in Verify.
+- Local evidence so far: release-candidate mutation/contract tests `10/10`; Lab/API
+  `23/23`; governance `30/30`; S4 promotion receipt PASS; `npm ci` audit 0
+  vulnerabilities; `git diff --check` PASS. Exact-head CI, independent review, App
+  attestation, native approval, merge, post-merge artifact transfer, deployment, and
+  public readback remain external HOLD gates.
+- PR #61 head `95b139fb03dc88eab5ee4754dd63833d2f29bc9d` passed trusted policy
+  after the PR-body machine format was corrected. Verify `32858919671` then failed
+  in 44 seconds, before any long corpus, because historical
+  `test/s4-receipt.test.mjs` still asserted that both Verify and Deploy directly ran
+  `verify:s2`, `verify:s3`, and `verify:s4`. This was a valid old-architecture guard,
+  not a product/runtime failure. Browser parity was cancelled once the head was
+  known to be invalid; neither job is reusable evidence.
+- The successor S4 workflow contract requires all promoted receipt gates in Verify,
+  forbids their duplicate execution in Deploy, and binds Deploy to successful Verify
+  plus release-candidate verification. Local `test:s4-receipt` passes `12/12`; the
+  complete pre-long-suite chain also passes baseline `12/12`, S1 `12/12`, S2
+  `12/12`, S3 `13/13`, and S4 `12/12`, alongside the prior focused gates. A new
+  commit/push and fresh exact-head policy/Verify remain required.
