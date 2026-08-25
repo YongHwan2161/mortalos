@@ -304,28 +304,33 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   assert.doesNotMatch(gptVerifierSource, /fetch\(scenarioApiUrl/);
 
   const deploymentWorkflow = await readFile(new URL("../.github/workflows/deploy-lab.yml", import.meta.url), "utf8");
-  assert.match(deploymentWorkflow, /test "\$GITHUB_REF" = "refs\/heads\/main"/);
-  assert.match(deploymentWorkflow, /test "\$\(git rev-parse HEAD\)" = "\$GITHUB_SHA"/);
+  assert.match(deploymentWorkflow, /^  workflow_run:\n    workflows: \[Verify\]/m);
+  assert.doesNotMatch(deploymentWorkflow, /^  (?:push|workflow_dispatch):/m);
+  assert.match(deploymentWorkflow, /workflow_run\.conclusion == 'success'/);
+  assert.match(deploymentWorkflow, /workflow_run\.head_repository\.full_name == github\.repository/);
+  assert.match(deploymentWorkflow, /test "\$\(git rev-parse HEAD\)" = "\$MORTALOS_SOURCE_COMMIT"/);
+  assert.match(deploymentWorkflow, /test "\$\(git rev-parse refs\/remotes\/origin\/main\)" = "\$MORTALOS_SOURCE_COMMIT"/);
   assert.doesNotMatch(deploymentWorkflow, /^      CLOUDFLARE_(?:ACCOUNT_ID|API_TOKEN):/m);
   assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_ACCOUNT_ID:/gm) ?? []).length, 3);
   assert.equal((deploymentWorkflow.match(/^          CLOUDFLARE_API_TOKEN:/gm) ?? []).length, 3);
   assert.equal((deploymentWorkflow.match(/^          OPENAI_API_KEY:/gm) ?? []).length, 0);
   assert.equal((deploymentWorkflow.match(/^          SAFETY_IDENTIFIER_SECRET:/gm) ?? []).length, 0);
   assert.equal((deploymentWorkflow.match(/^          TURNSTILE_SECRET_KEY:/gm) ?? []).length, 0);
-  assert.match(deploymentWorkflow, /wrangler deploy --config relay\/wrangler\.jsonc/);
+  assert.match(deploymentWorkflow, /wrangler deploy --env="" --config relay\/wrangler\.jsonc/);
   assert.match(deploymentWorkflow, /npm run verify:release/);
   const chromiumInstall = deploymentWorkflow.indexOf("npx playwright install --with-deps chromium");
-  const sourceVerification = deploymentWorkflow.indexOf("run: npm test");
-  const relayDeployment = deploymentWorkflow.indexOf("npx wrangler deploy --config relay/wrangler.jsonc");
+  const candidateVerification = deploymentWorkflow.indexOf("run: npm run verify:release-candidate");
+  const relayDeployment = deploymentWorkflow.indexOf("npx wrangler deploy --env=\"\" --config relay/wrangler.jsonc");
   const staticDeployment = deploymentWorkflow.indexOf("run: npm run deploy:lab");
-  const publicVerification = deploymentWorkflow.indexOf("run: npm run verify:release");
+  const publicVerification = deploymentWorkflow.lastIndexOf("run: npm run verify:release");
   assert.ok(chromiumInstall > 0);
   assert.equal(deploymentWorkflow.indexOf("npx playwright install --with-deps chromium", chromiumInstall + 1), -1);
-  assert.ok(chromiumInstall < sourceVerification);
-  assert.ok(sourceVerification < relayDeployment);
+  assert.doesNotMatch(deploymentWorkflow, /run: npm test/);
+  assert.ok(candidateVerification < chromiumInstall);
+  assert.ok(chromiumInstall < relayDeployment);
   assert.ok(relayDeployment < staticDeployment);
   assert.ok(staticDeployment < publicVerification);
-  assert.match(deploymentWorkflow, /^      MORTALOS_SOURCE_COMMIT: \$\{\{ github\.sha \}\}$/m);
+  assert.match(deploymentWorkflow, /^      MORTALOS_SOURCE_COMMIT: \$\{\{ github\.event\.workflow_run\.head_sha \}\}$/m);
   for (const remoteOnlyVariable of [
     "MORTALOS_EXPECTED_COMMIT",
     "MORTALOS_LAB_URL",
@@ -337,7 +342,7 @@ test("browser Lab source fails closed and contains no persistence or copied vali
   const publicVerificationStep = deploymentWorkflow.slice(
     deploymentWorkflow.lastIndexOf("- name: Verify public artifact, relay, and bilingual judge path")
   );
-  assert.match(publicVerificationStep, /^          MORTALOS_EXPECTED_COMMIT: \$\{\{ github\.sha \}\}$/m);
+  assert.match(publicVerificationStep, /^          MORTALOS_EXPECTED_COMMIT: \$\{\{ github\.event\.workflow_run\.head_sha \}\}$/m);
   assert.match(publicVerificationStep, /^          MORTALOS_LAB_URL: https:\/\/mortal-os\.com$/m);
   assert.match(publicVerificationStep, /^          MORTALOS_DEPLOY_VERIFY_ATTEMPTS: 12$/m);
   assert.match(publicVerificationStep, /^          MORTALOS_DEPLOY_VERIFY_DELAY_MS: 5000$/m);

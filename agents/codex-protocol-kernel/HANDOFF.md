@@ -5,9 +5,40 @@ not active locks.
 
 ## Active intent
 
-Status: **SINGLE-LINEAGE REAL-FILE CONTINUITY REMEDIATION PASS LOCALLY; NEW EXACT-SHA CI/REVIEW REMAIN HOLD**
+Status: **RELEASE ARTIFACT PROMOTION LOCAL FOCUSED PASS; EXACT-HEAD CI/REVIEW REMAIN HOLD**
 
-### ACTIVE INTENT — visible real-file continuity journey
+### ACTIVE INTENT — verify-gated release artifact promotion
+
+- Branch: `agent/codex-protocol-kernel--release-artifact-promotion`
+- Base: `611dd0a2265ee4fb15ed945cc9c00a8fef763c5f` (`origin/main` after fresh fetch)
+- Worktree: `D:\repo\mortalos-release-candidates\pr60-verify-clone-bdc4ace-worktrees\codex-protocol-kernel--release-artifact-promotion`
+- Shared paths declared for this task: `.github/workflows/verify.yml`,
+  `.github/workflows/deploy-lab.yml`, `scripts/deploy-lab.mjs`, focused new
+  release-candidate receipt create/verify scripts under `scripts/`, focused tests
+  under `test/`, `package.json`, `README.md`, `docs/IMPLEMENTATION_PLAN.md`,
+  `docs/CLAIM_MATRIX.md`, and `agents/codex-protocol-kernel/{HANDOFF,MEMORY,WORKLOG}.md`.
+- Goal: make production mutation impossible until the exact-main Verify workflow has
+  completed successfully, publish a content-addressed release-candidate artifact from
+  that successful run, require Deploy to download and verify the same run/commit/tree/
+  artifact digest, and retain exact public readback without rerunning the multi-hour
+  source suite in the deployment workflow.
+- Stop conditions: no weakening, skipping, or relabeling of protocol/browser/receipt/
+  audit gates; no deploy from pull-request Verify runs; no stale-main or manually
+  substituted artifact; no Cloudflare write before exact candidate/main/artifact
+  validation; no secret in artifacts or logs. Workflow exact-head CI, independent
+  review, App attestation, native approval, merge, and live deployment remain external
+  gates.
+- Implemented result: `Verify` now builds and uploads one exact-SHA candidate only
+  after both existing jobs pass; Deploy is `workflow_run`-only, binds the triggering
+  run and SHA, rejects non-push/foreign/stale main, verifies the full canonical
+  candidate before credentials, and deploys prebuilt bytes. Direct/manual Deploy and
+  its duplicate multi-hour `npm test` path are removed.
+- Local evidence: release-candidate mutation/workflow tests `10/10`; Lab/API `23/23`;
+  governance `30/30`; S4 receipt, specification, links, YAML structural parse, and
+  `git diff --check` PASS; clean `npm ci` audited 95 packages with 0 vulnerabilities.
+  Exact-head remote gates and every live mutation remain pending.
+
+### HISTORICAL — visible real-file continuity journey
 
 - Branch: `agent/codex-protocol-kernel--visible-file-continuity-journey`
 - Base: `9fedd6ce733fad9b5eae61490667adef1193ab18` (`origin/main` after fresh fetch)

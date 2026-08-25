@@ -1,11 +1,13 @@
 name: Deploy MortalOS Lab
 
 on:
-  push:
+  workflow_run:
+    workflows: [Verify]
     branches: [main]
-  workflow_dispatch:
+    types: [completed]
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -15,16 +17,23 @@ concurrency:
 jobs:
   deploy:
     name: Deploy reviewed Lab
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 240
     env:
-      MORTALOS_SOURCE_COMMIT: ${{ github.sha }}
+      MORTALOS_RELEASE_CANDIDATE_DIR: dist/release-candidate
+      MORTALOS_SOURCE_COMMIT: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Check out reviewed main
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -34,8 +43,25 @@ jobs:
 
       - name: Require exact main revision
         run: |
-          test "$GITHUB_REF" = "refs/heads/main"
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "${{ github.event.workflow_run.event }}" = "push"
+          test "${{ github.event.workflow_run.head_branch }}" = "main"
+          test "$(git rev-parse HEAD)" = "$MORTALOS_SOURCE_COMMIT"
+          git fetch --no-tags origin main
+          test "$(git rev-parse refs/remotes/origin/main)" = "$MORTALOS_SOURCE_COMMIT"
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Download candidate from successful Verify run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mortalos-release-candidate-${{ github.event.workflow_run.head_sha }}
+          path: dist/release-candidate
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Verify content-addressed release candidate
+        run: npm run verify:release-candidate
 
       - name: Require deployment credentials
         env:
@@ -43,28 +69,19 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
 
-      - name: Install locked dependencies
-        run: npm ci
-
-      - name: Install Chromium for source and public verification
+      - name: Install Chromium for public verification
         run: npx playwright install --with-deps chromium
 
-      - name: Verify exact source before deployment
-        run: npm test
-
-      - name: Verify promoted S0 through S4 receipts
+      - name: Recheck current main before cloud mutation
         run: |
-          npm run verify:baseline
-          npm run verify:s1
-          npm run verify:s2
-          npm run verify:s3
-          npm run verify:s4
+          git fetch --no-tags origin main
+          test "$(git rev-parse refs/remotes/origin/main)" = "$MORTALOS_SOURCE_COMMIT"
 
       - name: Deploy exact relay artifact and Durable Object migration
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: npx wrangler deploy --config relay/wrangler.jsonc
+        run: npx wrangler deploy --env="" --config relay/wrangler.jsonc
 
       - name: Deploy exact static artifact
         env:
@@ -74,7 +91,7 @@ jobs:
 
       - name: Verify public artifact, relay, and bilingual judge path
         env:
-          MORTALOS_EXPECTED_COMMIT: ${{ github.sha }}
+          MORTALOS_EXPECTED_COMMIT: ${{ github.event.workflow_run.head_sha }}
           MORTALOS_LAB_URL: https://mortal-os.com
           MORTALOS_DEPLOY_VERIFY_ATTEMPTS: 12
           MORTALOS_DEPLOY_VERIFY_DELAY_MS: 5000

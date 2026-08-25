@@ -1140,7 +1140,45 @@ no-bypass ruleset enforcement, and expected-head squash merge as
 credentials under one operator, not separate human or administrative control.
 Future source changes must repeat the same exact-snapshot gate.
 
-## 17. Completion and explicit nonclaims
+## 17. Verify-gated release artifact promotion
+
+Goal: production consumes only the byte-exact static artifact produced after every
+required Verify job succeeds for the current main commit. Deployment must not race
+the correctness workflow or repeat its multi-hour source suite.
+
+Implemented candidate:
+
+- `Verify` retains its independent protocol and browser-parity jobs. A third job can
+  run only after both pass on a `main` push;
+- that job builds one release candidate and emits a canonical receipt binding the
+  source commit, Git tree, Lab asset digest, exact sorted path set, byte lengths, and
+  SHA-256 digest of every deployable file;
+- the receipt and all Lab bytes are uploaded under an exact commit-addressed artifact
+  name with pinned official upload action code;
+- `Deploy MortalOS Lab` has no push or manual trigger. It accepts only a successful
+  same-repository `Verify` `workflow_run` caused by a `main` push, checks that the
+  candidate is still current `origin/main`, and downloads only that run's exact named
+  artifact with a pinned official download action;
+- candidate verification precedes credential admission and every Cloudflare write;
+  the production deploy script requires the candidate, revalidates its receipt
+  against checked-out HEAD/tree, and deploys those verified bytes without rebuilding;
+- the deployment workflow no longer repeats `npm test` or S0-S4 checks. Those remain
+  mandatory upstream Verify gates, while post-deploy public commit/asset/EN/KO
+  verification remains mandatory downstream.
+
+Pass criteria:
+
+- pull-request, failed, cancelled, stale-main, foreign-repository, or manually
+  invoked Verify executions cannot reach a deployment job;
+- a changed, added, removed, linked, non-canonical, wrong-commit, wrong-tree, or
+  receipt-substituted candidate fails before credentials or cloud mutation;
+- the artifact consumed by Deploy is identified by both triggering run ID and exact
+  source SHA;
+- exact-head policy/Verify, immutable independent review, App attestation, native
+  approval, expected-head merge, post-merge artifact promotion, production Deploy,
+  and public readback all pass before this candidate is called promoted.
+
+## 18. Completion and explicit nonclaims
 
 The P0 real-file vertical, public package surface, signed resource contract, and
 lease-bound execution vertical are merged on main. Their local execution evidence

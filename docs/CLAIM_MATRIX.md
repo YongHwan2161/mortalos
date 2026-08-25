@@ -2,7 +2,7 @@
 
 Status: **ACTIVE — TLS-CHANNEL-BOUND CRASH-RECOVERABLE ROLE-KEY-ATTESTED COORDINATOR-NON-AUTHORITY ALL-ROLE-KEYS-RATIFIED PUBLIC-CHAIN; PREDECESSOR COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN PENDING; EXACT-SHA PENDING; EXTERNAL ISSUER HONESTY, SYBIL, AND PHYSICAL INDEPENDENCE HOLD**
 
-Last synchronized: **2026-08-22 KST**
+Last synchronized: **2026-08-25 KST**
 
 The exact 121-path pre-document-sync candidate completed the configured 48-stage
 `npm test` sequence from `2026-08-22T17:27:15.2047412+09:00` through
@@ -101,6 +101,7 @@ immutable review, approval, merge, deployment, and public readback remain extern
 | Firefox durable participant parity | Yes, main | Portable, S2 restart/loss/repair, and S4 counter/rotation actual-engine gates passed on `12e90e6…` | No | No | Requires an integrated release receipt before a production support claim. |
 | WebKit durable participant parity | Capability-routed main | Windows rejects Ed25519; Ubuntu creates a key but fails the protocol-ceiling/full-quorum signing envelope, so both measured runtimes are verifier-only | No | No | Engine name or key generation never grants authority; full custody requires the exact bounded sign/verify probe and no raw-key fallback is allowed. |
 | GPT/model authority | Intentionally absent | Not applicable | Not applicable | Not claimed | Optional model output cannot sign, select a head, or change a verdict. |
+| Verify-gated content-addressed production release | Yes, this candidate | Focused create/verify mutation corpus, Lab/API, governance, S4 receipt, workflow contract, and YAML parse pass locally | Not applicable | No | Deploy has no direct push/manual trigger and consumes only the successful same-run exact-SHA artifact after current-main and receipt validation. Exact-head CI/review, merge, post-merge promotion, cloud deployment, and public readback remain external. |
 
 ## Change rule
 
