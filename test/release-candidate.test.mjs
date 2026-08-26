@@ -124,11 +124,11 @@ test("deployment consumes only the successful Verify run artifact", async () => 
   assert.match(deployment, /wrangler deploy --env="" --config relay\/wrangler\.jsonc/);
 
   const verifyArtifact = verification.indexOf("run: npm run build:release-candidate");
-  const uploadArtifact = verification.indexOf("uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02");
+  const uploadArtifact = verification.indexOf("uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a");
   assert.ok(verifyArtifact > 0 && verifyArtifact < uploadArtifact);
   assert.match(verification, /needs: \[browser-parity, protocol\]/);
 
-  const downloadArtifact = deployment.indexOf("uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093");
+  const downloadArtifact = deployment.indexOf("uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c");
   const candidateVerification = deployment.indexOf("run: npm run verify:release-candidate");
   const credentialGate = deployment.indexOf("- name: Require deployment credentials");
   const relayMutation = deployment.indexOf("npx wrangler deploy");
