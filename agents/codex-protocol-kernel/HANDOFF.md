@@ -5,9 +5,41 @@ not active locks.
 
 ## Active intent
 
-Status: **RELEASE ARTIFACT PROMOTION LOCAL FOCUSED PASS; EXACT-HEAD CI/REVIEW REMAIN HOLD**
+Status: **NODE 24 ACTION PIN MIGRATION LOCAL FOCUSED PASS; EXACT-HEAD CI/REVIEW HOLD**
 
-### ACTIVE INTENT — verify-gated release artifact promotion
+### ACTIVE INTENT — Node 24 GitHub Actions migration
+
+- Branch: `agent/codex-protocol-kernel--node24-actions`
+- Base: `8708decdf4d46f7293c4d9e77e1a746581a09c46` (`origin/main` after fresh fetch)
+- Worktree: `D:\repo\mortalos-release-candidates\main-8708dec-worktrees\codex-protocol-kernel--node24-actions`
+- Shared paths declared for this task: `.github/workflows/verify.yml`,
+  `.github/workflows/deploy-lab.yml`, `.github/workflows/trusted-pr-policy.yml`,
+  `test/agent-governance.test.mjs`, `test/lab.test.mjs`,
+  `test/release-candidate.test.mjs`, and
+  `agents/codex-protocol-kernel/HANDOFF.md`.
+- Goal: replace every pinned first-party action that declares `runs.using: node20`
+  with the latest official Node 24 release pinned to its immutable commit, while
+  preserving workflow triggers, permissions, inputs, timeouts, and release gates.
+- Observed baseline: exact-main Verify run `32903482632` and Deploy run
+  `32915790958` completed successfully but emitted Node 20 deprecation annotations
+  for checkout/setup-node/upload-artifact/download-artifact.
+- Stop conditions: no floating action tags; no third-party action; no change to
+  executable workflow commands, permissions, triggers, credentials, promotion, or
+  deployment semantics. Local structural validation, exact-head CI, immutable
+  review, expected-head merge, post-merge Verify/Deploy, and annotation readback are
+  separate gates.
+- Implemented result: checkout `v7.0.1`, setup-node `v7.0.0`, upload-artifact
+  `v7.0.1`, and download-artifact `v8.0.1` are pinned to their official immutable
+  commits. Each upstream `action.yml` declares `runs.using: node24`; all prior
+  Node 20 action pins are absent from the three workflows.
+- Local evidence: clean `npm ci` audited `95` packages with `0` vulnerabilities;
+  governance `30/30`, Lab/API `23/23`, release-candidate `10/10`, S1-S4 receipt
+  tests `49/49`, standalone S4 promotion verification, YAML `3/3`, and
+  `git diff --check` pass. An attempted rewrite of the historical S4 workflow
+  digests correctly failed three immutable-receipt tests and was reverted; the
+  historical receipt bytes remain unchanged.
+
+### HISTORICAL — verify-gated release artifact promotion
 
 - Branch: `agent/codex-protocol-kernel--release-artifact-promotion`
 - Base: `611dd0a2265ee4fb15ed945cc9c00a8fef763c5f` (`origin/main` after fresh fetch)
