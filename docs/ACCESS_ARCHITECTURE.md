@@ -1,8 +1,8 @@
 # MortalOS endpoint-neutral access architecture
 
-Status: **PORTABLE CORE PROMOTED; CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING; MULTI-HOST INDEPENDENCE HOLD**
+Status: **PORTABLE CORE PROMOTED; EXACT-MAIN SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`; MULTI-HOST INDEPENDENCE HOLD**
 
-Last synchronized: **2026-08-21 KST**
+Last synchronized: **2026-08-30 KST**
 
 ## Decision
 
@@ -181,10 +181,10 @@ commit or delivery before cleanup, and at-most-once native close capability use.
   The prior `8,076.826s` runtime/test/workflow full-suite PASS predates the current
   WebRTC remediation. The merged base then passed a fresh `8,631,790ms` suite through
   final `verify:s4`. The lease-bound liveness-policy delta now passes uninterrupted
-  `npm test` in `7,476,222ms` through final `verify:s4`; exact-SHA governance remains
-  external for that source. The later membership-bound observer-attestation/view
-  source also reaches final `verify:s4` in a fresh ordered complete suite; post-run
-  docs pass separate static gates and exact-SHA governance remains external.
+  `npm test` in `7,476,222ms` through final `verify:s4`. The later membership-bound
+  observer-attestation/view source also reaches final `verify:s4` in a fresh ordered
+  complete suite. Those local epochs remain provenance; exact-main Verify/release at
+  `a6cfb657…` covers the integrated implementation.
 
 The trusted `src/` kernel contains no filesystem, process, DOM, network, ambient-clock,
 or ambient-random dependency. All portable corpus results must remain byte-identical

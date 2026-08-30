@@ -1,8 +1,8 @@
 # Browser participant compatibility
 
-Status: **SIGNED-EVIDENCE REPAIR SCHEDULE CORPUS + CURRENT SOURCE/RUNTIME/TEST
-COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING**. Production support still requires exact deployed-commit
-evidence.
+Status: **SIGNED-EVIDENCE REPAIR SCHEDULE CORPUS + EXACT-MAIN
+SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`**. Browser capability claims remain
+profile-specific; independently operated topology is still unproven.
 
 MortalOS exposes two deliberately different browser modes.
 
@@ -131,7 +131,7 @@ not byte-identical accounting, only the same upper ceiling and fail-closed resul
 The prior `8,076.826s` full-suite PASS predates the WebRTC remediation. The merged
 base later passed `8,631,790ms` through final `verify:s4`. The lease-bound
 liveness-policy delta now passes both its actual-Chromium path and uninterrupted
-`npm test` in `7,476,222ms`; exact-SHA gates remain external for this source.
+`npm test` in `7,476,222ms`; exact-main Verify/release at `a6cfb657…` covers the integrated source.
 
 This focused gate is Chromium-only. Firefox and WebKit have not passed this complete
 P2P data-plane scenario. Manual same-host ICE does not prove arbitrary NAT traversal
