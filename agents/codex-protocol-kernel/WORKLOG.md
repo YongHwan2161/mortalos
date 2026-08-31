@@ -4221,3 +4221,28 @@ result, and reproducible verification.
   links report 60 local and 11 HTTPS syntax-only targets; governance passes `30/30`;
   ruleset policy and `git diff --check` pass. No runtime, issue, receipt, workflow,
   credential, cloud, deployment, or public asset was mutated.
+
+## 2026-08-31 — R0 exact-main release closeout and Korean roadmap refresh
+
+- Exact-main Verify `33350808561/1` completed successfully on
+  `9b418ee35559c488528bc55ad433708ce94499d8`; browser parity, protocol, and exact
+  candidate promotion all passed. The three Verify jobs and one Deploy job expose
+  zero annotations.
+- Downloaded artifact `9745399911` from the exact Verify run and verified candidate
+  digest `sha256:bgmKayCul-jE0pQgaJQa_wYgtnF_RoWWiv98PI9Zwg0` against source tree
+  `6ffae88f8b1f7892cefbce3df3d4ca2482c2855b`. Deploy `33356877108/1` is a successful
+  `workflow_run`; its log binds run `33350808561`, the exact head, and the same
+  artifact before cloud mutation.
+- Two no-cache public manifest reads were byte-identical at 1,266 bytes and matched
+  the candidate. Their source commit is `9b418ee...`; all nine assets, totaling
+  1,346,187 bytes, matched asset-set digest
+  `sha256:EPCDV6PCFMjMIfpMdLU2Q9zmR_5ptz9wpsl35YvykCE` and their individual hashes.
+- Rechecked issues #33–#37, stage receipts, and production WebRTC construction.
+  Every issue remains open, only S1–S4 receipts exist, and both production peer
+  constructors still use `iceServers: []`. R1 bounded ICE configuration is therefore
+  the next P0; R2 reachability, R3 independent administration, R4 100 failures plus
+  seven-day burn-in, and R5 S7 promotion remain HOLD.
+- Rewrote `docs/NORTH_STAR_PRIORITY_ROADMAP.md` in Korean, marked R0 PASS with exact
+  evidence, and preserved the implementation SSOT and all claim boundaries. No
+  manual workflow rerun, deployment, credential, issue, receipt, runtime, or public
+  asset mutation was performed in this closeout.

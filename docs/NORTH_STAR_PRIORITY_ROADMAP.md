@@ -1,279 +1,308 @@
-# MortalOS North Star priority execution roadmap
+# MortalOS North Star 우선순위 실행 로드맵
 
-Status: **EXECUTION COMPANION — NOT A CLAIM OR STAGE SSOT**
+상태: **R0 PASS · 다음 P0는 R1 제한형 ICE 구성 계약**
 
-Snapshot base: `9b418ee35559c488528bc55ad433708ce94499d8`
-(`main`, 2026-08-31 KST)
+감사 기준:
 
-Authority remains [the North Star implementation SSOT](IMPLEMENTATION_PLAN.md).
-That document alone defines current direction, stage order, and promotion rules.
-This roadmap turns its remaining gaps into smaller execution gates. It must be
-refreshed against live source, issues, checks, receipts, and deployment evidence
-before any gate is executed.
+- `main`: `9b418ee35559c488528bc55ad433708ce94499d8`
+- Git 트리: `6ffae88f8b1f7892cefbce3df3d4ca2482c2855b`
+- 기준 시각: 2026-08-31 KST
 
-## 1. Re-audited position
+이 문서는 [North Star 구현 SSOT](IMPLEMENTATION_PLAN.md)를 대체하지 않는
+실행 보조 문서다. 단계 정의, 주장 승격, 순서의 최종 권한은 구현 SSOT에
+있다. 이 문서는 현재 증거를 더 작은 실행 게이트로 나누며, 각 게이트를
+실행하기 직전에 소스, 이슈, 체크, 영수증, 배포 상태를 다시 확인해야 한다.
 
-| Evidence layer | Current verified position | Boundary that remains |
+## 1. 현재 도달 지점
+
+| 증거 계층 | 현재 확인된 지점 | 남은 경계 |
 | --- | --- | --- |
-| Product vertical | Release `a6cfb657…` proves a real bounded file can move A to B, recover 2-of-3 after A exits, and continue the same lineage | The promoted run is not independent-host or arbitrary-NAT evidence |
-| Status synchronization | PR #63 is squash-merged as this snapshot base `9b418ee…` | Its exact-main Verify `33350808561/1` was still running at this audit: `browser-parity` passed while `protocol` remained in progress; no post-merge release result is inferred |
-| WebRTC reachability | The actual Chromium carrier, canonical manual signaling, transcript ceilings, close semantics, and same-host origin-cut tests pass in the promoted release | Production construction still fixes `iceServers: []`; STUN, TURN fallback, forced relay, arbitrary NAT, and Internet reachability remain unproved |
-| Admission and observation | Policy-locked role services, membership-bound plans, complete-roster activation, observer attestation, public-chain replay, and role-source receipts are implemented locally | Current executable evidence is one-PC/loopback. Signed declarations, TLS keys, profiles, or process separation do not prove administrative or physical independence |
-| Stage evidence | Receipts exist only for S1-S4. Issues [#33](https://github.com/YongHwan2161/mortalos/issues/33) through [#37](https://github.com/YongHwan2161/mortalos/issues/37) remain open | S5-S8 receipts are absent; revised S4, S6 physical independence, S7 production topology, and S8 strong custody are HOLD |
-| Browser custody | Chromium and Firefox full paths and WebKit verifier-only capability detection are implemented | Same-origin code may still invoke a non-extractable key; WebKit full signing and isolated signer/counter custody remain HOLD |
+| 제품 수직 경로 | 실제 제한형 파일을 A에서 B로 이전하고, A 종료 후 2-of-3 복구와 동일 계보의 다음 전이를 수행하는 경로가 배포됨 | 독립 호스트, 임의 NAT, 독립 관리자 증거는 아님 |
+| R0 릴리스 | 정확한 `main` Verify, 릴리스 후보, 자동 Deploy, 공개 자산 대조가 모두 PASS | 완료. 이후 런타임 후보는 이 지점을 기준으로 시작 |
+| WebRTC 도달성 | 실제 Chromium DataChannel, 수동 정규 신호, 전송량 상한, 종료 정리, 동일 호스트 origin-cut 테스트가 PASS | 프로덕션 생성자는 여전히 `iceServers: []`; STUN, TURN, 강제 릴레이, 임의 NAT는 미증명 |
+| 승인·관측 경로 | 정책 고정 signer, membership-bound plan, 전체 roster 활성화, observer attestation, public-chain replay가 구현됨 | 실행 증거는 동일 PC/loopback. 키·인증서·프로세스 분리는 관리·물리 독립 증거가 아님 |
+| 단계 영수증 | S1~S4 파일만 존재 | S5~S8 영수증 부재. 이슈 #33~#37은 모두 OPEN |
+| 브라우저 키 보관 | Chromium/Firefox 전체 경로와 WebKit verifier-only 탐지가 구현됨 | 동일 origin 코드의 직접 sign 호출 가능성, WebKit 전체 signing, 격리 signer/counter는 HOLD |
 
-The critical distinction is:
+가장 중요한 구분은 다음과 같다.
 
-> A network path can be reachable without being independently operated.
+> 네트워크가 연결될 수 있다는 사실과 독립적으로 운영된다는 사실은 서로
+> 다른 증거다.
 
-A same-administrator STUN/TURN success may close only the reachability gate. It
-must never promote distinct provider, administrator, credential, host, network,
-power, or physical failure-domain claims.
+동일 관리자가 수행한 STUN/TURN 성공은 도달성만 증명한다. 별도 provider,
+관리자, 자격증명, 호스트, 네트워크, 전원 또는 물리 장애 도메인을 승격하지
+않는다.
 
-## 2. Priority map
+## 2. R0 완료 증거
+
+R0 판정: **PASS**
+
+### 2.1 정확한 `main` Verify
+
+- 실행: [Verify 33350808561/1](https://github.com/YongHwan2161/mortalos/actions/runs/33350808561)
+- event/head: `push` / `9b418ee35559c488528bc55ad433708ce94499d8`
+- `browser-parity`: PASS
+- `protocol`: PASS
+- `Promote exact release candidate`: PASS
+- 세 job의 annotation: 모두 0건
+
+### 2.2 릴리스 후보
+
+- artifact ID: `9745399911`
+- 이름: `mortalos-release-candidate-9b418ee35559c488528bc55ad433708ce94499d8`
+- GitHub artifact digest:
+  `sha256:c810f7ce85484bdd5fc839755e613f5166de7e9788ab989c9372bbc923bf2b58`
+- 후보 digest:
+  `sha256:bgmKayCul-jE0pQgaJQa_wYgtnF_RoWWiv98PI9Zwg0`
+- 저장소 검증기: PASS
+- 결합 source/tree:
+  `9b418ee35559c488528bc55ad433708ce94499d8` /
+  `6ffae88f8b1f7892cefbce3df3d4ca2482c2855b`
+
+### 2.3 자동 Deploy와 공개 대조
+
+- 실행: [Deploy 33356877108/1](https://github.com/YongHwan2161/mortalos/actions/runs/33356877108)
+- event/head: `workflow_run` /
+  `9b418ee35559c488528bc55ad433708ce94499d8`
+- 로그에 원본 Verify run ID `33350808561`과 artifact ID `9745399911`이
+  고정됨
+- Deploy job annotation: 0건
+- 공개 `asset-manifest.json`: 1,266바이트, 두 차례 no-cache 읽기
+  바이트 일치
+- manifest SHA-256:
+  `sha256:N8jfhh1B56dvyHOZrdcNF7vGyz0XtW3f8owpgiJfZnU`
+- source commit: `9b418ee35559c488528bc55ad433708ce94499d8`
+- 공개 asset-set digest:
+  `sha256:EPCDV6PCFMjMIfpMdLU2Q9zmR_5ptz9wpsl35YvykCE`
+- 공개 자산: 9개, 합계 1,346,187바이트, 각 SHA-256 전부 일치
+
+R0 완료는 이 정확한 릴리스만 승격한다. STUN/TURN, 독립 토폴로지, S7,
+강한 키 보관을 승격하지 않는다.
+
+## 3. 재점검한 남은 단계
 
 ```text
-R0 exact-main release closeout
-  -> R1 bounded ICE configuration contract
-  -> R2 measured NAT and TURN reachability pilot
-  -> R3 separately administered admitted topology
-  -> R4 100 induced failures plus immutable seven-day burn-in
-  -> R5 exact S7 receipt and governed promotion
+R0 정확한 main 릴리스 종결                 PASS
+  -> R1 제한형 ICE 구성 계약               NEXT P0
+  -> R2 NAT/TURN 도달성 파일럿             HOLD
+  -> R3 별도 관리 주체의 승인된 토폴로지   HOLD
+  -> R4 100회 장애 시험 + 7일 burn-in      HOLD
+  -> R5 정확한 S7 영수증과 주장 승격       HOLD
 
-After R4: S5/S6 receipt debt -> isolated signer/counter custody -> S4/S8 promotion
-          -> contribution UX, capacity/SLA, incentives, broader discovery
+R4 안정화 이후:
+  S5/S6 영수증 정리
+  -> 격리 signer/counter 보관
+  -> S4/S8 재승격
+  -> 기여 UX, 용량/SLA, 인센티브, 확장 discovery
 ```
 
-R0-R5 are the critical path. Later work must not displace it. Receipt preparation
-may run in parallel only when it does not change a claim, topology, credential, or
-release candidate.
+현재 최단 임계 경로는 R1~R5다. 문서·영수증 준비는 이 경로를 지연시키거나
+주장을 바꾸지 않는 범위에서만 병렬로 수행한다.
 
-## 3. P0 release gate — R0 exact-main closeout
+## 4. P0 구현 게이트 — R1 제한형 ICE 구성 계약
 
-Objective: close the automatically started release lineage for this snapshot before
-using it as the base of another runtime candidate.
+목표: STUN, TURN, signaling, relay를 유효성 권한으로 만들지 않으면서 실제
+네트워크 도달성을 구성 가능하게 만든다.
 
-Pass gate:
+최소 구현 범위:
 
-1. Verify `33350808561/1` must complete successfully on exact head `9b418ee…`.
-2. `protocol`, `browser-parity`, and `Promote exact release candidate` must all
-   succeed with no disqualifying annotation or skipped required gate.
-3. The exact candidate artifact must pass the repository verifier.
-4. Its `workflow_run` Deploy must bind the same Verify run and head and complete
-   successfully without manual substitution.
-5. Two no-cache public-manifest reads must be byte-identical; the manifest source
-   must name `9b418ee…`, and every declared public asset must match its SHA-256.
+- 프로덕션의 두 `iceServers: []` 고정 생성을 하나의 불변·소유·제한형
+  RTC 구성 capability로 대체한다.
+- 기존 direct/동일 호스트 동작을 보존하도록 빈 서버 목록을 기본값으로
+  유지한다.
+- direct 또는 `relay`만 명시적으로 선택할 수 있게 하여 강제 TURN
+  증거가 direct 후보로 조용히 후퇴하지 못하게 한다.
+- 허용한 STUN/TURN URL과 credential 형태에만 정확한 개수·바이트 상한을
+  적용하고 malformed/max+1을 fail-closed 처리한다.
+- TURN credential은 런타임 로컬에만 두고 정규 프로토콜 증거, 공개 영수증,
+  진단, URL, 커밋 fixture에 포함하지 않는다.
+- 수동 신호 정규화, transcript 예산, send-before-commit 원자성, 종료
+  정리의 멱등성, transport 비권한 경계를 그대로 보존한다.
+- Node와 실제 브라우저에서 기본 direct, 구성 모드, 호출자 변이,
+  malformed/oversized, credential 비노출을 검증한다.
 
-HOLD on cancellation, failure, moving `main`, missing artifact, ambiguous workflow
-lineage, changed public bytes, or incomplete annotations. Monitoring is read-only;
-this gate does not authorize a manual rerun or deployment.
+PASS 조건:
 
-## 4. P0 implementation gate — R1 bounded ICE configuration
+- focused transport/security/Lab 테스트와 전체 exact-head suite가 모두
+  통과한다.
+- 현재 경계가 약화되지 않는다.
+- 이 단계의 결과는 안전한 adapter 구현으로만 기록한다. NAT 통과나
+  독립성을 주장하지 않는다.
 
-Objective: make real-network reachability configurable without making STUN, TURN,
-signaling, or relay infrastructure a validity authority.
+## 5. P0 증거 게이트 — R2 NAT/TURN 도달성 파일럿
 
-Smallest focused implementation:
+목표: 독립 운영 burn-in 비용을 투입하기 전에 정확한 제품 경로가 대표
+네트워크 조건을 통과하는지 확인한다.
 
-- replace the two hard-coded production `iceServers: []` constructions with one
-  immutable, owned, bounded RTC configuration capability;
-- retain the empty-server default so existing direct/same-host behavior is
-  byte-compatible;
-- support only the deliberately selected direct-or-`relay` ICE transport policy so
-  a forced-TURN evidence profile cannot silently fall back to a direct candidate;
-- accept only the deliberately supported STUN/TURN URL and credential shapes, with
-  exact count and byte ceilings and fail-closed malformed/max+1 cases;
-- keep TURN credentials runtime-local and absent from canonical protocol evidence,
-  public receipts, diagnostics, URLs, and committed fixtures;
-- preserve canonical manual signaling, transcript budgets, send-before-commit
-  atomicity, cleanup idempotence, and transport-non-authority boundaries;
-- add focused Node and actual-browser tests for default direct mode, configured
-  mode, caller mutation, malformed/oversized configuration, and credential
-  non-disclosure.
+첫 실행 전에 다음 네 프로필을 동결한다.
 
-Pass gate: focused transport/security/Lab tests and the complete exact-head suite
-pass without weakening any current claim boundary. This gate proves only a safe
-adapter; it proves neither NAT traversal nor independence.
+1. 동일 LAN direct 기준선
+2. 서로 다른 NAT의 STUN server-reflexive 경로
+3. direct 후보를 비활성화한 강제 TURN relay
+4. 연결 손실 뒤 한 번의 제한형 reconnect/fallback
 
-## 5. P0 evidence gate — R2 NAT and TURN reachability pilot
+각 프로필에서 런타임 파일로 20회의 새로운 A→B 경로를 연속 실행한다.
+저장 가능한 관측값은 경로 등급(`host`, `srflx`, `relay`), 시간,
+제한형 실패 코드, source/resource/head digest, 결과뿐이다. candidate 문자열,
+IP 주소, TURN credential, 파일 평문은 저장하지 않는다.
 
-Objective: determine whether the exact product journey survives representative
-network paths before paying the operational cost of the independence burn-in.
+PASS 조건:
 
-Pre-register four profiles:
+- 프로필별 20/20 완료
+- A 종료 후에만 B가 복구와 후속 commit 수행
+- resource 바이트, organism ID, lineage head, Capsule 결합 전부 일치
+- 손상 copy는 거부하고 below-quorum은 fail-closed
+- signaling, HTTP relay, TURN 로그, 공개 증거에 파일 평문이나 전체
+  인코딩 파일이 없음
+- reconnect/fallback 중 provider 또는 Continuity 중복 effect 0건
 
-1. same-LAN direct baseline;
-2. distinct NATs with a server-reflexive STUN path;
-3. forced TURN relay with direct candidates disabled;
-4. connection loss followed by one bounded reconnect/fallback attempt.
+결과 라벨은 반드시 **단일 운영 도메인의 도달성 증거**로 남긴다. S7을
+충족하지 않는다.
 
-For every profile, run at least 20 consecutive fresh A-to-B journeys using a runtime
-file. Record only sanitized path class (`host`, `srflx`, or `relay`), timing, bounded
-failure code, exact source/resource/head digests, and result. Do not persist candidate
-strings, IP addresses, TURN credentials, or file plaintext.
+## 6. P0 운영 게이트 — R3 별도 관리 주체의 승인된 토폴로지
 
-Pass gate:
+목표: 구현된 admission/observer ceremony를 한 운영자 밖의 보관·토폴로지
+사실과 결합한다.
 
-- 20/20 journeys per profile finish the same bounded user scenario;
-- A is gone before B recovers and commits the successor;
-- exact resource bytes, organism ID, lineage head, and Capsule bindings verify;
-- one corrupt copy is rejected and below quorum fails closed;
-- no file plaintext or complete encoded file appears in signaling, HTTP relay, TURN
-  logs, or public evidence;
-- no duplicate provider or Continuity effect is observed during reconnect/fallback.
+필수 조건:
 
-Any success here is labeled **reachability evidence under one operating domain**.
-It does not satisfy S7.
+- 독립으로 계산할 모든 참여자의 provider, host, administrator,
+  credential 도메인이 서로 다름
+- 독립 관리되는 counter/provider replica 최소 3개와 선택된 membership
+  epoch이 요구하는 전체 observer roster
+- issuer, subject, observer, TLS, possession credential을 각 호스트에만
+  보관하고 coordinator로 이동하지 않음
+- 네트워크·장애 도메인은 외부 감사 가능한 provider/관리자 증거로
+  확인하며 프로세스 ID, 브라우저 프로필, 선언 라벨, 키, 인증서, socket
+  주소만으로 추론하지 않음
+- 하나의 동결된 ceremony, plan, 전체 acceptance, activation, membership
+  binding, observation journal, attestation set, compact view, public chain,
+  role-source aggregate, source verdict, all-role-key closure
 
-## 6. P0 operations gate — R3 separately administered topology
+PASS 조건:
 
-Objective: run the already implemented admission and observer ceremony with custody
-and topology facts rooted outside one operator.
+- 새로운 verifier 프로세스가 모든 공개 sidecar를 재생한다.
+- 누락, 추가, 대체, 충돌, 잘못된 순서의 증거가 fail-closed 처리된다.
+- 직접 관측하지 못한 모든 차원은 `unproven`으로 남는다.
 
-Required topology and custody:
+## 7. P0 회복력 게이트 — R4 장애 시험과 burn-in
 
-- distinct provider, host, administrator, and credential domains for every S7
-  participant counted as independent;
-- at least three independently administered counter/provider replicas and the exact
-  complete admitted observer roster required by the selected membership epoch;
-- host-local issuer, subject, observer, TLS, and possession credentials that never
-  pass through the coordinator;
-- distinct networks and failure domains recorded from externally auditable provider
-  or administrator evidence, not inferred from process IDs, browser profiles,
-  declared labels, keys, certificates, or socket addresses alone;
-- one frozen ceremony, deployment plan, complete acceptance roster, activation,
-  membership binding, observation journal, attestation set, compact view, public
-  chain, role-source aggregate, source verdict, and all-role-key closure.
+목표: 로컬 replica나 짧은 파일럿에서 추론하지 않고 S7의 production-only
+조건을 실제로 충족한다.
 
-Pass gate: fresh verifier processes replay every exact public sidecar; missing,
-extra, substituted, conflicting, or reordered evidence fails closed. The topology
-assessment must keep every non-observed dimension `unproven`.
+첫 시험 전에 최소 다음 항목을 포함한 100회 matrix를 등록한다.
 
-## 7. P0 resilience gate — R4 induced failures and burn-in
+- 결과 게시 전후 provider/process 종료
+- observer, signer 손실과 network partition/heal
+- counter replica 손실, 재시작, repair, 경쟁 coordinator
+- 전송 연결 후 TURN 또는 signaling 손실
+- handoff 전, handoff 후, B 복구 중 A 손실
+- 손상 shard/copy, below-quorum, stale/fork 증거
+- 기반 capability가 없는 상태에서 정확한 durable result 복구
 
-Objective: satisfy the production-only S7 criterion rather than extrapolating it
-from local replicas or a short pilot.
+이후 변경하지 않은 후보를 7일 연속 운영하고 append-only,
+content-addressed 증거를 남긴다. 구성, credential, binary, manifest, 시험
+정의는 1회차 전에 동결한다. 하나라도 바뀌면 새 후보로 다시 시작한다.
 
-Pre-register a 100-trial matrix covering at minimum:
+PASS 조건:
 
-- provider/process termination before and after result publication;
-- observer loss, signer loss, and network partition/heal;
-- counter-replica loss, restart, repair, and competing coordinators;
-- TURN or signaling loss after transport establishment;
-- A loss before handoff, after handoff, and during B recovery;
-- one corrupt shard/copy, below-quorum loss, and stale/forked evidence;
-- crash recovery from an exact durable result with the underlying capability absent.
+- 사전 등록 100회가 예상한 결정적 PASS 또는 fail-closed 결과를 생성
+- 복구 바이트 일치와 유일한 후속 lineage
+- below quorum 진행 0건
+- provider, counter allocation, accounting, Continuity 중복 effect 0건
+- 7일 증거 체인에 공백, 교체, 가변 덮어쓰기 없음
+- 독립 reviewer가 secret 없는 공개 증거로 aggregate 재현 가능
 
-Then operate the unchanged candidate for seven continuous days with append-only,
-content-addressed evidence. Configuration, credentials, binaries, manifests, and
-trial definitions are frozen before trial 1; any change starts a new candidate and
-resets the burn-in.
+## 8. P0 승격 게이트 — R5 S7 영수증
 
-Pass gate:
+목표: R3/R4 후보를 보고서가 아닌 governed claim으로 전환한다.
 
-- all 100 pre-registered trials produce their expected deterministic PASS or
-  fail-closed outcome;
-- recovery bytes are exact and the continued lineage is unique;
-- below quorum never progresses;
-- duplicate provider, counter-allocation, accounting, and Continuity effects are
-  all zero;
-- the seven-day evidence chain has no gap, replacement, or mutable overwrite;
-- independent reviewers can reproduce the aggregate from public, secret-free
-  evidence.
+필수 순서:
 
-## 8. P0 promotion gate — R5 S7 receipt
+1. 정확한 후보와 운영 증거에서
+   `evidence/stages/s7-failure-domains.json` 생성
+2. 하나의 불변 SHA에서 locked install, focused gate, full suite, inventory,
+   영수증 검증 수행
+3. 논리 reviewer receipt, GitHub App exact-head attestation, native
+   latest-head approval을 서로 대체 불가능한 세 게이트로 확보
+4. expected-head merge
+5. 정확한 새 `main`, candidate artifact, 자동 Deploy, 공개 readback 확인
 
-Objective: convert the exact R3/R4 candidate into a governed claim rather than a
-report.
+다섯 단계가 모두 끝날 때까지 이슈
+[#36](https://github.com/YongHwan2161/mortalos/issues/36)은 OPEN이고
+물리·관리 독립성은 HOLD다.
 
-Required sequence:
+## 9. P1 영수증·배포 메타데이터 부채
 
-1. create `evidence/stages/s7-failure-domains.json` from the immutable candidate and
-   exact operational evidence;
-2. run locked install, all focused gates, full suite, inventory, and receipt
-   verification on one immutable SHA;
-3. obtain the logical reviewer receipt, GitHub App exact-head attestation, and native
-   latest-head approval as three non-substitutable gates;
-4. use expected-head merge;
-5. verify the exact new `main`, candidate artifact, automatic Deploy, and public
-   readback before changing the S7 claim state.
+R4가 안정화되어 임계 경로를 방해하지 않을 때 시작한다.
 
-Until all five complete, issue #36 remains open and physical/administrative
-independence remains HOLD.
+- S5: `evidence/stages/s5-sdk-cli.json` 생성. 공개 package registry
+  게시 여부는 별도 결정한다. 영수증이 게시를 의미하지 않고 게시도
+  영수증을 의미하지 않는다.
+- S6: 정확한 통합 제품 경로와 R3/R4 토폴로지 증거에 대해
+  `evidence/stages/s6-continuity-capsule.json` 생성
+- S4: signer/counter가 별도 origin/service 또는 hardware authorization
+  경계를 충족하기 전에는 `s4-confidentiality.json`을 재발급하지 않음
+- S8: 아래 강한 보관 경계가 해결된 뒤
+  `evidence/stages/s8-adversarial-custody.json` 생성. WebKit
+  verifier-only는 정직한 profile로 유지
+- 이슈 #33~#37의 `a6cfb657…`/“#63 candidate” 상태 문구는 정확한
+  `9b418ee…` R0 사실에 맞춰 별도 coordination-only 변경으로 동기화
 
-## 9. P1 evidence and distribution debt
+각 영수증은 독립된 exact-head review, merge, readback 수명주기를 갖는다.
+과거 영수증 바이트는 다시 쓰지 않는다.
 
-Start only after R4 is stable enough that it cannot be displaced by documentation or
-distribution work.
+## 10. P2 키 보관·브라우저 강화
 
-- S5: create `evidence/stages/s5-sdk-cli.json`; separately decide whether public
-  package-registry publication is desired. A receipt does not imply publication, and
-  publication does not imply the receipt.
-- S6: create `evidence/stages/s6-continuity-capsule.json` against the exact integrated
-  product journey and R3/R4 topology evidence.
-- S4: do not reissue `evidence/stages/s4-confidentiality.json` until signer/counter
-  custody satisfies its separate-origin/service or hardware authorization boundary.
-- S8: create `evidence/stages/s8-adversarial-custody.json` only after the strong
-  custody boundary below is resolved; verifier-only WebKit remains an honest profile.
+목표: 독립 운영 증명 이후 가장 큰 잔여 key-use 공백을 제거한다.
 
-Each receipt has its own exact-head review, merge, and readback lifecycle. Receipt
-work must not rewrite historical receipt bytes.
+- signing key와 counter state를 함께 별도 origin/service 또는 hardware
+  authorization 도메인으로 이동
+- 일반 sign 기능 대신 명시적 제한형 요청만 허용
+- 제품 origin 침해, 재시작, 동시성, below-quorum에서 sign-once와 counter
+  allocation 검증
+- Chromium/Firefox 전체군과 WebKit capability detection 재실행
+- WebKit은 native 구현이 전체 정규 envelope와 S2/S4군을 private material
+  노출 없이 통과할 때만 signing 승격
 
-## 10. P2 custody and browser hardening
+WebKit을 통과시키기 위해 key containment를 약화하는 fallback은 금지한다.
 
-Objective: remove the largest remaining key-use gap after real independent operation
-is demonstrated.
+## 11. P3 제품·네트워크 확장
 
-- move the signing key and counter state together into a separate origin/service or
-  hardware authorization domain;
-- require explicit bounded requests rather than exposing general same-origin sign
-  use;
-- prove sign-once and counter allocation across restart, concurrency, compromise of
-  the product origin, and below-quorum operation;
-- rerun Chromium/Firefox full families and WebKit capability detection; promote
-  WebKit signing only if its native implementation passes the complete canonical
-  envelope and S2/S4 family without exporting key material.
+R5와 키 보관 게이트 이후에만 진행한다.
 
-No fallback may weaken key containment merely to turn WebKit green.
+- 공개 기여 UX와 provider onboarding
+- 관측된 독립 도메인에 근거한 capacity/SLA weight
+- 추적 가능한 metering에 근거한 incentive, penalty, settlement
+- 확장 rendezvous, anti-entropy, discovery
+- 측정된 실패 분포에서 도출한 availability 목표
 
-## 11. P3 product and network expansion
+discovery, relay, UI, GPT, Cloudflare는 계속 교체 가능한 carrier다. membership,
+validity, mortality, repair 권한이 되지 않는다.
 
-Only after R5 and the custody gate:
+## 12. 연구 비주장과 중단 목록
 
-- public contribution UX and provider onboarding;
-- capacity and SLA weights backed by observed domains;
-- incentives, penalties, or settlement backed by attributable metering;
-- broader rendezvous, anti-entropy, and discovery;
-- availability targets derived from measured failure distributions.
+R0~R5의 릴리스 blocker로 만들거나 그 증거에서 추론하지 않는다.
 
-Discovery, relay, UI, GPT, and Cloudflare remain replaceable carriers. None becomes
-membership, validity, mortality, or repair authority.
+- 절대적 Sybil 저항성
+- 전역 hidden-artifact 발견 또는 global currentness
+- 객관적 global death
+- 선언된 저장 경계를 넘는 hostile-disk 또는 sudden-power-loss 증명
+- 승인된 custody/journal 모델 밖의 copied-key 탐지
+- 정확한 증거 없는 “decentralized”, “ownerless”, “immortal”,
+  arbitrary-Internet 주장
 
-## 12. Research nonclaims and stop list
+R3를 흉내 내기 위해 동일 PC transport, coordinator, receipt wrapper, signed
+declaration을 하나 더 추가하지 않는다. 다음 유효한 구현은 R1이고, 다음
+의미 있는 North Star 승격은 R5다.
 
-Do not schedule these as release blockers or claim them from R0-R5 evidence:
+## 13. 즉시 실행 순서
 
-- absolute Sybil resistance;
-- global hidden-artifact discovery or global currentness;
-- objective global death;
-- hostile-disk or sudden-power-loss proof beyond the declared storage boundary;
-- copied-key detection outside the admitted custody and journal model;
-- “decentralized”, “ownerless”, “immortal”, or arbitrary-Internet claims without
-  their own exact evidence.
+1. **R1**: credential 없는 제한형 ICE 구성 PR
+2. **R2 준비**: 첫 네트워크 실행 전에 네 프로필과 비식별 증거 schema 동결
+3. **R3 준비**: live authority나 ceremony 생성 전에 독립 관리 도메인 확보
+4. **R4 준비**: 첫 시험 전에 100회 matrix 등록
+5. **R5 준비**: burn-in 중에는 영수증 schema만 검토하고 주장 승격은 금지
 
-Also do not start another same-PC transport, coordinator, receipt wrapper, or signed
-declaration merely to approximate R3. The next useful implementation is R1; the next
-meaningful North Star promotion is R5.
-
-## 13. Immediate execution queue
-
-1. Observe R0 to a terminal exact-main result; do not mutate external state while it
-   is running.
-2. Open one focused R1 implementation candidate with no operational credentials.
-3. Freeze the R2 profiles and sanitized evidence schema before the first network run.
-4. Recruit and verify the R3 administrative domains before creating any live
-   authority, ceremony, or seven-day candidate.
-5. Pre-register R4 before trial 1; a retrospective trial matrix does not count.
-
-Every step reports `PASS` or `HOLD`, the immutable source/evidence identifiers, and
-the exact boundary not proved.
+모든 단계는 `PASS` 또는 `HOLD`, 불변 source/evidence 식별자, 그리고
+증명하지 못한 정확한 경계를 함께 보고한다.

@@ -5,7 +5,7 @@ not active locks.
 
 ## Active intent
 
-Status: **NORTH STAR PRIORITY ROADMAP LOCAL STATIC PASS; PUBLICATION HOLD**
+Status: **R0 EXACT-MAIN RELEASE PASS; KOREAN ROADMAP LOCAL STATIC PASS; REMOTE CI/REVIEW HOLD**
 
 ### ACTIVE INTENT — North Star priority roadmap
 
@@ -23,10 +23,13 @@ Status: **NORTH STAR PRIORITY ROADMAP LOCAL STATIC PASS; PUBLICATION HOLD**
   package, workflow, dependency, stage receipt, issue, credential, deployed asset,
   or cloud-resource mutation. Publication, exact-head CI, review, merge, and any
   deployment remain separate gates.
-- Audited boundary: main `9b418ee35559c488528bc55ad433708ce94499d8`,
-  exact-main Verify `33350808561/1` still in progress with `browser-parity` success
-  and `protocol` running, production `iceServers: []`, open issues #33–#37, and only
-  S1–S4 receipt files present. No running workflow result was promoted.
+- Audited boundary: main `9b418ee35559c488528bc55ad433708ce94499d8`
+  and tree `6ffae88f8b1f7892cefbce3df3d4ca2482c2855b` completed exact-main
+  Verify `33350808561/1`, exact candidate artifact `9745399911`, and linked
+  workflow-run Deploy `33356877108/1`. All four job annotation sets were empty.
+  Two no-cache 1,266-byte public manifests and all nine public asset hashes matched
+  the candidate. Production still fixes `iceServers: []`, issues #33–#37 remain
+  open, and only S1–S4 receipt files exist.
 - Local evidence: clean `npm ci` audited 95 packages with zero vulnerabilities;
   specification PASS with 106 relative links, release-link PASS with 60 local and
   11 HTTPS syntax-only targets, governance `30/30`, ruleset policy PASS, and
