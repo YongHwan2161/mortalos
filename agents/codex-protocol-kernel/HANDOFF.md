@@ -5,9 +5,42 @@ not active locks.
 
 ## Active intent
 
-Status: **NORTH STAR STATUS SSOT LOCAL STATIC PASS; REMOTE CI/REVIEW HOLD**
+Status: **R0 PASS; R1 EXACT-HEAD CI PASS; KOREAN ROADMAP REFRESH LOCAL PASS; REMOTE CI HOLD**
 
-### ACTIVE INTENT — North Star status SSOT normalization
+### ACTIVE INTENT — North Star priority roadmap
+
+- Branch: `agent/codex-protocol-kernel--north-star-priority-roadmap`
+- Base: `9b418ee35559c488528bc55ad433708ce94499d8` (`origin/main` after fresh fetch)
+- Worktree: `D:\repo\mortalos-release-candidates\main-a6cfb657-worktrees\codex-protocol-kernel--north-star-priority-roadmap`
+- Shared paths declared for this task: `docs/NORTH_STAR_PRIORITY_ROADMAP.md`,
+  `docs/README.md`, `agents/codex-protocol-kernel/HANDOFF.md`, and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Goal: re-audit the remaining North Star gaps on the exact merged source, separate
+  reachability evidence from administrative/physical independence, and publish one
+  priority-ordered execution companion without replacing
+  `docs/IMPLEMENTATION_PLAN.md` as the sole direction/stage-ledger SSOT.
+- Stop conditions: documentation and read-only evidence inspection only; no runtime,
+  package, workflow, dependency, stage receipt, issue, credential, deployed asset,
+  or cloud-resource mutation. Publication, exact-head CI, review, merge, and any
+  deployment remain separate gates.
+- Audited boundary: main `9b418ee35559c488528bc55ad433708ce94499d8`
+  and tree `6ffae88f8b1f7892cefbce3df3d4ca2482c2855b` completed exact-main
+  Verify `33350808561/1`, exact candidate artifact `9745399911`, and linked
+  workflow-run Deploy `33356877108/1`. All four job annotation sets were empty.
+  Two no-cache 1,266-byte public manifests and all nine public asset hashes matched
+  the candidate. Merged production still fixes `iceServers: []`; external R1 PR #65
+  head `13e44b74eca2f3a485f9f8f54de1ae9b668023f9` now supplies the bounded
+  configuration candidate and passed its local/actual-Chromium gates, Agent PR
+  Policy `33361909517/1`, and exact-head Verify `33361909417/1`. Protocol and
+  browser parity passed with zero annotations; the PR-only promotion job was
+  intentionally skipped. The candidate remains unreviewed and unmerged. Issues
+  #33–#37 remain open, and only S1–S4 receipt files exist.
+- Local evidence: clean `npm ci` audited 95 packages with zero vulnerabilities;
+  specification PASS with 106 relative links, release-link PASS with 60 local and
+  11 HTTPS syntax-only targets, governance `30/30`, ruleset policy PASS, and
+  `git diff --check` PASS.
+
+### HISTORICAL — North Star status SSOT normalization
 
 - Branch: `agent/codex-protocol-kernel--north-star-status-ssot`
 - Base: `a6cfb657212a0b0c20848851d86786b62b9e14f7` (`origin/main` after fresh fetch)

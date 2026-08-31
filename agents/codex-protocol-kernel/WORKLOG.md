@@ -4198,3 +4198,87 @@ result, and reproducible verification.
   complete pre-long-suite chain also passes baseline `12/12`, S1 `12/12`, S2
   `12/12`, S3 `13/13`, and S4 `12/12`, alongside the prior focused gates. A new
   commit/push and fresh exact-head policy/Verify remain required.
+
+## 2026-08-31 — North Star priority roadmap audit
+
+- Started from freshly fetched `origin/main`
+  `9b418ee35559c488528bc55ad433708ce94499d8` in the dedicated
+  `agent/codex-protocol-kernel--north-star-priority-roadmap` worktree after PR #63
+  was expected-head squash-merged.
+- Re-audited the implementation SSOT, claim/threat/browser boundaries, open stage
+  issues #33–#37, stage receipts, production WebRTC construction, and exact-main
+  Verify. The release workflow remained in progress: `browser-parity` passed while
+  `protocol` was still running. Production still fixed `iceServers: []`, and only
+  S1–S4 receipts existed.
+- Added `docs/NORTH_STAR_PRIORITY_ROADMAP.md` as an explicitly subordinate execution
+  companion. It separates bounded ICE/STUN/TURN reachability from independently
+  administered topology, then requires 100 pre-registered induced failures and an
+  immutable seven-day burn-in before S7 promotion. S5/S6 receipt debt, strong signer
+  custody, WebKit signing, contribution UX, incentives, and discovery remain later
+  lanes.
+- Local documentation evidence passes: clean `npm ci` audited 95 packages with zero
+  vulnerabilities; specification verification reports 106 relative links; release
+  links report 60 local and 11 HTTPS syntax-only targets; governance passes `30/30`;
+  ruleset policy and `git diff --check` pass. No runtime, issue, receipt, workflow,
+  credential, cloud, deployment, or public asset was mutated.
+
+## 2026-08-31 — R0 exact-main release closeout and Korean roadmap refresh
+
+- Exact-main Verify `33350808561/1` completed successfully on
+  `9b418ee35559c488528bc55ad433708ce94499d8`; browser parity, protocol, and exact
+  candidate promotion all passed. The three Verify jobs and one Deploy job expose
+  zero annotations.
+- Downloaded artifact `9745399911` from the exact Verify run and verified candidate
+  digest `sha256:bgmKayCul-jE0pQgaJQa_wYgtnF_RoWWiv98PI9Zwg0` against source tree
+  `6ffae88f8b1f7892cefbce3df3d4ca2482c2855b`. Deploy `33356877108/1` is a successful
+  `workflow_run`; its log binds run `33350808561`, the exact head, and the same
+  artifact before cloud mutation.
+- Two no-cache public manifest reads were byte-identical at 1,266 bytes and matched
+  the candidate. Their source commit is `9b418ee...`; all nine assets, totaling
+  1,346,187 bytes, matched asset-set digest
+  `sha256:EPCDV6PCFMjMIfpMdLU2Q9zmR_5ptz9wpsl35YvykCE` and their individual hashes.
+- Rechecked issues #33–#37, stage receipts, and production WebRTC construction.
+  Every issue remains open, only S1–S4 receipts exist, and both production peer
+  constructors still use `iceServers: []`. R1 bounded ICE configuration is therefore
+  the next P0; R2 reachability, R3 independent administration, R4 100 failures plus
+  seven-day burn-in, and R5 S7 promotion remain HOLD.
+- Rewrote `docs/NORTH_STAR_PRIORITY_ROADMAP.md` in Korean, marked R0 PASS with exact
+  evidence, and preserved the implementation SSOT and all claim boundaries. No
+  manual workflow rerun, deployment, credential, issue, receipt, runtime, or public
+  asset mutation was performed in this closeout.
+
+## 2026-08-31 — R1 candidate and remaining-roadmap recheck
+
+- Re-read current main, issues #33–#37, stage receipt inventory, and focused R1 PR
+  #65. All five issues remain OPEN and only S1–S4 receipt files exist.
+- Bound the roadmap to R1 base `9b418ee35559c488528bc55ad433708ce94499d8`
+  and candidate head `13e44b74eca2f3a485f9f8f54de1ae9b668023f9`. The candidate
+  changes 10 files (+404/-25), passes local Node/actual-Chromium/security/Lab/
+  governance/static gates and Agent PR Policy `33361909517/1`; exact-head Verify
+  `33361909417/1` is still running, so R1 remains CI HOLD.
+- Corrected the native policy wording from nonexistent `direct` to `all`/`relay`,
+  recorded the actual server/URL/credential/total-byte limits, constructor-only
+  credential flow, and fail-closed shapes, and retained live STUN/TURN and arbitrary-
+  NAT evidence as R2 rather than promoting it from source tests.
+- Reprioritized the remaining critical path as R1 exact-head closeout, R2 frozen
+  four-profile measurement, R3 separately administered topology, R4 pre-registered
+  100 failures plus seven-day burn-in, and R5 exact S7 promotion. S5/S6 and issue
+  metadata remain P1 with a separate exact-head lifecycle. No issue, credential,
+  receipt, runtime, merge, deployment, cloud resource, or public asset changed.
+
+## 2026-08-31 — R1 exact-head CI closeout
+
+- PR #65 remained immutable at base `9b418ee35559c488528bc55ad433708ce94499d8`
+  and head `13e44b74eca2f3a485f9f8f54de1ae9b668023f9`, with the same 10
+  declared changed files. Verify `33361909417/1` completed success for event
+  `pull_request` on that exact head.
+- `protocol` and `browser-parity` both passed. `Promote exact release candidate`
+  was intentionally skipped for a PR run. All three job annotation collections
+  were empty. Agent PR Policy `33361909517/1` remained successful.
+- Updated the Korean roadmap from CI HOLD to exact-head CI PASS while keeping PR
+  #65 explicitly unreviewed and unmerged. The next R1 action is the separate
+  immutable-review/approval/expected-head merge lifecycle; no live credential,
+  network pilot, review, approval, merge, deployment, or public claim was created.
+- The refreshed roadmap passes specification and link verification, governance
+  `30/30`, ruleset policy, and `git diff --check`; its new exact-head policy and
+  Verify remain separate remote gates.

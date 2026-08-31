@@ -1,11 +1,14 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-21 KST**
+Last synchronized: **2026-08-31 KST**
 
 ## Read first
 
 - [North Star implementation SSOT](IMPLEMENTATION_PLAN.md) — current direction,
   evidence layers, priority order, and strict completion gates.
+- [North Star priority execution roadmap](NORTH_STAR_PRIORITY_ROADMAP.md) — a
+  subordinate, snapshot-based breakdown of the remaining gates; it does not replace
+  the implementation SSOT or promote a claim.
 - [Current claim matrix](CLAIM_MATRIX.md) — what is implemented, verified,
   promoted, and explicitly unclaimed.
 - [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) — source
