@@ -4265,3 +4265,20 @@ result, and reproducible verification.
   100 failures plus seven-day burn-in, and R5 exact S7 promotion. S5/S6 and issue
   metadata remain P1 with a separate exact-head lifecycle. No issue, credential,
   receipt, runtime, merge, deployment, cloud resource, or public asset changed.
+
+## 2026-08-31 — R1 exact-head CI closeout
+
+- PR #65 remained immutable at base `9b418ee35559c488528bc55ad433708ce94499d8`
+  and head `13e44b74eca2f3a485f9f8f54de1ae9b668023f9`, with the same 10
+  declared changed files. Verify `33361909417/1` completed success for event
+  `pull_request` on that exact head.
+- `protocol` and `browser-parity` both passed. `Promote exact release candidate`
+  was intentionally skipped for a PR run. All three job annotation collections
+  were empty. Agent PR Policy `33361909517/1` remained successful.
+- Updated the Korean roadmap from CI HOLD to exact-head CI PASS while keeping PR
+  #65 explicitly unreviewed and unmerged. The next R1 action is the separate
+  immutable-review/approval/expected-head merge lifecycle; no live credential,
+  network pilot, review, approval, merge, deployment, or public claim was created.
+- The refreshed roadmap passes specification and link verification, governance
+  `30/30`, ruleset policy, and `git diff --check`; its new exact-head policy and
+  Verify remain separate remote gates.

@@ -5,7 +5,7 @@ not active locks.
 
 ## Active intent
 
-Status: **R0 PASS; KOREAN ROADMAP R1 REFRESH LOCAL PASS; REMOTE CI/REVIEW HOLD**
+Status: **R0 PASS; R1 EXACT-HEAD CI PASS; KOREAN ROADMAP REFRESH LOCAL PASS; REMOTE CI HOLD**
 
 ### ACTIVE INTENT — North Star priority roadmap
 
@@ -30,9 +30,11 @@ Status: **R0 PASS; KOREAN ROADMAP R1 REFRESH LOCAL PASS; REMOTE CI/REVIEW HOLD**
   Two no-cache 1,266-byte public manifests and all nine public asset hashes matched
   the candidate. Merged production still fixes `iceServers: []`; external R1 PR #65
   head `13e44b74eca2f3a485f9f8f54de1ae9b668023f9` now supplies the bounded
-  configuration candidate and passed its local/actual-Chromium gates plus Agent PR
-  Policy while exact-head Verify remains in progress. Issues #33–#37 remain open,
-  and only S1–S4 receipt files exist.
+  configuration candidate and passed its local/actual-Chromium gates, Agent PR
+  Policy `33361909517/1`, and exact-head Verify `33361909417/1`. Protocol and
+  browser parity passed with zero annotations; the PR-only promotion job was
+  intentionally skipped. The candidate remains unreviewed and unmerged. Issues
+  #33–#37 remain open, and only S1–S4 receipt files exist.
 - Local evidence: clean `npm ci` audited 95 packages with zero vulnerabilities;
   specification PASS with 106 relative links, release-link PASS with 60 local and
   11 HTTPS syntax-only targets, governance `30/30`, ruleset policy PASS, and

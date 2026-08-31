@@ -1,6 +1,6 @@
 # MortalOS North Star 우선순위 실행 로드맵
 
-상태: **R0 PASS · R1 구현 후보 LOCAL/BROWSER PASS · exact-head CI HOLD**
+상태: **R0 PASS · R1 구현 후보 EXACT-HEAD CI PASS · 미병합/리뷰 HOLD**
 
 감사 기준:
 
@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | 제품 수직 경로 | 실제 제한형 파일을 A에서 B로 이전하고, A 종료 후 2-of-3 복구와 동일 계보의 다음 전이를 수행하는 경로가 배포됨 | 독립 호스트, 임의 NAT, 독립 관리자 증거는 아님 |
 | R0 릴리스 | 정확한 `main` Verify, 릴리스 후보, 자동 Deploy, 공개 자산 대조가 모두 PASS | 완료. 이후 런타임 후보는 이 지점을 기준으로 시작 |
-| WebRTC 도달성 | R1 후보가 offer/answer 공통의 불변·소유·제한형 ICE 구성, 빈 목록/`all` 기본값, 명시적 STUN/TURN 및 `all`/`relay` 정책을 구현했고 실제 Chromium 회귀가 PASS | 후보는 아직 미병합이며 exact-head CI 진행 중. 실제 STUN/TURN 서비스, 강제 TURN 경로, 임의 NAT는 미증명 |
+| WebRTC 도달성 | R1 후보가 offer/answer 공통의 불변·소유·제한형 ICE 구성, 빈 목록/`all` 기본값, 명시적 STUN/TURN 및 `all`/`relay` 정책을 구현했고 정확한 head의 protocol·browser-parity가 PASS | 후보는 아직 미병합·미리뷰다. 실제 STUN/TURN 서비스, 강제 TURN 경로, 임의 NAT는 미증명 |
 | 승인·관측 경로 | 정책 고정 signer, membership-bound plan, 전체 roster 활성화, observer attestation, public-chain replay가 구현됨 | 실행 증거는 동일 PC/loopback. 키·인증서·프로세스 분리는 관리·물리 독립 증거가 아님 |
 | 단계 영수증 | S1~S4 파일만 존재 | S5~S8 영수증 부재. 이슈 #33~#37은 모두 OPEN |
 | 브라우저 키 보관 | Chromium/Firefox 전체 경로와 WebKit verifier-only 탐지가 구현됨 | 동일 origin 코드의 직접 sign 호출 가능성, WebKit 전체 signing, 격리 signer/counter는 HOLD |
@@ -84,8 +84,8 @@ R0 완료는 이 정확한 릴리스만 승격한다. STUN/TURN, 독립 토폴�
 
 ```text
 R0 정확한 main 릴리스 종결                 PASS
-  -> R1 제한형 ICE 구성 계약               LOCAL/BROWSER PASS · CI HOLD
-  -> R2 NAT/TURN 도달성 파일럿             NEXT (R1 CI/병합 전 HOLD)
+  -> R1 제한형 ICE 구성 계약               EXACT-HEAD CI PASS · MERGE HOLD
+  -> R2 NAT/TURN 도달성 파일럿             NEXT (R1 병합 전 HOLD)
   -> R3 별도 관리 주체의 승인된 토폴로지   HOLD
   -> R4 100회 장애 시험 + 7일 burn-in      HOLD
   -> R5 정확한 S7 영수증과 주장 승격       HOLD
@@ -107,8 +107,8 @@ R4 사전 등록 matrix, S7 영수증은 아직 없다. 따라서 우선순위�
 
 | 우선순위 | 다음 관문 | 현재 blocker / 종료 신호 |
 | --- | --- | --- |
-| P0-A | R1 exact-head 종결 | PR #65 protocol/browser-parity 완료·성공 |
-| P0-B | R2 schema 동결과 네 프로필 측정 | R1 종결 전 live credential·네트워크 실행 금지; 이후 프로필별 20/20 |
+| P0-A | R1 거버넌스 종결 | exact-head CI PASS; immutable review·승인·expected-head 병합은 별도 HOLD |
+| P0-B | R2 schema 동결과 네 프로필 측정 | R1 병합 전 live credential·네트워크 실행 금지; 이후 프로필별 20/20 |
 | P0-C | R3 독립 운영 토폴로지 | 서로 다른 관리자·credential·host·network 증거 부재; 공개 sidecar 전체 재생 |
 | P0-D | R4 100회 matrix와 7일 burn-in | R3 후보·시험 정의 미동결; 중복 effect 0, 증거 공백 0 |
 | P0-E | R5 S7 승격 | 정확한 S7 영수증·독립 리뷰·병합·배포 readback 부재 |
@@ -116,7 +116,7 @@ R4 사전 등록 matrix, S7 영수증은 아직 없다. 따라서 우선순위�
 
 ## 4. P0 구현 게이트 — R1 제한형 ICE 구성 계약
 
-현재 판정: **구현·로컬·실브라우저 PASS / exact-head 원격 CI HOLD**
+현재 판정: **구현·로컬·실브라우저·exact-head CI PASS / 미병합·미리뷰 HOLD**
 
 불변 후보:
 
@@ -125,7 +125,10 @@ R4 사전 등록 matrix, S7 영수증은 아직 없다. 따라서 우선순위�
 - head: `13e44b74eca2f3a485f9f8f54de1ae9b668023f9`
 - 변경량: 10개 파일, +404/-25
 - Agent PR Policy: `33361909517/1` PASS
-- Verify: `33361909417/1` 진행 중; 완료 전에는 R1 PASS로 승격하지 않음
+- Verify: `33361909417/1` / event `pull_request` / exact head
+  `13e44b74eca2f3a485f9f8f54de1ae9b668023f9` / completed success
+- `protocol`과 `browser-parity`: PASS; PR에서만 실행되는 release-candidate
+  승격 job은 의도대로 SKIPPED; 세 job annotation 모두 0건
 
 목표: STUN, TURN, signaling, relay를 유효성 권한으로 만들지 않으면서 실제
 네트워크 도달성을 구성 가능하게 만든다.
@@ -168,9 +171,10 @@ PASS 조건:
 - 이 단계의 결과는 안전한 adapter 구현으로만 기록한다. NAT 통과나
   독립성을 주장하지 않는다.
 
-남은 R1 종결 조건은 현재 불변 head의 protocol과 browser-parity가 모두
-완료·성공하는 것이다. 이후 immutable review와 병합은 별도 승인 수명주기이며,
-R1 소스 종결과 R2의 실제 네트워크 증거를 서로 대체하지 않는다.
+R1 소스와 exact-head 검증은 종결되었다. 남은 조건은 현재 불변 head의
+immutable review, 필요한 승인, expected-head 병합이다. 이는 별도 승인
+수명주기이며, 병합되기 전 live credential·네트워크 파일럿으로 우회하지
+않는다. R1 소스 종결과 R2의 실제 네트워크 증거도 서로 대체하지 않는다.
 
 ## 5. P0 증거 게이트 — R2 NAT/TURN 도달성 파일럿
 
@@ -341,9 +345,9 @@ declaration을 하나 더 추가하지 않는다. 다음 유효한 구현은 R1�
 
 ## 13. 즉시 실행 순서
 
-1. **R1 종결**: PR #65 exact-head protocol/browser-parity 결과 확인; 실패 시
-   동일 head를 성공으로 간주하거나 R2로 우회하지 않음
-2. **R2 준비**: R1 종결 후, 첫 네트워크 실행 전에 네 프로필과 비식별 증거
+1. **R1 거버넌스 종결**: PR #65의 immutable review·승인·expected-head 병합;
+   exact-head CI PASS만으로 병합 또는 R2 실행을 추론하지 않음
+2. **R2 준비**: R1 병합 후, 첫 네트워크 실행 전에 네 프로필과 비식별 증거
    schema 및 TURN credential 취급 경계 동결
 3. **R3 준비**: live authority나 ceremony 생성 전에 독립 관리 도메인 확보
 4. **R4 준비**: 첫 시험 전에 100회 matrix 등록
