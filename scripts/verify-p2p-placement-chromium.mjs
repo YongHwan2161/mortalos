@@ -147,6 +147,7 @@ async function verifyWebRtcPrimordials() {
     assert.deepEqual(result, {
       artifact_kind_poison_calls: 0,
       array_frames: 3,
+      bounded_ice_configuration: true,
       channel_poison_calls: 0,
       constructor_poison_calls: 0,
       forbidden_local_frames: 0,

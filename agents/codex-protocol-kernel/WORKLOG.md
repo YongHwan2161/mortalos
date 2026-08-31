@@ -4198,3 +4198,31 @@ result, and reproducible verification.
   complete pre-long-suite chain also passes baseline `12/12`, S1 `12/12`, S2
   `12/12`, S3 `13/13`, and S4 `12/12`, alongside the prior focused gates. A new
   commit/push and fresh exact-head policy/Verify remain required.
+
+## 2026-08-31 — R1 bounded ICE configuration
+
+- Started from freshly fetched `origin/main`
+  `9b418ee35559c488528bc55ad433708ce94499d8` in the dedicated
+  `agent/codex-protocol-kernel--bounded-ice-configuration` worktree. The prior
+  production constructors always supplied `iceServers: []`, so same-host direct
+  evidence could not exercise a bounded STUN/TURN or forced-relay configuration.
+- Added one shared ownership boundary for offer and answer. It retains the frozen
+  empty/`all` default and accepts only exact `all`/`relay` configurations with at
+  most 8 servers, 8 URLs per server, 2,048 UTF-8 bytes per URL, 512 bytes per TURN
+  username/credential, and 16,384 total string bytes. STUN and TURN cannot mix in
+  one record, credential-bearing URLs and unknown/accessor fields reject, and
+  caller arrays/records are owned before the first suspension.
+- TURN credentials flow only into the native `RTCPeerConnection` constructor. They
+  are not stored on the transport and do not enter manual signals, presence, or
+  serialized transport state. The security inventory and exact reviewed function/
+  module digests were refreshed after review.
+- Local evidence: focused WebRTC `17/17`; actual Chromium P2P placement/repair PASS
+  including the explicit `relay` policy probe and all existing cap, poison, direct-
+  channel, and origin-cut regressions; async security `26/26` over `22` direct and
+  `145` discovered boundaries; Lab/API `23/23`; governance `30/30`; specification,
+  links, generated protocol profile, ruleset policy, Lab build, and `git diff
+  --check` PASS. `npm ci` audited 95 packages with zero vulnerabilities.
+- Claim boundary: this is a source adapter candidate, not live STUN/TURN or
+  arbitrary-NAT evidence. Exact-head policy/full Verify and immutable review remain
+  pending; R2 measured reachability and R3 separate administration remain HOLD. No
+  service, credential, issue, receipt, merge, deployment, or public claim changed.

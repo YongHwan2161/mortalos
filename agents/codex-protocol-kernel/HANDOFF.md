@@ -5,9 +5,39 @@ not active locks.
 
 ## Active intent
 
-Status: **NORTH STAR STATUS SSOT LOCAL STATIC PASS; REMOTE CI/REVIEW HOLD**
+Status: **R1 BOUNDED ICE CONFIGURATION LOCAL PASS; EXACT-HEAD REMOTE CI HOLD**
 
-### ACTIVE INTENT — North Star status SSOT normalization
+### ACTIVE INTENT — bounded ICE configuration
+
+- Branch: `agent/codex-protocol-kernel--bounded-ice-configuration`
+- Base: `9b418ee35559c488528bc55ad433708ce94499d8` (`origin/main` after fresh fetch)
+- Worktree: `D:\repo\mortalos-release-candidates\main-a6cfb657-worktrees\codex-protocol-kernel--bounded-ice-configuration`
+- Shared paths declared for this task: `lab/transport/webrtc-peer.mjs`,
+  `test/webrtc-transport.test.mjs`, `test/webrtc-transport-browser-entry.mjs`,
+  `security/async-entrypoints.json`, `scripts/verify-security-boundaries.mjs`,
+  `scripts/verify-p2p-placement-chromium.mjs`,
+  `docs/CLAIM_MATRIX.md`, `docs/THREAT_MODEL.md`,
+  `agents/codex-protocol-kernel/HANDOFF.md`, and
+  `agents/codex-protocol-kernel/WORKLOG.md`.
+- Goal: replace the two fixed production `iceServers: []` constructors with one
+  owned, immutable, bounded RTC configuration boundary that retains the empty/all
+  default, supports explicit forced relay, accepts only bounded STUN/TURN shapes,
+  and never publishes credentials or promotes reachability/independence claims.
+- Stop conditions: no live STUN/TURN service, network pilot, credential creation,
+  issue mutation, receipt, deployment, or claim promotion. R1 is an adapter source
+  gate; R2 measured reachability and R3 independent administration remain separate.
+- Local result: offer and answer now own and freeze one exact bounded ICE
+  configuration before suspension. The empty/`all` default remains; explicit
+  `all`/`relay` STUN/TURN shapes are count- and byte-bounded; TURN credentials pass
+  only to the native constructor and do not enter signals or transport state.
+  Focused WebRTC `17/17`, actual Chromium P2P, async security `26/26` over `22`
+  direct / `145` discovered boundaries, Lab/API `23/23`, governance `30/30`, spec,
+  links, generated profile, ruleset policy, Lab build, and diff checks pass.
+- Remaining gate: commit/push, focused PR policy, and the exact-head multi-hour
+  Verify suite. These source checks are not live STUN/TURN, arbitrary-NAT, or
+  independent-host evidence; R2 and R3 remain HOLD.
+
+### HISTORICAL — North Star status SSOT normalization
 
 - Branch: `agent/codex-protocol-kernel--north-star-status-ssot`
 - Base: `a6cfb657212a0b0c20848851d86786b62b9e14f7` (`origin/main` after fresh fetch)

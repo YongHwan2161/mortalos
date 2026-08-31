@@ -279,7 +279,7 @@ const OWNERSHIP_MODULE_DIGESTS = Object.freeze({
   "src/transport/corpus.mjs": "dcb55a72317ce04e5d3f31744475873663389290d97646f8ba1cc473a5a9e94c",
   "src/transport/chunk-data-plane.mjs": "b11cbaa072c517db55b6edb1c605b57b3dc41d2b6496e50b37363110e20ff704",
   "src/transport/protocol.mjs": "d0633fdd1c6790746d2dd3fcf16bac0c44b34d8b9984ddb4b23495af1ee1fa28",
-  "lab/transport/webrtc-peer.mjs": "26321761c8c98d909ff79a80f2373662a075a18d5d07b595a0686795b4691292"
+  "lab/transport/webrtc-peer.mjs": "d0154afb437983183fefdd5031a22657e299f863f4d2ea3c7877afad4017cf98"
 });
 
 // These synchronous producer/commit boundaries mint or persist replay-policy
@@ -416,8 +416,8 @@ const CLASSIFICATION_DIGESTS = Object.freeze({
   "src/transport/chunk-data-plane.mjs:RelayChunkRecoveryAdapter.async readChunk": "94fe133d82c2e1c8dccf35daa5c4c31315b7c9003c3dfb2c8968ae34444cd1bb",
   "src/continuity.mjs:export async function createContinuityAuthority": "4e27da7380ce0fe1ede42a239dc7fc38ba2404f548e86b886de662a2a5528b75",
   "src/continuity.mjs:export async function handoffContinuity": "547901d2b13e6634d9b6419496be097bbde4fc25998acd6c5d033e924fbd62dd",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async createOffer": "9ec5d2cdbcb4759cce808bc5f2096cf66693189b50cd66a119ff5194eab4d2aa",
-  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "312dca19733fd7464d95ccb0ffc5e1909229d2849eff5f319faa34b9bce46626",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async createOffer": "9274979780bd465a7f92be15f78f326dbc63507265f1bb04d334da8b76952ebf",
+  "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.static async acceptOffer": "491a5cd540c18b5cd86edd3fa4120b4d53b3292959c30416cd378348c4577071",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async complete": "bad59957d4f2e1e69468d3bb90116d9cfcee18497e5128e2f28438d32aae3769",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async ready": "9cce22bbcfa0dba396f69810dd8d8b38d4067743da66ef5850e880e0dbdd6929",
   "lab/transport/webrtc-peer.mjs:ManualWebRtcParticipantTransport.async publish": "09b45f9c220f20bbbf716f789b48fb194d03002d16f7410fa5bd057ed071535b",

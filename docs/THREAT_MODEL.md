@@ -700,9 +700,13 @@ The revision must identify the new trust assumption, affected invariant, failure
   observer timers or independent actors. One administrator may control multiple
   valid observer keys; Sybil resistance and physical failure-domain diversity remain
   HOLD.
-- Manual `iceServers: []` same-host success does not prove NAT traversal, Internet
-  reachability, or origin-free discovery. Signaling, STUN, TURN, and relays may be
-  replaceable availability capabilities but never validity authorities.
+- The default remains bounded `iceServers: []` with `iceTransportPolicy: "all"`.
+  This source revision also owns and bounds explicit STUN/TURN configuration and
+  native `"all"`/`"relay"` policy before suspension, without retaining credentials
+  in signaling or transport state. That adapter path is not live STUN/TURN, NAT-
+  traversal, Internet-reachability, or origin-free-discovery evidence. Signaling,
+  STUN, TURN, and relays remain replaceable availability capabilities, never
+  validity authorities.
 - Separate browser and Node processes on this PC share hardware, network,
   administrator, and credential domains. Physical S7/S8 claims remain HOLD.
 - Literal count/byte cap-plus-one and terminal-cleanup regressions pass in the
