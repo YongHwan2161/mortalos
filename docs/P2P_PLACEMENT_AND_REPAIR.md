@@ -1,8 +1,8 @@
 # P2P storage placement and repair
 
-Status: **CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING; PHYSICAL TOPOLOGY HOLD**
+Status: **EXACT-MAIN SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`; PHYSICAL TOPOLOGY HOLD**
 
-Last synchronized: **2026-08-21 KST**
+Last synchronized: **2026-08-30 KST**
 
 ## Contract
 
@@ -86,7 +86,7 @@ and verify the nested canonical bytes again.
 | Confidential browser vertical | `node scripts/verify-confidential-placement-chromium.mjs` | Actual native File encrypted for B, distinct ciphertext shards and liveness challenge over peers, four observer processes and 3-of-4 local-duration certificate, provider loss, A generation commit, sign-once handoff, A exit, successor-authorized operational signer repair and successor commit, then 127 cycles from generation 2 to the exact generation-129/384-chain ceiling with actual browser-held non-extractable provider keys, browser storage results/signatures, current-context receipts, and exact successor chains. A browser-signed generation-130 `3/3` candidate proves before plus-one rejection; exact bytes remain unchanged and oldest replay rejects after reload. The portable journal controller remains Node-orchestrated; this is not independently in-browser journal-kernel parity. Deterministic convergence, corrupt-shard rejection, exact decrypt; the signer is not custody-identity-bound |
 | Combined gate | `npm run test:p2p-placement` | The containing revision must pass the current Node suite and both current Chromium verticals; historical 17-case results predate the stateful corpus and do not transfer; exact-SHA CI is the publication authority |
 | Package boundary | `node scripts/verify-sdk-package.mjs` | Clean packed import of `@mortal-os/core/placement` |
-| Complete repository regression | `npm test` | Current source/runtime/test PASS from `2026-08-21T15:08:09.9777152+09:00` through `2026-08-21T17:12:46.1993423+09:00`, exit `0`, wall `7,476,222ms`, through final `verify:s4`. Post-run evidence docs have separate static gates; exact-SHA CI remains the publication authority. |
+| Complete repository regression | `npm test` | Current source/runtime/test PASS from `2026-08-21T15:08:09.9777152+09:00` through `2026-08-21T17:12:46.1993423+09:00`, exit `0`, wall `7,476,222ms`, through final `verify:s4`. Exact-main Verify `33052134872/1` is the publication authority for `a6cfb657…`; later changes require fresh gates. |
 
 ## Explicit nonclaims
 

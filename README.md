@@ -264,8 +264,9 @@ Capsule membership convergence, all attestations, and the compact view. The inde
 sidecars; offline receipt restore remains `public_chain_verified:false`. Unordered
 bundle/approval/acceptance/attestation inputs are byte-deterministic, while missing or
 substituted sidecars and public-root path escape reject. The receipt records the
-expected Git commit but explicitly labels execution binding `recorded-only`; clean
-exact-SHA execution and review remain external gates. A separate role-local layer now
+expected Git commit but explicitly labels execution binding `recorded-only`; that
+receipt alone is not clean-source proof. Exact-main Verify/release at `a6cfb657…`
+supplies the separate external evidence. A separate role-local layer now
 narrows that gap without changing the public-chain receipt. The conforming
 `attest-placement-admission-role-execution.mjs` path checks an exact Git `HEAD` and a
 clean tracked/untracked/submodule worktree before the artifact's own authority signs a
@@ -297,8 +298,8 @@ role keys and reports `inventory_closure:"all-role-keys-ratified"`. This is
 participant-ratified closure for that plan, not proof of artifacts hidden from every
 honest participant or of copied-key/journal independence.
 This is attributable operator testimony under the conforming CLI, not proof against a
-dishonest operator or a replacement build process; exact-SHA CI and immutable review
-remain separate. The current native `/2`, journal-
+dishonest operator or a replacement build process. Exact-main CI/release at
+`a6cfb657…` covers the implementation and fixture tests, not operator honesty. The current native `/2`, journal-
 recovery, role-response-complete affected integration passes `1/1` in
 `207,089.5934ms` (runner `207,282.5833ms`, exit `0`) with the complete 34-artifact
 verdict and 7/7 participant closure verified. The signer-service file passes
@@ -309,8 +310,9 @@ preceding stages and emitted P2P tests through `51` without a failure, but its f
 PTY output/exit receipt was lost after worker exit and remains historical incomplete
 evidence. A later receipt-complete predecessor run at `4b0ff0d290626318f68e4479d4b35d586a936822`
 passed all 48 configured stages, `458/458` TAP tests, and final `verify:s4` with zero
-failures, cancellations, or skips. The current repair-hardening successor passes its
-focused executor regression `1/1`; its complete-suite rerun remains pending.
+failures, cancellations, or skips. The repair-hardened successor is covered by
+exact-main complete-suite Verify `33052134872/1`, artifact `9643090168`, and Deploy
+`33064417517/1`.
 This removes raw disjoint
 **unadmitted** rosters and same-roster
 multi-plan selection in the conforming flow. It does not make locally supplied times or
@@ -321,11 +323,10 @@ view is still unknowable. The focused public-chain test uses native role-local T
 signers on one PC; explicit proxy `/1` compatibility is tested separately. Real
 separately administered vantage operation is the next gate.
 
-Current status is **TLS-CHANNEL-BOUND, CRASH-RECOVERABLE, ROLE-KEY-ATTESTED,
-COORDINATOR-NON-AUTHORITY, ALL-ROLE-KEYS-RATIFIED PUBLIC-CHAIN PILOT; PREDECESSOR
-COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN
-PENDING; EXACT-SHA GATES EXTERNAL; SEPARATELY
-ADMINISTERED MULTI-HOST OPERATION NEXT**.
+Current status is **EXACT-MAIN VERIFY/RELEASE/DEPLOY PASS AT `a6cfb657…`;
+TLS-CHANNEL-BOUND, CRASH-RECOVERABLE, ROLE-KEY-ATTESTED, COORDINATOR-NON-AUTHORITY,
+ALL-ROLE-KEYS-RATIFIED PUBLIC-CHAIN PILOT; SEPARATELY ADMINISTERED MULTI-HOST
+OPERATION NEXT**.
 The production evidence-session corpus runs `10,000` deterministic schedules with
 eight response/certificate/order/partition/disconnect/restart events each. Node and a
 fresh process match byte-for-byte in `733,588.2114ms`; a separately bundled Chromium

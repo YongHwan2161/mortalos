@@ -1,8 +1,8 @@
 # Lineage-bound placement convergence
 
-Status: **SOURCE + CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING; PHYSICAL INDEPENDENCE HOLD**
+Status: **EXACT-MAIN SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`; PHYSICAL INDEPENDENCE HOLD**
 
-Last synchronized: **2026-08-21 KST**
+Last synchronized: **2026-08-30 KST**
 
 ## Why this layer exists
 
@@ -94,7 +94,7 @@ one generation, an incomplete or broken prior link, or different organisms retur
 | `npm run verify:security-boundaries` | Async commit owns caller bytes and resolves authority before its first suspension |
 | `npm run test:sdk` and `npm run verify:sdk-package` | Public placement subpath verifies/converges without exporting signing authority |
 | focused WebRTC remediation | Node `24/24` in `31,241ms` and actual Chromium in `50,086ms`; combined 512-message/8,388,608-raw-byte transcript, duplicate non-consumption, outbound/inbound atomicity, virtual-transport byte ceiling, hostile `Error`/`Symbol.hasInstance` containment, and remote-channel cleanup that closes a still-live peer with each native close capability invoked at most once PASS. Relay base64 estimation may reject slightly earlier, so byte-identical edge accounting is not claimed. |
-| `npm test` | The current source/runtime/test ordered chain was invoked at `2026-08-21T20:48:19.650+09:00` and emitted final `verify:s4` PASS at `2026-08-21T23:11:26.544+09:00`; the wrapper did not emit an exact wall-time marker. Post-run evidence docs have separate static gates; exact-SHA CI remains the publication authority. |
+| `npm test` | The current source/runtime/test ordered chain was invoked at `2026-08-21T20:48:19.650+09:00` and emitted final `verify:s4` PASS at `2026-08-21T23:11:26.544+09:00`; the wrapper did not emit an exact wall-time marker. Exact-main Verify `33052134872/1` is the publication authority for `a6cfb657…`; later changes require fresh gates. |
 
 ## Explicit nonclaims
 

@@ -60,8 +60,8 @@ discovery, signaling, Cloudflare, and GPT decide none of those results.
 
 ## Current boundary
 
-Status: **CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC
-PASS; EXACT-SHA PENDING; SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
+Status: **EXACT-MAIN SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`;
+SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
 
 Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
 continuity and local resource-execution verticals. This revision adds direct WebRTC

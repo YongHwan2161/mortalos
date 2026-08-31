@@ -1,8 +1,8 @@
 # MortalOS North Star implementation SSOT
 
-Status: **ACTIVE IMPLEMENTATION SSOT — CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING; NEXT: SEPARATELY ADMINISTERED MULTI-HOST OPERATION**
+Status: **ACTIVE IMPLEMENTATION SSOT — EXACT-MAIN VERIFY/RELEASE/DEPLOY PASS AT `a6cfb657…`; NEXT: SEPARATELY ADMINISTERED MULTI-HOST OPERATION**
 
-Last synchronized: **2026-08-22 KST**
+Last synchronized: **2026-08-30 KST**
 
 This is the sole current direction, stage ledger, and ordered implementation plan.
 Historical receipts remain valid only for their named commits. Historical
@@ -14,18 +14,23 @@ merge record, post-merge workflows, and deployed manifest; this document does no
 self-promote its containing revision. No source success manufactures a stage receipt,
 global-availability claim, or physical-independence claim.
 
-Current local verification receipt: the exact 121-path pre-document-sync candidate
-completed all 48 configured `npm test` stages from
-`2026-08-22T17:27:15.2047412+09:00` through
-`2026-08-22T19:46:22.2970708+09:00`, exited `0`, and reached final `verify:s4` in
-`8,347,092ms`. Thirty TAP summaries total `458/458` with zero failures,
-cancellations, or skips; P2P Node is `72/72`. Pre-run, post-run, and fresh pre-sync
-comparison found the same 121 paths byte-stable under entries-only SHA-256
-`7a666332d2453ad95cf895bc035baae66040b97f7d866dc8e7332a08bc319022`.
-The complete log SHA-256 is
-`3f4dc9d2e88a0070727a36b7c3b1df365dcb37b3fce0c3a7b047fb520acdfa18`.
-This post-run documentation synchronization is verified separately and does not
-self-promote the uncommitted candidate to an exact-SHA release.
+Current promoted release snapshot: reviewed source `a6cfb657212a0b0c20848851d86786b62b9e14f7`
+with tree `bf111d3314359a2646f282b7ce28475f04c5c410` completed exact-main Verify
+run `33052134872/1`: `protocol`, `browser-parity`, and
+`Promote exact release candidate` all completed successfully with zero job
+annotations. Artifact `9643090168`, named
+`mortalos-release-candidate-a6cfb657212a0b0c20848851d86786b62b9e14f7`, is
+content-addressed with GitHub artifact digest
+`sha256:8801a6ea0f116691c8c62ffc66545eab29b6ff40f1d8cdebbe413ed0d23ab524`.
+Its exact `workflow_run` Deploy `33064417517/1` completed successfully. Two
+no-cache reads of the public manifest were byte-identical at 1,266 bytes, named the
+same source commit, and all nine public assets (1,346,187 bytes total) matched their
+declared SHA-256 values; the public asset-set digest is
+`sha256:EPCDV6PCFMjMIfpMdLU2Q9zmR_5ptz9wpsl35YvykCE`.
+
+Those immutable facts promote only the named release. This documentation successor
+does not inherit that promotion and requires its own exact-head policy/CI, immutable
+review, and expected-head merge before it becomes the new source SSOT.
 
 ## 1. North Star
 
@@ -646,9 +651,9 @@ Strict pass criteria:
   Chromium gates pass for this logical boundary; p2p Node test-file concurrency is
   bounded to `2` so the signed ceiling and repair corpora retain measured CPU budgets.
   The current source/runtime/test ordered suite includes the membership-bound
-  observer-attribution and compact all-roster view and reaches final `verify:s4`;
-  post-run docs pass separate static gates while exact-SHA release gates remain
-  pending. The runner's current
+  observer-attribution and compact all-roster view and reaches final `verify:s4`.
+  The same implementation is covered by exact-main Verify/Deploy/public readback at
+  `a6cfb657212a0b0c20848851d86786b62b9e14f7`. The runner's current
   executable evidence is loopback and does
   not itself establish independent administration or topology.
 
@@ -755,10 +760,10 @@ usable and stable.
 | [S7](https://github.com/YongHwan2161/mortalos/issues/36) | Three process-isolated HTTP counter replicas | Concurrent CAS, one loss, restart, repair | Logical model only; real provider independence deferred |
 | [S8](https://github.com/YongHwan2161/mortalos/issues/37) | Stateful mutation corpus and capability-routed browser parity | Chromium/Firefox full path; WebKit verifier-only | Merged regression boundary; strong custody deferred |
 | Resource execution | Lease-bound storage/bandwidth/compute challenge and receipt layer | Local child-provider execution, death, reassignment, browser-target, packed consumer, exact-head CI/review/App/native approval/merge | Merged local execution claim; physical independence **HOLD** |
-| P2P placement | Direct WebRTC storage, combined 512-message/8,388,608-raw-byte transcript ceiling, outbound/inbound atomicity, idempotent native cleanup, exact receipt gating, provider loss, and new-lease repair | Focused Node `24/24`, actual Chromium literal cap-plus-one/remote-close probe, origin-cut vertical, and current `7,476,222ms` suite | Source/runtime/test full PASS; exact-SHA governance external; Internet reachability **HOLD** |
-| Confidential controller | S4 2-of-3 provider shards, generation-time freshness, prior-head/context-nonce journal v2, cumulative epoch chain high-waters, active `3/3` head barrier, hard-link successor CAS, and successor-authorized operational leases | `test/confidential-placement.test.mjs`, `test/confidential-journal-v2.test.mjs`, `test/confidential-controller-v2.test.mjs`, actual Chromium 98,317-byte file vertical, packed SDK import | Source implementation; exact-revision gates required. Unsigned local evidence only; hostile disk, hidden history, global consensus, custody-identity binding, and physical independence **HOLD** |
-| Lineage placement convergence | Generation/evidence/prior/repair binding, current-descriptor sign-once commit, derived plan, executor revalidation contract, fork halt | Node A→B and adversarial siblings, two fresh verifier processes, 1,000 partition/heal events, actual Chromium origin-cut A→B repair/commit | Source + local evidence; exact-SHA governance external |
-| Quorum liveness certificates | Provider-signed exact offer/lease policy `/1`, consumer policy-bound challenge `/2`, provider-only nonce-selected storage Merkle response `/2`, 3-of-4 local-duration certificate `/2`, pointer/legacy non-authority, generation binding, contested halt, one-shard effect/completion, proof-import unresolved-claim recovery, internal multi-action batch | Focused Node liveness/fresh process/lineage/SDK plus single-effect concurrency/retry/process interruption, provider/Continuity durable restart and cross-process first-execution exclusion, exact signed-result import with zero duplicate calls, two-shard fresh-evidence batch reconciliation, actual connected DataChannel late-proof/disconnect zero-call evidence, Node/fresh-process/Chromium `10,000 × 8` schedule parity, and the current source/runtime/test complete suite | Policy/window/sampled-possession, provider/Continuity restart/exclusion and proof-import recovery, internal batch, connected-WebRTC reconciliation, bounded schedule corpus, membership-bound observer attribution, and compact attestation view pass the local ordered suite. Exact-SHA external. Background gossip/discovery, full continuous custody, provider-fair SLA/breach/death/settlement, Sybil resistance, and independent failure domains **HOLD** |
+| P2P placement | Direct WebRTC storage, combined 512-message/8,388,608-raw-byte transcript ceiling, outbound/inbound atomicity, idempotent native cleanup, exact receipt gating, provider loss, and new-lease repair | Focused Node `24/24`, actual Chromium literal cap-plus-one/remote-close probe, origin-cut vertical, complete suite, and exact-main Verify/Deploy at `a6cfb657…` | Exact-release source/runtime/test PASS; arbitrary Internet/NAT reachability remains **HOLD** |
+| Confidential controller | S4 2-of-3 provider shards, generation-time freshness, prior-head/context-nonce journal v2, cumulative epoch chain high-waters, active `3/3` head barrier, hard-link successor CAS, and successor-authorized operational leases | `test/confidential-placement.test.mjs`, `test/confidential-journal-v2.test.mjs`, `test/confidential-controller-v2.test.mjs`, actual Chromium 98,317-byte file vertical, packed SDK import, and exact-main Verify at `a6cfb657…` | Exact-release source/runtime/test PASS. Unsigned local journal evidence, hostile disk, hidden history, global consensus, custody-identity binding, and physical independence remain **HOLD** |
+| Lineage placement convergence | Generation/evidence/prior/repair binding, current-descriptor sign-once commit, derived plan, executor revalidation contract, fork halt | Node A→B and adversarial siblings, two fresh verifier processes, 1,000 partition/heal events, actual Chromium origin-cut A→B repair/commit, and exact-main Verify at `a6cfb657…` | Exact-release source/runtime/test PASS; unseen global currentness and independent topology remain unclaimed |
+| Quorum liveness certificates | Provider-signed exact offer/lease policy `/1`, consumer policy-bound challenge `/2`, provider-only nonce-selected storage Merkle response `/2`, 3-of-4 local-duration certificate `/2`, pointer/legacy non-authority, generation binding, contested halt, one-shard effect/completion, proof-import unresolved-claim recovery, internal multi-action batch | Focused Node liveness/fresh process/lineage/SDK plus single-effect concurrency/retry/process interruption, provider/Continuity durable restart and cross-process first-execution exclusion, exact signed-result import with zero duplicate calls, two-shard fresh-evidence batch reconciliation, actual connected DataChannel late-proof/disconnect zero-call evidence, Node/fresh-process/Chromium `10,000 × 8` schedule parity, complete suite, and exact-main Verify at `a6cfb657…` | Exact-release source/runtime/test PASS. Background gossip/discovery, full continuous custody, provider-fair SLA/breach/death/settlement, Sybil resistance, and independent failure domains remain **HOLD** |
 
 Stage coordination remains subordinate to this SSOT:
 
@@ -819,7 +824,7 @@ then immutable review, App attestation, native approval, expected-head merge, an
 exact-main Verify/Deploy completed. Public package-registry publication remains a
 separate unclaimed distribution step.
 
-### Completed P1 in source/runtime/test — Make the Lab a product demonstration
+### Completed P1 — Make the Lab a product demonstration
 
 - reduce the default journey to **Create resource → Move custody → Recover and
   continue**;
@@ -836,19 +841,35 @@ Current evidence: the focused Chromium verifier passes both 6,016 bytes and the
 requests, exact post-handoff download, one corrupt copy rejected, 2-of-3 recovery,
 and sequence 3. The integrated EN/KO UX gate passes stable states, an under-90-second
 two-browser path, and honest read-only stall when A disappears before handoff.
-Exact-SHA review/CI and independent multi-host operation remain separate gates.
+Exact-main review/CI, promoted release artifact, Deploy, and public readback completed
+at `a6cfb657212a0b0c20848851d86786b62b9e14f7`. Independent multi-host operation
+remains a separate gate.
 
-### P1 — Promote only the integrated result
+### Completed P1 — Promote only the integrated result
 
 Freeze S5/S6 receipts after the product vertical stabilizes. Bind source, packed
 artifact, exact user scenario, browser evidence, and public readback to one SHA.
 Do not spend release evidence on another disconnected candidate.
 
-### P2 — Deferred strengthening
+PR #61 added Verify-gated content-addressed promotion, and PR #62 migrated every
+first-party workflow action to Node 24 without changing release semantics. Exact-main
+Verify `33052134872/1`, artifact `9643090168`, Deploy `33064417517/1`, and the
+byte-stable nine-asset public readback close this gate for `a6cfb657…`.
 
-Return to isolated signer custody, WebKit full signing, real independent providers,
-100 failure trials, and seven-day burn-in only after P0/P1 pass. These are explicit
-nonclaims meanwhile and must not be weakened to make the product flow pass.
+### Next P0 — Independently operated topology and burn-in
+
+Execute the already implemented ceremony and observer path first across distinct
+hosts, networks, and credentials. A same-administrator run may prove reachability
+only; it must not promote administrative independence. Promotion requires distinct
+provider, host, administrator, and credential domains, 100 induced failure trials,
+and an immutable seven-day burn-in. Exact resource recovery must remain byte-identical,
+quorum loss must fail closed, and no duplicate provider or Continuity effect may be
+observed.
+
+Only after that gate passes should isolated signer custody, WebKit full signing,
+public contribution UX, capacity/SLA weights, incentives, or broader anti-entropy
+discovery return to the active roadmap. Sybil resistance and global death remain
+explicit research nonclaims rather than release blockers.
 
 ## 5. Global gate and evidence rules
 

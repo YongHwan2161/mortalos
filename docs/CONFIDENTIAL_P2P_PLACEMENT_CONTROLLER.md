@@ -1,8 +1,8 @@
 # Confidential P2P placement controller
 
-Status: **CURRENT SOURCE/RUNTIME/TEST COMPLETE-SUITE PASS; POST-RUN DOCS STATIC PASS; EXACT-SHA PENDING; PHYSICAL PROMOTION HOLD**
+Status: **EXACT-MAIN SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`; PHYSICAL PROMOTION HOLD**
 
-Last synchronized: **2026-08-21 KST**
+Last synchronized: **2026-08-30 KST**
 
 ## Purpose
 
@@ -140,7 +140,7 @@ controller delegation.
 | Current transport remediation | `node --test test/transport.test.mjs test/webrtc-transport.test.mjs` and `node scripts/verify-p2p-placement-chromium.mjs` | Focused Node `24/24` in `31,241ms` and actual Chromium PASS in `50,086ms`: one combined 512-unique-message/8,388,608-decoded-raw-byte transcript, duplicates non-consuming, outbound pre-send capacity/post-success commit, inbound overflow with no transcript/dedupe commit or delivery before terminal cleanup, virtual-transport exact raw-byte ceiling, hostile `Error`/`Symbol.hasInstance` containment, and remote-channel cleanup that closes a still-live peer while invoking native close capabilities at most once. Relay edge base64 estimation may reject slightly earlier; byte-identical edge accounting is not claimed. |
 | Combined placement gate | `npm run test:p2p-placement` | The containing revision must pass the current Node suite and both current Chromium verticals; historical 17-case results predate the stateful corpus and do not transfer; exact-SHA CI is the publication authority |
 | Public package boundary | `node scripts/verify-sdk-package.mjs` | Clean packed consumer imports the authority-free placement surface |
-| Complete repository regression | `npm test` | The current source/runtime/test ordered chain was invoked at `2026-08-21T20:48:19.650+09:00` and emitted final `verify:s4` PASS at `2026-08-21T23:11:26.544+09:00`; the wrapper did not emit an exact wall-time marker. Post-run evidence docs have separate static gates; exact-SHA CI remains the publication authority. |
+| Complete repository regression | `npm test` | The current source/runtime/test ordered chain was invoked at `2026-08-21T20:48:19.650+09:00` and emitted final `verify:s4` PASS at `2026-08-21T23:11:26.544+09:00`; the wrapper did not emit an exact wall-time marker. Exact-main Verify `33052134872/1` is the publication authority for `a6cfb657…`; later changes require fresh gates. |
 
 ## Explicit nonclaims
 

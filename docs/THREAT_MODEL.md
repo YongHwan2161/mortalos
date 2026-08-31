@@ -709,8 +709,10 @@ The revision must identify the new trust assumption, affected invariant, failure
   focused Node and actual Chromium gates. The prior `8,076.826s` complete
   runtime/test/workflow PASS predates the current WebRTC runtime/test/security
   remediation. The merged base later passed `8,631,790ms` through final `verify:s4`.
-  The liveness-policy delta now passes uninterrupted `npm test` in `7,476,222ms`
-  through final `verify:s4`; exact-SHA governance remains external for this source.
+  The liveness-policy delta later entered the immutable promoted release at
+  `a6cfb657212a0b0c20848851d86786b62b9e14f7`: Verify run `33052134872/1`
+  and its linked Deploy run `33064417517/1` completed successfully. This exact-SHA
+  release evidence does not promote the physical S7/S8 claims held above.
 
 The policy/window, provider-only sampled response, one-shard effect/completion,
 provider-domain sequential restart recovery, and internal multi-action fresh-evidence

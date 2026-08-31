@@ -5,9 +5,38 @@ not active locks.
 
 ## Active intent
 
-Status: **NODE 24 ACTION PIN MIGRATION LOCAL FOCUSED PASS; EXACT-HEAD CI/REVIEW HOLD**
+Status: **NORTH STAR STATUS SSOT LOCAL STATIC PASS; REMOTE CI/REVIEW HOLD**
 
-### ACTIVE INTENT — Node 24 GitHub Actions migration
+### ACTIVE INTENT — North Star status SSOT normalization
+
+- Branch: `agent/codex-protocol-kernel--north-star-status-ssot`
+- Base: `a6cfb657212a0b0c20848851d86786b62b9e14f7` (`origin/main` after fresh fetch)
+- Worktree: `D:\repo\mortalos-release-candidates\main-a6cfb657-worktrees\codex-protocol-kernel--north-star-status-ssot`
+- Shared paths declared for this task: `README.md`, `docs/**`, and
+  `agents/codex-protocol-kernel/HANDOFF.md`. The broad documentation prefix is
+  required because multiple current claim-boundary documents repeat the stale
+  pre-promotion status; runtime and archived contest documents remain unchanged.
+- External coordination scope: repair the stale implementation-authority links and
+  current claim boundaries in open stage issues #33-#37; record an explicit
+  supersession disposition for draft PRs #54 and #55 only after their unique deltas
+  are compared with current `main`.
+- Goal: make the repository status SSOT reflect the immutable promoted release at
+  `a6cfb657212a0b0c20848851d86786b62b9e14f7`, its exact Verify/Deploy/public-readback
+  evidence, and the real separately administered multi-host pilot as the next root
+  P0 without promoting same-host evidence to physical or administrative independence.
+- Local result: current claim/plan documents now bind the exact promoted release and
+  retain explicit physical, administrative, NAT, Sybil, browser-custody, and global
+  durability HOLDs. `npm run verify:spec`, `npm run verify:links`,
+  `npm run test:governance` (30/30), `npm run verify:ruleset-policy`, and
+  `git diff --check` pass after synchronization. `npm ci` installed 94 packages and
+  audited 95 with zero vulnerabilities; it did not change package metadata.
+- Stop conditions: documentation and GitHub coordination only; no runtime, package,
+  workflow, dependency, receipt, deployed asset, cloud resource, or credential
+  mutation. The documentation successor does not inherit the predecessor's exact-SHA
+  promotion and requires its own PR policy, CI, immutable review, and expected-head
+  merge before it becomes the new source SSOT.
+
+### HISTORICAL — Node 24 GitHub Actions migration
 
 - Branch: `agent/codex-protocol-kernel--node24-actions`
 - Base: `8708decdf4d46f7293c4d9e77e1a746581a09c46` (`origin/main` after fresh fetch)

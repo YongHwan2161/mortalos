@@ -1,8 +1,8 @@
 # Lineage-governed placement admission and logical failure domains
 
-Status: **PUBLIC-CHAIN PILOT RECEIPT PREDECESSOR COMPLETE-SUITE PASS; CURRENT REPAIR-HARDENING FOCUSED PASS AND COMPLETE-SUITE RERUN PENDING; EXACT-SHA GATES EXTERNAL**
+Status: **PUBLIC-CHAIN PILOT + EXACT-MAIN SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`; EXTERNAL ISSUER HONESTY AND INDEPENDENCE HOLD**
 
-Last synchronized: **2026-08-22 KST**
+Last synchronized: **2026-08-30 KST**
 
 ## Claim
 
@@ -141,8 +141,9 @@ digests and authenticated IDs. Its restorer is self-hash-only and reports
 reports true only after recreating exact bytes from every sidecar. Missing or swapped
 ceremony input, omitted epoch, self-rehashed receipt substitution, source-commit
 disagreement, absolute/parent/symlink path escape, and output reuse reject. The receipt
-labels the Git commit `recorded-only`: it prevents index/receipt disagreement but does
-not prove clean exact-SHA execution, review, topology, or administrator independence.
+labels the Git commit `recorded-only`: it prevents index/receipt disagreement but the
+receipt alone does not prove clean execution, topology, or administrator independence.
+Exact-main CI/release supplies separate clean-source evidence for `a6cfb657…`.
 
 `lab/placement/admission-role-execution-receipt.mjs` adds a separate attributable
 source claim for role-signed artifacts. Its operator CLI refuses a source-commit/HEAD
@@ -162,7 +163,8 @@ The signature makes the clean-checkout statement attributable to that role key; 
 cannot prove that a dishonest operator used the conforming CLI, that unsigned
 coordinator artifacts were built by the same source, or that CI/review/topology and
 administrator separation are valid. Those fields therefore remain explicitly
-`unproven` and exact-SHA governance remains a separate gate.
+`unproven`; exact-main CI/release covers only the implementation and fixture tests at
+`a6cfb657…`.
 
 `lab/placement/admission-pilot-source-verdict.mjs` removes the need to promote that
 remaining execution gap into a new coordinator authority. It first fully verifies the
@@ -350,8 +352,8 @@ test's same-PC administrators or physical domains are independent.
   retained as historical incomplete evidence. A later receipt-complete predecessor run
   at `4b0ff0d290626318f68e4479d4b35d586a936822` passed all 48 configured stages and
   `458/458` TAP tests through final `verify:s4` with zero failures, cancellations, or
-  skips. The current repair-hardening successor passes focused executor `1/1`; its
-  complete-suite rerun remains pending.
+  skips. The repair-hardened successor is covered by exact-main complete-suite Verify
+  `33052134872/1`, artifact `9643090168`, and Deploy `33064417517/1`.
 - The exact multi-action late-response case passes `1/1` in `166,487.7185ms`.
 - The exact A-to-B lineage case, including missing/duplicate sidecar rejection and
   current/historical Capsule binding, passes `1/1` in `534,301.6707ms`.
