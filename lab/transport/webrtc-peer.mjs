@@ -5,9 +5,12 @@ import {
   RELAY_LIMITS
 } from "../../src/transport/protocol.mjs";
 import {
+  arrayLength,
   arrayPush,
   arraySlice,
   arraySort,
+  arrayValueAt,
+  copyOwnDataArray,
   createMap,
   createSet,
   createTextDecoder,
@@ -20,10 +23,13 @@ import {
   mapValues,
   numberIsSafeInteger,
   objectKeys,
+  ownDataRecordEntry,
+  ownKeys,
   regexpTest,
   setAdd,
   setHas,
   setValues,
+  snapshotOwnDataRecord,
   snapshotDataMethod,
   stringStartsWith,
   textDecoderDecode,
@@ -34,11 +40,20 @@ export const WEBRTC_SIGNAL_FORMAT = "mortalos-webrtc-signal/1";
 export const WEBRTC_LIMITS = Object.freeze({
   buffered_bytes: RELAY_LIMITS.frame_bytes * 4,
   endpoint_chars: 64,
+  ice_configuration_bytes: 16_384,
+  ice_credential_bytes: 512,
+  ice_servers: 8,
+  ice_url_bytes: 2_048,
+  ice_urls_per_server: 8,
+  ice_username_bytes: 512,
   signal_bytes: 32_768,
   sdp_chars: 24_576
 });
 
 const ENDPOINT_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
+const ICE_SECRET = /^[^\u0000-\u001f\u007f]+$/u;
+const STUN_URL = /^stuns?:[^\s/?#@]+$/u;
+const TURN_URL = /^turns?:[^\s/?#@]+(?:\?transport=(?:udp|tcp))?$/u;
 const OPEN_TIMEOUT_MS = 15_000;
 const ICE_TIMEOUT_MS = 10_000;
 const PromiseIntrinsic = Promise;
@@ -204,22 +219,149 @@ function fail(code, message) {
   throw new WebRtcTransportError(code, message);
 }
 
-function exactKeys(value, expected, label) {
+function exactKeys(value, expected, label, errorCode = "WEBRTC_SIGNAL_SCHEMA") {
   if (!value || typeof value !== "object" || isArray(value)) {
-    fail("WEBRTC_SIGNAL_SCHEMA", `${label} must be an object`);
+    fail(errorCode, `${label} must be an object`);
   }
   const actual = objectKeys(value);
   const wanted = arraySlice(expected, 0, expected.length);
   arraySort(actual);
   arraySort(wanted);
   if (actual.length !== wanted.length) {
-    fail("WEBRTC_SIGNAL_SCHEMA", `${label} has unknown or missing fields`);
+    fail(errorCode, `${label} has unknown or missing fields`);
   }
   for (let index = 0; index < actual.length; index += 1) {
     if (actual[index] !== wanted[index]) {
-      fail("WEBRTC_SIGNAL_SCHEMA", `${label} has unknown or missing fields`);
+      fail(errorCode, `${label} has unknown or missing fields`);
     }
   }
+}
+
+function iceConfigurationFail(message = "RTC ICE configuration is invalid") {
+  fail("WEBRTC_ICE_CONFIGURATION", message);
+}
+
+function snapshotIceRecord(value, label) {
+  try {
+    return snapshotOwnDataRecord(value, label);
+  } catch {
+    iceConfigurationFail(`${label} must contain only own data properties`);
+  }
+}
+
+function exactIceRecordKeys(descriptors, expected, label) {
+  const actual = ownKeys(descriptors);
+  for (let index = 0; index < arrayLength(actual); index += 1) {
+    if (typeof arrayValueAt(actual, index) !== "string") {
+      iceConfigurationFail(`${label} has unknown or missing fields`);
+    }
+  }
+  exactKeys(descriptors, expected, label, "WEBRTC_ICE_CONFIGURATION");
+}
+
+function ownedIceArray(value, label) {
+  try {
+    return copyOwnDataArray(value, label);
+  } catch {
+    iceConfigurationFail(`${label} must be a dense ordinary array`);
+  }
+}
+
+function utf8Length(value) {
+  return textEncoderEncode(createTextEncoder(), value).byteLength;
+}
+
+function boundedIceSecret(value, byteLimit, label) {
+  if (
+    typeof value !== "string" ||
+    value.length < 1 ||
+    utf8Length(value) > byteLimit ||
+    !regexpTest(ICE_SECRET, value)
+  ) iceConfigurationFail(`${label} is invalid`);
+  return value;
+}
+
+function boundedIceUrl(value) {
+  if (
+    typeof value !== "string" ||
+    value.length < 1 ||
+    utf8Length(value) > WEBRTC_LIMITS.ice_url_bytes
+  ) iceConfigurationFail("ICE server URL is invalid");
+  if (regexpTest(STUN_URL, value)) return freeze({ kind: "stun", value });
+  if (regexpTest(TURN_URL, value)) return freeze({ kind: "turn", value });
+  iceConfigurationFail("ICE server URL is invalid");
+}
+
+function snapshotIceServer(value, index, budget) {
+  const label = `RTC ICE server ${index}`;
+  const descriptors = snapshotIceRecord(value, label);
+  const urlsEntry = ownDataRecordEntry(descriptors, "urls");
+  if (!urlsEntry.present) iceConfigurationFail(`${label}.urls is required`);
+  const sourceUrls = typeof urlsEntry.value === "string"
+    ? [urlsEntry.value]
+    : ownedIceArray(urlsEntry.value, `${label}.urls`);
+  const urlCount = arrayLength(sourceUrls);
+  if (urlCount < 1 || urlCount > WEBRTC_LIMITS.ice_urls_per_server) {
+    iceConfigurationFail(`${label}.urls count is invalid`);
+  }
+  const urls = [];
+  let kind = null;
+  for (let urlIndex = 0; urlIndex < urlCount; urlIndex += 1) {
+    const opened = boundedIceUrl(arrayValueAt(sourceUrls, urlIndex));
+    kind ??= opened.kind;
+    if (kind !== opened.kind) iceConfigurationFail(`${label}.urls cannot mix STUN and TURN`);
+    budget.bytes += utf8Length(opened.value);
+    arrayPush(urls, opened.value);
+  }
+  if (kind === "stun") {
+    exactIceRecordKeys(descriptors, ["urls"], label);
+    return freeze({ urls: freeze(urls) });
+  }
+  exactIceRecordKeys(descriptors, ["credential", "urls", "username"], label);
+  const username = boundedIceSecret(
+    ownDataRecordEntry(descriptors, "username").value,
+    WEBRTC_LIMITS.ice_username_bytes,
+    `${label}.username`
+  );
+  const credential = boundedIceSecret(
+    ownDataRecordEntry(descriptors, "credential").value,
+    WEBRTC_LIMITS.ice_credential_bytes,
+    `${label}.credential`
+  );
+  budget.bytes += utf8Length(username) + utf8Length(credential);
+  return freeze({ credential, urls: freeze(urls), username });
+}
+
+function snapshotIceConfiguration(source) {
+  if (source === undefined) {
+    return freeze({ iceServers: freeze([]), iceTransportPolicy: "all" });
+  }
+  const descriptors = snapshotIceRecord(source, "RTC ICE configuration");
+  exactIceRecordKeys(
+    descriptors,
+    ["iceServers", "iceTransportPolicy"],
+    "RTC ICE configuration"
+  );
+  const policy = ownDataRecordEntry(descriptors, "iceTransportPolicy").value;
+  if (policy !== "all" && policy !== "relay") {
+    iceConfigurationFail("RTC ICE transport policy must be all or relay");
+  }
+  const sourceServers = ownedIceArray(
+    ownDataRecordEntry(descriptors, "iceServers").value,
+    "RTC ICE configuration.iceServers"
+  );
+  if (arrayLength(sourceServers) > WEBRTC_LIMITS.ice_servers) {
+    iceConfigurationFail("RTC ICE server count exceeds the limit");
+  }
+  const budget = { bytes: 0 };
+  const iceServers = [];
+  for (let index = 0; index < arrayLength(sourceServers); index += 1) {
+    arrayPush(iceServers, snapshotIceServer(arrayValueAt(sourceServers, index), index, budget));
+    if (budget.bytes > WEBRTC_LIMITS.ice_configuration_bytes) {
+      iceConfigurationFail("RTC ICE configuration exceeds the byte limit");
+    }
+  }
+  return freeze({ iceServers: freeze(iceServers), iceTransportPolicy: policy });
 }
 
 function endpointId(value, label = "endpoint ID") {
@@ -453,9 +595,10 @@ export class ManualWebRtcParticipantTransport {
     });
   }
 
-  static async createOffer({ endpointId: endpoint }) {
+  static async createOffer({ endpointId: endpoint, iceConfiguration }) {
+    const configuration = snapshotIceConfiguration(iceConfiguration);
     const PeerConnection = peerConnectionConstructor();
-    const connection = new PeerConnection({ iceServers: [] });
+    const connection = new PeerConnection(configuration);
     const createDataChannel = snapshotBoundMethod(
       connection,
       rtcPeerConnectionCreateDataChannelIntrinsic,
@@ -485,12 +628,13 @@ export class ManualWebRtcParticipantTransport {
     return freeze({ signal: localSignal(connection, transport.#endpointId, "offer"), transport });
   }
 
-  static async acceptOffer({ endpointId: endpoint, offer }) {
+  static async acceptOffer({ endpointId: endpoint, iceConfiguration, offer }) {
     const opened = decodeWebRtcSignal(offer, "offer");
     const ownedEndpoint = endpointId(endpoint);
     if (opened.endpoint_id === ownedEndpoint) fail("WEBRTC_ENDPOINT", "remote endpoint must be distinct");
+    const configuration = snapshotIceConfiguration(iceConfiguration);
     const PeerConnection = peerConnectionConstructor();
-    const connection = new PeerConnection({ iceServers: [] });
+    const connection = new PeerConnection(configuration);
     const createAnswer = snapshotBoundMethod(
       connection,
       rtcPeerConnectionCreateAnswerIntrinsic,

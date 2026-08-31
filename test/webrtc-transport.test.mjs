@@ -15,13 +15,18 @@ import {
   decodeWebRtcSignal,
   encodeWebRtcSignal,
   ManualWebRtcParticipantTransport,
+  WEBRTC_LIMITS,
   WEBRTC_SIGNAL_FORMAT
 } from "../lab/transport/webrtc-peer.mjs";
 
 const sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
 
-async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = {}) {
+async function openFakeTransport(
+  endpointId = "A-direct",
+  { afterCreate = null, iceConfiguration = undefined, sendImpl = null } = {}
+) {
   let channel;
+  let configuration;
   let connection;
   class FakeChannel extends EventTarget {
     constructor() {
@@ -45,8 +50,9 @@ async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = 
     }
   }
   class FakePeer extends EventTarget {
-    constructor() {
+    constructor(value) {
       super();
+      configuration = value;
       connection = this;
       this.closeCalls = 0;
       this.connectionState = "connected";
@@ -66,14 +72,18 @@ async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = 
   const prior = globalThis.RTCPeerConnection;
   globalThis.RTCPeerConnection = FakePeer;
   try {
-    const { transport } = await ManualWebRtcParticipantTransport.createOffer({ endpointId });
+    const pending = ManualWebRtcParticipantTransport.createOffer({ endpointId, iceConfiguration });
+    afterCreate?.();
+    const { signal, transport } = await pending;
     return {
       channel,
+      configuration,
       connection,
       restore() {
         if (prior === undefined) delete globalThis.RTCPeerConnection;
         else globalThis.RTCPeerConnection = prior;
       },
+      signal,
       transport
     };
   } catch (error) {
@@ -83,11 +93,16 @@ async function openFakeTransport(endpointId = "A-direct", { sendImpl = null } = 
   }
 }
 
-async function openFakeAcceptedTransport(endpointId = "B-direct") {
+async function openFakeAcceptedTransport(
+  endpointId = "B-direct",
+  { afterCreate = null, iceConfiguration = undefined } = {}
+) {
+  let configuration;
   let connection;
   class FakePeer extends EventTarget {
-    constructor() {
+    constructor(value) {
       super();
+      configuration = value;
       connection = this;
       this.closeCalls = 0;
       this.connectionState = "connected";
@@ -107,16 +122,21 @@ async function openFakeAcceptedTransport(endpointId = "B-direct") {
   const prior = globalThis.RTCPeerConnection;
   globalThis.RTCPeerConnection = FakePeer;
   try {
-    const accepted = await ManualWebRtcParticipantTransport.acceptOffer({
+    const pending = ManualWebRtcParticipantTransport.acceptOffer({
       endpointId,
+      iceConfiguration,
       offer: encodeWebRtcSignal({ endpoint_id: "A-direct", sdp, type: "offer" })
     });
+    afterCreate?.();
+    const accepted = await pending;
     return {
+      configuration,
       connection,
       restore() {
         if (prior === undefined) delete globalThis.RTCPeerConnection;
         else globalThis.RTCPeerConnection = prior;
       },
+      signal: accepted.signal,
       transport: accepted.transport
     };
   } catch (error) {
@@ -247,6 +267,144 @@ test("direct transport has no implicit network fallback outside a browser", asyn
     ManualWebRtcParticipantTransport.createOffer({ endpointId: "A-direct" }),
     (error) => error.code === "WEBRTC_UNAVAILABLE"
   );
+});
+
+test("bounded ICE configuration is owned before suspension and credentials stay transport-local", async () => {
+  const defaultCase = await openFakeTransport("ice-default");
+  try {
+    assert.deepEqual(defaultCase.configuration, {
+      iceServers: [],
+      iceTransportPolicy: "all"
+    });
+    assert.equal(Object.isFrozen(defaultCase.configuration), true);
+    assert.equal(Object.isFrozen(defaultCase.configuration.iceServers), true);
+  } finally {
+    defaultCase.transport.close();
+    defaultCase.restore();
+  }
+
+  const source = {
+    iceServers: [{
+      credential: "turn-secret-before-mutation",
+      urls: ["turn:relay.example.test:3478?transport=udp"],
+      username: "turn-user-before-mutation"
+    }],
+    iceTransportPolicy: "relay"
+  };
+  const configured = await openFakeTransport("ice-relay", {
+    afterCreate() {
+      source.iceTransportPolicy = "all";
+      source.iceServers[0].credential = "mutated-secret";
+      source.iceServers[0].username = "mutated-user";
+      source.iceServers[0].urls[0] = "stun:mutated.example.test";
+      source.iceServers.push({ urls: ["stun:late.example.test"] });
+    },
+    iceConfiguration: source
+  });
+  try {
+    assert.deepEqual(configured.configuration, {
+      iceServers: [{
+        credential: "turn-secret-before-mutation",
+        urls: ["turn:relay.example.test:3478?transport=udp"],
+        username: "turn-user-before-mutation"
+      }],
+      iceTransportPolicy: "relay"
+    });
+    assert.equal(Object.isFrozen(configured.configuration), true);
+    assert.equal(Object.isFrozen(configured.configuration.iceServers), true);
+    assert.equal(Object.isFrozen(configured.configuration.iceServers[0]), true);
+    assert.equal(Object.isFrozen(configured.configuration.iceServers[0].urls), true);
+    assert.equal(configured.signal.includes("turn-secret-before-mutation"), false);
+    assert.equal(configured.signal.includes("turn-user-before-mutation"), false);
+    assert.equal(JSON.stringify(await configured.transport.touchPresence()).includes("turn-secret"), false);
+    assert.equal(JSON.stringify(configured.transport).includes("turn-secret"), false);
+  } finally {
+    configured.transport.close();
+    configured.restore();
+  }
+
+  const answerSource = {
+    iceServers: [{ urls: "stun:stun.example.test:3478" }],
+    iceTransportPolicy: "all"
+  };
+  const accepted = await openFakeAcceptedTransport("ice-answer", {
+    afterCreate() {
+      answerSource.iceServers[0].urls = "stun:mutated.example.test";
+    },
+    iceConfiguration: answerSource
+  });
+  try {
+    assert.deepEqual(accepted.configuration, {
+      iceServers: [{ urls: ["stun:stun.example.test:3478"] }],
+      iceTransportPolicy: "all"
+    });
+    assert.equal(accepted.signal.includes("stun.example.test"), false);
+  } finally {
+    accepted.transport.close();
+    accepted.restore();
+  }
+});
+
+test("bounded ICE configuration accepts exact limits and rejects ambiguous or secret-bearing URL shapes", async () => {
+  const urlAtLimit = `stun:${"a".repeat(WEBRTC_LIMITS.ice_url_bytes - 5)}`;
+  const exact = await openFakeTransport("ice-max", {
+    iceConfiguration: {
+      iceServers: [{ urls: [urlAtLimit] }],
+      iceTransportPolicy: "all"
+    }
+  });
+  exact.transport.close();
+  exact.restore();
+
+  const turnUrlAtLimit = `turn:${"a".repeat(WEBRTC_LIMITS.ice_url_bytes - 5)}`;
+  const turnUrlBelowLimit = `turn:${"b".repeat(WEBRTC_LIMITS.ice_url_bytes - 7)}`;
+  const exactBudget = await openFakeTransport("ice-budget-max", {
+    iceConfiguration: {
+      iceServers: [{
+        credential: "c",
+        urls: [...new Array(7).fill(turnUrlAtLimit), turnUrlBelowLimit],
+        username: "u"
+      }],
+      iceTransportPolicy: "relay"
+    }
+  });
+  exactBudget.transport.close();
+  exactBudget.restore();
+
+  const invalid = [
+    { iceServers: [], iceTransportPolicy: "direct" },
+    { extra: true, iceServers: [], iceTransportPolicy: "all" },
+    { iceServers: new Array(WEBRTC_LIMITS.ice_servers + 1).fill({ urls: ["stun:stun.example.test"] }), iceTransportPolicy: "all" },
+    { iceServers: [{ urls: new Array(WEBRTC_LIMITS.ice_urls_per_server + 1).fill("stun:stun.example.test") }], iceTransportPolicy: "all" },
+    { iceServers: [{ urls: [`${urlAtLimit}a`] }], iceTransportPolicy: "all" },
+    { iceServers: [{ urls: ["stun:user:secret@stun.example.test"] }], iceTransportPolicy: "all" },
+    { iceServers: [{ urls: ["stun:stun.example.test", "turn:turn.example.test"] }], iceTransportPolicy: "all" },
+    { iceServers: [{ credential: "secret", urls: ["stun:stun.example.test"], username: "user" }], iceTransportPolicy: "all" },
+    { iceServers: [{ urls: ["turn:turn.example.test"] }], iceTransportPolicy: "relay" },
+    { iceServers: [{ credential: "c".repeat(WEBRTC_LIMITS.ice_credential_bytes + 1), urls: ["turn:turn.example.test"], username: "user" }], iceTransportPolicy: "relay" },
+    { iceServers: [{ credential: "cc", urls: [...new Array(7).fill(turnUrlAtLimit), turnUrlBelowLimit], username: "u" }], iceTransportPolicy: "relay" }
+  ];
+  for (const iceConfiguration of invalid) {
+    await assert.rejects(
+      ManualWebRtcParticipantTransport.createOffer({ endpointId: "ice-invalid", iceConfiguration }),
+      (error) => error.code === "WEBRTC_ICE_CONFIGURATION" && !error.message.includes("secret")
+    );
+  }
+
+  let getterCalls = 0;
+  const accessor = { iceTransportPolicy: "all" };
+  Object.defineProperty(accessor, "iceServers", {
+    enumerable: true,
+    get() {
+      getterCalls += 1;
+      return [];
+    }
+  });
+  await assert.rejects(
+    ManualWebRtcParticipantTransport.createOffer({ endpointId: "ice-accessor", iceConfiguration: accessor }),
+    (error) => error.code === "WEBRTC_ICE_CONFIGURATION"
+  );
+  assert.equal(getterCalls, 0);
 });
 
 test("WebRTC publisher owns borrowed bytes before its first suspension", async () => {

@@ -346,8 +346,20 @@ export async function runWebRtcPrimordialBrowserProbe() {
   const secondBytes = artifactBytes("browser-map-transcript");
   const thirdBytes = artifactBytes("browser-set-delivery");
   let bareTransport;
+  let configuredTransport;
   let extraTransport;
   try {
+    const configured = await ManualWebRtcParticipantTransport.createOffer({
+      endpointId: "browser-relay-config",
+      iceConfiguration: {
+        iceServers: [],
+        iceTransportPolicy: "relay"
+      }
+    });
+    configuredTransport = configured.transport;
+    assert.equal(configured.signal.includes("iceServers"), false);
+    assert.equal(configured.signal.includes("iceTransportPolicy"), false);
+
     let forbiddenDeliveries = 0;
     const unsubscribeForbiddenAudit = right.subscribe(() => {
       forbiddenDeliveries += 1;
@@ -666,6 +678,7 @@ export async function runWebRtcPrimordialBrowserProbe() {
     return Object.freeze({
       artifact_kind_poison_calls: artifactKindPoisonCalls,
       array_frames: arrayFrames.length,
+      bounded_ice_configuration: true,
       channel_poison_calls: channelPoisonCalls,
       constructor_poison_calls: constructorPoisonCalls,
       generated_boundaries: generatedBoundaries,
@@ -678,6 +691,7 @@ export async function runWebRtcPrimordialBrowserProbe() {
       set_poison_calls: setIteratorPoisonCalls + setMutationPoisonCalls
     });
   } finally {
+    configuredTransport?.close();
     extraTransport?.close();
     bareTransport?.close();
     left.close();
