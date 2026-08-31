@@ -4198,3 +4198,26 @@ result, and reproducible verification.
   complete pre-long-suite chain also passes baseline `12/12`, S1 `12/12`, S2
   `12/12`, S3 `13/13`, and S4 `12/12`, alongside the prior focused gates. A new
   commit/push and fresh exact-head policy/Verify remain required.
+
+## 2026-08-31 — North Star priority roadmap audit
+
+- Started from freshly fetched `origin/main`
+  `9b418ee35559c488528bc55ad433708ce94499d8` in the dedicated
+  `agent/codex-protocol-kernel--north-star-priority-roadmap` worktree after PR #63
+  was expected-head squash-merged.
+- Re-audited the implementation SSOT, claim/threat/browser boundaries, open stage
+  issues #33–#37, stage receipts, production WebRTC construction, and exact-main
+  Verify. The release workflow remained in progress: `browser-parity` passed while
+  `protocol` was still running. Production still fixed `iceServers: []`, and only
+  S1–S4 receipts existed.
+- Added `docs/NORTH_STAR_PRIORITY_ROADMAP.md` as an explicitly subordinate execution
+  companion. It separates bounded ICE/STUN/TURN reachability from independently
+  administered topology, then requires 100 pre-registered induced failures and an
+  immutable seven-day burn-in before S7 promotion. S5/S6 receipt debt, strong signer
+  custody, WebKit signing, contribution UX, incentives, and discovery remain later
+  lanes.
+- Local documentation evidence passes: clean `npm ci` audited 95 packages with zero
+  vulnerabilities; specification verification reports 106 relative links; release
+  links report 60 local and 11 HTTPS syntax-only targets; governance passes `30/30`;
+  ruleset policy and `git diff --check` pass. No runtime, issue, receipt, workflow,
+  credential, cloud, deployment, or public asset was mutated.
