@@ -4246,3 +4246,22 @@ result, and reproducible verification.
   evidence, and preserved the implementation SSOT and all claim boundaries. No
   manual workflow rerun, deployment, credential, issue, receipt, runtime, or public
   asset mutation was performed in this closeout.
+
+## 2026-08-31 — R1 candidate and remaining-roadmap recheck
+
+- Re-read current main, issues #33–#37, stage receipt inventory, and focused R1 PR
+  #65. All five issues remain OPEN and only S1–S4 receipt files exist.
+- Bound the roadmap to R1 base `9b418ee35559c488528bc55ad433708ce94499d8`
+  and candidate head `13e44b74eca2f3a485f9f8f54de1ae9b668023f9`. The candidate
+  changes 10 files (+404/-25), passes local Node/actual-Chromium/security/Lab/
+  governance/static gates and Agent PR Policy `33361909517/1`; exact-head Verify
+  `33361909417/1` is still running, so R1 remains CI HOLD.
+- Corrected the native policy wording from nonexistent `direct` to `all`/`relay`,
+  recorded the actual server/URL/credential/total-byte limits, constructor-only
+  credential flow, and fail-closed shapes, and retained live STUN/TURN and arbitrary-
+  NAT evidence as R2 rather than promoting it from source tests.
+- Reprioritized the remaining critical path as R1 exact-head closeout, R2 frozen
+  four-profile measurement, R3 separately administered topology, R4 pre-registered
+  100 failures plus seven-day burn-in, and R5 exact S7 promotion. S5/S6 and issue
+  metadata remain P1 with a separate exact-head lifecycle. No issue, credential,
+  receipt, runtime, merge, deployment, cloud resource, or public asset changed.

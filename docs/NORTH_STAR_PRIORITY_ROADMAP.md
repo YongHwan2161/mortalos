@@ -1,12 +1,13 @@
 # MortalOS North Star 우선순위 실행 로드맵
 
-상태: **R0 PASS · 다음 P0는 R1 제한형 ICE 구성 계약**
+상태: **R0 PASS · R1 구현 후보 LOCAL/BROWSER PASS · exact-head CI HOLD**
 
 감사 기준:
 
 - `main`: `9b418ee35559c488528bc55ad433708ce94499d8`
 - Git 트리: `6ffae88f8b1f7892cefbce3df3d4ca2482c2855b`
 - 기준 시각: 2026-08-31 KST
+- R1 후보: [PR #65](https://github.com/YongHwan2161/mortalos/pull/65) / `13e44b74eca2f3a485f9f8f54de1ae9b668023f9`
 
 이 문서는 [North Star 구현 SSOT](IMPLEMENTATION_PLAN.md)를 대체하지 않는
 실행 보조 문서다. 단계 정의, 주장 승격, 순서의 최종 권한은 구현 SSOT에
@@ -19,7 +20,7 @@
 | --- | --- | --- |
 | 제품 수직 경로 | 실제 제한형 파일을 A에서 B로 이전하고, A 종료 후 2-of-3 복구와 동일 계보의 다음 전이를 수행하는 경로가 배포됨 | 독립 호스트, 임의 NAT, 독립 관리자 증거는 아님 |
 | R0 릴리스 | 정확한 `main` Verify, 릴리스 후보, 자동 Deploy, 공개 자산 대조가 모두 PASS | 완료. 이후 런타임 후보는 이 지점을 기준으로 시작 |
-| WebRTC 도달성 | 실제 Chromium DataChannel, 수동 정규 신호, 전송량 상한, 종료 정리, 동일 호스트 origin-cut 테스트가 PASS | 프로덕션 생성자는 여전히 `iceServers: []`; STUN, TURN, 강제 릴레이, 임의 NAT는 미증명 |
+| WebRTC 도달성 | R1 후보가 offer/answer 공통의 불변·소유·제한형 ICE 구성, 빈 목록/`all` 기본값, 명시적 STUN/TURN 및 `all`/`relay` 정책을 구현했고 실제 Chromium 회귀가 PASS | 후보는 아직 미병합이며 exact-head CI 진행 중. 실제 STUN/TURN 서비스, 강제 TURN 경로, 임의 NAT는 미증명 |
 | 승인·관측 경로 | 정책 고정 signer, membership-bound plan, 전체 roster 활성화, observer attestation, public-chain replay가 구현됨 | 실행 증거는 동일 PC/loopback. 키·인증서·프로세스 분리는 관리·물리 독립 증거가 아님 |
 | 단계 영수증 | S1~S4 파일만 존재 | S5~S8 영수증 부재. 이슈 #33~#37은 모두 OPEN |
 | 브라우저 키 보관 | Chromium/Firefox 전체 경로와 WebKit verifier-only 탐지가 구현됨 | 동일 origin 코드의 직접 sign 호출 가능성, WebKit 전체 signing, 격리 signer/counter는 HOLD |
@@ -83,8 +84,8 @@ R0 완료는 이 정확한 릴리스만 승격한다. STUN/TURN, 독립 토폴�
 
 ```text
 R0 정확한 main 릴리스 종결                 PASS
-  -> R1 제한형 ICE 구성 계약               NEXT P0
-  -> R2 NAT/TURN 도달성 파일럿             HOLD
+  -> R1 제한형 ICE 구성 계약               LOCAL/BROWSER PASS · CI HOLD
+  -> R2 NAT/TURN 도달성 파일럿             NEXT (R1 CI/병합 전 HOLD)
   -> R3 별도 관리 주체의 승인된 토폴로지   HOLD
   -> R4 100회 장애 시험 + 7일 burn-in      HOLD
   -> R5 정확한 S7 영수증과 주장 승격       HOLD
@@ -96,10 +97,35 @@ R4 안정화 이후:
   -> 기여 UX, 용량/SLA, 인센티브, 확장 discovery
 ```
 
-현재 최단 임계 경로는 R1~R5다. 문서·영수증 준비는 이 경로를 지연시키거나
+현재 최단 임계 경로는 R1의 exact-head 종결부터 R5까지다. 문서·영수증 준비는 이 경로를 지연시키거나
 주장을 바꾸지 않는 범위에서만 병렬로 수행한다.
 
+2026-08-31 재점검 결과 이슈 #33~#37은 모두 OPEN이며, 저장소의 단계
+영수증은 S1~S4 네 개뿐이다. R2 비식별 측정 schema, R3 독립 운영 계약,
+R4 사전 등록 matrix, S7 영수증은 아직 없다. 따라서 우선순위는 다음처럼
+유지한다.
+
+| 우선순위 | 다음 관문 | 현재 blocker / 종료 신호 |
+| --- | --- | --- |
+| P0-A | R1 exact-head 종결 | PR #65 protocol/browser-parity 완료·성공 |
+| P0-B | R2 schema 동결과 네 프로필 측정 | R1 종결 전 live credential·네트워크 실행 금지; 이후 프로필별 20/20 |
+| P0-C | R3 독립 운영 토폴로지 | 서로 다른 관리자·credential·host·network 증거 부재; 공개 sidecar 전체 재생 |
+| P0-D | R4 100회 matrix와 7일 burn-in | R3 후보·시험 정의 미동결; 중복 effect 0, 증거 공백 0 |
+| P0-E | R5 S7 승격 | 정확한 S7 영수증·독립 리뷰·병합·배포 readback 부재 |
+| P1 | S5/S6와 이슈 상태 정리 | P0 임계 경로를 지연시키지 않는 별도 exact-head 수명주기 |
+
 ## 4. P0 구현 게이트 — R1 제한형 ICE 구성 계약
+
+현재 판정: **구현·로컬·실브라우저 PASS / exact-head 원격 CI HOLD**
+
+불변 후보:
+
+- PR: [#65](https://github.com/YongHwan2161/mortalos/pull/65)
+- base: `9b418ee35559c488528bc55ad433708ce94499d8`
+- head: `13e44b74eca2f3a485f9f8f54de1ae9b668023f9`
+- 변경량: 10개 파일, +404/-25
+- Agent PR Policy: `33361909517/1` PASS
+- Verify: `33361909417/1` 진행 중; 완료 전에는 R1 PASS로 승격하지 않음
 
 목표: STUN, TURN, signaling, relay를 유효성 권한으로 만들지 않으면서 실제
 네트워크 도달성을 구성 가능하게 만든다.
@@ -110,7 +136,7 @@ R4 안정화 이후:
   RTC 구성 capability로 대체한다.
 - 기존 direct/동일 호스트 동작을 보존하도록 빈 서버 목록을 기본값으로
   유지한다.
-- direct 또는 `relay`만 명시적으로 선택할 수 있게 하여 강제 TURN
+- 네이티브 `all` 또는 `relay`만 명시적으로 선택할 수 있게 하여 강제 TURN
   증거가 direct 후보로 조용히 후퇴하지 못하게 한다.
 - 허용한 STUN/TURN URL과 credential 형태에만 정확한 개수·바이트 상한을
   적용하고 malformed/max+1을 fail-closed 처리한다.
@@ -121,6 +147,19 @@ R4 안정화 이후:
 - Node와 실제 브라우저에서 기본 direct, 구성 모드, 호출자 변이,
   malformed/oversized, credential 비노출을 검증한다.
 
+현재 구현 결과:
+
+- offer와 answer 모두 첫 suspension 전에 설정 레코드와 중첩 배열을 복사·동결한다.
+- 서버 최대 8개, 서버당 URL 최대 8개, URL당 UTF-8 2,048바이트,
+  TURN username/credential 각 512바이트, 전체 문자열 16,384바이트를 적용한다.
+- STUN/TURN 혼합, URL 내 credential, 알 수 없는 필드, accessor, max+1을
+  `WEBRTC_ICE_CONFIGURATION`으로 fail-closed 처리한다.
+- credential은 네이티브 `RTCPeerConnection` 생성자에만 전달하며 정규 신호,
+  presence, transport 상태에 보관하지 않는다.
+- focused WebRTC `17/17`, 실제 Chromium P2P, async security `26/26`
+  (`22` direct / `145` discovered), Lab/API `23/23`, governance `30/30`,
+  spec, links, protocol profile, ruleset, Lab build, diff check가 PASS했다.
+
 PASS 조건:
 
 - focused transport/security/Lab 테스트와 전체 exact-head suite가 모두
@@ -128,6 +167,10 @@ PASS 조건:
 - 현재 경계가 약화되지 않는다.
 - 이 단계의 결과는 안전한 adapter 구현으로만 기록한다. NAT 통과나
   독립성을 주장하지 않는다.
+
+남은 R1 종결 조건은 현재 불변 head의 protocol과 browser-parity가 모두
+완료·성공하는 것이다. 이후 immutable review와 병합은 별도 승인 수명주기이며,
+R1 소스 종결과 R2의 실제 네트워크 증거를 서로 대체하지 않는다.
 
 ## 5. P0 증거 게이트 — R2 NAT/TURN 도달성 파일럿
 
@@ -298,8 +341,10 @@ declaration을 하나 더 추가하지 않는다. 다음 유효한 구현은 R1�
 
 ## 13. 즉시 실행 순서
 
-1. **R1**: credential 없는 제한형 ICE 구성 PR
-2. **R2 준비**: 첫 네트워크 실행 전에 네 프로필과 비식별 증거 schema 동결
+1. **R1 종결**: PR #65 exact-head protocol/browser-parity 결과 확인; 실패 시
+   동일 head를 성공으로 간주하거나 R2로 우회하지 않음
+2. **R2 준비**: R1 종결 후, 첫 네트워크 실행 전에 네 프로필과 비식별 증거
+   schema 및 TURN credential 취급 경계 동결
 3. **R3 준비**: live authority나 ceremony 생성 전에 독립 관리 도메인 확보
 4. **R4 준비**: 첫 시험 전에 100회 matrix 등록
 5. **R5 준비**: burn-in 중에는 영수증 schema만 검토하고 주장 승격은 금지
