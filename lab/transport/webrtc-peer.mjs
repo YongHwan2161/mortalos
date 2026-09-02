@@ -37,6 +37,7 @@ import {
 } from "../../src/primordials.mjs";
 
 export const WEBRTC_SIGNAL_FORMAT = "mortalos-webrtc-signal/1";
+export const WEBRTC_SELECTED_ROUTE_FORMAT = "mortalos-webrtc-selected-route/1";
 export const WEBRTC_LIMITS = Object.freeze({
   buffered_bytes: RELAY_LIMITS.frame_bytes * 4,
   endpoint_chars: 64,
@@ -47,7 +48,8 @@ export const WEBRTC_LIMITS = Object.freeze({
   ice_urls_per_server: 8,
   ice_username_bytes: 512,
   signal_bytes: 32_768,
-  sdp_chars: 24_576
+  sdp_chars: 24_576,
+  stats_records: 512
 });
 
 const ENDPOINT_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
@@ -73,6 +75,7 @@ const rtcPeerConnectionCloseIntrinsic = rtcPeerConnectionPrototype?.close ?? nul
 const rtcPeerConnectionCreateAnswerIntrinsic = rtcPeerConnectionPrototype?.createAnswer ?? null;
 const rtcPeerConnectionCreateDataChannelIntrinsic = rtcPeerConnectionPrototype?.createDataChannel ?? null;
 const rtcPeerConnectionCreateOfferIntrinsic = rtcPeerConnectionPrototype?.createOffer ?? null;
+const rtcPeerConnectionGetStatsIntrinsic = rtcPeerConnectionPrototype?.getStats ?? null;
 const rtcPeerConnectionSetLocalDescriptionIntrinsic =
   rtcPeerConnectionPrototype?.setLocalDescription ?? null;
 const rtcPeerConnectionSetRemoteDescriptionIntrinsic =
@@ -472,6 +475,93 @@ function localSignal(connection, endpoint, type) {
   return encodeWebRtcSignal({ endpoint_id: endpoint, sdp: description.sdp, type });
 }
 
+function statsRecord(value, label) {
+  try {
+    return snapshotOwnDataRecord(value, label);
+  } catch {
+    fail("WEBRTC_ROUTE_UNAVAILABLE", `${label} must contain only own data properties`);
+  }
+}
+
+function statsValue(descriptors, property) {
+  const entry = ownDataRecordEntry(descriptors, property);
+  return entry.present ? entry.value : undefined;
+}
+
+function normalizedCandidateType(value) {
+  if (value === "host" || value === "relay") return value;
+  if (value === "srflx" || value === "prflx") return "srflx";
+  fail("WEBRTC_ROUTE_UNAVAILABLE", "selected ICE candidate type is unavailable");
+}
+
+function routeClass(localCandidateType, remoteCandidateType) {
+  if (localCandidateType === "relay" || remoteCandidateType === "relay") return "relay";
+  if (localCandidateType === "srflx" || remoteCandidateType === "srflx") return "srflx";
+  return "host";
+}
+
+function selectedRouteEvidence(report) {
+  let reportForEach;
+  let reportGet;
+  try {
+    reportForEach = snapshotDataMethod(report, "forEach", "RTCStatsReport");
+    reportGet = snapshotDataMethod(report, "get", "RTCStatsReport");
+  } catch {
+    fail("WEBRTC_ROUTE_UNAVAILABLE", "RTC stats report is unavailable");
+  }
+  let records = 0;
+  let selectedPairId = null;
+  reportForEach((record) => {
+    records += 1;
+    if (records > WEBRTC_LIMITS.stats_records) {
+      fail("WEBRTC_ROUTE_LIMIT", "RTC stats record ceiling exceeded");
+    }
+    const descriptors = statsRecord(record, "RTC stats record");
+    if (statsValue(descriptors, "type") !== "transport") return;
+    const candidatePairId = statsValue(descriptors, "selectedCandidatePairId");
+    if (candidatePairId === undefined) return;
+    if (typeof candidatePairId !== "string" || candidatePairId.length < 1) {
+      fail("WEBRTC_ROUTE_UNAVAILABLE", "selected ICE candidate pair is unavailable");
+    }
+    if (selectedPairId !== null && selectedPairId !== candidatePairId) {
+      fail("WEBRTC_ROUTE_AMBIGUOUS", "multiple selected ICE candidate pairs found");
+    }
+    selectedPairId = candidatePairId;
+  });
+  if (selectedPairId === null) {
+    fail("WEBRTC_ROUTE_UNAVAILABLE", "selected ICE candidate pair is unavailable");
+  }
+  const pair = statsRecord(reportGet(selectedPairId), "selected ICE candidate pair");
+  if (statsValue(pair, "type") !== "candidate-pair") {
+    fail("WEBRTC_ROUTE_UNAVAILABLE", "selected ICE candidate pair is unavailable");
+  }
+  const localCandidateId = statsValue(pair, "localCandidateId");
+  const remoteCandidateId = statsValue(pair, "remoteCandidateId");
+  if (
+    typeof localCandidateId !== "string" || localCandidateId.length < 1 ||
+    typeof remoteCandidateId !== "string" || remoteCandidateId.length < 1
+  ) {
+    fail("WEBRTC_ROUTE_UNAVAILABLE", "selected ICE candidates are unavailable");
+  }
+  const localCandidate = statsRecord(reportGet(localCandidateId), "local ICE candidate");
+  const remoteCandidate = statsRecord(reportGet(remoteCandidateId), "remote ICE candidate");
+  if (
+    statsValue(localCandidate, "type") !== "local-candidate" ||
+    statsValue(remoteCandidate, "type") !== "remote-candidate"
+  ) {
+    fail("WEBRTC_ROUTE_UNAVAILABLE", "selected ICE candidates are unavailable");
+  }
+  const localRouteClass = normalizedCandidateType(statsValue(localCandidate, "candidateType"));
+  const remoteRouteClass = normalizedCandidateType(statsValue(remoteCandidate, "candidateType"));
+  return freeze({
+    format: WEBRTC_SELECTED_ROUTE_FORMAT,
+    local_route_class: localRouteClass,
+    non_authority: true,
+    path_class: routeClass(localRouteClass, remoteRouteClass),
+    remote_route_class: remoteRouteClass
+  });
+}
+
 function ownedBinaryBytes(value) {
   let buffer;
   let byteLength;
@@ -545,6 +635,7 @@ export class ManualWebRtcParticipantTransport {
   #connection;
   #connectionClose;
   #connectionCloseStarted = false;
+  #connectionGetStats = null;
   #connectionSetRemoteDescription;
   #endpointId;
   #error = null;
@@ -565,6 +656,17 @@ export class ManualWebRtcParticipantTransport {
       "close",
       "RTCPeerConnection"
     );
+    try {
+      this.#connectionGetStats = snapshotBoundMethod(
+        connection,
+        rtcPeerConnectionGetStatsIntrinsic,
+        "getStats",
+        "RTCPeerConnection",
+        "WEBRTC_ROUTE_UNAVAILABLE"
+      );
+    } catch {
+      this.#connectionGetStats = null;
+    }
     try {
       this.#connectionSetRemoteDescription = snapshotBoundMethod(
         connection,
@@ -764,6 +866,21 @@ export class ManualWebRtcParticipantTransport {
       if (frame.sequence > after) arrayPush(selected, detachedRelayFrame(frame));
     }
     return selected;
+  }
+
+  async selectedRoute() {
+    if (
+      this.#closed ||
+      !this.#channel ||
+      channelSlot(this.#channel, rtcDataChannelReadyStateGetter, "readyState") !== "open"
+    ) {
+      fail("WEBRTC_ROUTE_UNAVAILABLE", "selected ICE route requires an open DataChannel");
+    }
+    if (!this.#connectionGetStats) {
+      fail("WEBRTC_ROUTE_UNAVAILABLE", "RTCPeerConnection.getStats is unavailable");
+    }
+    const report = await this.#connectionGetStats();
+    return selectedRouteEvidence(report);
   }
 
   subscribe(handler, { startAfter = 0 } = {}) {

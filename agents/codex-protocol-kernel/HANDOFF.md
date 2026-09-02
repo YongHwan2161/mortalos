@@ -5,9 +5,50 @@ not active locks.
 
 ## Active intent
 
-Status: **R1 BOUNDED ICE CONFIGURATION LOCAL PASS; EXACT-HEAD REMOTE CI HOLD**
+Status: **R2-A LOCAL PASS · EXACT-HEAD GOVERNANCE HOLD**
 
-### ACTIVE INTENT — bounded ICE configuration
+### ACTIVE INTENT — R2-A bounded WebRTC reachability evidence contract
+
+- Branch: `agent/codex-protocol-kernel--r2-reachability-contract`
+- Base: `9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9` (`origin/main` after fresh fetch)
+- Worktree: `D:\repo\mortalos-release-candidates\postmerge-main-9ede05c-worktrees\codex-protocol-kernel--r2-reachability-contract`
+- Shared paths declared for this task: `lab/transport/webrtc-peer.mjs`, a focused
+  reachability-observation module under `lab/transport/`,
+  `schemas/r2-reachability-{plan,observation}.schema.json`, focused WebRTC and
+  reachability-contract tests under `test/`, `test/webrtc-transport-browser-entry.mjs`,
+  `scripts/verify-p2p-placement-chromium.mjs`,
+  `scripts/verify-webrtc-reachability-chromium.mjs`, `security/async-entrypoints.json`,
+  `scripts/verify-security-boundaries.mjs`, `package.json`, `docs/README.md`,
+  `docs/NORTH_STAR_PRIORITY_ROADMAP.md`, and
+  `agents/codex-protocol-kernel/{HANDOFF,MEMORY,WORKLOG}.md`.
+- Goal: expose only a bounded, immutable, non-authoritative selected ICE route class
+  (`host`, `srflx`, or `relay`) from captured native stats; define a canonical R2
+  observation contract that binds the exact source/resource/lineage and one of four
+  pre-registered pilot profiles without retaining or publishing raw stats, SDP, IP,
+  port, STUN/TURN URL, username, or credential material; and synchronize the Korean
+  execution roadmap after R1's governed merge and exact deployment.
+- Stop conditions: no live STUN/TURN service, external TURN account or credential,
+  network pilot, issue mutation, S7 receipt, claim promotion, push, PR, merge, or
+  deployment. R2-A freezes and verifies the measurement contract only. R2-B's 80 live
+  paths, R3 independent administration, R4 failure matrix/burn-in, and R5 S7 promotion
+  remain separate gates.
+- Local result: the transport exposes only a frozen `host`/`srflx`/`relay` selected
+  route summary from a constructor-captured `getStats` capability with a 512-record
+  ceiling. A canonical content-addressed pilot plan freezes four ordered profiles,
+  20 attempts each, a fresh public 256-bit campaign nonce, exact source/resource/
+  organism/Capsule/lineage, and the expected route sequence. Each observation binds
+  that plan plus the complete A-retired,
+  exact-B-recovery, unique-successor, corrupt/below-quorum rejection, and zero-
+  duplicate-effect product result while excluding raw candidate and credential data.
+- Local evidence: focused R2 transport/contract `27/27`, actual Chromium selected
+  `host/host` with no raw candidate metadata, the complete Chromium P2P placement/
+  repair vertical, async security `26/26` over `22` direct / `146` discovered,
+  governance `30/30`, spec, links, ruleset policy, Lab build, and diff checks PASS.
+- Remaining gate: exact-head commit/push/CI, immutable review, approvals,
+  expected-head merge, exact-main Verify/Deploy/public readback. Only after that may
+  R2-B create a plan bound to the deployed commit/tree and begin 80 live paths.
+
+### HISTORICAL — bounded ICE configuration
 
 - Branch: `agent/codex-protocol-kernel--bounded-ice-configuration`
 - Base: `9b418ee35559c488528bc55ad433708ce94499d8` (`origin/main` after fresh fetch)

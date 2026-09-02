@@ -1,11 +1,14 @@
 # MortalOS documentation map
 
-Last synchronized: **2026-08-21 KST**
+Last synchronized: **2026-09-02 KST**
 
 ## Read first
 
 - [North Star implementation SSOT](IMPLEMENTATION_PLAN.md) — current direction,
   evidence layers, priority order, and strict completion gates.
+- [North Star priority roadmap](NORTH_STAR_PRIORITY_ROADMAP.md) — Korean
+  execution gates from the promoted R1 release through R2 reachability, R3
+  independent administration, R4 burn-in, and R5 S7 promotion.
 - [Current claim matrix](CLAIM_MATRIX.md) — what is implemented, verified,
   promoted, and explicitly unclaimed.
 - [P2P storage placement and repair](P2P_PLACEMENT_AND_REPAIR.md) — source
@@ -60,8 +63,16 @@ discovery, signaling, Cloudflare, and GPT decide none of those results.
 
 ## Current boundary
 
-Status: **EXACT-MAIN SOURCE/RUNTIME/TEST/RELEASE PASS AT `a6cfb657…`;
-SEPARATELY ADMINISTERED MULTI-HOST OPERATION NEXT**
+Status: **R1 EXACT-MAIN RELEASE PASS AT `9ede05cb…`; R2-A MEASUREMENT
+CONTRACT IS A LOCAL CANDIDATE; R2-B LIVE OPERATION HOLD**
+
+PR #65 promoted the bounded ICE configuration at exact main
+`9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9`; its exact-main Verify and linked
+Deploy passed. The current R2-A candidate adds only a content-addressed,
+non-authoritative reachability plan/observation contract and sanitized selected-route
+classes. It has not yet passed its own exact-head governance lifecycle and has not
+run the four-profile, 80-path live pilot. See the Korean priority roadmap for the
+current gate sequence and strict nonclaims.
 
 Historical integration base `25de18d8c1af8b3dfcb5adffb1a07538afa33332` already contained the governed
 continuity and local resource-execution verticals. This revision adds direct WebRTC

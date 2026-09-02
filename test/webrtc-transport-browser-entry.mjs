@@ -138,6 +138,31 @@ function waitForState(readState, expected, timeoutMs = 5_000) {
   });
 }
 
+function assertSelectedRoutes(selectedRoutes) {
+  assert.deepEqual(selectedRoutes.map((entry) => entry.path_class), ["host", "host"]);
+  assert.equal(
+    /address|candidateId|iceServers|port|protocol|sdp|url|username/iu.test(
+      JSON.stringify(selectedRoutes)
+    ),
+    false
+  );
+}
+
+export async function runWebRtcSelectedRouteBrowserProbe() {
+  const { left, right } = await connectedPair();
+  try {
+    const selectedRoutes = await Promise.all([left.selectedRoute(), right.selectedRoute()]);
+    assertSelectedRoutes(selectedRoutes);
+    return Object.freeze({
+      non_authority: selectedRoutes.every((entry) => entry.non_authority === true),
+      selected_route_classes: selectedRoutes.map((entry) => entry.path_class)
+    });
+  } finally {
+    left.close();
+    right.close();
+  }
+}
+
 function waitForIce(connection) {
   if (connection.iceGatheringState === "complete") return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -341,6 +366,8 @@ async function runGeneratedBoundaryProbe() {
 
 export async function runWebRtcPrimordialBrowserProbe() {
   const { left, right } = await connectedPair();
+  const selectedRoutes = await Promise.all([left.selectedRoute(), right.selectedRoute()]);
+  assertSelectedRoutes(selectedRoutes);
   const forbiddenBytes = rawArtifactBytes("verdict", "browser-forbidden-verdict");
   const firstBytes = artifactBytes("browser-channel-send");
   const secondBytes = artifactBytes("browser-map-transcript");
@@ -682,6 +709,7 @@ export async function runWebRtcPrimordialBrowserProbe() {
       channel_poison_calls: channelPoisonCalls,
       constructor_poison_calls: constructorPoisonCalls,
       generated_boundaries: generatedBoundaries,
+      selected_route_classes: selectedRoutes.map((entry) => entry.path_class),
       forbidden_local_frames: forbiddenLocalFrames,
       forbidden_remote_frames: forbiddenRemoteFrames,
       map_poison_calls: mapPoisonCalls,
