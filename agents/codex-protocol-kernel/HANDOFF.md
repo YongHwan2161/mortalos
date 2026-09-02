@@ -5,7 +5,7 @@ not active locks.
 
 ## Active intent
 
-Status: **R2-A LOCAL PASS · EXACT-HEAD GOVERNANCE HOLD**
+Status: **P0-A EXACT-HEAD GOVERNANCE ACTIVE**
 
 ### ACTIVE INTENT — R2-A bounded WebRTC reachability evidence contract
 
@@ -27,11 +27,15 @@ Status: **R2-A LOCAL PASS · EXACT-HEAD GOVERNANCE HOLD**
   pre-registered pilot profiles without retaining or publishing raw stats, SDP, IP,
   port, STUN/TURN URL, username, or credential material; and synchronize the Korean
   execution roadmap after R1's governed merge and exact deployment.
+- Authorized P0-A external scope: publish this exact task branch, create one focused
+  PR, complete exact-head CI and immutable reviewer/App/native-approval gates, merge
+  only with `expected_head_sha`, then verify exact-main release-candidate lineage,
+  workflow-run deployment, and public assets. This authorization was added only
+  after the local R2-A candidate was complete.
 - Stop conditions: no live STUN/TURN service, external TURN account or credential,
-  network pilot, issue mutation, S7 receipt, claim promotion, push, PR, merge, or
-  deployment. R2-A freezes and verifies the measurement contract only. R2-B's 80 live
-  paths, R3 independent administration, R4 failure matrix/burn-in, and R5 S7 promotion
-  remain separate gates.
+  R2-B network pilot, issue mutation, S7 receipt, or R3/R4/R5 claim promotion. R2-B's
+  80 live paths, R3 independent administration, R4 failure matrix/burn-in, and R5 S7
+  promotion remain separate gates.
 - Local result: the transport exposes only a frozen `host`/`srflx`/`relay` selected
   route summary from a constructor-captured `getStats` capability with a 512-record
   ceiling. A canonical content-addressed pilot plan freezes four ordered profiles,
