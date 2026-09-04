@@ -1,12 +1,29 @@
 # MortalOS North Star 우선순위 실행 로드맵
 
-상태: **R0 PASS · R1 PASS · R2-A 로컬 계약/실브라우저 PASS · 원격 승격 HOLD**
+## North Star
+
+> **Create once. Continue elsewhere.**
+>
+> 사용자는 실제 디지털 자원을 endpoint A의 검증 가능한 하나의 organism에
+> 결합하고, custody를 이전해 endpoint B에서 정확한 자원을 복구하며, A가
+> 사라진 뒤 다음 authorized transition을 커밋할 수 있어야 한다. UI, relay,
+> storage provider 또는 model은 이 결과를 결정하는 신뢰 원천이 아니다.
+
+이 문장의 규범적 원문과 단계 정의는
+[North Star 구현 SSOT](IMPLEMENTATION_PLAN.md#1-north-star)가 소유한다. 이
+로드맵의 모든 우선순위는 위 사용자 결과를 더 강한 실제 증거로 증명하는
+순서이며, transport·배포·문서 자체를 최종 authority로 승격하지 않는다.
+
+상태: **R0 PASS · R1 PASS · R2-A 로컬 계약/실브라우저 PASS · P0-A 원격 승격 HOLD(의존성 감사 실패)**
 
 감사 기준:
 
 - 원격 `main`: `9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9`
 - Git 트리: `9329129836d5d89e9a76f9fa4b4e2d81b0d57c54`
-- 기준 시각: 2026-09-02 KST
+- PR #66 base/head: `9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9` /
+  `bd16bd34e46b425f8a7da1a5ac3854ab5f0789ca`
+- PR Verify `33642011149/1`: `browser-parity` PASS, `protocol` FAIL
+- 기준 시각: 2026-09-04 KST
 - R2-A 기준 base: 위 `main`
 
 이 문서는 [North Star 구현 SSOT](IMPLEMENTATION_PLAN.md)를 대체하지 않는
@@ -20,7 +37,7 @@
 | --- | --- | --- |
 | R0 릴리스 경로 | PASS | 이후 후보의 자동 승격을 보장하지 않음 |
 | R1 제한형 ICE 구성 | PASS | 실제 NAT/STUN/TURN 성공이나 독립 운영은 아님 |
-| R2-A 측정 계약 | 로컬 PASS | exact-head CI, 리뷰, 병합, 배포는 미수행 |
+| R2-A 측정 계약 | 로컬 PASS · 원격 HOLD | exact-head protocol CI가 의존성 감사에서 실패했고 리뷰·병합·배포는 미수행 |
 | R2-B 실제 도달성 | HOLD | 네 프로필의 80개 새 제품 경로가 아직 없음 |
 | R3 독립 운영 | HOLD | 별도 관리자·credential·host·network 증거가 없음 |
 | R4 회복력 | HOLD | 사전 등록 100회 장애 시험과 7일 burn-in이 없음 |
@@ -118,7 +135,7 @@ SHA-256 `plan_id`로 고정한다.
 ```text
 R0 정확한 릴리스                           PASS
   -> R1 제한형 ICE 구성                    PASS
-  -> R2-A plan/observation 계약            LOCAL PASS · REMOTE HOLD
+  -> R2-A plan/observation 계약            LOCAL PASS · P0-A AUDIT HOLD
   -> R2-B 4프로필 x 20회 live 제품 경로   HOLD
   -> R3 별도 관리 주체 토폴로지            HOLD
   -> R4 100회 장애 시험 + 7일 burn-in      HOLD
@@ -140,12 +157,29 @@ S1~S4만 존재하므로 이슈 상태나 문서만으로 S5~S8을 승격하지 
 
 ## 5. 바로 다음 단계 — R2-A 원격 종결
 
-1. 현재 후보를 하나의 exact head로 고정한다.
-2. focused R2, security, spec, links, governance와 전체 Verify를 실행한다.
-3. 전체 diff, plan/observation schema, 민감정보 비노출 경계를 불변
+현재 P0-A 판정은 **HOLD**다.
+
+- 최신 성공 Agent PR Policy: `33642156461/1`
+- exact-head Verify `33642011149/1`: `browser-parity` PASS
+- 같은 Verify의 `protocol`: `npm audit --audit-level=moderate`에서 Ajv의
+  전이 의존성 `fast-uri@3.1.5` 고위험 취약점으로 FAIL
+- 안전한 범위: `fast-uri>=3.1.6`
+- `Promote exact release candidate`: SKIPPED
+- 불변 리뷰, 승인, 병합, 배포 mutation: 각각 0
+
+따라서 바로 다음 최소 단계는 **P0-A1 의존성 감사 복구**다.
+
+1. runtime/API 변경 없이 호환 가능한 lockfile 또는 dependency override만
+   `fast-uri>=3.1.6`으로 갱신한다.
+2. clean install 뒤 `npm audit --audit-level=moderate`의 취약점 수가 0인지
+   확인하고 dependency tree와 lockfile diff를 검토한다.
+3. focused R2, security, spec, links, governance 검증을 다시 수행한다.
+4. 문서 갱신과 감사 복구를 합친 새 exact head를 한 번만 push하고 전체
+   Verify를 새 증거로 실행한다. 실패한 `33642011149/1`은 재사용하지 않는다.
+5. 전체 diff, plan/observation schema, 민감정보 비노출 경계를 불변
    스냅샷으로 리뷰한다.
-4. 필요한 서로 대체 불가능한 승인과 expected-head 병합을 수행한다.
-5. exact-main Verify와 workflow-run Deploy를 추적하고 공개 자산을 대조한다.
+6. 필요한 서로 대체 불가능한 승인과 expected-head 병합을 수행한다.
+7. exact-main Verify와 workflow-run Deploy를 추적하고 공개 자산을 대조한다.
 
 이 단계가 끝나기 전에 live credential을 만들거나 R2-B 관측을 시작하지
 않는다. 계획의 `source_commit/source_tree`는 배포된 exact main을 가리켜야
