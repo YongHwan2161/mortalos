@@ -4226,3 +4226,54 @@ result, and reproducible verification.
   arbitrary-NAT evidence. Exact-head policy/full Verify and immutable review remain
   pending; R2 measured reachability and R3 separate administration remain HOLD. No
   service, credential, issue, receipt, merge, deployment, or public claim changed.
+
+## 2026-09-02 — R2-A reachability plan and observation contract
+
+- Created a dedicated worktree from freshly fetched exact main
+  `9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9` (tree
+  `9329129836d5d89e9a76f9fa4b4e2d81b0d57c54`) and recorded the shared-path scope
+  before editing.
+- Added sanitized selected-route evidence to the manual WebRTC transport. It captures
+  native `getStats` at construction, bounds the report at 512 records, requires one
+  selected candidate pair, maps only to `host`/`srflx`/`relay`, and fails closed on
+  missing, ambiguous, oversized, accessor, or unknown candidate data.
+- Added canonical plan and observation contracts plus strict JSON schemas. The plan
+  pre-registers a fresh public 256-bit campaign nonce and exactly 80 attempts across
+  LAN direct, NAT STUN, forced TURN, and reconnect-to-relay profiles. Observations
+  bind the plan, exact source/resource/
+  organism/Capsule/lineage, sanitized routes, A retirement, B exact recovery,
+  successor lineage, fail-closed corrupt/below-quorum checks, and duplicate effects.
+- Added Node and actual-Chromium regressions, security inventory classification and
+  exact function/module digests, package scripts, and the Korean North Star priority
+  roadmap. The roadmap separates R2-A contract evidence from R2-B live reachability
+  and R3 independent administration.
+- Final local gates: `npm run test:r2-reachability` PASS `27/27` plus actual Chromium;
+  `node scripts/verify-p2p-placement-chromium.mjs` PASS; security PASS `26/26` over
+  `22` direct / `146` discovered; governance PASS `30/30`; spec, links, ruleset,
+  Lab build, and `git diff --check` PASS. `npm ci` audited 95 packages with zero
+  vulnerabilities earlier in the same worktree.
+- External mutations remain zero: no live STUN/TURN service or credential, network
+  pilot, issue change, receipt, push, PR, merge, deployment, or public claim. The next
+  gate is exact-head governance for R2-A; R2-B starts only from its deployed commit/tree.
+
+## 2026-09-04 — P0-A1 dependency-audit recovery
+
+- Re-fetched `origin/main` and PR #66. Main/base remained
+  `9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9`; the failed remote head remained
+  `bd16bd34e46b425f8a7da1a5ac3854ab5f0789ca`.
+- Confirmed Verify `33642011149/1` passed browser parity but failed protocol only at
+  `npm audit --audit-level=moderate`: Ajv's overridden transitive
+  `fast-uri@3.1.5` was inside four high-severity advisory ranges.
+- Changed only the compatible `fast-uri` override and lock entry to `3.1.6`; no
+  runtime, API, protocol, schema, workflow, or direct dependency changed.
+- Clean `npm ci` installed 94 packages and audited 95 with zero vulnerabilities.
+  `npm ls` reports `ajv@8.20.0 -> fast-uri@3.1.6 overridden` and a fresh
+  `npm audit --audit-level=moderate` reports zero vulnerabilities.
+- Revalidated focused R2 `27/27` plus actual Chromium `host/host`, async security
+  `26/26` over `22` direct / `146` discovered, specification, links, governance
+  `30/30`, ruleset policy, Lab build, and `git diff --check`; all pass.
+- Synchronized the Korean roadmap with its North Star at the top, P0-A1 local PASS,
+  P0-A2 remote HOLD, and the still-ordered P0-B through P0-E gates. Issues #33-#37
+  were re-read and remain OPEN.
+- No failed run was reused. Push, new exact-head CI, review, approval, merge,
+  deployment, public readback, live STUN/TURN, and the R2-B pilot remain pending.

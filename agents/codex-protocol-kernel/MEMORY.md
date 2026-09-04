@@ -978,6 +978,35 @@ rolling source memory; consult immutable GitHub and deployed-manifest records.
   38 admitted relay operations/12s and zero local 429s. These are candidate source/runtime/test facts, not exact-SHA
   promotion, independent-host, administrator, network, or arbitrary-NAT evidence.
 
+## 2026-09-02 R2-A content-addressed reachability contract candidate
+
+- Fresh `origin/main` and local base are
+  `9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9`, tree
+  `9329129836d5d89e9a76f9fa4b4e2d81b0d57c54`. PR #65 is merged; exact-main
+  Verify `33403682605/1` and linked Deploy `33419081003/1` are completed/success.
+- `ManualWebRtcParticipantTransport.selectedRoute()` invokes a constructor-captured
+  native `getStats`, admits at most 512 records and one selected pair, normalizes
+  `prflx` to `srflx`, and returns only frozen `host`/`srflx`/`relay` classes with
+  `non_authority:true`. Raw candidate, IP, port, protocol, SDP, URL, username,
+  credential, accessor, and ambiguous/oversized reports cannot enter the result.
+- `mortalos-webrtc-reachability-plan/1` freezes the exact source/tree, resource,
+  organism, Capsule, starting lineage, a fresh public 256-bit campaign nonce, four
+  canonical profiles, and 20 attempts per profile before execution.
+  `mortalos-webrtc-reachability-observation/1` is canonical,
+  content-addressed, plan-bound, and requires complete post-A-retirement recovery,
+  unique successor, corrupt-copy/below-quorum rejection, and zero provider/Continuity
+  duplicate effects for PASS. Failed attempts retain an allowlisted code and cannot
+  claim a complete product result.
+- Local evidence passes: R2 transport/contract `27/27`; actual Chromium `host/host`
+  selected-route probe; complete Chromium P2P placement/repair; async security
+  `26/26`, `22` direct / `146` discovered; governance `30/30`; spec, links, ruleset,
+  Lab build, and diff checks. This is same-host local evidence, not the R2-B 80-path
+  live pilot or R3 independence.
+- The Korean priority roadmap now records R0/R1 PASS, R2-A local PASS/remote HOLD,
+  then R2-B 80 paths, R3 independent administration, R4 100 failures plus 7-day
+  burn-in, and R5 exact S7 promotion. No live service, credential, issue, receipt,
+  push, PR, merge, deploy, or public claim was mutated.
+
 ## Memory maintenance
 
 - Store merged facts or explicitly labeled candidate evidence only.

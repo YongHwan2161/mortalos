@@ -166,6 +166,7 @@ async function verifyWebRtcPrimordials() {
       peer_poison_calls: 0,
       remote_frames: 3,
       scheduler_poison_calls: 0,
+      selected_route_classes: ["host", "host"],
       set_poison_calls: 0
     });
     assert.deepEqual(errors, []);

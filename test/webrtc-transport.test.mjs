@@ -16,6 +16,7 @@ import {
   encodeWebRtcSignal,
   ManualWebRtcParticipantTransport,
   WEBRTC_LIMITS,
+  WEBRTC_SELECTED_ROUTE_FORMAT,
   WEBRTC_SIGNAL_FORMAT
 } from "../lab/transport/webrtc-peer.mjs";
 
@@ -23,7 +24,7 @@ const sdp = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
 
 async function openFakeTransport(
   endpointId = "A-direct",
-  { afterCreate = null, iceConfiguration = undefined, sendImpl = null } = {}
+  { afterCreate = null, iceConfiguration = undefined, sendImpl = null, statsReport = null } = {}
 ) {
   let channel;
   let configuration;
@@ -62,6 +63,7 @@ async function openFakeTransport(
     }
     createDataChannel() { channel = new FakeChannel(); return channel; }
     async createOffer() { return { sdp, type: "offer" }; }
+    async getStats() { return statsReport; }
     async setLocalDescription(value) { this.localDescription = value; }
     close() {
       this.closeCalls += 1;
@@ -91,6 +93,44 @@ async function openFakeTransport(
     else globalThis.RTCPeerConnection = prior;
     throw error;
   }
+}
+
+function selectedStats(localCandidateType, remoteCandidateType, {
+  localExtra = {},
+  remoteExtra = {}
+} = {}) {
+  return new Map([
+    ["transport-1", {
+      id: "transport-1",
+      selectedCandidatePairId: "pair-1",
+      type: "transport"
+    }],
+    ["pair-1", {
+      id: "pair-1",
+      localCandidateId: "local-1",
+      remoteCandidateId: "remote-1",
+      state: "succeeded",
+      type: "candidate-pair"
+    }],
+    ["local-1", {
+      address: "203.0.113.7",
+      candidateType: localCandidateType,
+      id: "local-1",
+      port: 49152,
+      protocol: "udp",
+      type: "local-candidate",
+      ...localExtra
+    }],
+    ["remote-1", {
+      address: "198.51.100.9",
+      candidateType: remoteCandidateType,
+      id: "remote-1",
+      port: 3478,
+      protocol: "udp",
+      type: "remote-candidate",
+      ...remoteExtra
+    }]
+  ]);
 }
 
 async function openFakeAcceptedTransport(
@@ -405,6 +445,102 @@ test("bounded ICE configuration accepts exact limits and rejects ambiguous or se
     (error) => error.code === "WEBRTC_ICE_CONFIGURATION"
   );
   assert.equal(getterCalls, 0);
+});
+
+test("selected ICE route evidence exposes only bounded non-authoritative classes", async () => {
+  const selected = await openFakeTransport("route-sanitized", {
+    statsReport: selectedStats("host", "prflx", {
+      localExtra: {
+        relayProtocol: "udp",
+        url: "turn:relay.example.test:3478?transport=udp",
+        usernameFragment: "secret-user-fragment"
+      }
+    })
+  });
+  try {
+    selected.connection.getStats = async () => selectedStats("relay", "relay");
+    const evidence = await selected.transport.selectedRoute();
+    assert.deepEqual(evidence, {
+      format: WEBRTC_SELECTED_ROUTE_FORMAT,
+      local_route_class: "host",
+      non_authority: true,
+      path_class: "srflx",
+      remote_route_class: "srflx"
+    });
+    assert.equal(Object.isFrozen(evidence), true);
+    assert.doesNotMatch(
+      JSON.stringify(evidence),
+      /203\.0\.113\.7|198\.51\.100\.9|3478|49152|secret|turn:|udp/iu
+    );
+  } finally {
+    selected.transport.close();
+    selected.restore();
+  }
+});
+
+test("selected ICE route evidence fails closed on missing, ambiguous, oversized, or accessor stats", async () => {
+  const missing = await openFakeTransport("route-missing");
+  try {
+    await assert.rejects(
+      missing.transport.selectedRoute(),
+      (error) => error.code === "WEBRTC_ROUTE_UNAVAILABLE"
+    );
+  } finally {
+    missing.transport.close();
+    missing.restore();
+  }
+
+  const ambiguousReport = selectedStats("host", "host");
+  ambiguousReport.set("transport-2", {
+    id: "transport-2",
+    selectedCandidatePairId: "pair-2",
+    type: "transport"
+  });
+  const ambiguous = await openFakeTransport("route-ambiguous", { statsReport: ambiguousReport });
+  try {
+    await assert.rejects(
+      ambiguous.transport.selectedRoute(),
+      (error) => error.code === "WEBRTC_ROUTE_AMBIGUOUS"
+    );
+  } finally {
+    ambiguous.transport.close();
+    ambiguous.restore();
+  }
+
+  const oversizedReport = selectedStats("host", "host");
+  for (let index = oversizedReport.size; index <= WEBRTC_LIMITS.stats_records; index += 1) {
+    oversizedReport.set(`codec-${index}`, { id: `codec-${index}`, type: "codec" });
+  }
+  const oversized = await openFakeTransport("route-oversized", { statsReport: oversizedReport });
+  try {
+    await assert.rejects(
+      oversized.transport.selectedRoute(),
+      (error) => error.code === "WEBRTC_ROUTE_LIMIT"
+    );
+  } finally {
+    oversized.transport.close();
+    oversized.restore();
+  }
+
+  let getterCalls = 0;
+  const accessorReport = selectedStats("host", "host");
+  const accessorCandidate = { id: "local-1", type: "local-candidate" };
+  Object.defineProperty(accessorCandidate, "candidateType", {
+    enumerable: true,
+    get() { getterCalls += 1; return "relay"; }
+  });
+  accessorReport.set("local-1", accessorCandidate);
+  const accessor = await openFakeTransport("route-accessor", { statsReport: accessorReport });
+  try {
+    await assert.rejects(
+      accessor.transport.selectedRoute(),
+      (error) => error.code === "WEBRTC_ROUTE_UNAVAILABLE"
+    );
+    assert.equal(getterCalls, 0);
+  } finally {
+    accessor.transport.close();
+    accessor.restore();
+  }
 });
 
 test("WebRTC publisher owns borrowed bytes before its first suspension", async () => {

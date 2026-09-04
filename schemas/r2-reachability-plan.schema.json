@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mortal-os.com/schemas/r2-reachability-plan.schema.json",
+  "title": "MortalOS R2 WebRTC reachability pilot plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "campaign_nonce",
+    "claim_scope",
+    "format",
+    "non_authority",
+    "plan_id",
+    "profiles",
+    "resource"
+  ],
+  "properties": {
+    "campaign_nonce": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$"
+    },
+    "claim_scope": { "const": "single-operator-reachability" },
+    "format": { "const": "mortalos-webrtc-reachability-plan/1" },
+    "non_authority": { "const": true },
+    "plan_id": { "$ref": "#/$defs/digest" },
+    "profiles": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        { "$ref": "#/$defs/lanDirect" },
+        { "$ref": "#/$defs/natStun" },
+        { "$ref": "#/$defs/forcedTurn" },
+        { "$ref": "#/$defs/reconnectFallback" }
+      ],
+      "items": false
+    },
+    "resource": { "$ref": "#/$defs/resource" }
+  },
+  "$defs": {
+    "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "digest": { "type": "string", "pattern": "^sha256:[A-Za-z0-9_-]{43}$" },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capsule_id",
+        "lineage_head",
+        "organism_id",
+        "resource_bytes",
+        "resource_digest",
+        "source_commit",
+        "source_tree"
+      ],
+      "properties": {
+        "capsule_id": { "$ref": "#/$defs/digest" },
+        "lineage_head": { "$ref": "#/$defs/digest" },
+        "organism_id": { "$ref": "#/$defs/digest" },
+        "resource_bytes": { "type": "integer", "minimum": 1, "maximum": 131072 },
+        "resource_digest": { "$ref": "#/$defs/digest" },
+        "source_commit": { "$ref": "#/$defs/commit" },
+        "source_tree": { "$ref": "#/$defs/commit" }
+      }
+    },
+    "profileBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempts", "expected_path_classes", "profile"],
+      "properties": {
+        "attempts": { "const": 20 },
+        "expected_path_classes": { "type": "array" },
+        "profile": { "type": "string" }
+      }
+    },
+    "lanDirect": {
+      "allOf": [
+        { "$ref": "#/$defs/profileBase" },
+        {
+          "type": "object",
+          "properties": {
+            "expected_path_classes": { "const": ["host"] },
+            "profile": { "const": "lan-direct" }
+          }
+        }
+      ]
+    },
+    "natStun": {
+      "allOf": [
+        { "$ref": "#/$defs/profileBase" },
+        {
+          "type": "object",
+          "properties": {
+            "expected_path_classes": { "const": ["srflx"] },
+            "profile": { "const": "nat-stun" }
+          }
+        }
+      ]
+    },
+    "forcedTurn": {
+      "allOf": [
+        { "$ref": "#/$defs/profileBase" },
+        {
+          "type": "object",
+          "properties": {
+            "expected_path_classes": { "const": ["relay"] },
+            "profile": { "const": "forced-turn" }
+          }
+        }
+      ]
+    },
+    "reconnectFallback": {
+      "allOf": [
+        { "$ref": "#/$defs/profileBase" },
+        {
+          "type": "object",
+          "properties": {
+            "expected_path_classes": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "prefixItems": [
+                { "enum": ["host", "srflx"] },
+                { "const": "relay" }
+              ],
+              "items": false
+            },
+            "profile": { "const": "reconnect-fallback" }
+          }
+        }
+      ]
+    }
+  }
+}

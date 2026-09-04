@@ -57,7 +57,8 @@
     "test:state-package": "node --test test/state-package.test.mjs",
     "test:confidentiality": "node --test test/confidential-format.test.mjs test/confidential-counter.test.mjs test/confidential-crypto-vectors.test.mjs test/confidential-package.test.mjs test/confidential-s3-recovery.test.mjs && node scripts/verify-confidential-chromium.mjs",
     "test:protocol-profile": "node --test test/protocol-profile.test.mjs test/resource-contract.test.mjs test/resource-execution.test.mjs test/resource-execution-process.test.mjs",
-    "test:p2p-placement": "node --test --test-concurrency=1 test/placement.test.mjs test/placement-process.test.mjs test/confidential-placement.test.mjs test/confidential-journal-v2.test.mjs test/confidential-controller-v2.test.mjs test/placement-admission.test.mjs test/placement-admission-ceremony.test.mjs test/placement-admission-deployment-observer.test.mjs test/placement-admission-external-ceremony.test.mjs test/placement-admission-signer-service.test.mjs test/placement-admission-signer-session.test.mjs test/placement-membership-epoch-ceremony.test.mjs test/placement-liveness.test.mjs test/lineage-placement.test.mjs test/durable-repair-provider-session.test.mjs test/durable-repair-continuity-session.test.mjs test/placement-repair-executor.test.mjs test/placement-repair-batch.test.mjs test/placement-repair-schedule.test.mjs test/webrtc-transport.test.mjs && node scripts/verify-placement-repair-schedules.mjs && node scripts/verify-p2p-placement-chromium.mjs && node scripts/verify-confidential-placement-chromium.mjs",
+    "test:p2p-placement": "node --test --test-concurrency=1 test/placement.test.mjs test/placement-process.test.mjs test/confidential-placement.test.mjs test/confidential-journal-v2.test.mjs test/confidential-controller-v2.test.mjs test/placement-admission.test.mjs test/placement-admission-ceremony.test.mjs test/placement-admission-deployment-observer.test.mjs test/placement-admission-external-ceremony.test.mjs test/placement-admission-signer-service.test.mjs test/placement-admission-signer-session.test.mjs test/placement-membership-epoch-ceremony.test.mjs test/placement-liveness.test.mjs test/lineage-placement.test.mjs test/durable-repair-provider-session.test.mjs test/durable-repair-continuity-session.test.mjs test/placement-repair-executor.test.mjs test/placement-repair-batch.test.mjs test/placement-repair-schedule.test.mjs test/webrtc-transport.test.mjs test/webrtc-reachability.test.mjs && node scripts/verify-placement-repair-schedules.mjs && node scripts/verify-p2p-placement-chromium.mjs && node scripts/verify-confidential-placement-chromium.mjs",
+    "test:r2-reachability": "node --test test/webrtc-transport.test.mjs test/webrtc-reachability.test.mjs && node scripts/verify-webrtc-reachability-chromium.mjs",
     "test:distributed-counter": "node --test test/distributed-counter.test.mjs && node scripts/verify-independent-counter-topology.mjs",
     "test:security-fuzz": "node --test test/security-stateful-fuzz.test.mjs",
     "verify:security-boundaries": "node --test test/security-boundary-verifier.test.mjs",
@@ -121,7 +122,7 @@
     "qrcode-generator": "1.4.4"
   },
   "overrides": {
-    "fast-uri": "3.1.5",
+    "fast-uri": "3.1.6",
     "postcss": "8.5.23",
     "undici": "7.29.0"
   }
