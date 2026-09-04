@@ -5,7 +5,7 @@ not active locks.
 
 ## Active intent
 
-Status: **P0-A EXACT-HEAD GOVERNANCE ACTIVE**
+Status: **P0-A1 LOCAL PASS · P0-A2 EXACT-HEAD GOVERNANCE PENDING**
 
 ### ACTIVE INTENT — R2-A bounded WebRTC reachability evidence contract
 
@@ -18,7 +18,8 @@ Status: **P0-A EXACT-HEAD GOVERNANCE ACTIVE**
   reachability-contract tests under `test/`, `test/webrtc-transport-browser-entry.mjs`,
   `scripts/verify-p2p-placement-chromium.mjs`,
   `scripts/verify-webrtc-reachability-chromium.mjs`, `security/async-entrypoints.json`,
-  `scripts/verify-security-boundaries.mjs`, `package.json`, `docs/README.md`,
+  `scripts/verify-security-boundaries.mjs`, `package.json`, `package-lock.json`,
+  `docs/README.md`,
   `docs/NORTH_STAR_PRIORITY_ROADMAP.md`, and
   `agents/codex-protocol-kernel/{HANDOFF,MEMORY,WORKLOG}.md`.
 - Goal: expose only a bounded, immutable, non-authoritative selected ICE route class
@@ -48,7 +49,13 @@ Status: **P0-A EXACT-HEAD GOVERNANCE ACTIVE**
   `host/host` with no raw candidate metadata, the complete Chromium P2P placement/
   repair vertical, async security `26/26` over `22` direct / `146` discovered,
   governance `30/30`, spec, links, ruleset policy, Lab build, and diff checks PASS.
-- Remaining gate: exact-head commit/push/CI, immutable review, approvals,
+- P0-A1 security-audit repair: the exact compatible override and lock entry move
+  only `fast-uri@3.1.5` to `3.1.6`. Clean `npm ci` installed 94 packages and audited
+  95 with zero vulnerabilities; the dependency tree remains
+  `ajv@8.20.0 -> fast-uri@3.1.6 overridden`. The focused R2, Chromium, security,
+  governance, spec, links, ruleset, Lab build, and diff gates above pass again.
+- Remaining P0-A2 gate: publish one combined exact head, complete fresh CI,
+  immutable review, approvals,
   expected-head merge, exact-main Verify/Deploy/public readback. Only after that may
   R2-B create a plan bound to the deployed commit/tree and begin 80 live paths.
 

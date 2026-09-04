@@ -122,7 +122,7 @@
     "qrcode-generator": "1.4.4"
   },
   "overrides": {
-    "fast-uri": "3.1.5",
+    "fast-uri": "3.1.6",
     "postcss": "8.5.23",
     "undici": "7.29.0"
   }

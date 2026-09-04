@@ -4255,3 +4255,25 @@ result, and reproducible verification.
 - External mutations remain zero: no live STUN/TURN service or credential, network
   pilot, issue change, receipt, push, PR, merge, deployment, or public claim. The next
   gate is exact-head governance for R2-A; R2-B starts only from its deployed commit/tree.
+
+## 2026-09-04 — P0-A1 dependency-audit recovery
+
+- Re-fetched `origin/main` and PR #66. Main/base remained
+  `9ede05cb8f7c120a24ac3ce645fe85caa61bb6e9`; the failed remote head remained
+  `bd16bd34e46b425f8a7da1a5ac3854ab5f0789ca`.
+- Confirmed Verify `33642011149/1` passed browser parity but failed protocol only at
+  `npm audit --audit-level=moderate`: Ajv's overridden transitive
+  `fast-uri@3.1.5` was inside four high-severity advisory ranges.
+- Changed only the compatible `fast-uri` override and lock entry to `3.1.6`; no
+  runtime, API, protocol, schema, workflow, or direct dependency changed.
+- Clean `npm ci` installed 94 packages and audited 95 with zero vulnerabilities.
+  `npm ls` reports `ajv@8.20.0 -> fast-uri@3.1.6 overridden` and a fresh
+  `npm audit --audit-level=moderate` reports zero vulnerabilities.
+- Revalidated focused R2 `27/27` plus actual Chromium `host/host`, async security
+  `26/26` over `22` direct / `146` discovered, specification, links, governance
+  `30/30`, ruleset policy, Lab build, and `git diff --check`; all pass.
+- Synchronized the Korean roadmap with its North Star at the top, P0-A1 local PASS,
+  P0-A2 remote HOLD, and the still-ordered P0-B through P0-E gates. Issues #33-#37
+  were re-read and remain OPEN.
+- No failed run was reused. Push, new exact-head CI, review, approval, merge,
+  deployment, public readback, live STUN/TURN, and the R2-B pilot remain pending.

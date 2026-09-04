@@ -14,7 +14,7 @@
 로드맵의 모든 우선순위는 위 사용자 결과를 더 강한 실제 증거로 증명하는
 순서이며, transport·배포·문서 자체를 최종 authority로 승격하지 않는다.
 
-상태: **R0 PASS · R1 PASS · R2-A 로컬 계약/실브라우저 PASS · P0-A 원격 승격 HOLD(의존성 감사 실패)**
+상태: **R0 PASS · R1 PASS · R2-A 로컬 계약/실브라우저 PASS · P0-A1 의존성 감사 복구 로컬 PASS · P0-A2 원격 승격 HOLD**
 
 감사 기준:
 
@@ -37,7 +37,7 @@
 | --- | --- | --- |
 | R0 릴리스 경로 | PASS | 이후 후보의 자동 승격을 보장하지 않음 |
 | R1 제한형 ICE 구성 | PASS | 실제 NAT/STUN/TURN 성공이나 독립 운영은 아님 |
-| R2-A 측정 계약 | 로컬 PASS · 원격 HOLD | exact-head protocol CI가 의존성 감사에서 실패했고 리뷰·병합·배포는 미수행 |
+| R2-A 측정 계약 | P0-A1 로컬 PASS · P0-A2 원격 HOLD | 보안 lockfile 후보는 복구됐지만 새 exact-head CI·리뷰·병합·배포는 미수행 |
 | R2-B 실제 도달성 | HOLD | 네 프로필의 80개 새 제품 경로가 아직 없음 |
 | R3 독립 운영 | HOLD | 별도 관리자·credential·host·network 증거가 없음 |
 | R4 회복력 | HOLD | 사전 등록 100회 장애 시험과 7일 burn-in이 없음 |
@@ -135,7 +135,7 @@ SHA-256 `plan_id`로 고정한다.
 ```text
 R0 정확한 릴리스                           PASS
   -> R1 제한형 ICE 구성                    PASS
-  -> R2-A plan/observation 계약            LOCAL PASS · P0-A AUDIT HOLD
+  -> R2-A plan/observation 계약            P0-A1 LOCAL PASS · P0-A2 REMOTE HOLD
   -> R2-B 4프로필 x 20회 live 제품 경로   HOLD
   -> R3 별도 관리 주체 토폴로지            HOLD
   -> R4 100회 장애 시험 + 7일 burn-in      HOLD
@@ -144,7 +144,8 @@ R0 정확한 릴리스                           PASS
 
 | 우선순위 | 관문 | 종료 조건 |
 | --- | --- | --- |
-| P0-A | R2-A 거버넌스 종결 | exact-head CI, 불변 리뷰, 승인, expected-head 병합, exact-main Verify/Deploy/readback |
+| P0-A1 | 의존성 감사 복구 | `fast-uri@3.1.6`, clean install, 취약점 0, R2·security·spec·links·governance PASS |
+| P0-A2 | R2-A 거버넌스 종결 | 새 exact-head CI, 불변 리뷰, 승인, expected-head 병합, exact-main Verify/Deploy/readback |
 | P0-B | R2-B 실행 harness와 80경로 | 고정 plan 아래 네 프로필 각각 20/20, 모든 제품 수직 불변식 PASS |
 | P0-C | R3 독립 운영 | 서로 다른 관리자·credential·host·network, 전체 공개 sidecar 독립 재생 |
 | P0-D | R4 회복력 | 사전 등록 100회 결정적 결과, 동일 후보 7일, 중복 effect·증거 공백 0 |
@@ -152,34 +153,37 @@ R0 정확한 릴리스                           PASS
 | P1 | S5/S6와 상태 부채 | P0를 지연시키지 않는 별도 exact-head 수명주기 |
 | P2 | signer/counter·브라우저 custody | 별도 origin/service 또는 hardware authorization, Chromium/Firefox/WebKit 재검증 |
 
-이슈 #33~#37은 2026-09-02 재확인 기준 모두 OPEN이다. 단계 영수증은
+이슈 #33~#37은 2026-09-04 재확인 기준 모두 OPEN이다. 단계 영수증은
 S1~S4만 존재하므로 이슈 상태나 문서만으로 S5~S8을 승격하지 않는다.
 
-## 5. 바로 다음 단계 — R2-A 원격 종결
+## 5. P0-A1 결과와 바로 다음 단계 — R2-A 원격 종결
 
-현재 P0-A 판정은 **HOLD**다.
+P0-A1 판정은 **로컬 PASS**다.
 
 - 최신 성공 Agent PR Policy: `33642156461/1`
 - exact-head Verify `33642011149/1`: `browser-parity` PASS
 - 같은 Verify의 `protocol`: `npm audit --audit-level=moderate`에서 Ajv의
   전이 의존성 `fast-uri@3.1.5` 고위험 취약점으로 FAIL
-- 안전한 범위: `fast-uri>=3.1.6`
 - `Promote exact release candidate`: SKIPPED
 - 불변 리뷰, 승인, 병합, 배포 mutation: 각각 0
+- 로컬 보안 복구: override와 lockfile만 `fast-uri@3.1.6`으로 변경
+- clean `npm ci`: 94 packages 설치, 95 packages 감사, 취약점 0
+- dependency tree: `ajv@8.20.0 -> fast-uri@3.1.6 overridden`
+- focused R2: 27/27와 실제 Chromium `host/host` 비식별 관측 PASS
+- async security: 26/26, 22 direct / 146 auto-discovered PASS
+- spec, links, governance 30/30, ruleset policy, Lab build, diff check PASS
 
-따라서 바로 다음 최소 단계는 **P0-A1 의존성 감사 복구**다.
+P0-A 전체 판정은 새 원격 head가 아직 없으므로 계속 **HOLD**다. 바로 다음
+최소 단계는 **P0-A2 새 exact-head 원격 승격**이다.
 
-1. runtime/API 변경 없이 호환 가능한 lockfile 또는 dependency override만
-   `fast-uri>=3.1.6`으로 갱신한다.
-2. clean install 뒤 `npm audit --audit-level=moderate`의 취약점 수가 0인지
-   확인하고 dependency tree와 lockfile diff를 검토한다.
-3. focused R2, security, spec, links, governance 검증을 다시 수행한다.
-4. 문서 갱신과 감사 복구를 합친 새 exact head를 한 번만 push하고 전체
+1. 문서 갱신과 감사 복구를 합친 새 exact head를 한 번만 push하고 전체
    Verify를 새 증거로 실행한다. 실패한 `33642011149/1`은 재사용하지 않는다.
-5. 전체 diff, plan/observation schema, 민감정보 비노출 경계를 불변
+2. 새 head의 `browser-parity`, `protocol`, dependency audit, release-candidate
+   promotion과 모든 annotation이 성공했는지 확인한다.
+3. 전체 diff, plan/observation schema, 민감정보 비노출 경계를 불변
    스냅샷으로 리뷰한다.
-6. 필요한 서로 대체 불가능한 승인과 expected-head 병합을 수행한다.
-7. exact-main Verify와 workflow-run Deploy를 추적하고 공개 자산을 대조한다.
+4. 필요한 서로 대체 불가능한 승인과 expected-head 병합을 수행한다.
+5. exact-main Verify와 workflow-run Deploy를 추적하고 공개 자산을 대조한다.
 
 이 단계가 끝나기 전에 live credential을 만들거나 R2-B 관측을 시작하지
 않는다. 계획의 `source_commit/source_tree`는 배포된 exact main을 가리켜야
